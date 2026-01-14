@@ -1,0 +1,32 @@
+{
+  "name": "backend",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "drizzle:migrate": "drizzle-kit migrate",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@hono/standard-validator": "^0.2.1",
+    "@standard-community/standard-json": "^0.3.5",
+    "@standard-community/standard-openapi": "^0.2.9",
+    "@t3-oss/env-core": "^0.13.10",
+    "better-auth": "^1.4.11",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.11.3",
+    "hono-openapi": "^1.1.2",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.8",
+    "quansync": "^1.0.0",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.16.0",
+    "drizzle-kit": "^0.31.8",
+    "tsx": "^4.21.0",
+    "wrangler": "^4.4.0"
+  }
+}

@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@import '@fontsource/ibm-plex-mono/300.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-mono/700.css';
+
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+
+@custom-variant dark (&:is(.dark *));
+
+body {
+  @apply m-0;
+  font-family: 'IBM Plex Mono';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #000000;
+  background-color: var(--background);
+}
+
+code {
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+:root {
+  --background: #e0deda;
+  --primary: #ed4937;
+  --secondary: #565653;
+  --black: #000000;
+  --success: #427e3d;
+  --destructive-light: #e0ac9f;
+  --border: #9b9b9b;
+}
+
+.dark {
+  --background: #e0deda;
+  --primary: #ed4937;
+  --secondary: #565653;
+  --black: #000000;
+  --success: #427e3d;
+  --destructive-light: #e0ac9f;
+  --border: #9b9b9b;
+}
+
+@theme {
+  --color-primary: var(--primary);
+  --color-success: var(--success);
+  --color-black: var(--black);
+  --color-destructive-light: var(--destructive-light);
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-secondary: var(--secondary);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-black min-h-screen;
+  }
+}
+
+@layer components {
+  .loader-fit {
+    width: fit-content;
+    height: fit-content;
+    display: grid;
+    place-content: center;
+    padding: 8px;
+
+    --border-angle: 1turn;
+    --swap-bg: var(--background);
+    --load-tail: #e5a79f;
+    --load-tail2: #e97b6e;
+
+    --main-bg: conic-gradient(
+      from var(--border-angle),
+      var(--swap-bg),
+      var(--swap-bg) 5%,
+      var(--swap-bg) 60%,
+      var(--swap-bg) 90%
+    );
+
+    border: solid 5px transparent;
+    --gradient-border: conic-gradient(
+      from var(--border-angle),
+      var(--primary) 0%,
+      var(--load-tail2) 35%,
+      var(--load-tail) 70%,
+      var(--swap-bg) 99%
+    );
+
+    background:
+      var(--main-bg) padding-box,
+      var(--gradient-border) border-box,
+      var(--main-bg) border-box;
+
+    background-position: center center;
+
+    animation: bg-spin 2.5s linear infinite;
+  }
+
+  @keyframes bg-spin {
+    to {
+      --border-angle: 0turn;
+    }
+  }
+
+  @property --border-angle {
+    syntax: '<angle>';
+    inherits: true;
+    initial-value: 1turn;
+  }
+}
