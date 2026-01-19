@@ -26,10 +26,6 @@ export const auth = betterAuth({
       getNonce: async () => crypto.randomUUID(),
       verifyMessage: async ({ message, signature, address }) => {
         try {
-          console.log('message', message)
-          console.log('signature', signature)
-          console.log('address', address)
-
           const isValid = await verifyMessage({
             address: address as `0x${string}`,
             message,
