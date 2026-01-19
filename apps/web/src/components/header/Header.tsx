@@ -5,14 +5,13 @@ import {
   ChevronDown,
   ChevronRight,
   Home,
-  Menu,
   Network,
   SquareFunction,
   StickyNote,
   X,
 } from 'lucide-react'
-import { HeaderLink } from './header-link'
 import { HeaderLinks } from './header-links'
+import { RedDuckIcon } from '../ui/icons/redduck'
 
 export default function Header() {
   const location = useLocation()
@@ -28,14 +27,10 @@ export default function Header() {
 
   return (
     <>
-      <header className="mt-5 mx-[60px] gap-10 mb-10 flex items-center bg-black px-[30px] py-5">
+      <header className="my-5  mx-[60px] gap-10 flex items-center bg-black px-[30px] py-5">
         <div className="w-[15%]">
           <Link to="/">
-            <img
-              src="/tanstack-word-logo-white.svg"
-              alt="TanStack Logo"
-              className="h-10"
-            />
+            <RedDuckIcon className="w-full" />
           </Link>
         </div>
 

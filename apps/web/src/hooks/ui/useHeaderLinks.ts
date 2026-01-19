@@ -4,15 +4,15 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 export const headerLinks = [
   {
     to: '/',
-    text: 'Home',
+    text: 'MY PROGRESS',
   },
   {
     to: '/demo/start/server-funcs',
-    text: 'Start - Server Functions',
+    text: 'COURSE PROGRAM',
   },
   {
     to: '/demo/start/api-request',
-    text: 'Start - API Request',
+    text: 'RATING',
   },
 ]
 

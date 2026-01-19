@@ -1,13 +1,8 @@
-import { SignUpGoogleButton } from '@/components/sign-up/sign-up-google-button'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-} from '@/components/ui/dialog'
+import { SignUpGoogleButton } from '@/components/pages/sign-up/sign-up-google-button'
+import { SignUpStartText } from '@/components/pages/sign-up/sign-up-start-text'
+import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-button'
+
 import { DuckIcon } from '@/components/ui/icons/duck'
-import { Loader } from '@/components/ui/loader'
 import { Text } from '@/components/ui/text'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -15,23 +10,16 @@ export const Route = createFileRoute('/sign-up')({ component: SignUp })
 
 function SignUp() {
   return (
-    <main className="flex flex-col">
-      <Dialog open={true}>
-        <DialogContent>
-          <DialogHeader>asdasd</DialogHeader>
-          <DialogBody>
-            <Loader />
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
-      <div className="p-[60px] flex flex-col">
+    <main className="flex flex-col min-h-screen">
+      <div className="p-[60px] relative overflow-hidden flex flex-col flex-1">
         <div>
           <Text variant="title-80">_REGISTER ON COURSE</Text>
         </div>
         <div className="flex flex-col flex-1 h-full justify-center gap-5 items-center">
           <SignUpGoogleButton />
-          <Button>Continue with Email</Button>
+          <SignUpWalletButton />
         </div>
+        <SignUpStartText />
       </div>
       <div className="flex gap-[107px] px-10 py-3 bg-black">
         <Text variant="caps-20" className="text-white text-nowrap">
