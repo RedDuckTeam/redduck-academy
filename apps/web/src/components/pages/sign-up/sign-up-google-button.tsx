@@ -2,13 +2,14 @@ import { cn } from '@/lib/utils'
 import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { authClient } from '@/lib/auth-client'
+import { env } from '@/env'
 
 export const SignUpGoogleButton = () => {
   const handleSignUpWithGoogle = async () => {
     try {
-      const response = await authClient.signIn.social({
+      await authClient.signIn.social({
         provider: 'google',
-        callbackURL: window.location.href,
+        callbackURL: env.VITE_APP_URL,
       })
     } catch (error) {
       console.error(error)

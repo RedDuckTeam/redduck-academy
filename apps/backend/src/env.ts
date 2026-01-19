@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import type { Context } from 'hono'
-import { env } from 'hono/adapter'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(1),
@@ -12,14 +13,4 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
-export function getEnvFromContext(c: Context): Env {
-  const rawEnv = env(c)
-
-  const result = envSchema.safeParse(rawEnv)
-
-  if (!result.success) {
-    throw result.error
-  }
-
-  return result.data
-}
+export const env = process.env as unknown as Env

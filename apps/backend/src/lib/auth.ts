@@ -1,25 +1,45 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { getDb } from '../db'
 import * as schema from '../db/schema'
-import { getEnvFromContext } from '../env'
-import { Context } from 'hono'
+import { env } from '../env'
+import { siwe } from 'better-auth/plugins'
+import { verifyMessage } from 'viem'
+import { db } from '../db'
 
-export const auth = (c: Context) => {
-  const env = getEnvFromContext(c)
-
-  return betterAuth({
-    database: drizzleAdapter(getDb(c), { provider: 'pg', schema }),
-    appName: 'Redduck Academy',
-    trustedOrigins: ['http://localhost:3000', 'http://localhost:8787'],
-    baseURL: env.BETTER_AUTH_URL,
-    secret: env.BETTER_AUTH_SECRET,
-    socialProviders: {
-      google: {
-        enabled: true,
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      },
+export const auth = betterAuth({
+  database: drizzleAdapter(db, { provider: 'pg', schema }),
+  appName: 'Redduck Academy',
+  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001'],
+  baseURL: env.BETTER_AUTH_URL,
+  secret: env.BETTER_AUTH_SECRET,
+  socialProviders: {
+    google: {
+      enabled: true,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
-  })
-}
+  },
+  plugins: [
+    siwe({
+      domain: 'localhost',
+      anonymous: true,
+      getNonce: async () => crypto.randomUUID(),
+      verifyMessage: async ({ message, signature, address }) => {
+        try {
+          console.log('message', message)
+          console.log('signature', signature)
+          console.log('address', address)
+
+          const isValid = await verifyMessage({
+            address: address as `0x${string}`,
+            message,
+            signature: signature as `0x${string}`,
+          })
+          return isValid
+        } catch {
+          return false
+        }
+      },
+    }),
+  ],
+})
