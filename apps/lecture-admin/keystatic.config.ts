@@ -1,7 +1,8 @@
 import { config, fields, collection } from '@keystatic/core';
 
 const isProd = process.env.NODE_ENV === 'production';
-export default config({
+
+export const keystaticConfig = config({
   storage: isProd
     ? {
         kind: 'github',
