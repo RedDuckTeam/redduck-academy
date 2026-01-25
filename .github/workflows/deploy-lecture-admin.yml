@@ -22,10 +22,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'yarn'
 
       - name: Enable corepack
         run: corepack enable
+
+      - name: Setup Node.js with cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install
