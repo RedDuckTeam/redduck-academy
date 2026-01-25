@@ -35,20 +35,13 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build with OpenNext
+      - name: Build and Deploy
         working-directory: apps/lecture-admin
-        run: npx @opennextjs/cloudflare
+        run: yarn deploy
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           KEYSTATIC_GITHUB_CLIENT_ID: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_ID }}
           KEYSTATIC_GITHUB_CLIENT_SECRET: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_SECRET }}
           KEYSTATIC_SECRET: ${{ secrets.KEYSTATIC_SECRET }}
           NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: ${{ secrets.NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG }}
-
-      - name: Deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/lecture-admin
-          command: deploy
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
