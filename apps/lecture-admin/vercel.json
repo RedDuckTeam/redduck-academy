@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build",
+  "buildCommand": "yarn build",
   "installCommand": "echo 'Dependencies installed via root workspace'"
 }
