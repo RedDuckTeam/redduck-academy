@@ -1,5 +1,0 @@
-{
-  "buildCommand": "yarn lecture-admin:build",
-  "outputDirectory": "apps/lecture-admin/.next",
-  "framework": "nextjs"
-}
