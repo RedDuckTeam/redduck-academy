@@ -3,9 +3,6 @@ import { Hono } from 'hono'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { cors } from 'hono/cors'
 import authApp from './routes/auth'
-import dotenv from 'dotenv'
-
-dotenv.config()
 
 const app = new Hono({ strict: false })
 
