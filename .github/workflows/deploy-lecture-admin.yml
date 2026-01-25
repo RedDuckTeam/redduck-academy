@@ -1,4 +1,4 @@
-name: Deploy Lecture Admin to Cloudflare Pages (Main)
+name: Deploy Lecture Admin to Cloudflare Workers
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
-    name: Deploy Lecture Admin to Cloudflare Pages
+    name: Deploy Lecture Admin to Cloudflare Workers
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,9 +35,9 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build with next-on-pages
+      - name: Build with OpenNext
         working-directory: apps/lecture-admin
-        run: npx @cloudflare/next-on-pages
+        run: npx @opennextjs/cloudflare
         env:
           KEYSTATIC_GITHUB_CLIENT_ID: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_ID }}
           KEYSTATIC_GITHUB_CLIENT_SECRET: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_SECRET }}
@@ -49,5 +49,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/lecture-admin/.vercel/output/static --project-name=lecture-admin
+          workingDirectory: apps/lecture-admin
+          command: deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
