@@ -1,0 +1,45 @@
+name: Deploy Lecture Admin to Cloudflare Pages (Main)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/lecture-admin/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy Lecture Admin to Cloudflare Pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build with next-on-pages
+        working-directory: apps/lecture-admin
+        run: npx @cloudflare/next-on-pages
+        env:
+          KEYSTATIC_GITHUB_CLIENT_ID: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_ID }}
+          KEYSTATIC_GITHUB_CLIENT_SECRET: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_SECRET }}
+          KEYSTATIC_SECRET: ${{ secrets.KEYSTATIC_SECRET }}
+          NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: ${{ secrets.NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG }}
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/lecture-admin/.vercel/output/static --project-name=lecture-admin
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
