@@ -1,0 +1,5 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "installCommand": "echo 'Dependencies installed via root workspace'"
+}
