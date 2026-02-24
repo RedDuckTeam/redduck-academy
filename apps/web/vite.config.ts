@@ -1,21 +1,31 @@
 import { defineConfig } from 'vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
-import tailwindcss from '@tailwindcss/vite'
-import { cloudflare } from '@cloudflare/vite-plugin'
+
+function getCoursePrerenderPaths(): Array<{ path: string }> {
+  return []
+}
 
 const config = defineConfig({
   plugins: [
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
-    // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      pages: [{ path: '/courses' }, ...getCoursePrerenderPaths()],
+      prerender: {
+        enabled: true,
+        autoStaticPathsDiscovery: true,
+        crawlLinks: true,
+      },
+    }),
     viteReact(),
   ],
 })

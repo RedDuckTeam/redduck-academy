@@ -1,12 +1,12 @@
-import {
-  wagmiAdapter,
-  networks,
-  projectId,
-  metadata,
-} from '@/constants/wallet-config'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { useEffect, useRef } from 'react'
+import {
+  metadata,
+  networks,
+  projectId,
+  wagmiAdapter,
+} from '@/constants/wallet-config'
 
 const queryClient = new QueryClient()
 

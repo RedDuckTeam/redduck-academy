@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { cors } from 'hono/cors'
 import authApp from './routes/auth'
+import coursesApp from './routes/courses'
 
 const app = new Hono({ strict: false })
 
@@ -12,7 +13,7 @@ app.get('/', (c) => {
 
 // CORS configuration for auth routes
 app.use(
-  '/api/auth/*',
+  '/api/*',
   cors({
     origin: 'http://localhost:3000',
     allowHeaders: ['Content-Type', 'Authorization'],
@@ -24,6 +25,7 @@ app.use(
 )
 
 app.route('/', authApp)
+app.route('/api/courses', coursesApp)
 
 app.get(
   '/openapi',

@@ -1,10 +1,10 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { SignUpGoogleButton } from '@/components/pages/sign-up/sign-up-google-button'
 import { SignUpStartText } from '@/components/pages/sign-up/sign-up-start-text'
 import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-button'
 
 import { DuckIcon } from '@/components/ui/icons/duck'
 import { Text } from '@/components/ui/text'
-import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/sign-up')({ component: SignUp })
 

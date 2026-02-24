@@ -6,6 +6,9 @@
     "apps/*"
   ],
   "scripts": {
-    "lecture-admin:build": "yarn workspace lecture-admin build"
+    "lecture-admin:build": "yarn workspace lecture-admin build",
+    "lecture-admin:dev": "yarn workspace lecture-admin dev",
+    "admin:build": "yarn workspace admin build",
+    "admin:dev": "yarn workspace admin dev"
   }
 }

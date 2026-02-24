@@ -1,6 +1,7 @@
+import { cva } from 'class-variance-authority'
+import type { VariantProps } from 'class-variance-authority'
+import type { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
-import { cva, VariantProps } from 'class-variance-authority'
-import { HTMLAttributes } from 'react'
 
 interface TextProps
   extends
@@ -14,6 +15,7 @@ interface TextProps
 const textVariants = cva('text-black', {
   variants: {
     variant: {
+      'main-14': 'font-inter text-[14px] leading-[18px]',
       'main-16': 'font-inter text-[16px] leading-[20px]',
       'main-18': 'font-inter text-[18px] leading-[22px]',
       'main-20': 'font-inter text-[20px] leading-[24px] font-medium',

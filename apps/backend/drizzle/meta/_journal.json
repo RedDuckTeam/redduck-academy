@@ -8,6 +8,20 @@
       "when": 1768864390755,
       "tag": "0000_gorgeous_magik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771802832590,
+      "tag": "0001_even_mordo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771880882681,
+      "tag": "0002_spicy_wolverine",
+      "breakpoints": true
     }
   ]
 }
