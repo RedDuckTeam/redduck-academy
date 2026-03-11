@@ -1,25 +1,15 @@
 import { Link, useLocation } from '@tanstack/react-router'
 
 import { useState } from 'react'
-import {
-  ChevronDown,
-  ChevronRight,
-  Home,
-  Network,
-  SquareFunction,
-  StickyNote,
-  X,
-} from 'lucide-react'
-import { HeaderLinks } from './header-links'
+import { ChevronDown, ChevronRight, Home, Network, SquareFunction, StickyNote, X } from 'lucide-react'
 import { RedDuckIcon } from '../ui/icons/redduck'
+import { HeaderLinks } from './header-links'
 
 export default function Header() {
   const location = useLocation()
   const isSignUpPage = location.pathname === '/sign-up'
   const [isOpen, setIsOpen] = useState(false)
-  const [groupedExpanded, setGroupedExpanded] = useState<
-    Record<string, boolean>
-  >({})
+  const [groupedExpanded, setGroupedExpanded] = useState<Record<string, boolean>>({})
 
   if (isSignUpPage) {
     return null
@@ -60,8 +50,7 @@ export default function Header() {
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
             activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
+              className: 'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
             }}
           >
             <Home size={20} />
@@ -75,8 +64,7 @@ export default function Header() {
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
             activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
+              className: 'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
             }}
           >
             <SquareFunction size={20} />
@@ -88,8 +76,7 @@ export default function Header() {
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
             activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
+              className: 'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
             }}
           >
             <Network size={20} />
@@ -118,11 +105,7 @@ export default function Header() {
                 }))
               }
             >
-              {groupedExpanded.StartSSRDemo ? (
-                <ChevronDown size={20} />
-              ) : (
-                <ChevronRight size={20} />
-              )}
+              {groupedExpanded.StartSSRDemo ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             </button>
           </div>
           {groupedExpanded.StartSSRDemo && (
@@ -173,8 +156,7 @@ export default function Header() {
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
             activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
+              className: 'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
             }}
           >
             <Network size={20} />

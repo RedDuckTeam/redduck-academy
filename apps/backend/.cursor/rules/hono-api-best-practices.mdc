@@ -1,0 +1,119 @@
+---
+description: Hono API best practices for type-safe, maintainable endpoints
+globs: apps/backend/**/*.ts
+alwaysApply: false
+---
+
+# Hono API Best Practices
+
+## Request Validation with Zod
+
+Always validate requests using `@hono/zod-validator`:
+
+```typescript
+// ❌ BAD - untyped, no runtime validation
+const body = await c.req.json()
+const slug = c.req.param('slug')
+
+// ✅ GOOD - validated and typed
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
+
+app.post(
+  '/:slug',
+  zValidator('param', z.object({ slug: z.string() })),
+  zValidator('json', z.object({ name: z.string() })),
+  async (c) => {
+    const { slug } = c.req.valid('param')
+    const { name } = c.req.valid('json')
+  }
+)
+```
+
+## Type-Safe Handlers
+
+Use `createFactory` for handlers in separate files to maintain type inference:
+
+```typescript
+// ❌ BAD - loses param type inference
+import { Context } from 'hono'
+export const handler = async (c: Context) => { ... }
+
+// ✅ GOOD - preserves types
+import { createFactory } from 'hono/factory'
+const factory = createFactory()
+export const handler = factory.createHandlers(
+  zValidator('param', schema),
+  async (c) => { ... }
+)
+```
+
+## Auth Middleware
+
+Extract auth checks into reusable middleware:
+
+```typescript
+import { createMiddleware } from 'hono/factory'
+
+export const requireAuth = createMiddleware(async (c, next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  c.set('user', session.user)
+  await next()
+})
+```
+
+## Context Type Variables
+
+Define Env types for middleware-injected values:
+
+```typescript
+type Env = {
+  Variables: {
+    user: typeof auth.$Infer.Session.user
+  }
+}
+
+const app = new Hono<Env>()
+```
+
+## Error Handling
+
+Use consistent error responses:
+
+```typescript
+// ❌ BAD - inconsistent error shapes
+return c.json({ message: 'Not found' }, 404)
+return c.json({ err: 'Failed' }, 500)
+
+// ✅ GOOD - consistent structure
+return c.json({ error: 'Resource not found' }, 404)
+return c.json({ error: 'Failed to process request' }, 500)
+```
+
+## No Barrel Exports (index.ts)
+
+Do not use `index.ts` for re-exporting. Import directly from source files:
+
+```typescript
+// ❌ BAD - barrel export
+import { healthCheckDesc } from './descriptions'
+
+// ✅ GOOD - direct import
+import { healthCheckDesc } from './descriptions/root'
+```
+
+## Route Organization
+
+Export route types for RPC-style frontend integration:
+
+```typescript
+const app = new Hono()
+  .get('/', handler1)
+  .post('/:id', handler2)
+
+export type AppType = typeof app
+export default app
+```

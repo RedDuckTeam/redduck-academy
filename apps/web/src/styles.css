@@ -56,6 +56,7 @@ code {
   --color-border: var(--border);
   --color-background: var(--background);
   --color-secondary: var(--secondary);
+  --font-inter: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {

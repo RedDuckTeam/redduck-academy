@@ -3,12 +3,12 @@ import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
 import { getLesson } from '@/lib/api/courses'
-import { RichText } from '@/components/ui/rich-text'
 import { LessonTest } from '@/components/pages/lesson/test/lesson-test'
+import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
+import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
+import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 
-export const Route = createFileRoute(
-  '/courses/$courseSlug/$moduleSlug/$lessonSlug',
-)({
+export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
   loader: async ({ params }) => {
     const lesson = await getLesson(params.courseSlug, params.lessonSlug)
@@ -28,21 +28,14 @@ function LessonPage() {
 
   return (
     <main className="flex flex-col min-h-screen gap-3.5 mx-[60px]">
-      <PageBreadcrumbs
-        courseSlug={courseSlug}
-        moduleSlug={moduleSlug}
-        lessonSlug={lessonSlug}
-      />
+      <PageBreadcrumbs courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
       <LessonContentContainer>
-        <LessonTitle title={lesson.title} />
-        {lesson.type === 'lecture' && lesson.content && (
-          <RichText
-            data={lesson.content}
-            className="prose dark:prose-invert max-w-none"
-          />
-        )}
+        {lesson.type !== 'coding_task' && <LessonTitle title={lesson.title} />}
+        {lesson.type === 'lecture' && <LessonLecture lesson={lesson} />}
         {lesson.type === 'test' && <LessonTest lesson={lesson} />}
+        {lesson.type === 'review_task' && <LessonProject lesson={lesson} />}
       </LessonContentContainer>
+      {lesson.type === 'coding_task' && <LessonCodeChallenge lesson={lesson} />}
     </main>
   )
 }

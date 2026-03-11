@@ -3,14 +3,17 @@ import { Fragment } from 'react/jsx-runtime'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { lessonTypeToLabel } from '@/lib/lessons/lessons'
+import { PlayIcon } from '@/components/ui/icons/play'
+import { cn } from '@/lib/utils'
 
 interface CoursesListProps {
   courses: Course[]
+  selectedCourse: number
 }
 
-export const CoursesList = ({ courses }: CoursesListProps) => {
+export const CoursesList = ({ courses, selectedCourse }: CoursesListProps) => {
   if (!courses.length) return null
-  const course = courses[0]
+  const course = courses[selectedCourse]
   return (
     <div className="flex flex-col border border-border divide-y divide-border">
       {course.modules.map((module, index) => (
@@ -31,7 +34,11 @@ export const CoursesList = ({ courses }: CoursesListProps) => {
               }}
               className="py-4 px-5 flex items-center gap-5"
             >
-              <div></div>
+              <div
+                className={cn('w-[45px] h-[45px] flex items-center justify-center rounded-full border border-black')}
+              >
+                <PlayIcon className="translate-x-0.5" />
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Text variant="main-18">{lesson.title}</Text>
 

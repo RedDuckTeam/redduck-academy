@@ -1,4 +1,3 @@
-import { StatusCode } from 'hono/utils/http-status'
 import app from '..'
 
 export class AppError extends Error {
@@ -13,7 +12,8 @@ export class AppError extends Error {
 // middleware
 app.onError((err, c) => {
   if (err instanceof AppError) {
-    return c.json({ error: err.message }, err.statusCode as StatusCode)
+    const code = err.statusCode as 400 | 401 | 403 | 404 | 500
+    return c.json({ error: err.message }, code)
   }
   console.error(err)
   return c.json({ error: 'Internal Server Error' }, 500)

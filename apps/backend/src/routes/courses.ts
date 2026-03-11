@@ -1,15 +1,18 @@
 import { Hono } from 'hono'
+import { validator } from 'hono-openapi'
+import { z } from 'zod'
 import { db } from '../db'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { courses } from '../db/payload-schema'
-import {
-  getLessonHandler,
-  validateTestLessonHandler,
-} from '../modules/courses/test-lesson'
+import { listCoursesDesc, getCourseDesc } from '../descriptions/courses'
+import { getLessonHandler } from '../modules/courses/lesson'
+import { validateTestLessonHandler } from '../modules/courses/test-lesson'
 
 const coursesApp = new Hono()
 
-coursesApp.get('/', async (c) => {
+const slugParamSchema = z.object({ slug: z.string() })
+
+coursesApp.get('/', listCoursesDesc, async (c) => {
   try {
     const allCourses = await db.query.courses.findMany({
       with: {
@@ -41,36 +44,41 @@ coursesApp.get('/', async (c) => {
   }
 })
 
-coursesApp.get('/:slug', async (c) => {
-  const slug = c.req.param('slug')
+coursesApp.get(
+  '/:slug',
+  getCourseDesc,
+  validator('param', slugParamSchema),
+  async (c) => {
+    const { slug } = c.req.valid('param')
 
-  try {
-    const course = await db.query.courses.findFirst({
-      where: eq(courses.slug, slug),
-      with: {
-        modules: {
-          with: {
-            lessons: true, // Return full lessons data including content for the specific course
+    try {
+      const course = await db.query.courses.findFirst({
+        where: eq(courses.slug, slug),
+        with: {
+          modules: {
+            with: {
+              lessons: true, // Return full lessons data including content for the specific course
+            },
           },
         },
-      },
-    })
+      })
 
-    if (!course) {
-      return c.json({ error: 'Course not found' }, 404)
+      if (!course) {
+        return c.json({ error: 'Course not found' }, 404)
+      }
+
+      return c.json({ data: course })
+    } catch (error) {
+      console.error(`Error fetching course ${slug}:`, error)
+      return c.json({ error: 'Failed to fetch course' }, 500)
     }
+  },
+)
 
-    return c.json({ data: course })
-  } catch (error) {
-    console.error(`Error fetching course ${slug}:`, error)
-    return c.json({ error: 'Failed to fetch course' }, 500)
-  }
-})
-
-coursesApp.get('/:courseSlug/lessons/:lessonSlug', getLessonHandler)
+coursesApp.get('/:courseSlug/lessons/:lessonSlug', ...getLessonHandler)
 coursesApp.post(
   '/:courseSlug/lessons/:lessonSlug/validate',
-  validateTestLessonHandler,
+  ...validateTestLessonHandler,
 )
 
 export type CoursesAppType = typeof coursesApp

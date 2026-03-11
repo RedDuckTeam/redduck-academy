@@ -1,16 +1,20 @@
 import { RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
 import { Text } from '@/components/ui/text'
+import { cn } from '@/lib/utils'
 
 interface CustomRichTextProps {
   data?: Record<string, any> | null
   className?: string
 }
 
+const blockquoteStyles =
+  '[&_blockquote]:text [&_blockquote]:pl-2.5 [&_blockquote]:border-l [&_blockquote]:border-border'
+
 export function RichText({ data, className }: CustomRichTextProps) {
   if (!data) return null
 
   return (
-    <div className={className}>
+    <div className={cn(blockquoteStyles, className)}>
       <PayloadRichText
         data={data as any}
         converters={({ defaultConverters }) => ({
@@ -47,11 +51,7 @@ export function RichText({ data, className }: CustomRichTextProps) {
           },
           blocks: {
             ...defaultConverters.blocks,
-            code: ({
-              node,
-            }: {
-              node: { fields?: { code?: string; language?: string } }
-            }) => {
+            code: ({ node }: { node: { fields?: { code?: string; language?: string } } }) => {
               const { code, language } = node.fields ?? {}
               return (
                 <div className="relative my-6 rounded-xl bg-[#1e1e1e] border border-white/10 shadow-lg overflow-hidden">

@@ -1,29 +1,21 @@
-import { describeRoute, resolver, validator } from 'hono-openapi'
 import { createFactory } from 'hono/factory'
+import { validator } from 'hono-openapi'
 import { z } from 'zod'
+import { getLessonDesc } from '../../descriptions/courses'
 import { db } from '../../db'
 import { eq } from 'drizzle-orm'
 import { courses, lessons } from '../../db/payload-schema'
 
 const factory = createFactory()
 
-const getLessonSchema = z.object({
+const getLessonParamSchema = z.object({
   courseSlug: z.string(),
   lessonSlug: z.string(),
 })
 
 export const getLessonHandler = factory.createHandlers(
-  describeRoute({
-    responses: {
-      200: {
-        description: 'Lesson data',
-        content: {
-          'application/json': { schema: resolver(getLessonSchema) },
-        },
-      },
-    },
-  }),
-  validator('param', getLessonSchema),
+  getLessonDesc,
+  validator('param', getLessonParamSchema),
   async (c) => {
     const { courseSlug, lessonSlug } = c.req.valid('param')
     try {
@@ -43,7 +35,7 @@ export const getLessonHandler = factory.createHandlers(
                           order: true,
                           parentId: true,
                           label: true,
-                          isCorrect: true, // we need it to calculate isMultipleChoices, we strip it later
+                          isCorrect: true, 
                         },
                       },
                     },

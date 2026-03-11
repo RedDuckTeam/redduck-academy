@@ -1,4 +1,4 @@
-import { IconProps } from './types'
+import type { IconProps } from './types'
 
 export const RedDuckIcon = ({ className, ...props }: IconProps) => {
   return (

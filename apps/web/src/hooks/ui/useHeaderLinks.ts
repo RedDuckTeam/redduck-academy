@@ -19,13 +19,9 @@ export const headerLinks = [
 export const useHeaderLinks = () => {
   const router = useRouter()
   const refs = useMemo(() => {
-    return headerLinks.map(
-      () =>
-        ({ current: null }) as unknown as React.RefObject<HTMLAnchorElement>,
-    )
+    return headerLinks.map(() => ({ current: null }) as unknown as React.RefObject<HTMLAnchorElement>)
   }, [])
-  const [activeLinkRef, setActiveLinkRef] =
-    useState<React.RefObject<HTMLAnchorElement> | null>(null)
+  const [activeLinkRef, setActiveLinkRef] = useState<React.RefObject<HTMLAnchorElement> | null>(null)
   const [triangleLeft, setTriangleLeft] = useState<number>(0)
 
   useEffect(() => {
@@ -42,10 +38,7 @@ export const useHeaderLinks = () => {
   useLayoutEffect(() => {
     const updatePosition = () => {
       if (activeLinkRef?.current) {
-        const left =
-          activeLinkRef.current.offsetLeft +
-          activeLinkRef.current.offsetWidth / 2 -
-          15
+        const left = activeLinkRef.current.offsetLeft + activeLinkRef.current.offsetWidth / 2 - 15
         setTriangleLeft(left)
       }
     }

@@ -7,12 +7,7 @@ export const HeaderLinks = () => {
   return (
     <nav className="flex flex-1 justify-center items-center gap-10 relative">
       {headerLinks.map((link, index) => (
-        <HeaderLink
-          key={link.to}
-          ref={refs[index]}
-          to={link.to}
-          text={link.text}
-        />
+        <HeaderLink key={link.to} ref={refs[index]} to={link.to} text={link.text} />
       ))}
 
       {activeLinkRef?.current && (

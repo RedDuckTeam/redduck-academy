@@ -2,12 +2,13 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { cors } from 'hono/cors'
+import { healthCheckDesc } from './descriptions/root'
 import authApp from './routes/auth'
 import coursesApp from './routes/courses'
 
 const app = new Hono({ strict: false })
 
-app.get('/', (c) => {
+app.get('/', healthCheckDesc, (c) => {
   return c.text('Hello Hono!')
 })
 

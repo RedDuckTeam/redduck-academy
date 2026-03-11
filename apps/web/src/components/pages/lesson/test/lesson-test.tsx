@@ -14,28 +14,20 @@ export const LessonTest = ({ lesson }: LessonTestProps) => {
 
   const [answers, setAnswers] = useState<Record<string, string[]>>({})
 
-  const handleSelect = (
-    questionId: string,
-    optionId: string,
-    isMultiple: boolean,
-  ) => {
+  const handleSelect = (questionId: string, optionId: string, isMultiple: boolean) => {
     console.log(questionId, optionId, isMultiple)
     setAnswers((prev) => {
       const current = prev[questionId] ?? []
       if (isMultiple) {
         const isSelected = current.includes(optionId)
-        const next = isSelected
-          ? current.filter((id) => id !== optionId)
-          : [...current, optionId]
+        const next = isSelected ? current.filter((id) => id !== optionId) : [...current, optionId]
         return { ...prev, [questionId]: next }
       }
       return { ...prev, [questionId]: [optionId] }
     })
   }
 
-  const isAllAnswersSelected = Object.values(answers).every(
-    (answer) => answer.length > 0,
-  )
+  const isAllAnswersSelected = Object.values(answers).every((answer) => answer.length > 0)
 
   return (
     <div className="flex flex-col gap-10 w-full">
@@ -44,9 +36,7 @@ export const LessonTest = ({ lesson }: LessonTestProps) => {
           key={question.id}
           question={question}
           selectedIds={answers[question.id] ?? []}
-          onSelect={(optionId) =>
-            handleSelect(question.id, optionId, question.isMultipleChoices)
-          }
+          onSelect={(optionId) => handleSelect(question.id, optionId, question.isMultipleChoices)}
         />
       ))}
       <div className="flex">
