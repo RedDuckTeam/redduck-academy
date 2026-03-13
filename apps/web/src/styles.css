@@ -24,8 +24,7 @@ body {
 }
 
 code {
-  font-family:
-    source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 :root {
@@ -61,7 +60,10 @@ code {
 
 @layer base {
   body {
-    @apply bg-background text-black min-h-screen;
+    @apply bg-background text-black min-h-screen overflow-x-hidden;
+  }
+  hr {
+    @apply text-border;
   }
 }
 

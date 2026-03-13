@@ -9,12 +9,15 @@ interface CustomRichTextProps {
 
 const blockquoteStyles =
   '[&_blockquote]:text [&_blockquote]:pl-2.5 [&_blockquote]:border-l [&_blockquote]:border-border'
+const anchorStyles = '[&_a]:text-primary [&_a]:underline'
 
+const codeStyles =
+  '[&_code]:bg-border/40 [&_code]:border [&_code]:border-border [&_code]:rounded-[2px] [&_code]:px-[3px] [&_code]:py-[2px]'
 export function RichText({ data, className }: CustomRichTextProps) {
   if (!data) return null
 
   return (
-    <div className={cn(blockquoteStyles, className)}>
+    <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className)}>
       <PayloadRichText
         data={data as any}
         converters={({ defaultConverters }) => ({
@@ -62,7 +65,7 @@ export function RichText({ data, className }: CustomRichTextProps) {
                     className="overflow-x-auto p-4 text-[14px] leading-relaxed text-[#d4d4d4] font-mono"
                     data-language={language}
                   >
-                    <code>{code ?? ''}</code>
+                    <code lang={language}>{code ?? ''}</code>
                   </pre>
                 </div>
               )

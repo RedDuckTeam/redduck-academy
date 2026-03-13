@@ -1,8 +1,4 @@
-import {
-  HeadContent,
-  Scripts,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
@@ -15,32 +11,20 @@ import appCss from '../styles.css?url'
 import type { QueryClient } from '@tanstack/react-query'
 import { Providers } from '@/components/providers/providers'
 import { Toaster } from '@/components/ui/sonner'
+import { createDefaultMeta } from '@/lib/seo'
 
 interface MyRouterContext {
   queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'TanStack Start Starter',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
+  head: () => {
+    const defaultMeta = createDefaultMeta()
+    return {
+      meta: defaultMeta.meta,
+      links: [{ rel: 'stylesheet', href: appCss }, ...(defaultMeta.links ?? [])],
+    }
+  },
 
   shellComponent: RootDocument,
 })

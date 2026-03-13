@@ -7,7 +7,7 @@ export const headerLinks = [
     text: 'MY PROGRESS',
   },
   {
-    to: '/demo/start/server-funcs',
+    to: '/courses',
     text: 'COURSE PROGRAM',
   },
   {

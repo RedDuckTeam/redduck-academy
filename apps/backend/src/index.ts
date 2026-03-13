@@ -5,6 +5,7 @@ import { cors } from 'hono/cors'
 import { healthCheckDesc } from './descriptions/root'
 import authApp from './routes/auth'
 import coursesApp from './routes/courses'
+import userApp from './routes/user'
 
 const app = new Hono({ strict: false })
 
@@ -27,6 +28,7 @@ app.use(
 
 app.route('/', authApp)
 app.route('/api/courses', coursesApp)
+app.route('/api/user', userApp)
 
 app.get(
   '/openapi',

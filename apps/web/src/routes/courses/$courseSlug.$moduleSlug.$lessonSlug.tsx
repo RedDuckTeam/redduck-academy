@@ -7,6 +7,7 @@ import { LessonTest } from '@/components/pages/lesson/test/lesson-test'
 import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
+import { createLessonMeta } from '@/lib/seo'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
@@ -20,6 +21,13 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
       lessonSlug: params.lessonSlug,
     }
   },
+  head: ({ loaderData, params }) =>
+    createLessonMeta({
+      lesson: loaderData!.lesson,
+      courseSlug: params.courseSlug,
+      moduleSlug: params.moduleSlug,
+      lessonSlug: params.lessonSlug,
+    }),
   component: LessonPage,
 })
 

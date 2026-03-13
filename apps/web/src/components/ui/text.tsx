@@ -16,6 +16,7 @@ const textVariants = cva('', {
       'main-16': 'font-inter text-[16px] leading-[20px] min-h-[20px]',
       'main-18': 'font-inter text-[18px] leading-[22px] min-h-[22px]',
       'main-20': 'font-inter text-[20px] leading-[24px] font-medium min-h-[24px]',
+      'caps-12': 'text-[12px] uppercase leading-[16px] min-h-[16px]',
       'caps-14': 'text-[14px] uppercase leading-[18px] min-h-[18px]',
       'caps-20': 'text-[20px] uppercase leading-[24px] min-h-[24px]',
       'caps-24': 'text-[24px] uppercase leading-[30px] font-medium min-h-[30px]',
