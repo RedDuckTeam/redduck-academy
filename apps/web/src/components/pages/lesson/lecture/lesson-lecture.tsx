@@ -7,11 +7,5 @@ interface LessonLectureProps {
 }
 
 export const LessonLecture = ({ lesson }: LessonLectureProps) => {
-  if (!lesson.content) return null
-  return (
-    <>
-      <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />
-      <NextButton />
-    </>
-  )
+  return <NextButton />
 }

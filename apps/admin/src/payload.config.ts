@@ -1,9 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import {
-  BlocksFeature,
-  HeadingFeature,
-  lexicalEditor,
-} from '@payloadcms/richtext-lexical'
+import { BlocksFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -66,6 +62,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     schemaName: 'payload',
+    push: false, // Disable schema push - schema is managed by Drizzle migrations
     pool: {
       connectionString: process.env.DATABASE_URL,
     },

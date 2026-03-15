@@ -53,17 +53,9 @@ export const Lessons: CollectionConfig = {
       ],
       defaultValue: 'lecture',
     },
-    // --------------------------------------------------------------------------
-    // Lecture Fields
     {
       name: 'content',
       type: 'richText',
-      admin: {
-        condition: (data) => {
-          if (!data?.type) return true;
-          return data.type === 'lecture';
-        },
-      },
     },
     // --------------------------------------------------------------------------
     // Test Fields
@@ -98,57 +90,14 @@ export const Lessons: CollectionConfig = {
       ]
     },
     // --------------------------------------------------------------------------
-    // Coding Task Fields
-    {
-      name: 'description',
-      type: 'richText',
-      admin: {
-        condition: (data) => data?.type === 'coding_task',
-      },
-    },
-    {
-      name: 'language',
-      type: 'text',
-      admin: {
-        condition: (data) => data?.type === 'coding_task',
-      },
-    },
-    {
-      name: 'boilerplate',
-      type: 'code',
-      admin: {
-        condition: (data) => data?.type === 'coding_task',
-      },
-    },
-    {
-      name: 'testSuite',
-      type: 'code',
-      admin: {
-        condition: (data) => data?.type === 'coding_task',
-      },
-    },
-    // --------------------------------------------------------------------------
     // Review Task Fields
     {
-      name: 'reviewDescription',
-      type: 'richText',
-      admin: {
-        condition: (data) => data?.type === 'review_task',
-      },
-    },
-    {
-      name: 'rubric',
-      type: 'textarea',
-      admin: {
-        condition: (data) => data?.type === 'review_task',
-      },
-    },
-    {
-      name: 'maxScore',
+      name: 'maxPoints',
       type: 'number',
-      defaultValue: 100,
+      defaultValue: 0,
       admin: {
-        condition: (data) => data?.type === 'review_task',
+        condition: (data) =>
+          data?.type === 'coding_task' || data?.type === 'review_task',
       },
     },
   ],

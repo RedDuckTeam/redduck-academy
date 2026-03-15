@@ -44,13 +44,7 @@ export const lessons = payloadSchema.table('lessons', {
   order: integer('order').notNull(),
   type: text('type').notNull(), // 'lecture' | 'test' | 'coding_task' | 'review_task'
   content: jsonb('content'),
-  description: jsonb('description'),
-  language: text('language'),
-  boilerplate: text('boilerplate'),
-  testSuite: text('test_suite'),
-  reviewDescription: jsonb('review_description'),
-  rubric: text('rubric'),
-  maxScore: integer('max_score'),
+  maxPoints: integer('max_points').notNull().default(0),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull(),
 })

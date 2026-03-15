@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { HTTPException } from 'hono/http-exception'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { cors } from 'hono/cors'
 import { healthCheckDesc } from './descriptions/root'
@@ -8,6 +9,16 @@ import coursesApp from './routes/courses'
 import userApp from './routes/user'
 
 const app = new Hono({ strict: false })
+
+app.onError((err, c) => {
+  console.error('Global Error Handler:', err)
+
+  if (err instanceof HTTPException) {
+    return err.getResponse()
+  }
+
+  return c.json({ error: err.message || 'Internal Server Error' }, 500)
+})
 
 app.get('/', healthCheckDesc, (c) => {
   return c.text('Hello Hono!')

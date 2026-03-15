@@ -1,6 +1,6 @@
 import { CommunityEventCard } from './community-event-card'
 import { Text } from '@/components/ui/text'
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel'
 
 export const Community = () => {
   return (

@@ -22,6 +22,27 @@
       "when": 1771880882681,
       "tag": "0002_spicy_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773571182741,
+      "tag": "0003_bitter_exiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773600000000,
+      "tag": "0004_payload_serial_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773650000000,
+      "tag": "0005_drop_lesson_description",
+      "breakpoints": true
     }
   ]
 }

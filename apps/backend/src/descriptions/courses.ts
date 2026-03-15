@@ -2,6 +2,34 @@ import { describeRoute, resolver } from 'hono-openapi'
 import { z } from 'zod'
 import { errorSchema } from './schemas'
 
+const courseInfoSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  totalPoints: z.number(),
+  totalTasks: z.number(),
+})
+
+export const listCoursesInfoDesc = describeRoute({
+  summary: 'List courses info',
+  description:
+    'Returns a lightweight array of courses with id, title, total points, and task count (non-lecture lessons).',
+  tags: ['Courses'],
+  responses: {
+    200: {
+      description: 'List of course info',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.array(courseInfoSchema) })),
+        },
+      },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const listCoursesDesc = describeRoute({
   summary: 'List all courses',
   description:

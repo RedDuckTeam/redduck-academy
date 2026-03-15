@@ -5,6 +5,22 @@ export interface GetCoursesResponse {
   data: Course[]
 }
 
+export interface CourseInfo {
+  id: number
+  title: string
+  totalPoints: number
+  totalTasks: number
+}
+
+export interface GetCoursesInfoResponse {
+  data: CourseInfo[]
+}
+
+export const getCoursesInfo = async () => {
+  const response = await api().get<GetCoursesInfoResponse>('/api/courses/info')
+  return response.data
+}
+
 export const getCourses = async () => {
   const response = await api().get<GetCoursesResponse>('/api/courses')
   return response.data

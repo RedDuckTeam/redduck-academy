@@ -125,7 +125,7 @@ export function createLessonMeta({
   lessonSlug: string
 }): HeadConfig {
   const fullTitle = `${lesson.title} | ${SITE_NAME}`
-  const rawDescription = lesson.description ? extractPlainText(lesson.description) : ''
+  const rawDescription = lesson.content ? extractPlainText(lesson.content) : ''
   const description = rawDescription ? truncateDescription(rawDescription) : lesson.title
   const canonicalPath = `/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`
 

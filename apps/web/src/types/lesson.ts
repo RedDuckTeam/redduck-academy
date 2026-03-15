@@ -27,18 +27,10 @@ export interface Lesson {
   order: number
   type: LessonType
   content?: any
-  description?: any
   updatedAt: string
   createdAt: string
   questions?: TestQuestion[]
-  /** Coding task fields */
-  language?: string | null
-  boilerplate?: string | null
-  testSuite?: string | null
-  /** Review task / project fields */
-  reviewDescription?: any
-  rubric?: string | null
-  maxScore?: number | null
+  maxPoints?: number | null
 }
 
 export enum LessonTypeEnum {

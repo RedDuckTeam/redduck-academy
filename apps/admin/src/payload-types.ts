@@ -231,41 +231,7 @@ export interface Lesson {
         id?: string | null;
       }[]
     | null;
-  description?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  language?: string | null;
-  boilerplate?: string | null;
-  testSuite?: string | null;
-  reviewDescription?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  rubric?: string | null;
-  maxScore?: number | null;
+  maxPoints?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -445,13 +411,7 @@ export interface LessonsSelect<T extends boolean = true> {
             };
         id?: T;
       };
-  description?: T;
-  language?: T;
-  boilerplate?: T;
-  testSuite?: T;
-  reviewDescription?: T;
-  rubric?: T;
-  maxScore?: T;
+  maxPoints?: T;
   updatedAt?: T;
   createdAt?: T;
 }

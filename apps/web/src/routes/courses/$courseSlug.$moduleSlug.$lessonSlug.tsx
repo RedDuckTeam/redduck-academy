@@ -8,6 +8,7 @@ import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 import { createLessonMeta } from '@/lib/seo'
+import { RichText } from '@/components/ui/rich-text'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
@@ -34,11 +35,17 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
 function LessonPage() {
   const { lesson, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
 
+  const isCodingChallenge = lesson.type === 'coding_task'
   return (
     <main className="flex flex-col min-h-screen gap-3.5 mx-[60px]">
       <PageBreadcrumbs courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
       <LessonContentContainer>
-        {lesson.type !== 'coding_task' && <LessonTitle title={lesson.title} />}
+        {!isCodingChallenge && (
+          <>
+            <LessonTitle title={lesson.title} />
+            {lesson.content && <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />}
+          </>
+        )}
         {lesson.type === 'lecture' && <LessonLecture lesson={lesson} />}
         {lesson.type === 'test' && <LessonTest lesson={lesson} />}
         {lesson.type === 'review_task' && <LessonProject lesson={lesson} />}

@@ -11,7 +11,7 @@ export function DescriptionPanel({ lesson }: DescriptionPanelProps) {
     <div className="flex flex-col gap-5 ">
       <Text variant="subtitle-32">{lesson.title}</Text>
 
-      {lesson.description && <RichText data={lesson.description} />}
+      {lesson.content && <RichText data={lesson.content} />}
     </div>
   )
 }
