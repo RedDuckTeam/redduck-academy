@@ -1,24 +1,17 @@
 import { api } from './fetcher'
 
 export interface SubmitTestPayload {
+  courseSlug: string
+  lessonSlug: string
   answers: Record<string, string[]> // questionId -> optionIds
 }
 
-export interface SubmitTestResponse {
-  data: {
-    score: number
-    correctAnswers: Record<string, string[]> // questionId -> optionIds
-  }
-}
-
-export const submitTest = async (
-  courseSlug: string,
-  lessonSlug: string,
-  payload: SubmitTestPayload,
-) => {
-  const response = await api().post<SubmitTestResponse['data']>(
-    `/api/courses/${courseSlug}/lessons/${lessonSlug}/validate`,
-    payload.answers,
+export const submitTest = async (payload: SubmitTestPayload): Promise<void> => {
+  const response = await api({ credentials: 'include' }).post(
+    '/api/lessons/submit-test',
+    payload as unknown as Record<string, unknown>,
   )
-  return response.data
+  if (!response.data && response.status >= 400) {
+    throw new Error(response.error ?? 'Failed to submit test')
+  }
 }

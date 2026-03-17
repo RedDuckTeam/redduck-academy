@@ -1,0 +1,90 @@
+import { describeRoute, resolver } from 'hono-openapi'
+import { z } from 'zod'
+import { errorSchema } from './schemas'
+
+export const getLessonDesc = describeRoute({
+  summary: 'Get lesson by slug',
+  description:
+    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons.',
+  tags: ['Lessons'],
+  responses: {
+    200: {
+      description: 'Lesson data with questions and options',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.any() })),
+        },
+      },
+    },
+    404: {
+      description: 'Course or lesson not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+export const submitTestDesc = describeRoute({
+  summary: 'Submit test lesson answers',
+  description:
+    'Submits user answers for a test lesson by courseSlug and lessonSlug. Validates answers, calculates score, marks lesson as completed, and adds points. Re-submissions are ignored. Use GET /api/user/lessons/:courseSlug/:lessonSlug to fetch results including correct answers.',
+  tags: ['Lessons'],
+  responses: {
+    200: {
+      description: 'Submission accepted',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ success: z.boolean() })),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Course, lesson not found, or lesson is not a test',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+export const markLessonAsCompletedDesc = describeRoute({
+  summary: 'Mark lecture as completed',
+  description:
+    'Marks a lecture lesson as completed for the authenticated user. Only lectures can be marked; tests and other types must be completed through their respective flows.',
+  tags: ['Lessons'],
+  responses: {
+    200: {
+      description: 'Lesson marked as completed',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ success: z.boolean() })),
+        },
+      },
+    },
+    400: {
+      description: 'Lesson is not a lecture',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Course or lesson not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})

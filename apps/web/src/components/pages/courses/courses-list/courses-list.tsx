@@ -5,13 +5,15 @@ import { Text } from '@/components/ui/text'
 import { lessonTypeToLabel } from '@/lib/lessons/lessons'
 import { PlayIcon } from '@/components/ui/icons/play'
 import { cn } from '@/lib/utils'
+import { CheckIcon } from '@/components/ui/icons/check'
 
 interface CoursesListProps {
   courses: Course[]
   selectedCourse: number
+  completedLessons: Set<number>
 }
 
-export const CoursesList = ({ courses, selectedCourse }: CoursesListProps) => {
+export const CoursesList = ({ courses, selectedCourse, completedLessons }: CoursesListProps) => {
   if (!courses.length) return null
   const course = courses[selectedCourse]
   return (
@@ -25,29 +27,39 @@ export const CoursesList = ({ courses, selectedCourse }: CoursesListProps) => {
           </div>
           {module.lessons
             .sort((a, b) => a.order - b.order)
-            .map((lesson) => (
-              <Link
-                key={lesson.slug}
-                to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
-                params={{
-                  courseSlug: course.slug,
-                  moduleSlug: module.slug,
-                  lessonSlug: lesson.slug,
-                }}
-                className="py-4 px-5 flex items-center gap-5"
-              >
-                <div
-                  className={cn('w-[45px] h-[45px] flex items-center justify-center rounded-full border border-black')}
+            .map((lesson) => {
+              const isCompleted = completedLessons.has(lesson.id)
+              return (
+                <Link
+                  key={lesson.slug}
+                  to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+                  params={{
+                    courseSlug: course.slug,
+                    moduleSlug: module.slug,
+                    lessonSlug: lesson.slug,
+                  }}
+                  className="py-4 px-5 flex items-center gap-5"
                 >
-                  <PlayIcon className="translate-x-0.5" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Text variant="main-18">{lesson.title}</Text>
+                  <div
+                    className={cn(
+                      'w-[45px] h-[45px] flex items-center justify-center rounded-full border ',
+                      isCompleted ? 'border-success' : 'border-black',
+                    )}
+                  >
+                    {isCompleted ? (
+                      <CheckIcon className="[&_path]:fill-success" />
+                    ) : (
+                      <PlayIcon className="translate-x-0.5" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Text variant="main-18">{lesson.title}</Text>
 
-                  <Text variant="main-14">{lessonTypeToLabel[lesson.type]}</Text>
-                </div>
-              </Link>
-            ))}
+                    <Text variant="main-14">{lessonTypeToLabel[lesson.type]}</Text>
+                  </div>
+                </Link>
+              )
+            })}
         </Fragment>
       ))}
     </div>

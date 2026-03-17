@@ -2068,6 +2068,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@formkit/auto-animate@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "@formkit/auto-animate@npm:0.9.0"
+  checksum: 10c0/5337bb905761d347cc07cf323b54fbd9967c1eac5469cb63f6ad67cf6705b08493c80ddafc470f317eee82fcc1c05f34391eb05896d41aa9f2f8a02738614ce4
+  languageName: node
+  linkType: hard
+
 "@graphql-typed-document-node/core@npm:^3.1.1":
   version: 3.2.0
   resolution: "@graphql-typed-document-node/core@npm:3.2.0"
@@ -6706,6 +6713,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@redduck/payload-config@workspace:^, @redduck/payload-config@workspace:packages/payload-config":
+  version: 0.0.0-use.local
+  resolution: "@redduck/payload-config@workspace:packages/payload-config"
+  dependencies:
+    "@payloadcms/db-postgres": "npm:3.77.0"
+    "@payloadcms/richtext-lexical": "npm:3.77.0"
+    drizzle-orm: "npm:^0.45.1"
+    payload: "npm:3.77.0"
+    typescript: "npm:^5.7.2"
+  languageName: unknown
+  linkType: soft
+
 "@remix-run/node-fetch-server@npm:^0.8.0":
   version: 0.8.1
   resolution: "@remix-run/node-fetch-server@npm:0.8.1"
@@ -10351,7 +10370,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"admin@workspace:apps/admin":
+"admin@workspace:^, admin@workspace:apps/admin":
   version: 0.0.0-use.local
   resolution: "admin@workspace:apps/admin"
   dependencies:
@@ -10360,6 +10379,7 @@ __metadata:
     "@payloadcms/richtext-lexical": "npm:3.77.0"
     "@payloadcms/ui": "npm:3.77.0"
     "@playwright/test": "npm:1.58.2"
+    "@redduck/payload-config": "workspace:^"
     "@testing-library/react": "npm:16.3.0"
     "@types/node": "npm:22.19.9"
     "@types/react": "npm:19.2.9"
@@ -10729,10 +10749,14 @@ __metadata:
   dependencies:
     "@hono/node-server": "npm:^1.13.8"
     "@hono/standard-validator": "npm:^0.2.1"
+    "@payloadcms/db-postgres": "npm:3.77.0"
+    "@payloadcms/richtext-lexical": "npm:3.77.0"
+    "@redduck/payload-config": "workspace:^"
     "@standard-community/standard-json": "npm:^0.3.5"
     "@standard-community/standard-openapi": "npm:^0.2.9"
     "@types/node": "npm:^22.10.0"
     "@types/pg": "npm:^8.16.0"
+    admin: "workspace:^"
     better-auth: "npm:^1.4.11"
     dotenv: "npm:^16.4.7"
     drizzle-kit: "npm:^0.31.8"
@@ -10740,6 +10764,7 @@ __metadata:
     hono: "npm:^4.11.3"
     hono-openapi: "npm:^1.1.2"
     ioredis: "npm:^5.10.0"
+    payload: "npm:3.77.0"
     pg: "npm:^8.16.3"
     postgres: "npm:^3.4.8"
     quansync: "npm:^1.0.0"
@@ -20662,6 +20687,7 @@ __metadata:
     "@cloudflare/vite-plugin": "npm:^1.13.8"
     "@fontsource/ibm-plex-mono": "npm:^5.2.7"
     "@fontsource/inter": "npm:^5.2.8"
+    "@formkit/auto-animate": "npm:^0.9.0"
     "@keystatic/core": "npm:^0.5.48"
     "@markdoc/markdoc": "npm:^0.5.4"
     "@monaco-editor/react": "npm:^4.7.0"

@@ -9,12 +9,15 @@ import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/le
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 import { createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
+import { DucksBadge } from '@/components/ui/ducks-badge'
+import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
+import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
   loader: async ({ params }) => {
     const lesson = await getLesson(params.courseSlug, params.lessonSlug)
-    if (!lesson) throw notFound()
+    if (!lesson?.data) throw notFound()
     return {
       lesson: lesson.data,
       courseSlug: params.courseSlug,
@@ -34,23 +37,36 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
 
 function LessonPage() {
   const { lesson, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
-
+  const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const isCodingChallenge = lesson.type === 'coding_task'
+  const isLecture = lesson.type === 'lecture'
+  const earnedPoints = isLecture ? null : (userLesson?.earnedPoints ?? null)
+
   return (
     <main className="flex flex-col min-h-screen gap-3.5 mx-[60px]">
       <PageBreadcrumbs courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-      <LessonContentContainer>
-        {!isCodingChallenge && (
-          <>
-            <LessonTitle title={lesson.title} />
-            {lesson.content && <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />}
-          </>
-        )}
-        {lesson.type === 'lecture' && <LessonLecture lesson={lesson} />}
-        {lesson.type === 'test' && <LessonTest lesson={lesson} />}
-        {lesson.type === 'review_task' && <LessonProject lesson={lesson} />}
-      </LessonContentContainer>
-      {lesson.type === 'coding_task' && <LessonCodeChallenge lesson={lesson} />}
+      <div className="flex gap-10">
+        <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+        <LessonContentContainer>
+          {!isCodingChallenge && (
+            <>
+              <div className="flex items-center justify-between w-full">
+                <LessonTitle title={lesson.title} />
+                <DucksBadge ducks={lesson.maxPoints} myDucks={earnedPoints} />
+              </div>
+              {lesson.content && <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />}
+            </>
+          )}
+          {lesson.type === 'lecture' && (
+            <LessonLecture lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} />
+          )}
+          {lesson.type === 'test' && (
+            <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+          )}
+          {lesson.type === 'review_task' && <LessonProject lesson={lesson} />}
+        </LessonContentContainer>
+        {lesson.type === 'coding_task' && <LessonCodeChallenge lesson={lesson} />}
+      </div>
     </main>
   )
 }

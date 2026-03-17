@@ -1,0 +1,21 @@
+{
+  "name": "@redduck/payload-config",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "generate": "yarn generate:types && yarn generate:schema",
+    "generate:types": "payload generate:types",
+    "generate:schema": "payload generate:db-schema"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "3.77.0",
+    "@payloadcms/richtext-lexical": "3.77.0",
+    "drizzle-orm": "^0.45.1",
+    "payload": "3.77.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

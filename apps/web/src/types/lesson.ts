@@ -30,7 +30,15 @@ export interface Lesson {
   updatedAt: string
   createdAt: string
   questions?: TestQuestion[]
-  maxPoints?: number | null
+  maxPoints: number
+  next: string | null
+}
+
+export interface LessonForUser extends Lesson {
+  earnedPoints: number | null
+  userAnswers: Record<string, string[]> | null
+  isCompleted: boolean
+  correctAnswers: Record<string, string[]> | null
 }
 
 export enum LessonTypeEnum {
@@ -41,6 +49,14 @@ export enum LessonTypeEnum {
 }
 
 export type LessonType = (typeof LessonTypeEnum)[keyof typeof LessonTypeEnum]
+
+export enum CourseStatusEnum {
+  START = 'start',
+  CONTINUE = 'continue',
+  COMPLETED = 'completed',
+}
+
+export type CourseStatus = (typeof CourseStatusEnum)[keyof typeof CourseStatusEnum]
 
 export interface TestQuestion {
   question: string

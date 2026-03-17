@@ -22,6 +22,7 @@
     "@payloadcms/next": "3.77.0",
     "@payloadcms/richtext-lexical": "3.77.0",
     "@payloadcms/ui": "3.77.0",
+    "@redduck/payload-config": "workspace:^",
     "better-auth": "^1.4.18",
     "cross-env": "^7.0.3",
     "dotenv": "^17.3.1",

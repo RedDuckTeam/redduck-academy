@@ -1,11 +1,6 @@
 import { Fragment, useMemo } from 'react'
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from '../ui/breadcrumbs'
+import { Link } from '@tanstack/react-router'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '../ui/breadcrumbs'
 import { coursesRoute } from '@/routes/courses'
 
 interface PageBreadcrumbsProps {
@@ -14,19 +9,13 @@ interface PageBreadcrumbsProps {
   lessonSlug?: string
 }
 
-export const PageBreadcrumbs = ({
-  courseSlug,
-  moduleSlug,
-  lessonSlug,
-}: PageBreadcrumbsProps) => {
+export const PageBreadcrumbs = ({ courseSlug, moduleSlug, lessonSlug }: PageBreadcrumbsProps) => {
   const breadcrumbs = useMemo(() => {
     return [
       { label: 'Course program', href: coursesRoute },
       {
         label: lessonSlug,
-        href: lessonSlug
-          ? `${coursesRoute}${courseSlug}/${moduleSlug}/${lessonSlug}`
-          : undefined,
+        href: lessonSlug ? `${coursesRoute}${courseSlug}/${moduleSlug}/${lessonSlug}` : undefined,
       },
     ]
   }, [courseSlug, moduleSlug, lessonSlug])
@@ -37,12 +26,11 @@ export const PageBreadcrumbs = ({
           <Fragment key={index}>
             <BreadcrumbItem>
               <BreadcrumbLink
+                asChild
                 href={breadcrumb.href}
-                className={
-                  index < breadcrumbs.length - 1 ? 'text-[#565653]' : undefined
-                }
+                className={index < breadcrumbs.length - 1 ? 'text-[#565653]' : undefined}
               >
-                {breadcrumb.label}
+                <Link to={breadcrumb.href}>{breadcrumb.label}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}

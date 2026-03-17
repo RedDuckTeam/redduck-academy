@@ -1,11 +1,12 @@
 import { NextButton } from './next-button'
 import type { Lesson } from '@/types/lesson'
-import { RichText } from '@/components/ui/rich-text'
 
 interface LessonLectureProps {
   lesson: Lesson
+  courseSlug: string
+  moduleSlug: string
 }
 
-export const LessonLecture = ({ lesson }: LessonLectureProps) => {
-  return <NextButton />
+export const LessonLecture = ({ lesson, courseSlug, moduleSlug }: LessonLectureProps) => {
+  return <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} />
 }

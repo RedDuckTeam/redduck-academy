@@ -12,36 +12,8 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1771802832590,
-      "tag": "0001_even_mordo",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1771880882681,
-      "tag": "0002_spicy_wolverine",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1773571182741,
-      "tag": "0003_bitter_exiles",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1773600000000,
-      "tag": "0004_payload_serial_ids",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1773650000000,
-      "tag": "0005_drop_lesson_description",
+      "when": 1773579048061,
+      "tag": "0001_neat_killer_shrike",
       "breakpoints": true
     }
   ]

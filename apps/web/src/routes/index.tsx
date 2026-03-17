@@ -1,9 +1,10 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { Progress } from '@/components/pages/home/progress/progress'
 import { createPageMeta } from '@/lib/seo'
 import { MyProgress } from '@/components/pages/home/my-progress/my-progress'
 import { useCourses } from '@/hooks/api/courses/useCourses'
 import { Community } from '@/components/pages/home/community/community'
+import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 
 export const Route = createFileRoute('/')({
   head: () =>
@@ -18,10 +19,11 @@ export const Route = createFileRoute('/')({
 
 function App() {
   const { data: courses } = useCourses()
+  const { data: completedLessons = [] } = useCompletedLessons()
   return (
     <main className="flex flex-col min-h-screen">
       <Progress />
-      <MyProgress courses={courses?.data ?? []} />
+      <MyProgress courses={courses?.data ?? []} completedLessons={completedLessons} />
       <Community />
     </main>
   )

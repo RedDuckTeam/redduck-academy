@@ -1,5 +1,5 @@
 import { api } from './fetcher'
-import type { Course, Lesson } from '@/types/lesson'
+import type { Course, Lesson, LessonForUser } from '@/types/lesson'
 
 export interface GetCoursesResponse {
   data: Course[]
@@ -26,13 +26,32 @@ export const getCourses = async () => {
   return response.data
 }
 
+export const getCourse = async (slug: string) => {
+  const response = await api().get<{ data: Course }>(`/api/courses/${slug}`)
+  return response.data
+}
+
 export interface GetLessonResponse {
   data: Lesson
 }
 
 export const getLesson = async (courseSlug: string, lessonSlug: string) => {
   const response = await api().get<GetLessonResponse>(
-    `/api/courses/${courseSlug}/lessons/${lessonSlug}`,
+    `/api/lessons/${courseSlug}/${lessonSlug}`,
+  )
+  return response.data
+}
+
+export interface GetLessonForUserResponse {
+  data: LessonForUser
+}
+
+export const getLessonForUser = async (
+  courseSlug: string,
+  lessonSlug: string,
+): Promise<GetLessonForUserResponse | null> => {
+  const response = await api({ credentials: 'include' }).get<GetLessonForUserResponse>(
+    `/api/user/lessons/${courseSlug}/${lessonSlug}`,
   )
   return response.data
 }

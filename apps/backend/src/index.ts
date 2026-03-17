@@ -4,9 +4,10 @@ import { HTTPException } from 'hono/http-exception'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { cors } from 'hono/cors'
 import { healthCheckDesc } from './descriptions/root'
-import authApp from './routes/auth'
-import coursesApp from './routes/courses'
-import userApp from './routes/user'
+import authApp from './services/auth/auth.routes'
+import coursesApp from './services/courses/courses.routes'
+import lessonsApp from './services/lessons/lessons.routes'
+import userApp from './services/user/user.routes'
 
 const app = new Hono({ strict: false })
 
@@ -39,6 +40,7 @@ app.use(
 
 app.route('/', authApp)
 app.route('/api/courses', coursesApp)
+app.route('/api/lessons', lessonsApp)
 app.route('/api/user', userApp)
 
 app.get(

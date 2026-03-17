@@ -2,19 +2,22 @@ import type { TestQuestion } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
 
 interface LessonTestQuestionProps {
   question: TestQuestion
+  rightAnswerIds: string[]
   selectedIds: string[]
   onSelect: (optionId: string) => void
-  disabled?: boolean
+  isCompleted: boolean
 }
 
 export const LessonTestQuestion = ({
   question,
+  rightAnswerIds,
   selectedIds,
   onSelect,
-  disabled,
+  isCompleted,
 }: LessonTestQuestionProps) => {
   if (!question.options) return null
 
@@ -28,36 +31,68 @@ export const LessonTestQuestion = ({
 
       {isMultiple ? (
         <div className="flex flex-col gap-3">
-          {question.options.map((option) => (
-            <label
-              key={option.id}
-              className="flex items-center gap-3 cursor-pointer"
-            >
-              <Checkbox
-                checked={selectedIds.includes(option.id)}
-                onCheckedChange={() => onSelect(option.id)}
-                disabled={disabled}
-              />
-              <Text className="flex-1">{option.label}</Text>
-            </label>
-          ))}
+          {question.options.map((option) => {
+            const isCorrect = rightAnswerIds.includes(option.id)
+            const isSelected = selectedIds.includes(option.id)
+            return (
+              <label
+                key={option.id}
+                className={cn(
+                  'flex items-center gap-3 cursor-pointer',
+                  isCompleted && isCorrect && 'text-success',
+                  isCompleted && isSelected && !isCorrect && 'text-primary',
+                )}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  className={cn(
+                    'disabled:opacity-100',
+                    isCompleted && isCorrect && 'border-success',
+                    isCompleted && isSelected && isCorrect && 'data-[state=checked]:bg-success',
+                    isCompleted && isSelected && !isCorrect && 'data-[state=checked]:bg-primary border-primary',
+                  )}
+                  onCheckedChange={() => onSelect(option.id)}
+                  disabled={isCompleted}
+                />
+                <Text className="flex-1">{option.label}</Text>
+              </label>
+            )
+          })}
         </div>
       ) : (
         <RadioGroup
           value={selectedIds[0] ?? ''}
           onValueChange={(value) => value && onSelect(value)}
-          disabled={disabled}
+          disabled={isCompleted}
         >
           <div className="flex flex-col gap-3">
-            {question.options.map((option) => (
-              <label
-                key={option.id}
-                className="flex items-center gap-3 cursor-pointer"
-              >
-                <RadioGroupItem value={option.id} />
-                <Text className="flex-1">{option.label}</Text>
-              </label>
-            ))}
+            {question.options.map((option) => {
+              const isCorrect = rightAnswerIds.includes(option.id)
+              const isSelected = selectedIds.includes(option.id)
+              return (
+                <label
+                  key={option.id}
+                  className={cn('flex items-center gap-3 cursor-pointer', isCompleted && isCorrect && 'text-success')}
+                >
+                  <RadioGroupItem
+                    value={option.id}
+                    className={cn(
+                      'disabled:opacity-100',
+                      isCompleted && isCorrect && 'border-success',
+                      isCompleted &&
+                        isSelected &&
+                        isCorrect &&
+                        '[&_[data-slot=radio-group-indicator]_span]:bg-success!',
+                      isCompleted && //
+                        isSelected &&
+                        !isCorrect &&
+                        '[&_[data-slot=radio-group-indicator]_span]:bg-primary border-primary',
+                    )}
+                  />
+                  <Text className="flex-1">{option.label}</Text>
+                </label>
+              )
+            })}
           </div>
         </RadioGroup>
       )}

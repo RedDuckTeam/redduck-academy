@@ -10,25 +10,37 @@ export interface FetcherResponse<T> {
 export class Fetcher {
   private readonly _baseURL: URL
   private readonly _headers: Record<string, string>
+  private readonly _credentials: RequestCredentials
 
-  constructor(baseURL: URL, headers: Record<string, string>) {
+  constructor(
+    baseURL: URL,
+    headers: Record<string, string>,
+    credentials: RequestCredentials = 'omit',
+  ) {
     this._baseURL = baseURL
     this._headers = headers
+    this._credentials = credentials
+  }
+
+  private _fetchOptions(init: RequestInit = {}): RequestInit {
+    return {
+      ...init,
+      headers: this._headers,
+      credentials: this._credentials,
+    }
   }
 
   public async get<T>(url: string) {
     return this._processResponse<T>(
-      fetch(new URL(url, this._baseURL), {
-        headers: this._headers,
-      }),
+      fetch(new URL(url, this._baseURL), this._fetchOptions()),
     )
   }
 
   public async post<T>(url: string, body?: Record<string, unknown>) {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
+        ...this._fetchOptions(),
         method: 'POST',
-        headers: this._headers,
         body: body ? JSON.stringify(body) : undefined,
       }),
     )
@@ -37,8 +49,8 @@ export class Fetcher {
   public async put<T>(url: string, body?: Record<string, unknown>) {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
+        ...this._fetchOptions(),
         method: 'PUT',
-        headers: this._headers,
         body: body ? JSON.stringify(body) : undefined,
       }),
     )
@@ -46,18 +58,15 @@ export class Fetcher {
 
   public async delete<T>(url: string) {
     return this._processResponse<T>(
-      fetch(new URL(url, this._baseURL), {
-        method: 'DELETE',
-        headers: this._headers,
-      }),
+      fetch(new URL(url, this._baseURL), this._fetchOptions({ method: 'DELETE' })),
     )
   }
 
   public async patch<T>(url: string, body?: Record<string, unknown>) {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
+        ...this._fetchOptions(),
         method: 'PATCH',
-        headers: this._headers,
         body: body ? JSON.stringify(body) : undefined,
       }),
     )
@@ -108,13 +117,19 @@ export class Fetcher {
 
 interface ApiClientOptions {
   headers?: Record<string, string>
+  /** Use 'include' to send cookies (e.g. for authenticated requests) */
+  credentials?: RequestCredentials
 }
 
 export const api = (options?: ApiClientOptions) => {
   const url = env.VITE_API_URL
 
-  return new Fetcher(new URL(url + '/api'), {
-    'Content-Type': 'application/json',
-    ...options?.headers,
-  })
+  return new Fetcher(
+    new URL(url + '/api'),
+    {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+    options?.credentials ?? 'omit',
+  )
 }

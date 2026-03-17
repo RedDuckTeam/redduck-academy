@@ -76,31 +76,6 @@ export const getCourseDesc = describeRoute({
   },
 })
 
-export const getLessonDesc = describeRoute({
-  summary: 'Get lesson by slug',
-  description:
-    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons.',
-  tags: ['Courses', 'Lessons'],
-  responses: {
-    200: {
-      description: 'Lesson data with questions and options',
-      content: {
-        'application/json': {
-          schema: resolver(z.object({ data: z.any() })),
-        },
-      },
-    },
-    404: {
-      description: 'Course or lesson not found',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-  },
-})
-
 export const validateTestLessonDesc = describeRoute({
   summary: 'Validate test lesson answers',
   description:

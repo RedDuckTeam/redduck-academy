@@ -2,5 +2,9 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { env } from '../env'
 import * as schema from './schema'
+import { payloadSchema } from '@redduck/payload-config'
 
-export const db = drizzle(postgres(env.DATABASE_URL), { schema })
+const client = postgres(env.DATABASE_URL)
+
+export const db = drizzle(client, { schema })
+export const payloadDb = drizzle(client, { schema: payloadSchema })
