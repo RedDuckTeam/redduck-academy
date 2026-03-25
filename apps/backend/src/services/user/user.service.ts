@@ -6,6 +6,7 @@ import { payloadSchema } from '@redduck/payload-config'
 import type { CompletedLesson } from '../../descriptions/user'
 import { LessonsService } from '../lessons/lessons.service'
 import { CoursesService } from '../courses/courses.service'
+import { ReviewService } from '../review/review.service'
 
 const { lessons } = payloadSchema
 
@@ -14,19 +15,20 @@ export class UserService {
     const lesson = await LessonsService.getLesson(courseSlug, lessonSlug)
 
     const [userLesson] = await db
-      .select({ score: userLessons.score, userAnswers: userLessons.userAnswers, isCompleted: userLessons.isCompleted })
+      .select({
+        score: userLessons.score,
+        userAnswers: userLessons.userAnswers,
+        isCompleted: userLessons.isCompleted,
+        attemptsLeft: userLessons.attemptsLeft,
+        id: userLessons.id,
+      })
       .from(userLessons)
-      .where(
-        and(eq(userLessons.userId, userId), eq(userLessons.lessonId, lesson.id), eq(userLessons.isCompleted, true)),
-      )
+      .where(and(eq(userLessons.userId, userId), eq(userLessons.lessonId, lesson.id)))
       .limit(1)
 
     let correctAnswers: Record<string, string[]> | null = null
     if (lesson.type === 'test' && userLesson?.isCompleted && lesson.module?.course?.id) {
-      const result = await CoursesService.getTestLessonWithQuestionsById(
-        lesson.module.course.id as number,
-        lesson.id,
-      )
+      const result = await CoursesService.getTestLessonWithQuestionsById(lesson.module.course.id as number, lesson.id)
       if (result) {
         correctAnswers = {}
         result.questions.forEach((q) => {
@@ -35,12 +37,25 @@ export class UserService {
       }
     }
 
+    let submissions: Awaited<ReturnType<typeof ReviewService.getSubmissionsForUserLesson>> = []
+    if (lesson.type === 'review_task' && userLesson?.id) {
+      submissions = await ReviewService.getSubmissionsForUserLesson(userLesson.id)
+    }
+
     return {
       ...lesson,
-      earnedPoints: userLesson?.score ?? null,
-      userAnswers: (userLesson?.userAnswers as Record<string, string[]> | null) ?? null,
+      earnedPoints: userLesson?.isCompleted ? (userLesson.score ?? null) : null,
+      userAnswers: userLesson?.isCompleted
+        ? ((userLesson.userAnswers as Record<string, string[]> | null) ?? null)
+        : null,
       isCompleted: userLesson?.isCompleted ?? false,
       correctAnswers,
+      ...(lesson.type === 'review_task'
+        ? {
+            attemptsLeft: userLesson?.attemptsLeft ?? 3,
+            submissions,
+          }
+        : {}),
     }
   }
 
@@ -81,8 +96,8 @@ export class UserService {
 
         const maxPoints =
           lesson.type === 'test'
-            ? lesson.maxPoints ?? (lesson.questions ?? []).reduce((sum, q) => sum + (q.points ?? 0), 0)
-            : lesson.maxPoints ?? 0
+            ? (lesson.maxPoints ?? (lesson.questions ?? []).reduce((sum, q) => sum + (q.points ?? 0), 0))
+            : (lesson.maxPoints ?? 0)
 
         return {
           courseSlug,

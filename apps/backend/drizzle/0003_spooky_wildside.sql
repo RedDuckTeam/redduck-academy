@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "user_lessons_user_id_lesson_id_unique" ON "user_lessons" USING btree ("user_id","lesson_id");

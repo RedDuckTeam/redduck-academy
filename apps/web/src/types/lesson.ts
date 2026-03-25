@@ -30,8 +30,32 @@ export interface Lesson {
   updatedAt: string
   createdAt: string
   questions?: TestQuestion[]
+  templateRepoUrl?: string
   maxPoints: number
   next: string | null
+}
+
+export interface ReviewCriterionFeedback {
+  taskId: string
+  name: string
+  points: number
+  maxPoints: number
+  passed: boolean
+  comment: string
+}
+
+export interface ReviewFeedback {
+  summary: string
+  criteria: ReviewCriterionFeedback[]
+}
+
+export interface LatestProjectSubmission {
+  id: number
+  status: string
+  submittedAt: string
+  batchRequestId: string | null
+  feedback: ReviewFeedback | null
+  errorMessage: string | null
 }
 
 export interface LessonForUser extends Lesson {
@@ -39,6 +63,9 @@ export interface LessonForUser extends Lesson {
   userAnswers: Record<string, string[]> | null
   isCompleted: boolean
   correctAnswers: Record<string, string[]> | null
+  attemptsLeft?: number
+  /** Review-task submissions, oldest first; latest is `.at(-1)`. */
+  submissions?: LatestProjectSubmission[]
 }
 
 export enum LessonTypeEnum {

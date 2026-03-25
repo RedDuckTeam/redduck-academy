@@ -202,6 +202,9 @@ export interface Lesson {
   module: number | Module;
   order: number;
   type: 'lecture' | 'test' | 'coding_task' | 'review_task';
+  /**
+   * Shown to students. For review tasks, use this as the learner-facing task description.
+   */
   content?: {
     root: {
       type: string;
@@ -232,7 +235,46 @@ export interface Lesson {
       }[]
     | null;
   /**
-   * For tests: auto-computed from question points. For coding/review tasks: enter manually.
+   * Short context for the AI reviewer (not shown to students via the public API).
+   */
+  aiTaskSummary?: string | null;
+  /**
+   * Acceptable approaches / solution hints for the model (not shown to students via the public API).
+   */
+  aiPossibleSolutions?: string | null;
+  /**
+   * Each row is one graded item. Total points must match lesson max points (auto-summed into Max points below).
+   */
+  reviewGradingTasks?:
+    | {
+        title: string;
+        points: number;
+        /**
+         * What the AI should verify for this row (pass/fail per rubric).
+         */
+        criteria?: string | null;
+        /**
+         * Learner must earn full points on this row for the lesson to count as passed (when any row is required, overall pass depends only on required rows).
+         */
+        isRequired?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Optional GitHub URL of a starter/template repo for students to clone.
+   */
+  templateRepoUrl?: string | null;
+  /**
+   * Repo-relative paths of files the backend will fetch for review (one file per row; folder expansion is not supported yet).
+   */
+  reviewPaths?:
+    | {
+        path: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Tests: auto from question points. Review tasks: auto from grading tasks. Coding tasks: enter manually.
    */
   maxPoints?: number | null;
   updatedAt: string;
@@ -412,6 +454,24 @@ export interface LessonsSelect<T extends boolean = true> {
               isCorrect?: T;
               id?: T;
             };
+        id?: T;
+      };
+  aiTaskSummary?: T;
+  aiPossibleSolutions?: T;
+  reviewGradingTasks?:
+    | T
+    | {
+        title?: T;
+        points?: T;
+        criteria?: T;
+        isRequired?: T;
+        id?: T;
+      };
+  templateRepoUrl?: T;
+  reviewPaths?:
+    | T
+    | {
+        path?: T;
         id?: T;
       };
   maxPoints?: T;

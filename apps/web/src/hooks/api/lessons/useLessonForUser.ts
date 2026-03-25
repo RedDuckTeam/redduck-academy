@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { LessonForUser } from '@/types/lesson'
+import { LessonTypeEnum } from '@/types/lesson'
 import { getLessonForUser } from '@/lib/api/courses'
 
 export const lessonForUserQueryKey = (courseSlug: string, lessonSlug: string) =>
@@ -16,5 +17,10 @@ export const useLessonForUser = (courseSlug: string, lessonSlug: string) => {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    refetchInterval: (query) => {
+      const d = query.state.data
+      if (!d || d.type !== LessonTypeEnum.REVIEW_TASK) return false
+      return d.submissions?.at(-1)?.status === 'pending' ? 60_000 : false
+    },
   })
 }

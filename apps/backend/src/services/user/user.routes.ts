@@ -2,7 +2,13 @@ import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import { z } from 'zod'
 import { requireAuth } from '../../lib/middleware'
-import { getUserStatsDesc, getUserCompletedLessonsDesc, getUserLessonDesc } from '../../descriptions/user'
+import {
+  getUserStatsDesc,
+  getUserCompletedLessonsDesc,
+  getUserLessonDesc,
+  syncProjectReviewDesc,
+} from '../../descriptions/user'
+import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
 
 type UserVariables = {
@@ -27,6 +33,19 @@ userApp.get(
     const { courseSlug, lessonSlug } = c.req.valid('param')
     const data = await UserService.getLessonForUser(authUser.id, courseSlug, lessonSlug)
     return c.json({ data })
+  },
+)
+
+userApp.post(
+  '/lessons/:courseSlug/:lessonSlug/sync-project-review',
+  requireAuth,
+  syncProjectReviewDesc,
+  validator('param', courseLessonParamSchema),
+  async (c) => {
+    const authUser = c.get('user')
+    const { courseSlug, lessonSlug } = c.req.valid('param')
+    await ReviewService.syncProjectReview(authUser.id, courseSlug, lessonSlug)
+    return c.body(null, 204)
   },
 )
 

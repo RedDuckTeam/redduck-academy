@@ -10,9 +10,10 @@ interface NextButtonProps {
   courseSlug: string
   moduleSlug: string
   lesson: Lesson
+  className?: string
 }
 
-export const NextButton = ({ courseSlug, moduleSlug, lesson }: NextButtonProps) => {
+export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextButtonProps) => {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { mutateAsync: markCompleted } = useMarkLessonCompleted()
@@ -30,7 +31,7 @@ export const NextButton = ({ courseSlug, moduleSlug, lesson }: NextButtonProps) 
   }
 
   return (
-    <Button onClick={handleClick} variant={'outline'}>
+    <Button onClick={handleClick} variant={'outline'} className={className}>
       <Text className="" variant={'caps-20'}>
         {hasNext ? 'go to next lesson' : 'go to course program'}
       </Text>

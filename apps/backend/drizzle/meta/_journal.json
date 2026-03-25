@@ -15,6 +15,20 @@
       "when": 1773579048061,
       "tag": "0001_neat_killer_shrike",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774182702565,
+      "tag": "0002_cuddly_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774186129825,
+      "tag": "0003_spooky_wildside",
+      "breakpoints": true
     }
   ]
 }

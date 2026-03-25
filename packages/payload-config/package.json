@@ -7,7 +7,8 @@
   "scripts": {
     "generate": "yarn generate:types && yarn generate:schema",
     "generate:types": "payload generate:types",
-    "generate:schema": "payload generate:db-schema"
+    "generate:schema": "payload generate:db-schema && node ./scripts/fix-payload-generated-schema-imports.mjs",
+    "generate:schema:payload-only": "payload generate:db-schema"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.77.0",

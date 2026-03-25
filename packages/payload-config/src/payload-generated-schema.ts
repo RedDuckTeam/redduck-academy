@@ -176,6 +176,47 @@ export const lessons_questions = db_schema.table(
   ],
 )
 
+export const lessons_review_grading_tasks = db_schema.table(
+  'lessons_review_grading_tasks',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    title: varchar('title'),
+    points: numeric('points', { mode: 'number' }),
+    criteria: varchar('criteria'),
+    isRequired: boolean('is_required').default(false),
+  },
+  (columns) => [
+    index('lessons_review_grading_tasks_order_idx').on(columns._order),
+    index('lessons_review_grading_tasks_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_review_grading_tasks_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_review_paths = db_schema.table(
+  'lessons_review_paths',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    path: varchar('path'),
+  },
+  (columns) => [
+    index('lessons_review_paths_order_idx').on(columns._order),
+    index('lessons_review_paths_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_review_paths_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
 export const lessons = db_schema.table(
   'lessons',
   {
@@ -190,6 +231,9 @@ export const lessons = db_schema.table(
     order: numeric('order', { mode: 'number' }).notNull(),
     type: enum_lessons_type('type').notNull().default('lecture'),
     content: jsonb('content'),
+    aiTaskSummary: varchar('ai_task_summary'),
+    aiPossibleSolutions: varchar('ai_possible_solutions'),
+    templateRepoUrl: varchar('template_repo_url'),
     maxPoints: numeric('max_points', { mode: 'number' }).default(0),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
@@ -383,6 +427,20 @@ export const relations_lessons_questions = relations(lessons_questions, ({ one, 
     relationName: 'options',
   }),
 }))
+export const relations_lessons_review_grading_tasks = relations(lessons_review_grading_tasks, ({ one }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_review_grading_tasks._parentID],
+    references: [lessons.id],
+    relationName: 'reviewGradingTasks',
+  }),
+}))
+export const relations_lessons_review_paths = relations(lessons_review_paths, ({ one }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_review_paths._parentID],
+    references: [lessons.id],
+    relationName: 'reviewPaths',
+  }),
+}))
 export const relations_lessons = relations(lessons, ({ one, many }) => ({
   module: one(modules, {
     fields: [lessons.module],
@@ -391,6 +449,12 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   }),
   questions: many(lessons_questions, {
     relationName: 'questions',
+  }),
+  reviewGradingTasks: many(lessons_review_grading_tasks, {
+    relationName: 'reviewGradingTasks',
+  }),
+  reviewPaths: many(lessons_review_paths, {
+    relationName: 'reviewPaths',
   }),
 }))
 export const relations_payload_kv = relations(payload_kv, () => ({}))
@@ -460,6 +524,8 @@ type DatabaseSchema = {
   modules: typeof modules
   lessons_questions_options: typeof lessons_questions_options
   lessons_questions: typeof lessons_questions
+  lessons_review_grading_tasks: typeof lessons_review_grading_tasks
+  lessons_review_paths: typeof lessons_review_paths
   lessons: typeof lessons
   payload_kv: typeof payload_kv
   payload_locked_documents: typeof payload_locked_documents
@@ -474,6 +540,8 @@ type DatabaseSchema = {
   relations_modules: typeof relations_modules
   relations_lessons_questions_options: typeof relations_lessons_questions_options
   relations_lessons_questions: typeof relations_lessons_questions
+  relations_lessons_review_grading_tasks: typeof relations_lessons_review_grading_tasks
+  relations_lessons_review_paths: typeof relations_lessons_review_paths
   relations_lessons: typeof relations_lessons
   relations_payload_kv: typeof relations_payload_kv
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels
@@ -483,4 +551,8 @@ type DatabaseSchema = {
   relations_payload_migrations: typeof relations_payload_migrations
 }
 
-export type { DatabaseSchema }
+declare module '@payloadcms/db-postgres' {
+  export interface GeneratedDatabaseSchema {
+    schema: DatabaseSchema
+  }
+}

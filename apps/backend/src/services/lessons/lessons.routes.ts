@@ -1,11 +1,12 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import { z } from 'zod'
-import { getLessonDesc, markLessonAsCompletedDesc, submitTestDesc } from '../../descriptions/lessons'
-import { auth } from '../../lib/auth'
+import { getLessonDesc, markLessonAsCompletedDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
+import { requireAuth } from '../../lib/middleware'
 import { HTTPException } from 'hono/http-exception'
-import { LessonsService } from './lessons.service'
 import { CoursesTestService } from '../courses/courses-test.service'
+import { ReviewService } from '../review/review.service'
+import { LessonsService } from './lessons.service'
 
 const submitTestBodySchema = z.object({
   courseSlug: z.string(),
@@ -13,49 +14,57 @@ const submitTestBodySchema = z.object({
   answers: z.record(z.string(), z.array(z.string())),
 })
 
+const submitProjectBodySchema = z.object({
+  courseSlug: z.string(),
+  lessonSlug: z.string(),
+  repoUrl: z.string().url(),
+})
+
 const courseLessonParamSchema = z.object({
   courseSlug: z.string(),
   lessonSlug: z.string(),
 })
 
-const lessonsApp = new Hono()
+type LessonsVariables = {
+  user: { id: string }
+  session: unknown
+}
+
+const lessonsApp = new Hono<{ Variables: LessonsVariables }>()
+
+lessonsApp.post('/submit-test', requireAuth, submitTestDesc, validator('json', submitTestBodySchema), async (c) => {
+  const user = c.get('user')
+  const { courseSlug, lessonSlug, answers } = c.req.valid('json')
+  await CoursesTestService.validateTestLesson(courseSlug, lessonSlug, user.id, answers)
+  return c.json({ success: true })
+})
 
 lessonsApp.post(
-  '/submit-test',
-  submitTestDesc,
-  validator('json', submitTestBodySchema),
+  '/submit-project',
+  requireAuth,
+  submitProjectDesc,
+  validator('json', submitProjectBodySchema),
   async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    if (!session || !session.user) {
-      throw new HTTPException(401, { message: 'Unauthorized' })
-    }
-    const { courseSlug, lessonSlug, answers } = c.req.valid('json')
-    await CoursesTestService.validateTestLesson(courseSlug, lessonSlug, session.user.id, answers)
+    const user = c.get('user')
+    const { courseSlug, lessonSlug, repoUrl } = c.req.valid('json')
+    await ReviewService.submitProject(user.id, courseSlug, lessonSlug, repoUrl)
     return c.json({ success: true })
   },
 )
 
-lessonsApp.get(
-  '/:courseSlug/:lessonSlug',
-  getLessonDesc,
-  validator('param', courseLessonParamSchema),
-  async (c) => {
-    const { courseSlug, lessonSlug } = c.req.valid('param')
-    const data = await LessonsService.getLesson(courseSlug, lessonSlug)
-    return c.json({ data })
-  },
-)
+lessonsApp.get('/:courseSlug/:lessonSlug', getLessonDesc, validator('param', courseLessonParamSchema), async (c) => {
+  const { courseSlug, lessonSlug } = c.req.valid('param')
+  const data = await LessonsService.getLesson(courseSlug, lessonSlug)
+  return c.json({ data })
+})
 
 lessonsApp.post(
   '/:courseSlug/:lessonSlug/mark-completed',
+  requireAuth,
   markLessonAsCompletedDesc,
   validator('param', courseLessonParamSchema),
   async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    if (!session || !session.user) {
-      throw new HTTPException(401, { message: 'Unauthorized' })
-    }
-
+    const user = c.get('user')
     const { courseSlug, lessonSlug } = c.req.valid('param')
     const lesson = await LessonsService.getLesson(courseSlug, lessonSlug)
 
@@ -65,7 +74,7 @@ lessonsApp.post(
       })
     }
 
-    await LessonsService.markLessonAsCompleted(session.user.id, courseSlug, lessonSlug)
+    await LessonsService.markLessonAsCompleted(user.id, courseSlug, lessonSlug)
     return c.json({ success: true })
   },
 )

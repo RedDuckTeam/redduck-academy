@@ -31,6 +31,8 @@ export {
   modules,
   lessons_questions_options,
   lessons_questions,
+  lessons_review_grading_tasks,
+  lessons_review_paths,
   lessons,
   payload_kv,
   payload_locked_documents,
@@ -43,6 +45,8 @@ export {
   relations_media,
   relations_lessons_questions_options,
   relations_lessons_questions,
+  relations_lessons_review_grading_tasks,
+  relations_lessons_review_paths,
   relations_lessons,
   relations_payload_kv,
   relations_payload_locked_documents_rels,
@@ -51,4 +55,3 @@ export {
   relations_payload_preferences,
   relations_payload_migrations,
 } from './payload-generated-schema'
-export type { DatabaseSchema } from './payload-generated-schema'

@@ -36,9 +36,7 @@ export interface GetLessonResponse {
 }
 
 export const getLesson = async (courseSlug: string, lessonSlug: string) => {
-  const response = await api().get<GetLessonResponse>(
-    `/api/lessons/${courseSlug}/${lessonSlug}`,
-  )
+  const response = await api().get<GetLessonResponse>(`/api/lessons/${courseSlug}/${lessonSlug}`)
   return response.data
 }
 
@@ -54,4 +52,8 @@ export const getLessonForUser = async (
     `/api/user/lessons/${courseSlug}/${lessonSlug}`,
   )
   return response.data
+}
+
+export const syncProjectReview = async (courseSlug: string, lessonSlug: string) => {
+  await api({ credentials: 'include' }).post(`/api/user/lessons/${courseSlug}/${lessonSlug}/sync-project-review`)
 }

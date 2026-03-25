@@ -14,8 +14,7 @@ export type CompletedLesson = z.infer<typeof completedLessonSchema>
 
 export const getUserCompletedLessonsDesc = describeRoute({
   summary: 'Get user completed lessons',
-  description:
-    'Returns the list of completed lessons with courseSlug, lessonSlug, points earned, and max points.',
+  description: 'Returns the list of completed lessons with courseSlug, lessonSlug, points earned, and max points.',
   tags: ['User'],
   responses: {
     200: {
@@ -44,7 +43,7 @@ export const getUserCompletedLessonsDesc = describeRoute({
 export const getUserLessonDesc = describeRoute({
   summary: 'Get lesson for authenticated user',
   description:
-    'Returns lesson data with user-specific fields: earnedPoints, userAnswers, isCompleted, correctAnswers (for completed tests).',
+    'Returns lesson data with user-specific fields: earnedPoints, userAnswers, isCompleted, correctAnswers (for completed tests). For review_task lessons, also attemptsLeft and submissions (all attempts, oldest first; latest is the last element).',
   tags: ['User'],
   responses: {
     200: {
@@ -70,10 +69,41 @@ export const getUserLessonDesc = describeRoute({
   },
 })
 
+export const syncProjectReviewDesc = describeRoute({
+  summary: 'Sync OpenAI batch review status',
+  description:
+    'For review_task lessons: polls OpenAI for the latest pending project submission batch. If the batch finished, downloads output, stores feedback, and updates lesson score/completion. Idempotent when nothing is pending.',
+  tags: ['User'],
+  responses: {
+    204: {
+      description: 'Sync finished; use GET lesson to read updated state.',
+    },
+    400: {
+      description: 'Lesson is not a review task',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Lesson not started or lesson not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    503: {
+      description: 'AI not configured',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const getUserStatsDesc = describeRoute({
   summary: 'Get user stats',
-  description:
-    'Returns the authenticated user stats (points and completed lessons count).',
+  description: 'Returns the authenticated user stats (points and completed lessons count).',
   tags: ['User'],
   responses: {
     200: {

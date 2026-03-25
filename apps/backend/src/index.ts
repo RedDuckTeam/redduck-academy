@@ -8,6 +8,10 @@ import authApp from './services/auth/auth.routes'
 import coursesApp from './services/courses/courses.routes'
 import lessonsApp from './services/lessons/lessons.routes'
 import userApp from './services/user/user.routes'
+import reviewApp from './services/review/review.routes'
+
+const port = Number(process.env.PORT) || 3001
+const backendOrigin = `http://localhost:${port}`
 
 const app = new Hono({ strict: false })
 
@@ -29,7 +33,7 @@ app.get('/', healthCheckDesc, (c) => {
 app.use(
   '/api/*',
   cors({
-    origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'http://localhost:8787'],
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['POST', 'GET', 'OPTIONS'],
     exposeHeaders: ['Content-Length'],
@@ -42,6 +46,7 @@ app.route('/', authApp)
 app.route('/api/courses', coursesApp)
 app.route('/api/lessons', lessonsApp)
 app.route('/api/user', userApp)
+app.route('/api/review', reviewApp)
 
 app.get(
   '/openapi',
@@ -50,16 +55,40 @@ app.get(
       info: {
         title: 'Hono API',
         version: '1.0.0',
-        description: 'Greeting API',
+        description: 'Redduck Academy backend API',
       },
-      servers: [{ url: 'http://localhost:3000', description: 'Local Server' }],
+      servers: [
+        { url: backendOrigin, description: 'Backend (this server)' },
+        { url: 'http://localhost:3000', description: 'Web app origin (if proxied)' },
+      ],
     },
   }),
 )
 
-const port = Number(process.env.PORT) || 3001
+/** Swagger-like UI: GET /docs on this server (spec URL uses PORT from env). */
+app.get('/docs', (c) => {
+  const specUrl = `${backendOrigin}/openapi`
+  return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>API docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" crossorigin />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
+  <script>
+    SwaggerUIBundle({
+      url: ${JSON.stringify(specUrl)},
+      dom_id: '#swagger-ui',
+    });
+  </script>
+</body>
+</html>`)
+})
 
-console.log(`Server is running on http://localhost:${port}`)
+console.log(`Server is running on ${backendOrigin}`)
 
 serve({
   fetch: app.fetch,

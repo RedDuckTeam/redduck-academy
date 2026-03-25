@@ -18,6 +18,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
   loader: async ({ params }) => {
     const lesson = await getLesson(params.courseSlug, params.lessonSlug)
     if (!lesson?.data) throw notFound()
+
     return {
       lesson: lesson.data,
       courseSlug: params.courseSlug,
@@ -63,7 +64,9 @@ function LessonPage() {
           {lesson.type === 'test' && (
             <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
           )}
-          {lesson.type === 'review_task' && <LessonProject lesson={lesson} />}
+          {lesson.type === 'review_task' && (
+            <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
+          )}
         </LessonContentContainer>
         {lesson.type === 'coding_task' && <LessonCodeChallenge lesson={lesson} />}
       </div>

@@ -56,6 +56,51 @@ export const submitTestDesc = describeRoute({
   },
 })
 
+export const submitProjectDesc = describeRoute({
+  summary: 'Submit review task repository URL',
+  description:
+    'Creates a user lesson row if needed, stores a project submission, and starts an OpenAI Batch job. Idempotent: same repo URL with a batch already created returns success without duplicating the job; pending submission without a batch retries batch creation.',
+  tags: ['Lessons'],
+  responses: {
+    200: {
+      description: 'Submission queued for AI batch, or already queued (idempotent)',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ success: z.literal(true) })),
+        },
+      },
+    },
+    400: {
+      description: 'Lesson is not a review task or no attempts left',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Course or lesson not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    409: {
+      description: 'Another repository URL is already being reviewed for this lesson',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    502: {
+      description: 'OpenAI batch creation failed',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    503: {
+      description: 'AI not configured',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const markLessonAsCompletedDesc = describeRoute({
   summary: 'Mark lecture as completed',
   description:

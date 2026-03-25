@@ -1,51 +1,91 @@
-import { eq, and } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { HTTPException } from 'hono/http-exception'
 import { db, payloadDb } from '../../db'
-import { payloadSchema } from '@redduck/payload-config'
+import { Lesson, payloadSchema } from '@redduck/payload-config'
 import { userLessons } from '../../db/schema'
 
 const { courses, lessons, modules } = payloadSchema
 
 export class LessonsService {
   static async getLesson(courseSlug: string, lessonSlug: string) {
-    const candidates = await payloadDb.query.lessons.findMany({
-      where: eq(lessons.slug, lessonSlug),
+    const lesson = await payloadDb.query.lessons.findFirst({
+      where: and(
+        eq(lessons.slug, lessonSlug),
+        sql`exists (
+          select 1 from ${modules} m
+          inner join ${courses} c on c.id = m.course_id
+          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+        )`,
+      ),
       with: {
-        module: {
-          with: {
-            course: true,
-          },
-        },
-        questions: {
-          with: {
-            options: true,
-          },
-        },
+        module: { with: { course: true } },
+        questions: { with: { options: true } },
+        reviewGradingTasks: true,
       },
     })
 
-    const lesson = candidates.find((l) => l.module?.course?.slug === courseSlug)
     if (!lesson) {
       throw new HTTPException(404, { message: 'Lesson not found' })
     }
 
     const next = await LessonsService.#getNextLessonSlug(courseSlug, lesson.id)
 
-    if (lesson.type !== 'test') return { ...lesson, next }
+    // @ts-expect-error - next is not typed
+    lesson.next = next
 
-    return {
-      ...lesson,
-      next,
-      questions: lesson.questions!.map((q) => {
-        const correctCount = q.options?.filter((o) => o.isCorrect).length ?? 0
-        return {
-          ...q,
-          isMultipleChoices: correctCount > 1,
-          order: q._order,
-          options: (q.options ?? []).map(({ isCorrect, ...safeOption }) => safeOption),
-        }
-      }),
+    if (lesson.type === 'review_task') {
+      return LessonsService.#toPublicReviewLesson(lesson)
     }
+
+    if (lesson.type === 'test') {
+      if (!lesson.questions) return lesson
+
+      return {
+        ...lesson,
+        questions: lesson.questions.map((q) => {
+          const correctCount = q.options?.filter((o) => o.isCorrect).length ?? 0
+          return {
+            ...q,
+            isMultipleChoices: correctCount > 1,
+            order: q._order,
+            options: (q.options ?? []).map(({ isCorrect, ...safeOption }) => safeOption),
+          }
+        }),
+      }
+    }
+
+    return lesson
+  }
+
+  /**
+   * Server-only: review lesson + rubric for the given course (one query: lesson scoped by course slug).
+   */
+  static async getReviewLessonWithRubric(courseSlug: string, lessonSlug: string): Promise<Lesson> {
+    const lesson = await payloadDb.query.lessons.findFirst({
+      where: and(
+        eq(lessons.slug, lessonSlug),
+        sql`exists (
+          select 1 from ${modules} m
+          inner join ${courses} c on c.id = m.course_id
+          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+        )`,
+      ),
+      with: {
+        reviewGradingTasks: true,
+        reviewPaths: {
+          orderBy: (reviewPaths, { asc }) => [asc(reviewPaths._order)],
+        },
+      },
+    })
+
+    if (!lesson) {
+      throw new HTTPException(404, { message: 'Lesson not found' })
+    }
+    if (lesson.type !== 'review_task') {
+      throw new HTTPException(400, { message: 'Lesson is not a review task' })
+    }
+
+    return lesson as Lesson
   }
 
   static async #getNextLessonSlug(courseSlug: string, lessonId: number): Promise<string | null> {
@@ -74,39 +114,39 @@ export class LessonsService {
     const lesson = await LessonsService.#getLessonBySlugs(courseSlug, lessonSlug)
     if (!lesson) return
 
-    const [existing] = await db
-      .select()
-      .from(userLessons)
-      .where(
-        and(
-          eq(userLessons.userId, userId),
-          eq(userLessons.lessonId, lesson.id),
-          eq(userLessons.isCompleted, true),
-        ),
-      )
-      .limit(1)
-
-    if (existing) return
-
-    await db.insert(userLessons).values({
-      userId,
-      lessonId: lesson.id,
-      isCompleted: true,
-    })
+    await db
+      .insert(userLessons)
+      .values({
+        userId,
+        lessonId: lesson.id,
+        isCompleted: true,
+      })
+      .onConflictDoUpdate({
+        target: [userLessons.userId, userLessons.lessonId],
+        set: { isCompleted: true },
+      })
   }
 
   static async #getLessonBySlugs(courseSlug: string, lessonSlug: string) {
-    const candidates = await payloadDb.query.lessons.findMany({
-      where: eq(lessons.slug, lessonSlug),
-      with: {
-        module: {
-          with: {
-            course: true,
-          },
-        },
-      },
+    const lesson = await payloadDb.query.lessons.findFirst({
+      where: and(
+        eq(lessons.slug, lessonSlug),
+        sql`exists (
+          select 1 from ${modules} m
+          inner join ${courses} c on c.id = m.course_id
+          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+        )`,
+      ),
     })
 
-    return candidates.find((l) => l.module?.course?.slug === courseSlug) ?? null
+    return lesson || null
+  }
+
+  /**
+   * Strips AI-only rubric fields from review lessons so the public API does not leak hints or criteria.
+   */
+  static #toPublicReviewLesson<L extends Record<string, unknown>>(lesson: L) {
+    const { aiTaskSummary: _a, aiPossibleSolutions: _b, reviewGradingTasks: _c, ...rest } = lesson
+    return rest
   }
 }
