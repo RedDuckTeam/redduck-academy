@@ -43,7 +43,7 @@ export const getUserCompletedLessonsDesc = describeRoute({
 export const getUserLessonDesc = describeRoute({
   summary: 'Get lesson for authenticated user',
   description:
-    'Returns lesson data with user-specific fields: earnedPoints, userAnswers, isCompleted, correctAnswers (for completed tests). For review_task lessons, also attemptsLeft and submissions (all attempts, oldest first; latest is the last element).',
+    'Returns lesson data with user-specific fields: earnedPoints, userAnswers, isCompleted, correctAnswers (for completed tests). For review_task lessons, also attemptsLeft, reviewGradingTasks (learner-safe rubric rows), and submissions (all attempts, oldest first; latest is the last element). Per-criterion feedback comments for hidden rubric rows are redacted in submissions so hints are not leaked.',
   tags: ['User'],
   responses: {
     200: {

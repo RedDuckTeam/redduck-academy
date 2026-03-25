@@ -4,9 +4,11 @@ import { user } from '../../db/auth-schema'
 import { userLessons } from '../../db/schema'
 import { payloadSchema } from '@redduck/payload-config'
 import type { CompletedLesson } from '../../descriptions/user'
+import type { ReviewFeedback } from '../../types/review-feedback'
 import { LessonsService } from '../lessons/lessons.service'
 import { CoursesService } from '../courses/courses.service'
 import { ReviewService } from '../review/review.service'
+import { sanitizeReviewFeedbackForLearner } from '../review/sanitize-review-feedback-for-learner'
 
 const { lessons } = payloadSchema
 
@@ -39,7 +41,16 @@ export class UserService {
 
     let submissions: Awaited<ReturnType<typeof ReviewService.getSubmissionsForUserLesson>> = []
     if (lesson.type === 'review_task' && userLesson?.id) {
-      submissions = await ReviewService.getSubmissionsForUserLesson(userLesson.id)
+      const raw = await ReviewService.getSubmissionsForUserLesson(userLesson.id)
+      const hiddenCriteriaTaskIds = new Set<string>()
+      for (const t of lesson.reviewGradingTasks ?? []) {
+        const row = t as { id: string; criteriaHidden?: boolean }
+        if (row.criteriaHidden) hiddenCriteriaTaskIds.add(row.id)
+      }
+      submissions = raw.map((s) => ({
+        ...s,
+        feedback: sanitizeReviewFeedbackForLearner(s.feedback as ReviewFeedback | null, hiddenCriteriaTaskIds),
+      }))
     }
 
     return {

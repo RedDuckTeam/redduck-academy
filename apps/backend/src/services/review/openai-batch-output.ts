@@ -1,3 +1,4 @@
+import type { Lesson } from '@redduck/payload-config'
 import type { ReviewFeedback } from '../../types/review-feedback'
 
 const ASSISTANT_OUTPUT_LOG_MAX_CHARS = 8_000
@@ -57,6 +58,23 @@ export function extractChatCompletionContentFromBatchJsonl(jsonlText: string, su
     return message.content
   }
   throw new Error('No batch output line for this submission')
+}
+
+/** Overwrite criterion names with CMS grading-task titles so UI always matches admin panel (taskId must match). */
+export function applyAdminTitlesToReviewFeedback(
+  feedback: ReviewFeedback,
+  tasks: NonNullable<Lesson['reviewGradingTasks']>,
+): ReviewFeedback {
+  if (tasks.length === 0) return feedback
+  const titleByTaskId = new Map(tasks.map((t) => [String(t.id), t.title != null ? String(t.title).trim() : '']))
+  return {
+    ...feedback,
+    criteria: feedback.criteria.map((c) => {
+      const title = titleByTaskId.get(c.taskId)
+      if (title === undefined) return c
+      return { ...c, name: title !== '' ? title : c.name }
+    }),
+  }
 }
 
 export function parseReviewFeedbackFromAssistantContent(

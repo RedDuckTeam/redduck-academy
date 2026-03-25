@@ -19,6 +19,17 @@ export interface Module {
   lessons: Lesson[]
 }
 
+/** Public shape for review_task grading rows (from GET lesson); criteria omitted when criteriaHidden is true. */
+export interface PublicReviewGradingTask {
+  id: string
+  title: string
+  points: number
+  isRequired: boolean
+  _order: number
+  criteriaHidden: boolean
+  criteria?: string
+}
+
 export interface Lesson {
   id: number
   title: string
@@ -33,6 +44,8 @@ export interface Lesson {
   templateRepoUrl?: string
   maxPoints: number
   next: string | null
+  /** Review-task rubric rows (learner-safe; hidden rows have criteriaHidden and no criteria). */
+  reviewGradingTasks?: PublicReviewGradingTask[]
 }
 
 export interface ReviewCriterionFeedback {

@@ -7,6 +7,7 @@ import type { ReviewFeedback } from '../../types/review-feedback'
 import { createOpenAiBatchForReview, getOpenAiClient } from '../ai/batch'
 import { LessonsService } from '../lessons/lessons.service'
 import {
+  applyAdminTitlesToReviewFeedback,
   extractChatCompletionContentFromBatchJsonl,
   parseReviewFeedbackFromAssistantContent,
   sumCriteriaPoints,
@@ -45,6 +46,7 @@ ${fetchResult.missingPaths.map((p) => `- ${p}`).join('\n')}
         (t) => `
 <task>
   <taskId>${String(t.id)}</taskId>
+  <title>${wrapCdata(t.title != null && String(t.title).trim() !== '' ? String(t.title) : 'Untitled')}</title>
   <requiredToPass>${t.isRequired}</requiredToPass>
   <maxPoints>${Number(t.points)}</maxPoints>
   <gradingHint>${wrapCdata(t.criteria != null && String(t.criteria).trim() !== '' ? String(t.criteria) : 'None')}</gradingHint>
@@ -75,7 +77,7 @@ ${rubricBlock}
 4. "points": Assign an integer between 0 and maxPoints inclusive.
 5. "lessonPassed": (Authoritative) Set to true ONLY IF EVERY task with <requiredToPass>true</requiredToPass> is marked as passed: true. Optional rows (requiredToPass: false) affect points but do not automatically fail the lesson.
 6. "summary": Provide a brief overall review. If lessonPassed is false, explicitly state which mandatory requirements or missing files caused the failure.
-7. Structured output: Respond with the required JSON object (lessonPassed, summary, criteria array). Each criterion must include taskId, name (short label), points, maxPoints, passed, and comment as enforced by the API schema.
+7. Structured output: Respond with the required JSON object (lessonPassed, summary, criteria array). Each criterion must include taskId, name, points, maxPoints, passed, and comment. The "name" for each criterion MUST be the exact character-for-character <title> from the <task> with the same taskId (do not paraphrase or translate).
 </grading_rules>`
   }
 
@@ -261,7 +263,10 @@ ${rubricBlock}
     let feedback: ReviewFeedback
     try {
       const content = extractChatCompletionContentFromBatchJsonl(jsonlText, latest.id)
-      feedback = parseReviewFeedbackFromAssistantContent(content, { submissionId: latest.id })
+      feedback = applyAdminTitlesToReviewFeedback(
+        parseReviewFeedbackFromAssistantContent(content, { submissionId: latest.id }),
+        lesson.reviewGradingTasks ?? [],
+      )
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to parse review output'
       await ReviewService.#markSubmissionFailed(latest.id, message)

@@ -198,6 +198,15 @@ export const Lessons: CollectionConfig = {
           },
         },
         {
+          name: 'hideCriteriaFromLearner',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description:
+              'When enabled, criteria text is not shown to learners in the app or API (still used for AI review). Use for spoilers or solution hints.',
+          },
+        },
+        {
           name: 'isRequired',
           type: 'checkbox',
           defaultValue: false,

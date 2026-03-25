@@ -20,7 +20,9 @@ export class LessonsService {
       with: {
         module: { with: { course: true } },
         questions: { with: { options: true } },
-        reviewGradingTasks: true,
+        reviewGradingTasks: {
+          orderBy: (tasks, { asc }) => [asc(tasks._order)],
+        },
       },
     })
 
@@ -71,7 +73,9 @@ export class LessonsService {
         )`,
       ),
       with: {
-        reviewGradingTasks: true,
+        reviewGradingTasks: {
+          orderBy: (tasks, { asc }) => [asc(tasks._order)],
+        },
         reviewPaths: {
           orderBy: (reviewPaths, { asc }) => [asc(reviewPaths._order)],
         },
@@ -143,10 +147,35 @@ export class LessonsService {
   }
 
   /**
-   * Strips AI-only rubric fields from review lessons so the public API does not leak hints or criteria.
+   * Strips AI-only lesson fields and maps grading tasks to a learner-safe shape (criteria optional; criteriaHidden when withheld).
    */
   static #toPublicReviewLesson<L extends Record<string, unknown>>(lesson: L) {
-    const { aiTaskSummary: _a, aiPossibleSolutions: _b, reviewGradingTasks: _c, ...rest } = lesson
-    return rest
+    const { aiTaskSummary: _a, aiPossibleSolutions: _b, reviewGradingTasks: tasks, ...rest } = lesson
+    const publicTasks = Array.isArray(tasks)
+      ? [...tasks]
+          .sort((x, y) => Number((x as { _order?: unknown })._order) - Number((y as { _order?: unknown })._order))
+          .map((row) => LessonsService.#mapReviewGradingTaskForPublic(row as Record<string, unknown>))
+      : []
+    return { ...rest, reviewGradingTasks: publicTasks }
+  }
+
+  static #mapReviewGradingTaskForPublic(row: Record<string, unknown>) {
+    const hide = Boolean(row.hideCriteriaFromLearner)
+    const criteriaRaw = row.criteria != null ? String(row.criteria).trim() : ''
+    const base = {
+      id: String(row.id),
+      title: row.title != null ? String(row.title) : '',
+      points: Number(row.points),
+      isRequired: Boolean(row.isRequired),
+      _order: Number(row._order),
+      criteriaHidden: hide,
+    }
+    if (hide) {
+      return base
+    }
+    if (criteriaRaw !== '') {
+      return { ...base, criteria: criteriaRaw }
+    }
+    return base
   }
 }

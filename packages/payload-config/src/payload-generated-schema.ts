@@ -185,6 +185,7 @@ export const lessons_review_grading_tasks = db_schema.table(
     title: varchar('title'),
     points: numeric('points', { mode: 'number' }),
     criteria: varchar('criteria'),
+    hideCriteriaFromLearner: boolean('hide_criteria_from_learner').default(false),
     isRequired: boolean('is_required').default(false),
   },
   (columns) => [
@@ -245,6 +246,31 @@ export const lessons = db_schema.table(
   ],
 )
 
+export const community_events = db_schema.table(
+  'community_events',
+  {
+    id: serial('id').primaryKey(),
+    title: varchar('title').notNull(),
+    slug: varchar('slug'),
+    description: varchar('description').notNull(),
+    eventDate: timestamp('event_date', { mode: 'string', withTimezone: true, precision: 3 }),
+    photo: integer('photo_id')
+      .notNull()
+      .references(() => media.id, {
+        onDelete: 'set null',
+      }),
+    content: jsonb('content'),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
+  },
+  (columns) => [
+    uniqueIndex('community_events_slug_idx').on(columns.slug),
+    index('community_events_photo_idx').on(columns.photo),
+    index('community_events_updated_at_idx').on(columns.updatedAt),
+    index('community_events_created_at_idx').on(columns.createdAt),
+  ],
+)
+
 export const payload_kv = db_schema.table(
   'payload_kv',
   {
@@ -282,6 +308,7 @@ export const payload_locked_documents_rels = db_schema.table(
     coursesID: integer('courses_id'),
     modulesID: integer('modules_id'),
     lessonsID: integer('lessons_id'),
+    'community-eventsID': integer('community_events_id'),
   },
   (columns) => [
     index('payload_locked_documents_rels_order_idx').on(columns.order),
@@ -292,6 +319,7 @@ export const payload_locked_documents_rels = db_schema.table(
     index('payload_locked_documents_rels_courses_id_idx').on(columns.coursesID),
     index('payload_locked_documents_rels_modules_id_idx').on(columns.modulesID),
     index('payload_locked_documents_rels_lessons_id_idx').on(columns.lessonsID),
+    index('payload_locked_documents_rels_community_events_id_idx').on(columns['community-eventsID']),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [payload_locked_documents.id],
@@ -321,6 +349,11 @@ export const payload_locked_documents_rels = db_schema.table(
       columns: [columns['lessonsID']],
       foreignColumns: [lessons.id],
       name: 'payload_locked_documents_rels_lessons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['community-eventsID']],
+      foreignColumns: [community_events.id],
+      name: 'payload_locked_documents_rels_community_events_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -457,6 +490,13 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
     relationName: 'reviewPaths',
   }),
 }))
+export const relations_community_events = relations(community_events, ({ one }) => ({
+  photo: one(media, {
+    fields: [community_events.photo],
+    references: [media.id],
+    relationName: 'photo',
+  }),
+}))
 export const relations_payload_kv = relations(payload_kv, () => ({}))
 export const relations_payload_locked_documents_rels = relations(payload_locked_documents_rels, ({ one }) => ({
   parent: one(payload_locked_documents, {
@@ -488,6 +528,11 @@ export const relations_payload_locked_documents_rels = relations(payload_locked_
     fields: [payload_locked_documents_rels.lessonsID],
     references: [lessons.id],
     relationName: 'lessons',
+  }),
+  'community-eventsID': one(community_events, {
+    fields: [payload_locked_documents_rels['community-eventsID']],
+    references: [community_events.id],
+    relationName: 'community-events',
   }),
 }))
 export const relations_payload_locked_documents = relations(payload_locked_documents, ({ many }) => ({
@@ -527,6 +572,7 @@ type DatabaseSchema = {
   lessons_review_grading_tasks: typeof lessons_review_grading_tasks
   lessons_review_paths: typeof lessons_review_paths
   lessons: typeof lessons
+  community_events: typeof community_events
   payload_kv: typeof payload_kv
   payload_locked_documents: typeof payload_locked_documents
   payload_locked_documents_rels: typeof payload_locked_documents_rels
@@ -543,6 +589,7 @@ type DatabaseSchema = {
   relations_lessons_review_grading_tasks: typeof relations_lessons_review_grading_tasks
   relations_lessons_review_paths: typeof relations_lessons_review_paths
   relations_lessons: typeof relations_lessons
+  relations_community_events: typeof relations_community_events
   relations_payload_kv: typeof relations_payload_kv
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels
   relations_payload_locked_documents: typeof relations_payload_locked_documents

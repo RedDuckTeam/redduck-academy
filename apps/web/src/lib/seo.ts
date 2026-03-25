@@ -1,3 +1,4 @@
+import type { CommunityEvent } from '@/types/community'
 import type { Course, Lesson } from '@/types/lesson'
 import { env } from '@/env'
 
@@ -49,6 +50,8 @@ export type HeadMeta = {
 export type HeadLinks = {
   rel?: string
   href?: string
+  type?: string
+  sizes?: string
 }
 
 export type HeadConfig = {
@@ -72,6 +75,12 @@ export function createDefaultMeta(): HeadConfig {
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: SITE_NAME },
       { name: 'twitter:description', content: SITE_DESCRIPTION },
+    ],
+    links: [
+      { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+      { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96x96.png' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      { rel: 'manifest', href: '/manifest.json' },
     ],
   }
 }
@@ -146,6 +155,33 @@ export function createLessonMeta({
 /**
  * Meta for courses index page.
  */
+export function createCommunityEventMeta({
+  event,
+  slug,
+}: {
+  event: CommunityEvent
+  slug: string
+}): HeadConfig {
+  const fullTitle = `${event.title} | ${SITE_NAME}`
+  const fromContent = event.content ? extractPlainText(event.content) : ''
+  const rawDescription = event.description?.trim() || fromContent
+  const description = rawDescription ? truncateDescription(rawDescription) : event.title
+  const canonicalPath = `/community/${slug}`
+
+  return {
+    meta: [
+      { title: fullTitle },
+      { name: 'description', content: description },
+      { property: 'og:title', content: fullTitle },
+      { property: 'og:description', content: description },
+      { property: 'og:type', content: 'article' },
+      { name: 'twitter:title', content: fullTitle },
+      { name: 'twitter:description', content: description },
+    ],
+    links: [{ rel: 'canonical', href: `${getBaseUrl()}${canonicalPath}` }],
+  }
+}
+
 export function createCoursesMeta({ courses = [] }: { courses?: Course[] } = {}): HeadConfig {
   const title = 'Courses'
   const courseCount = courses.length

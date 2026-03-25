@@ -33,7 +33,11 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
               additionalProperties: false,
               properties: {
                 taskId: { type: 'string', description: 'Stable id for this rubric row (Payload grading task id).' },
-                name: { type: 'string', description: 'Criterion title.' },
+                name: {
+                  type: 'string',
+                  description:
+                    'Must exactly match the rubric task title for this taskId (same string as the title in the rubric XML).',
+                },
                 points: { type: 'number', description: 'Points earned for this criterion.' },
                 maxPoints: { type: 'number', description: 'Maximum points for this criterion.' },
                 passed: {

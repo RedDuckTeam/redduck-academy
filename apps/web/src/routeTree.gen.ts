@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as CoursesCourseSlugRouteImport } from './routes/courses/$courseSlug'
+import { Route as CommunitySlugRouteImport } from './routes/community/$slug'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
@@ -47,6 +48,11 @@ const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
 const CoursesCourseSlugRoute = CoursesCourseSlugRouteImport.update({
   id: '/courses/$courseSlug',
   path: '/courses/$courseSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunitySlugRoute = CommunitySlugRouteImport.update({
+  id: '/community/$slug',
+  path: '/community/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
@@ -99,6 +105,7 @@ const CoursesCourseSlugModuleSlugLessonSlugRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
+  '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses': typeof CoursesIndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
+  '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses': typeof CoursesIndexRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
+  '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses/': typeof CoursesIndexRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/sign-up'
+    | '/community/$slug'
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/sign-up'
+    | '/community/$slug'
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/sign-up'
+    | '/community/$slug'
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses/'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SignUpRoute: typeof SignUpRoute
+  CommunitySlugRoute: typeof CommunitySlugRoute
   CoursesCourseSlugRoute: typeof CoursesCourseSlugRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/courses/$courseSlug'
       fullPath: '/courses/$courseSlug'
       preLoaderRoute: typeof CoursesCourseSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community/$slug': {
+      id: '/community/$slug'
+      path: '/community/$slug'
+      fullPath: '/community/$slug'
+      preLoaderRoute: typeof CommunitySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/start/server-funcs': {
@@ -330,6 +350,7 @@ const CoursesCourseSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SignUpRoute: SignUpRoute,
+  CommunitySlugRoute: CommunitySlugRoute,
   CoursesCourseSlugRoute: CoursesCourseSlugRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   CoursesIndexRoute: CoursesIndexRoute,

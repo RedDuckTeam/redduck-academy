@@ -9,6 +9,7 @@ import coursesApp from './services/courses/courses.routes'
 import lessonsApp from './services/lessons/lessons.routes'
 import userApp from './services/user/user.routes'
 import reviewApp from './services/review/review.routes'
+import communityApp from './services/community/community.routes'
 
 const port = Number(process.env.PORT) || 3001
 const backendOrigin = `http://localhost:${port}`
@@ -47,6 +48,7 @@ app.route('/api/courses', coursesApp)
 app.route('/api/lessons', lessonsApp)
 app.route('/api/user', userApp)
 app.route('/api/review', reviewApp)
+app.route('/api/community', communityApp)
 
 app.get(
   '/openapi',

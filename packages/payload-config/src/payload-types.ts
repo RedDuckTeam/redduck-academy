@@ -72,6 +72,7 @@ export interface Config {
     courses: Course;
     modules: Module;
     lessons: Lesson;
+    'community-events': CommunityEvent;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +85,7 @@ export interface Config {
     courses: CoursesSelect<false> | CoursesSelect<true>;
     modules: ModulesSelect<false> | ModulesSelect<true>;
     lessons: LessonsSelect<false> | LessonsSelect<true>;
+    'community-events': CommunityEventsSelect<false> | CommunityEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -96,6 +98,9 @@ export interface Config {
   globals: {};
   globalsSelect: {};
   locale: null;
+  widgets: {
+    collections: CollectionsWidget;
+  };
   user: User;
   jobs: {
     tasks: unknown;
@@ -254,6 +259,10 @@ export interface Lesson {
          */
         criteria?: string | null;
         /**
+         * When enabled, criteria text is not shown to learners in the app or API (still used for AI review). Use for spoilers or solution hints.
+         */
+        hideCriteriaFromLearner?: boolean | null;
+        /**
          * Learner must earn full points on this row for the lesson to count as passed (when any row is required, overall pass depends only on required rows).
          */
         isRequired?: boolean | null;
@@ -277,6 +286,35 @@ export interface Lesson {
    * Tests: auto from question points. Review tasks: auto from grading tasks. Coding tasks: enter manually.
    */
   maxPoints?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "community-events".
+ */
+export interface CommunityEvent {
+  id: number;
+  title: string;
+  slug?: string | null;
+  description: string;
+  eventDate?: string | null;
+  photo: number | Media;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -323,6 +361,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'lessons';
         value: number | Lesson;
+      } | null)
+    | ({
+        relationTo: 'community-events';
+        value: number | CommunityEvent;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -464,6 +506,7 @@ export interface LessonsSelect<T extends boolean = true> {
         title?: T;
         points?: T;
         criteria?: T;
+        hideCriteriaFromLearner?: T;
         isRequired?: T;
         id?: T;
       };
@@ -475,6 +518,20 @@ export interface LessonsSelect<T extends boolean = true> {
         id?: T;
       };
   maxPoints?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "community-events_select".
+ */
+export interface CommunityEventsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  eventDate?: T;
+  photo?: T;
+  content?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -517,6 +574,16 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -5,7 +5,7 @@ import { errorSchema } from './schemas'
 export const getLessonDesc = describeRoute({
   summary: 'Get lesson by slug',
   description:
-    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons.',
+    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, points, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden.',
   tags: ['Lessons'],
   responses: {
     200: {

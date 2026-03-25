@@ -19,7 +19,7 @@
     "@keystatic/core": "^0.5.48",
     "@markdoc/markdoc": "^0.5.4",
     "@monaco-editor/react": "^4.7.0",
-    "@payloadcms/richtext-lexical": "^3.77.0",
+    "@payloadcms/richtext-lexical": "3.80.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@reown/appkit": "^1.8.16",

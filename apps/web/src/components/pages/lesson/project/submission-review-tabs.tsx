@@ -1,6 +1,8 @@
 import type { LatestProjectSubmission } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/lib/utils'
+import { DucksBadge } from '@/components/ui/ducks-badge'
 
 interface SubmissionReviewTabsProps {
   submissions: LatestProjectSubmission[]
@@ -11,53 +13,58 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
     return null
   }
 
+  const filteredSubmissions = submissions.filter((s) => s.status !== 'pending')
   const defaultValue = `attempt-${submissions.length - 1}`
 
+  console.log({ filteredSubmissions })
   return (
     <Tabs
       key={submissions.map((s) => s.id).join('-')}
       defaultValue={defaultValue}
       orientation="horizontal"
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-3 w-full max-w-[600px]"
     >
-      <TabsList variant="line" className="w-full max-w-[420px] flex-wrap justify-start h-auto min-h-8">
-        {submissions.map((submission, index) => (
+      <TabsList variant="line" className="w-full flex-wrap justify-start h-auto min-h-8 gap-4">
+        {filteredSubmissions.map((submission, index) => (
           <TabsTrigger key={submission.id} value={`attempt-${index}`}>
             Attempt {index + 1}
           </TabsTrigger>
         ))}
       </TabsList>
-      {submissions.map((submission, index) => (
+      {filteredSubmissions.map((submission, index) => (
         <TabsContent key={submission.id} value={`attempt-${index}`} className="mt-0">
-          {submission.status === 'pending' && (
-            <Text variant="main-18" className="text-muted-foreground">
-              Review in progress…
-            </Text>
-          )}
           {submission.status === 'completed' && submission.feedback && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               <Text variant="main-18">{submission.feedback.summary}</Text>
-              <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                {submission.feedback.criteria.map((c) => (
-                  <li key={c.taskId}>
-                    {c.name}: {c.points}/{c.maxPoints} — {c.passed ? 'Passed' : 'Not passed'}
-                  </li>
+              <div className="flex flex-col gap-8">
+                {submission.feedback.criteria.map((c, i) => (
+                  <div key={c.taskId} className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <Text variant="main-18" className={cn(c.passed ? 'text-success' : 'text-primary')}>
+                        {i + 1}. {c.name}
+                      </Text>
+                      <DucksBadge className="bg-transparent p-0" ducks={c.maxPoints} myDucks={c.points} />
+                    </div>
+                    <Text variant="main-18" className="text-muted-foreground">
+                      {c.comment}
+                    </Text>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
           {submission.status === 'failed' && submission.errorMessage && (
-            <Text variant="main-18" className="text-destructive">
+            <Text variant="main-18" className="text-primary">
               {submission.errorMessage}
             </Text>
           )}
           {submission.status === 'failed' && !submission.errorMessage && (
-            <Text variant="main-18" className="text-destructive">
+            <Text variant="main-18" className="text-primary">
               Review failed.
             </Text>
           )}
           {submission.status === 'completed' && !submission.feedback && (
-            <Text variant="main-18" className="text-muted-foreground">
+            <Text variant="main-18" className="">
               No feedback available.
             </Text>
           )}

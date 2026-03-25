@@ -80,12 +80,12 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
             <ClipboardIcon />
           </button>
         </div>
-        <Button disabled={!link || isPending} onClick={handleSubmit} className="w-full">
+        <Button disabled={!link || isPending || !userLesson?.attemptsLeft} onClick={handleSubmit} className="w-full">
           <Text variant="caps-20">SEND TO REVIEW</Text>
         </Button>
 
         {submissions.length > 0 && (
-          <div className="flex flex-col gap-3 mt-2 max-w-[420px]">
+          <div className="flex flex-col gap-3 mt-2 ">
             <Text variant="caps-24" className="font-medium">
               REVIEW STATUS
             </Text>
