@@ -16,9 +16,7 @@ export function LessonCodeChallenge({ lesson }: LessonCodeChallengeProps) {
       <div className="flex flex-col w-full ">
         <PanelHeader>
           <FileIcon className="w-5 h-5" />
-          <Text variant="caps-14" className="text-white">
-            DESCRIPTION
-          </Text>
+          <Text variant="caps-14">DESCRIPTION</Text>
         </PanelHeader>
         <div className="flex flex-col p-5 border-b border-x border-border">
           <DescriptionPanel lesson={lesson} />
@@ -28,9 +26,7 @@ export function LessonCodeChallenge({ lesson }: LessonCodeChallengeProps) {
         <div className="flex flex-col flex-1 w-full">
           <PanelHeader>
             <CodeIcon className="w-5 h-5" />
-            <Text variant="caps-14" className="text-white">
-              CODE
-            </Text>
+            <Text variant="caps-14">CODE</Text>
           </PanelHeader>
           <div className="flex flex-col py-5 border-b border-x border-border">
             <CodePanel lesson={lesson} />
@@ -39,9 +35,7 @@ export function LessonCodeChallenge({ lesson }: LessonCodeChallengeProps) {
         <div className="flex flex-col flex-1 w-full">
           <PanelHeader>
             <CodeIcon className="w-5 h-5" />
-            <Text variant="caps-14" className="text-white">
-              CODE
-            </Text>
+            <Text variant="caps-14">CODE</Text>
           </PanelHeader>
           <div className="flex flex-col p-5 border-b border-x border-border">
             <DescriptionPanel lesson={lesson} />

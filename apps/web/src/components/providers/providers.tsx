@@ -7,6 +7,7 @@ import {
   projectId,
   wagmiAdapter,
 } from '@/constants/wallet-config'
+import { ThemeProvider } from '@/components/providers/theme-context'
 
 const queryClient = new QueryClient()
 
@@ -29,7 +30,9 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </QueryClientProvider>
     </WagmiProvider>
   )
 }

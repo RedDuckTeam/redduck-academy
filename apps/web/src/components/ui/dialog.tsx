@@ -27,7 +27,7 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 backdrop-blur-[2px] bg-black/70',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px] dark:bg-black/80',
         className,
       )}
       {...props}
@@ -58,7 +58,7 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="data-[state=open]:text-black absolute cursor-pointer top-4 right-4 transition-opacity hover:opacity-100  focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="absolute top-4 right-4 cursor-pointer text-foreground transition-opacity hover:opacity-100 focus:outline-hidden data-[state=open]:text-foreground disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
             <span className="sr-only">Close</span>

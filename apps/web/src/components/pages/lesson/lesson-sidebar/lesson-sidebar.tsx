@@ -41,7 +41,7 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
   const [parent] = useAutoAnimate({ duration: 200, easing: 'ease-in-out' })
   return (
     <div
-      className="flex flex-col bg-black overflow-hidden transition-all duration-200 ease-in-out"
+      className="flex flex-col overflow-hidden bg-sidebar transition-all duration-200 ease-in-out"
       style={{ width: isOpen ? 380 : 60, height: isOpen ? '100%' : 60 }}
     >
       <div
@@ -55,7 +55,7 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
               onClick={() => setIsOpen(false)}
             >
               <ArrowRight className="rotate-180 shrink-0" />
-              <Text variant="caps-20" className="text-white truncate">
+              <Text variant="caps-20" className="truncate text-[#e0deda]">
                 {course?.data.title}
               </Text>
             </button>
@@ -72,7 +72,7 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
                     <Text variant="main-16" className="text-primary font-ibm-plex-mono">
                       {index < 10 ? `0${index + 1}` : index + 1}.
                     </Text>
-                    <Text variant="main-16" className="text-white font-ibm-plex-mono uppercase">
+                    <Text variant="main-16" className="font-ibm-plex-mono uppercase text-[#e0deda]">
                       {module.title}
                     </Text>
                   </AccordionTrigger>
@@ -90,7 +90,7 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
                             lessonSlug: lesson.slug,
                           }}
                         >
-                          <Text key={lesson.id} variant="main-16" className="text-white px-[30px] py-5">
+                          <Text key={lesson.id} variant="main-16" className="px-[30px] py-5 text-[#e0deda]">
                             {lesson.title}
                           </Text>
                         </Link>

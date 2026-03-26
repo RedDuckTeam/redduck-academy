@@ -54,7 +54,7 @@ export const SignUpWalletButton = () => {
   return (
     <button
       className={cn(
-        'flex w-full max-w-[850px] min-h-[100px] cursor-pointer items-center justify-between rounded-[80px] bg-black px-10 py-[18px] md:translate-x-20 md:min-h-0 md:px-[70px]',
+        'flex w-full max-w-[850px] min-h-[100px] cursor-pointer items-center justify-between rounded-[80px] bg-foreground px-10 py-[18px] md:translate-x-20 md:min-h-0 md:px-[70px]',
       )}
       onClick={handleSignInWithWallet}
     >
@@ -64,7 +64,7 @@ export const SignUpWalletButton = () => {
       <Text variant="subtitle-45" className="text-background max-md:text-[20px] max-md:leading-normal max-md:min-h-0">
         WEB3 WALLET
       </Text>
-      <LongArrowRight />
+      <LongArrowRight className="[&_path]:fill-background" />
     </button>
   )
 }

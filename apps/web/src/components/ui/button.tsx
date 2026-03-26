@@ -5,14 +5,17 @@ import type { VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center cursor-pointer flex text-[16px] md:text-[20px] disabled:bg-destructive-light disabled:cursor-not-allowed 2xl:text-[24px] text-black h-full max-h-[50px] md:max-h-[56px] lg:max-h-[60px] hover:enabled:scale-[1.03] transition-all leading-[20px] md:leading-[25px] lg:leading-[30px]',
+  'inline-flex h-full max-h-[50px] cursor-pointer items-center justify-center text-[16px] transition-all hover:enabled:scale-[1.03] md:max-h-[56px] md:text-[20px] lg:max-h-[60px] lg:leading-[30px] 2xl:text-[24px] flex leading-[20px] text-foreground md:leading-[25px] disabled:cursor-not-allowed disabled:bg-destructive-light',
   {
     variants: {
       variant: {
-        default: 'bg-primary',
-        secondary: 'bg-black text-white',
-        link: 'rounded-full border border-black bg-gray justify-center',
-        outline: cn('border border-black bg-transparent text-black', 'hover:bg-black hover:text-white '),
+        default: 'bg-primary text-primary-foreground',
+        secondary: 'bg-header text-header-foreground',
+        link: 'justify-center rounded-full border border-foreground bg-muted text-foreground',
+        outline: cn(
+          'border border-foreground bg-transparent text-foreground',
+          'hover:bg-header hover:text-header-foreground',
+        ),
       },
       size: {
         default: 'py-[15px] px-6',

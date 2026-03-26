@@ -11,16 +11,13 @@
 @import '@fontsource/inter/400.css';
 @import '@fontsource/inter/500.css';
 
-@custom-variant dark
-  (&: is(.dark *));
+@custom-variant dark (&:is(.dark *));
 
 body {
   @apply m-0;
   font-family: 'IBM Plex Mono';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #000000;
-  background-color: var(--background);
 }
 
 code {
@@ -29,38 +26,87 @@ code {
 
 :root {
   --background: #e0deda;
+  --foreground: #000000;
+  --muted: #d4d2ce;
+  --text: #000000;
+  --muted-foreground: #565653;
+  --card: #f2f0ec;
+  --card-foreground: #000000;
+  --popover: #f2f0ec;
+  --popover-foreground: #000000;
   --primary: #ed4937;
+  --primary-foreground: #000000;
   --secondary: #565653;
   --black: #000000;
   --success: #427e3d;
   --destructive-light: #e0ac9f;
   --border: #9b9b9b;
+  --input: #e0deda;
+  --ring: #9b9b9b;
+  --header: #000000;
+  --header-foreground: #ffffff;
+  --sidebar: #000000;
+  --sidebar-border: #565653;
+  --radius: 0.5rem;
 }
 
 .dark {
-  --background: #e0deda;
+  --background: #000000;
+  --foreground: #e0cdc6;
+  --muted: #1a1a1a;
+  --text: #e0deda;
+  --muted-foreground: #e0deda;
+  --card: #141414;
+  --card-foreground: #ffffff;
+  --popover: #1a1a1a;
+  --popover-foreground: #ffffff;
   --primary: #ed4937;
-  --secondary: #565653;
-  --black: #000000;
-  --success: #427e3d;
-  --destructive-light: #e0ac9f;
-  --border: #9b9b9b;
+  --primary-foreground: #ffffff;
+  --secondary: #9b9b9b;
+  --black: #ffffff;
+  --success: #5cb85c;
+  --destructive-light: #8b4a3a;
+  --border: #565653;
+  --input: #222222;
+  --ring: #9b9b9b;
+  --header: #000000;
+  --header-foreground: #ffffff;
+  --sidebar: #000000;
+  --sidebar-border: #565653;
 }
 
 @theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-text: var(--text);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
   --color-success: var(--success);
   --color-black: var(--black);
   --color-destructive-light: var(--destructive-light);
   --color-border: var(--border);
-  --color-background: var(--background);
-  --color-secondary: var(--secondary);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
   --font-inter: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
   body {
-    @apply bg-background text-black min-h-screen overflow-x-hidden;
+    @apply bg-input text-text min-h-screen overflow-x-hidden;
   }
   hr {
     @apply text-border;
@@ -143,5 +189,39 @@ code {
 
   .animate-accordion-up {
     animation: accordion-up 0.2s ease-out;
+  }
+
+  /** Keeps certificate “paper” colors on dark page backgrounds (see course certificate screen). */
+  .certificate-paper-surface {
+    --background: #f2f0ec;
+    --foreground: #000000;
+    --secondary: #565653;
+    --border: #9b9b9b;
+    --card: #f2f0ec;
+    --card-foreground: #000000;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  header {
+    display: none !important;
+  }
+
+  .certificate-print-page {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+  }
+
+  .certificate-print-root {
+    max-width: 100% !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

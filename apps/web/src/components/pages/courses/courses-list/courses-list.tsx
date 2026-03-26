@@ -21,7 +21,7 @@ export const CoursesList = ({ courses, selectedCourse, completedLessons }: Cours
       {course.modules.map((module, index) => (
         <Fragment key={module.slug}>
           <div className="p-5">
-            <Text variant="caps-20">
+            <Text variant="caps-20" className="text-black">
               {index < 10 ? `0${index + 1}` : index + 1}. {module.title}
             </Text>
           </div>
@@ -49,13 +49,17 @@ export const CoursesList = ({ courses, selectedCourse, completedLessons }: Cours
                     {isCompleted ? (
                       <CheckIcon className="[&_path]:fill-success" />
                     ) : (
-                      <PlayIcon className="translate-x-0.5" />
+                      <PlayIcon className="translate-x-0.5 [&_path]:fill-black" />
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Text variant="main-18">{lesson.title}</Text>
+                    <Text variant="main-18" className="text-black">
+                      {lesson.title}
+                    </Text>
 
-                    <Text variant="main-14">{lessonTypeToLabel[lesson.type]}</Text>
+                    <Text variant="main-14" className="text-secondary">
+                      {lessonTypeToLabel[lesson.type]}
+                    </Text>
                   </div>
                 </Link>
               )

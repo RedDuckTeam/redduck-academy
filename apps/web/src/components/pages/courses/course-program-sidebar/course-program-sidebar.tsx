@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useState } from 'react'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
+import { cn } from '@/lib/utils'
 
 interface CourseProgramSidebarProps {
   courses: Course[]
@@ -29,24 +30,27 @@ export const CourseProgramSidebar = ({ courses, selectedCourse, setSelectedCours
   }, [selectedCourse, refs])
 
   return (
-    <div className="flex flex-col bg-black divide-y divide-[#565653] w-[380px]">
-      <div className="h-[60px] px-5 flex items-center">
+    <div className="flex w-[380px] flex-col divide-y divide-border bg-[#000000]">
+      <div className="flex h-[60px] items-center px-5">
         <Text variant="caps-20" className="text-white">
           course program
         </Text>
       </div>
-      <div className="relative flex flex-col divide-[#565653] divide-y">
+      <div className="relative flex flex-col ">
         {courses.map((course, index) => (
           <button
             key={course.id}
             ref={refs[index]}
-            className="flex items-center gap-5 py-[22px] px-5 cursor-pointer"
+            className={cn(
+              'flex items-center gap-5 py-[22px] px-5 cursor-pointer',
+              courses.length - 1 !== index ? 'border-b border-border' : '',
+            )}
             onClick={() => setSelectedCourse(index)}
           >
             <Text variant="main-16" className="text-primary font-ibm-plex-mono">
               {index < 10 ? `0${index + 1}` : index + 1}.
             </Text>
-            <Text variant="main-16" className="text-white font-ibm-plex-mono uppercase">
+            <Text variant="main-16" className="font-ibm-plex-mono uppercase text-white">
               {course.title}
             </Text>
           </button>

@@ -19,6 +19,7 @@ import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.se
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as CoursesCourseSlugCertificateRouteImport } from './routes/courses/$courseSlug.certificate'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
@@ -75,6 +76,12 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoursesCourseSlugCertificateRoute =
+  CoursesCourseSlugCertificateRouteImport.update({
+    id: '/certificate',
+    path: '/certificate',
+    getParentRoute: () => CoursesCourseSlugRoute,
+  } as any)
 const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
   id: '/demo/start/ssr/',
   path: '/demo/start/ssr/',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses/': typeof CoursesIndexRoute
+  '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -126,6 +134,7 @@ export interface FileRoutesByTo {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses': typeof CoursesIndexRoute
+  '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -144,6 +153,7 @@ export interface FileRoutesById {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses/': typeof CoursesIndexRoute
+  '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses/'
+    | '/courses/$courseSlug/certificate'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses'
+    | '/courses/$courseSlug/certificate'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses/'
+    | '/courses/$courseSlug/certificate'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/courses/$courseSlug/certificate': {
+      id: '/courses/$courseSlug/certificate'
+      path: '/certificate'
+      fullPath: '/courses/$courseSlug/certificate'
+      preLoaderRoute: typeof CoursesCourseSlugCertificateRouteImport
+      parentRoute: typeof CoursesCourseSlugRoute
+    }
     '/demo/start/ssr/': {
       id: '/demo/start/ssr/'
       path: '/demo/start/ssr'
@@ -336,10 +356,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface CoursesCourseSlugRouteChildren {
+  CoursesCourseSlugCertificateRoute: typeof CoursesCourseSlugCertificateRoute
   CoursesCourseSlugModuleSlugLessonSlugRoute: typeof CoursesCourseSlugModuleSlugLessonSlugRoute
 }
 
 const CoursesCourseSlugRouteChildren: CoursesCourseSlugRouteChildren = {
+  CoursesCourseSlugCertificateRoute: CoursesCourseSlugCertificateRoute,
   CoursesCourseSlugModuleSlugLessonSlugRoute:
     CoursesCourseSlugModuleSlugLessonSlugRoute,
 }

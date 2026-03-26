@@ -17,6 +17,8 @@ interface MyRouterContext {
   queryClient: QueryClient
 }
 
+const themeInitScript = `(function(){try{var t=localStorage.getItem('redduck-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => {
     const defaultMeta = createDefaultMeta()
@@ -31,9 +33,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
         <Providers>

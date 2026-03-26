@@ -23,9 +23,18 @@ type PageBreadcrumbsProps =
       variant: 'community'
       eventTitle: string
     }
+  | {
+      variant: 'certificate'
+    }
 
 export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
   const breadcrumbs = useMemo(() => {
+    if (props.variant === 'certificate') {
+      return [
+        { label: 'Dashboard', href: homeRoute },
+        { label: 'Course certificate', href: undefined },
+      ]
+    }
     if (props.variant === 'community') {
       return [
         { label: 'Community', href: homeRoute },
@@ -42,9 +51,11 @@ export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
     ]
   }, [
     props.variant,
-    ...(props.variant === 'community'
-      ? [props.eventTitle]
-      : [props.courseSlug, props.moduleSlug, props.lessonSlug]),
+    ...(props.variant === 'certificate'
+      ? []
+      : props.variant === 'community'
+        ? [props.eventTitle]
+        : [props.courseSlug, props.moduleSlug, props.lessonSlug]),
   ])
 
   return (
@@ -57,7 +68,7 @@ export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
                 <BreadcrumbLink
                   asChild
                   href={breadcrumb.href}
-                  className={index < breadcrumbs.length - 1 ? 'text-[#565653]' : undefined}
+                  className={index < breadcrumbs.length - 1 ? 'text-[#565653] dark:text-[#9B9B9B]' : 'text-black'}
                 >
                   <Link to={breadcrumb.href}>{breadcrumb.label}</Link>
                 </BreadcrumbLink>

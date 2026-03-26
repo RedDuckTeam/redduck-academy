@@ -182,6 +182,19 @@ export function createCommunityEventMeta({
   }
 }
 
+export function createCourseCertificateMeta({
+  courseTitle,
+  courseSlug,
+}: {
+  courseTitle: string
+  courseSlug: string
+}): HeadConfig {
+  const title = `Certificate — ${courseTitle}`
+  const description = `Course completion certificate for ${courseTitle} at ${SITE_NAME}.`
+  const path = `/courses/${courseSlug}/certificate`
+  return createPageMeta({ title, description, path })
+}
+
 export function createCoursesMeta({ courses = [] }: { courses?: Course[] } = {}): HeadConfig {
   const title = 'Courses'
   const courseCount = courses.length

@@ -1,5 +1,6 @@
 import { Editor } from '@monaco-editor/react'
 import { useEffect, useRef } from 'react'
+import { useTheme } from '@/components/providers/theme-context'
 import { registerLanguages } from '@/lib/monaco-languages'
 
 interface CodeEditorProps {
@@ -9,7 +10,9 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEditorProps) {
+  const { theme } = useTheme()
   const containerRef = useRef<HTMLDivElement>(null)
+  const monacoTheme = theme === 'dark' ? 'vs-dark' : 'vs-light'
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -39,10 +42,11 @@ export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEdito
   return (
     <div ref={containerRef} className="monaco-transparent">
       <Editor
+        key={monacoTheme}
         height="560px"
         defaultLanguage={language}
         language={language}
-        theme="vs-light"
+        theme={monacoTheme}
         value={value}
         onChange={(val) => onChange(val ?? '')}
         beforeMount={(monaco) => {

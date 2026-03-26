@@ -23,7 +23,7 @@ export const Progress = () => {
           variant="secondary"
           className="p-[60px] flex items-center gap-5"
         >
-          <Text variant="caps-20" className="text-white">
+          <Text variant="caps-20" className="text-header-foreground">
             START
           </Text>
           <LongArrowRight className="max-md:h-6" />

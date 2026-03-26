@@ -48,8 +48,10 @@ function LessonPage() {
       <PageBreadcrumbs variant="lesson" courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
       <div className="flex gap-10">
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-        <LessonContentContainer>
-          {!isCodingChallenge && (
+        {isCodingChallenge ? (
+          <LessonCodeChallenge lesson={lesson} />
+        ) : (
+          <LessonContentContainer>
             <>
               <div className="flex items-center justify-between w-full">
                 <LessonTitle title={lesson.title} />
@@ -57,18 +59,18 @@ function LessonPage() {
               </div>
               {lesson.content && <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />}
             </>
-          )}
-          {lesson.type === 'lecture' && (
-            <LessonLecture lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} />
-          )}
-          {lesson.type === 'test' && (
-            <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-          )}
-          {lesson.type === 'review_task' && (
-            <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
-          )}
-        </LessonContentContainer>
-        {lesson.type === 'coding_task' && <LessonCodeChallenge lesson={lesson} />}
+
+            {lesson.type === 'lecture' && (
+              <LessonLecture lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} />
+            )}
+            {lesson.type === 'test' && (
+              <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+            )}
+            {lesson.type === 'review_task' && (
+              <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
+            )}
+          </LessonContentContainer>
+        )}
       </div>
     </main>
   )

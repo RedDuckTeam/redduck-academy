@@ -11,9 +11,9 @@ export const HeaderLink = forwardRef<HTMLAnchorElement, HeaderLinkProps>(
       <Link
         ref={ref}
         to={to}
-        className="text-white text-lg font-medium relative"
+        className="relative text-lg font-medium text-header-foreground"
         activeProps={{
-          className: 'text-white text-lg font-medium relative',
+          className: 'relative text-lg font-medium text-header-foreground',
         }}
       >
         {text}

@@ -57,12 +57,12 @@ export function RichText({ data, className }: CustomRichTextProps) {
             code: ({ node }: { node: { fields?: { code?: string; language?: string } } }) => {
               const { code, language } = node.fields ?? {}
               return (
-                <div className="relative my-6 rounded-xl bg-[#1e1e1e] border border-white/10 shadow-lg overflow-hidden">
-                  <div className="flex items-center px-4 py-2 border-b border-white/10 bg-[#2d2d2d] text-xs text-white/50 uppercase tracking-widest font-semibold">
+                <div className="relative my-6 overflow-hidden rounded-xl border border-border bg-muted shadow-lg dark:border-white/10 dark:bg-[#1e1e1e]">
+                  <div className="flex items-center border-b border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground dark:border-white/10 dark:bg-[#2d2d2d] dark:text-white/50">
                     {language || 'code'}
                   </div>
                   <pre
-                    className="overflow-x-auto p-4 text-[14px] leading-relaxed text-[#d4d4d4] font-mono"
+                    className="overflow-x-auto p-4 font-mono text-[14px] leading-relaxed text-foreground dark:text-[#d4d4d4]"
                     data-language={language}
                   >
                     <code lang={language}>{code ?? ''}</code>

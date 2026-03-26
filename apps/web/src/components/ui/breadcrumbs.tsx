@@ -41,11 +41,7 @@ function BreadcrumbLink({
   const Comp = asChild ? Slot : 'a'
 
   return (
-    <Comp
-      data-slot="breadcrumb-link"
-      className={cn('hover:text-foreground transition-colors', className)}
-      {...props}
-    />
+    <Comp data-slot="breadcrumb-link" className={cn('hover:text-foreground transition-colors', className)} {...props} />
   )
 }
 
@@ -56,23 +52,19 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={cn('text-foreground font-normal', className)}
+      className={cn('text-black font-normal', className)}
       {...props}
     />
   )
 }
 
-function BreadcrumbSeparator({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<'li'>) {
+function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn('w-2.5 h-2.5 bg-black', className)}
+      className={cn('h-2.5 w-2.5 bg-black', className)}
       {...props}
     >
       {children}
@@ -80,10 +72,7 @@ function BreadcrumbSeparator({
   )
 }
 
-function BreadcrumbEllipsis({
-  className,
-  ...props
-}: React.ComponentProps<'span'>) {
+function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="breadcrumb-ellipsis"

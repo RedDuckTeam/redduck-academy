@@ -57,7 +57,7 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
   }, [courses, completedLessons, completedLessonIds])
 
   return (
-    <div className="p-[60px] bg-black text-background flex flex-col gap-10">
+    <div className="flex flex-col gap-10 bg-header p-[60px] text-[#e0deda]">
       <Text variant={'subtitle-32'}>_MY PROGRESS</Text>
       <div className="grid grid-cols-10 border border-border">
         <div className="p-5 col-span-6">
