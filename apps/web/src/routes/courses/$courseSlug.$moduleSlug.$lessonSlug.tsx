@@ -45,7 +45,7 @@ function LessonPage() {
 
   return (
     <main className="flex flex-col min-h-screen gap-3.5 mx-[60px] mb-[60px]">
-      <PageBreadcrumbs courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+      <PageBreadcrumbs variant="lesson" courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
       <div className="flex gap-10">
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         <LessonContentContainer>

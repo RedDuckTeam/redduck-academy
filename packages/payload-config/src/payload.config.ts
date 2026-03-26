@@ -16,7 +16,6 @@ import { s3Storage } from '@payloadcms/storage-s3'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-console.log(process.env.R2_BUCKET)
 export default buildConfig({
   admin: {
     user: Users.slug,

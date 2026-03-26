@@ -34,7 +34,7 @@ export const CommunityEventCard = ({ event }: CommunityEventCardProps) => {
         <img
           src={imageSrc}
           alt={event.photo?.alt ?? event.title}
-          className="w-full rounded-[80px] bg-cover h-[160px] object-cover"
+          className="w-full rounded-[80px] h-[160px] object-cover object-center"
         />
       ) : null}
     </div>

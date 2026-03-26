@@ -4098,6 +4098,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@opentelemetry/api@npm:^1.9.1":
+  version: 1.9.1
+  resolution: "@opentelemetry/api@npm:1.9.1"
+  checksum: 10c0/c608485fc8b5a91e1f7e05e843b45b509307456b31cd2ad365933d90813e40ebfedf179f1451c762037e82d7c76aa8500e95d2da3609f640a1206cde5322cd14
+  languageName: node
+  linkType: hard
+
 "@opentelemetry/semantic-conventions@npm:^1.39.0":
   version: 1.40.0
   resolution: "@opentelemetry/semantic-conventions@npm:1.40.0"
@@ -7194,6 +7201,7 @@ __metadata:
     "@payloadcms/db-postgres": "npm:3.80.0"
     "@payloadcms/richtext-lexical": "npm:3.80.0"
     "@payloadcms/storage-s3": "npm:3.80.0"
+    dotenv: "npm:^17.3.1"
     drizzle-orm: "npm:^0.45.1"
     payload: "npm:3.80.0"
     typescript: "npm:^5.7.2"
@@ -11532,34 +11540,6 @@ __metadata:
 "backend@workspace:apps/backend":
   version: 0.0.0-use.local
   resolution: "backend@workspace:apps/backend"
-  dependencies:
-    "@hono/node-server": "npm:^1.13.8"
-    "@hono/standard-validator": "npm:^0.2.1"
-    "@octokit/rest": "npm:^22.0.1"
-    "@payloadcms/db-postgres": "npm:3.80.0"
-    "@payloadcms/richtext-lexical": "npm:3.80.0"
-    "@redduck/payload-config": "workspace:^"
-    "@standard-community/standard-json": "npm:^0.3.5"
-    "@standard-community/standard-openapi": "npm:^0.2.9"
-    "@types/node": "npm:^22.10.0"
-    "@types/pg": "npm:^8.16.0"
-    admin: "workspace:^"
-    better-auth: "npm:^1.4.11"
-    dotenv: "npm:^16.4.7"
-    drizzle-kit: "npm:^0.31.8"
-    drizzle-orm: "npm:^0.45.1"
-    hono: "npm:^4.11.3"
-    hono-openapi: "npm:^1.1.2"
-    ioredis: "npm:^5.10.0"
-    openai: "npm:^6.32.0"
-    payload: "npm:3.80.0"
-    pg: "npm:^8.16.3"
-    postgres: "npm:^3.4.8"
-    quansync: "npm:^1.0.0"
-    tsx: "npm:^4.21.0"
-    typescript: "npm:^5.7.2"
-    viem: "npm:^2.44.4"
-    zod: "npm:^4.3.5"
   languageName: unknown
   linkType: soft
 
@@ -18835,13 +18815,39 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "redduck-academy@workspace:."
   dependencies:
+    "@hono/node-server": "npm:^1.13.8"
+    "@hono/standard-validator": "npm:^0.2.1"
+    "@octokit/rest": "npm:^22.0.1"
+    "@opentelemetry/api": "npm:^1.9.1"
     "@payloadcms/db-postgres": "npm:3.80.0"
     "@payloadcms/next": "npm:3.80.0"
     "@payloadcms/plugin-cloud-storage": "npm:3.80.0"
     "@payloadcms/richtext-lexical": "npm:3.80.0"
     "@payloadcms/storage-s3": "npm:3.80.0"
     "@payloadcms/ui": "npm:3.80.0"
+    "@redduck/payload-config": "workspace:^"
+    "@standard-community/standard-json": "npm:^0.3.5"
+    "@standard-community/standard-openapi": "npm:^0.2.9"
+    "@types/node": "npm:^22.10.0"
+    "@types/pg": "npm:^8.16.0"
+    admin: "workspace:^"
+    better-auth: "npm:^1.4.11"
+    dotenv: "npm:^16.4.7"
+    drizzle-kit: "npm:^0.31.8"
+    drizzle-orm: "npm:^0.45.1"
+    hono: "npm:^4.11.3"
+    hono-openapi: "npm:^1.1.2"
+    ioredis: "npm:^5.10.0"
+    openai: "npm:^6.32.0"
     payload: "npm:3.80.0"
+    pg: "npm:^8.16.3"
+    postgres: "npm:^3.4.8"
+    quansync: "npm:^1.0.0"
+    sharp: "npm:^0.34.5"
+    tsx: "npm:^4.21.0"
+    typescript: "npm:^5.7.2"
+    viem: "npm:^2.44.4"
+    zod: "npm:^4.3.5"
   languageName: unknown
   linkType: soft
 

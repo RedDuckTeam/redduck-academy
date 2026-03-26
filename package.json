@@ -19,13 +19,41 @@
     "@payloadcms/translations": "3.80.0"
   },
   "dependencies": {
+    "@hono/node-server": "^1.13.8",
+    "@hono/standard-validator": "^0.2.1",
+    "@octokit/rest": "^22.0.1",
+    "@opentelemetry/api": "^1.9.1",
     "@payloadcms/db-postgres": "3.80.0",
     "@payloadcms/next": "3.80.0",
     "@payloadcms/plugin-cloud-storage": "3.80.0",
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/storage-s3": "3.80.0",
     "@payloadcms/ui": "3.80.0",
-    "payload": "3.80.0"
+    "@redduck/payload-config": "workspace:^",
+    "@standard-community/standard-json": "^0.3.5",
+    "@standard-community/standard-openapi": "^0.2.9",
+    "admin": "workspace:^",
+    "better-auth": "^1.4.11",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.11.3",
+    "hono-openapi": "^1.1.2",
+    "ioredis": "^5.10.0",
+    "openai": "^6.32.0",
+    "payload": "3.80.0",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.8",
+    "quansync": "^1.0.0",
+    "sharp": "^0.34.5",
+    "viem": "^2.44.4",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.16.0",
+    "drizzle-kit": "^0.31.8",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2"
   },
   "scripts": {
     "payload-config:generate": "yarn workspace @redduck/payload-config generate",

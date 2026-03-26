@@ -11,10 +11,10 @@
     "generate:schema:payload-only": "payload generate:db-schema"
   },
   "dependencies": {
-    "dotenv": "^17.3.1",
     "@payloadcms/db-postgres": "3.80.0",
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/storage-s3": "3.80.0",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
     "payload": "3.80.0"
   },
