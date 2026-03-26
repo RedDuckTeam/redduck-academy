@@ -1,178 +1,58 @@
 import { Link, useLocation } from '@tanstack/react-router'
 
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, Home, Network, SquareFunction, StickyNote, X } from 'lucide-react'
+import { useState, type ComponentProps } from 'react'
 import { RedDuckIcon } from '../ui/icons/redduck'
 import { HeaderLinks } from './header-links'
 import { ThemeToggle } from './theme-toggle'
+import { Drawer, DrawerContent } from '../ui/drawer-menu'
+import { MenuIcon } from '../ui/icons/menu'
+import { cn } from '@/lib/utils'
 
 export default function Header() {
   const location = useLocation()
   const isSignUpPage = location.pathname === '/sign-up'
   const [isOpen, setIsOpen] = useState(false)
-  const [groupedExpanded, setGroupedExpanded] = useState<Record<string, boolean>>({})
 
   if (isSignUpPage) {
     return null
   }
 
+  const handleOpenChange = () => {
+    if (isOpen) return
+    setIsOpen(true)
+  }
+
   return (
     <>
-      <header className="my-5 mx-[60px] flex items-center gap-10 bg-header px-[30px] py-5 print:hidden">
-        <div className="w-[15%]">
+      <header
+        className={cn(
+          'md:my-5 mb-5 lg:mx-[60px] flex max-md:justify-between items-center gap-5 lg:gap-10 bg-header px-5 md:px-[30px] py-2.5 md:py-5 print:hidden',
+          isOpen && 'fixed w-full',
+        )}
+      >
+        <button
+          onClick={handleOpenChange}
+          className="rounded-full md:hidden w-10 h-10 border border-white flex items-center justify-center"
+        >
+          <MenuIcon className="w-6 h-6" />
+        </button>
+        <div className="md:w-[20%] xl:w-[15%]">
           <Link to="/">
             <RedDuckIcon className="w-full" />
           </Link>
         </div>
-
-        <HeaderLinks />
-        <div className="flex w-[15%] items-center justify-end gap-4">
+        <div className="flex-1 max-md:hidden">
+          <HeaderLinks />
+        </div>
+        <div className="flex xl:w-[15%] items-center justify-end gap-4">
           <ThemeToggle />
         </div>
       </header>
+      <div className={cn('md:hidden', isOpen && 'h-[60px] mb-5 w-full')}></div>
 
-      <aside
-        className={`fixed top-0 left-0 z-50 flex h-full w-80 transform flex-col bg-card text-card-foreground shadow-2xl transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-xl font-bold">Navigation</h2>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="rounded-lg p-2 transition-colors hover:bg-muted"
-            aria-label="Close menu"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <Link
-            to="/"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-            }}
-          >
-            <Home size={20} />
-            <span className="font-medium">Home</span>
-          </Link>
-
-          {/* Demo Links Start */}
-
-          <Link
-            to="/demo/start/server-funcs"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-            }}
-          >
-            <SquareFunction size={20} />
-            <span className="font-medium">Start - Server Functions</span>
-          </Link>
-
-          <Link
-            to="/demo/start/api-request"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-            }}
-          >
-            <Network size={20} />
-            <span className="font-medium">Start - API Request</span>
-          </Link>
-
-          <div className="flex flex-row justify-between">
-            <Link
-              to="/demo/start/ssr"
-              onClick={() => setIsOpen(false)}
-              className="flex-1 flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-              activeProps={{
-                className:
-                  'flex-1 flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-              }}
-            >
-              <StickyNote size={20} />
-              <span className="font-medium">Start - SSR Demos</span>
-            </Link>
-            <button
-              className="rounded-lg p-2 transition-colors hover:bg-muted"
-              onClick={() =>
-                setGroupedExpanded((prev) => ({
-                  ...prev,
-                  StartSSRDemo: !prev.StartSSRDemo,
-                }))
-              }
-            >
-              {groupedExpanded.StartSSRDemo ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-            </button>
-          </div>
-          {groupedExpanded.StartSSRDemo && (
-            <div className="flex flex-col ml-4">
-              <Link
-                to="/demo/start/ssr/spa-mode"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">SPA Mode</span>
-              </Link>
-
-              <Link
-                to="/demo/start/ssr/full-ssr"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">Full SSR</span>
-              </Link>
-
-              <Link
-                to="/demo/start/ssr/data-only"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">Data Only</span>
-              </Link>
-            </div>
-          )}
-
-          <Link
-            to="/demo/tanstack-query"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors mb-2',
-            }}
-          >
-            <Network size={20} />
-            <span className="font-medium">TanStack Query</span>
-          </Link>
-
-          {/* Demo Links End */}
-        </nav>
-      </aside>
+      <Drawer direction="left" open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerContent>Hello</DrawerContent>
+      </Drawer>
     </>
   )
 }
