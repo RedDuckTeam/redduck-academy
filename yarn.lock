@@ -18612,6 +18612,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-fast-marquee@npm:^1.6.5":
+  version: 1.6.5
+  resolution: "react-fast-marquee@npm:1.6.5"
+  peerDependencies:
+    react: ">= 16.8.0 || ^18.0.0"
+    react-dom: ">= 16.8.0 || ^18.0.0"
+  checksum: 10c0/ea2378c4cd1eb323d004e8c2ff6222a7a4def311e00f0bd0c99adebc906aa56a078c2101b3c6697109b15dcf177bfa31edd95b9f7a114887072e3103fe234ecd
+  languageName: node
+  linkType: hard
+
 "react-image-crop@npm:10.1.8":
   version: 10.1.8
   resolution: "react-image-crop@npm:10.1.8"
@@ -21427,6 +21437,7 @@ __metadata:
     radix-ui: "npm:^1.4.3"
     react: "npm:^19.2.0"
     react-dom: "npm:^19.2.0"
+    react-fast-marquee: "npm:^1.6.5"
     react-markdown: "npm:^10.1.0"
     sonner: "npm:^2.0.7"
     tailwind-merge: "npm:^3.0.2"

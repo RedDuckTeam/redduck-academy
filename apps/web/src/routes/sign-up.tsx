@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import Marquee from 'react-fast-marquee'
 import { SignUpGoogleButton } from '@/components/pages/sign-up/sign-up-google-button'
 import { SignUpStartText } from '@/components/pages/sign-up/sign-up-start-text'
 import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-button'
@@ -6,46 +7,65 @@ import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-bu
 import { DuckIcon } from '@/components/ui/icons/duck'
 import { Text } from '@/components/ui/text'
 
+const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
+
+/** Repeated so the strip reads as one long loop; autoFill also clones to cover ultra-wide viewports. */
+const MARQUEE_ITEMS = [...MARQUEE_LABELS, ...MARQUEE_LABELS, ...MARQUEE_LABELS] as const
+
 export const Route = createFileRoute('/sign-up')({ component: SignUp })
 
 function SignUp() {
   return (
     <main className="flex flex-col min-h-screen">
-      <div className="p-[60px] relative overflow-hidden flex flex-col flex-1">
+      <div className="relative flex flex-1 flex-col overflow-hidden px-5 pt-20 pb-0 md:p-[60px]">
         <div>
-          <Text variant="title-80">_REGISTER ON COURSE</Text>
+          <Text
+            variant="title-80"
+            className="min-h-0 text-center text-[26px] leading-normal md:min-h-[96px] md:text-left md:text-[80px] md:leading-[96px]"
+          >
+            _REGISTER ON COURSE
+          </Text>
         </div>
-        <div className="flex flex-col flex-1 h-full justify-center gap-5 items-center">
+        <div className="mx-auto flex h-full w-full md:max-w-[calc(100%-80px)] lg:max-w-[850px] flex-1 flex-col items-center justify-center gap-4 md:gap-5">
           <SignUpGoogleButton />
           <SignUpWalletButton />
         </div>
         <SignUpStartText />
       </div>
-      <div className="flex gap-[107px] px-10 py-3 bg-black">
-        <Text variant="caps-20" className="text-white text-nowrap">
-          DeFi
-        </Text>
-        <Text variant="caps-20" className="text-white text-nowrap">
-          Rebase tokens
-        </Text>
-        <Text variant="caps-20" className="text-white text-nowrap">
-          DEX
-        </Text>
-        <Text variant="caps-20" className="text-white text-nowrap">
-          Synthetic tokens
-        </Text>
-        <Text variant="caps-20" className="text-white text-nowrap">
-          DeFi
-        </Text>
+      <div className="overflow-hidden bg-black py-3">
+        <Marquee autoFill speed={45} gradient={false} pauseOnHover>
+          {MARQUEE_ITEMS.map((label, index) => (
+            <span key={`${label}-${index}`} className="mx-6 inline-flex md:mx-10">
+              <Text variant="caps-20" className="text-nowrap text-white">
+                {label}
+              </Text>
+            </span>
+          ))}
+        </Marquee>
       </div>
-      <div className="flex items-center justify-between px-[60px] pb-[60px] pt-[27px]">
+      <div className="flex items-center justify-between px-5 py-10 md:px-[60px] md:pb-[60px] md:pt-[27px]">
         <div className="flex flex-col">
-          <Text variant={'caps-24'}>redduck</Text>
-          <Text variant={'caps-24'}>blockchain</Text>
-          <Text variant={'caps-24'}>academy</Text>
+          <Text
+            variant="caps-24"
+            className="text-[16px] leading-5 min-h-0 uppercase md:min-h-[30px] md:text-[24px] md:leading-[30px]"
+          >
+            redduck
+          </Text>
+          <Text
+            variant="caps-24"
+            className="text-[16px] leading-5 min-h-0 uppercase md:min-h-[30px] md:text-[24px] md:leading-[30px]"
+          >
+            blockchain
+          </Text>
+          <Text
+            variant="caps-24"
+            className="text-[16px] leading-5 min-h-0 uppercase md:min-h-[30px] md:text-[24px] md:leading-[30px]"
+          >
+            academy
+          </Text>
         </div>
-        <div className="size-[90px] bg-primary flex items-center justify-center">
-          <DuckIcon />
+        <div className="flex size-[clamp(2.75rem,10vw,5.625rem)] shrink-0 items-center justify-center bg-primary p-1.5 sm:p-2">
+          <DuckIcon className="h-auto w-[72%] max-w-[48px] sm:max-w-[52px] md:max-w-[54px]" />
         </div>
       </div>
     </main>

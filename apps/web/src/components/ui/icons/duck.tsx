@@ -1,14 +1,13 @@
+import { cn } from '@/lib/utils'
 import type { IconProps } from './types'
 
 export const DuckIcon = ({ className, ...props }: IconProps) => {
   return (
     <svg
-      width="60"
-      height="24"
       viewBox="0 0 60 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={cn('h-auto w-[60px]', className)}
       {...props}
     >
       <path

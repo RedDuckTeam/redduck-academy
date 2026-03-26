@@ -26,7 +26,7 @@ export const Progress = () => {
           <Text variant="caps-20" className="text-white">
             START
           </Text>
-          <LongArrowRight className="" />
+          <LongArrowRight className="max-md:h-6" />
         </Button>
       </div>
     </div>

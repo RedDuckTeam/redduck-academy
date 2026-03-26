@@ -1,14 +1,13 @@
+import { cn } from '@/lib/utils'
 import type { IconProps } from './types'
 
 export const LongArrowRight = ({ className, ...props }: IconProps) => {
   return (
     <svg
-      width="82"
-      height="28"
       viewBox="0 0 82 28"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={cn('h-7 w-auto shrink-0 max-md:h-3.5', className)}
       {...props}
     >
       <path
