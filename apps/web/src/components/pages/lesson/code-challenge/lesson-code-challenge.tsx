@@ -12,7 +12,7 @@ interface LessonCodeChallengeProps {
 
 export function LessonCodeChallenge({ lesson }: LessonCodeChallengeProps) {
   return (
-    <div className="flex flex-col lg:flex-row gap-6 w-full">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 lg:flex-row">
       <div className="flex flex-col w-full ">
         <PanelHeader>
           <FileIcon className="w-5 h-5" />

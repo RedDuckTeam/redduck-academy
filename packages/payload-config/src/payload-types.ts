@@ -270,11 +270,11 @@ export interface Lesson {
       }[]
     | null;
   /**
-   * Optional GitHub URL of a starter/template repo for students to clone.
+   * GitHub URL of the course repo students should fork (Fork button). When set, submissions must be a GitHub fork whose upstream matches this repository; the original repo URL alone is rejected.
    */
   templateRepoUrl?: string | null;
   /**
-   * Repo-relative paths of files the backend will fetch for review (one file per row; folder expansion is not supported yet).
+   * Repo-relative paths. Each row is one exact file or one glob; every matching file is fetched for AI review (duplicate paths across rows are deduped). Literals: e.g. src/Contract.sol, README.md. Single-segment * (does not cross /): e.g. contracts/*.sol, tests/*.spec.ts. Recursive **: e.g. contracts/** /*.sol, ** /*.sol, ** /Contract.sol. ? and [a-z] character classes are supported. If a glob matches no files in the student repo, submission fails like a missing file.
    */
   reviewPaths?:
     | {

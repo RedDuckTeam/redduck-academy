@@ -1,5 +1,8 @@
-import { GitHubApiError, GitHubUrlError } from '../errors/github'
+import { HTTPException } from 'hono/http-exception'
+
 import type { ParsedGitHubRepoUrl } from '../types/github'
+
+const INVALID_REPO_URL = 'Invalid or unsupported GitHub repository URL'
 
 export function httpStatus(err: unknown): number | undefined {
   if (err && typeof err === 'object' && 'status' in err) {
@@ -9,11 +12,10 @@ export function httpStatus(err: unknown): number | undefined {
   return undefined
 }
 
-export function toGitHubApiError(err: unknown): GitHubApiError {
-  if (err instanceof Error) {
-    return new GitHubApiError(err.message, httpStatus(err), err)
-  }
-  return new GitHubApiError(String(err), httpStatus(err), err)
+/** GitHub API / token failures — surfaced as 502 to the client. */
+export function throwGitHubApiError(err: unknown): never {
+  const message = err instanceof Error ? err.message : String(err)
+  throw new HTTPException(502, { message })
 }
 
 /**
@@ -28,17 +30,17 @@ export function parseGitHubRepoUrl(raw: string): ParsedGitHubRepoUrl {
   try {
     u = new URL(raw.trim())
   } catch {
-    throw new GitHubUrlError()
+    throw new HTTPException(400, { message: INVALID_REPO_URL })
   }
 
   const host = u.hostname.replace(/^www\./i, '')
   if (host !== 'github.com') {
-    throw new GitHubUrlError('Only github.com URLs are supported')
+    throw new HTTPException(400, { message: 'Only github.com URLs are supported' })
   }
 
   const parts = u.pathname.split('/').filter(Boolean)
   if (parts.length < 2) {
-    throw new GitHubUrlError()
+    throw new HTTPException(400, { message: INVALID_REPO_URL })
   }
 
   const owner = parts[0]

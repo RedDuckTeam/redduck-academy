@@ -44,16 +44,16 @@ function LessonPage() {
   const earnedPoints = isLecture ? null : (userLesson?.earnedPoints ?? null)
 
   return (
-    <main className="flex flex-col min-h-screen gap-3.5 mx-[60px] mb-[60px]">
+    <main className="mx-5 mb-[60px] flex min-h-screen min-w-0 flex-col gap-3.5 md:mx-[60px]">
       <PageBreadcrumbs variant="lesson" courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-      <div className="flex gap-10">
+      <div className="flex min-w-0 gap-10">
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
           <LessonCodeChallenge lesson={lesson} />
         ) : (
           <LessonContentContainer>
             <>
-              <div className="flex items-center justify-between w-full">
+              <div className="flex max-md:gap-3 md:items-center max-md:flex-col md:justify-between w-full">
                 <LessonTitle title={lesson.title} />
                 <DucksBadge ducks={lesson.maxPoints} myDucks={earnedPoints} />
               </div>

@@ -29,8 +29,17 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const handleSubmit = async () => {
     try {
       await submitProject({ courseSlug, lessonSlug, repoUrl: link })
-    } catch {
-      toast.error('Failed to submit project')
+    } catch (error) {
+      console.error(error)
+      if (error instanceof Error) {
+        if (error.message === 'No valid files were fetched') {
+          toast.error('The repository does not contain the expected files')
+        } else {
+          toast.error('Failed to submit project')
+        }
+      } else {
+        toast.error('Failed to submit project')
+      }
     }
   }
 
@@ -45,11 +54,16 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
       <Dialog open={latest?.status === 'pending'}>
         <InProgressDialog courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} lesson={lesson} />
       </Dialog>
-      <div className="flex flex-col w-fit gap-5">
+      <div className="flex min-w-0 w-fit max-w-full flex-col gap-5">
         {lesson.templateRepoUrl && (
-          <Text variant="main-18" className="flex gap-2">
+          <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
             Starter repository:{' '}
-            <a href={lesson.templateRepoUrl} target="_blank" rel="noopener noreferrer" className="text-primary">
+            <a
+              href={lesson.templateRepoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary wrap-anywhere"
+            >
               {lesson.templateRepoUrl}
             </a>
           </Text>
@@ -67,10 +81,10 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
         <div className="relative">
           <Input
             type="url"
-            placeholder="https://"
+            placeholder="https://github.com/"
             value={link}
             onChange={(e) => setLink(e.target.value)}
-            className="min-w-[420px]"
+            className="max-sm:w-full sm:min-w-[420px] pr-10"
           />
           <button
             onClick={handlePaste}

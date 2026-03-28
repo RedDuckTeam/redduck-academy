@@ -16,7 +16,6 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
   const filteredSubmissions = submissions.filter((s) => s.status !== 'pending')
   const defaultValue = `attempt-${submissions.length - 1}`
 
-  console.log({ filteredSubmissions })
   return (
     <Tabs
       key={submissions.map((s) => s.id).join('-')}
@@ -24,7 +23,10 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
       orientation="horizontal"
       className="flex flex-col gap-3 w-full max-w-[600px]"
     >
-      <TabsList variant="line" className="w-full flex-wrap justify-start h-auto min-h-8 gap-4">
+      <TabsList
+        variant="line"
+        className="flex w-full !h-auto flex-col items-stretch justify-start gap-4 sm:flex-row sm:flex-wrap sm:items-center"
+      >
         {filteredSubmissions.map((submission, index) => (
           <TabsTrigger key={submission.id} value={`attempt-${index}`}>
             Attempt {index + 1}
@@ -35,7 +37,9 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
         <TabsContent key={submission.id} value={`attempt-${index}`} className="mt-0">
           {submission.status === 'completed' && submission.feedback && (
             <div className="flex flex-col gap-4">
-              <Text variant="main-18">{submission.feedback.summary}</Text>
+              <Text variant="main-18" className="text-justify">
+                {submission.feedback.summary}
+              </Text>
               <div className="flex flex-col gap-8">
                 {submission.feedback.criteria.map((c, i) => (
                   <div key={c.taskId} className="flex flex-col gap-2">
@@ -45,7 +49,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
                       </Text>
                       <DucksBadge className="bg-transparent p-0" ducks={c.maxPoints} myDucks={c.points} />
                     </div>
-                    <Text variant="main-18" className="text-muted-foreground">
+                    <Text variant="main-18" className="text-muted-foreground text-justify">
                       {c.comment}
                     </Text>
                   </div>

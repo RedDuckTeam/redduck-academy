@@ -41,7 +41,9 @@ export function InProgressDialog({ courseSlug, lessonSlug, moduleSlug, lesson }:
           </Text>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="button" disabled={isSyncing} onClick={handleCheckStatus} className="w-full">
-              Check status
+              <Text className="" variant={'caps-20'}>
+                Check status
+              </Text>
             </Button>
             <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} className="w-full" />
           </div>

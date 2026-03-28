@@ -2,7 +2,9 @@ import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/reac
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
+import Footer from '../components/footer/Footer'
 import Header from '../components/header/Header'
+import { ScrollToTop } from '@/components/scroll-to-top'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -40,8 +42,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Providers>
+          <ScrollToTop />
           <Header />
           {children}
+          <Footer />
           <TanStackDevtools
             config={{
               position: 'bottom-right',

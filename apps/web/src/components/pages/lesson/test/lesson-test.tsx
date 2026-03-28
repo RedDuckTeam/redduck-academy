@@ -49,7 +49,7 @@ export const LessonTest = ({ lesson, courseSlug, moduleSlug, lessonSlug }: Lesso
   const userAnswers = isCompleted ? (userLesson?.userAnswers ?? {}) : answers
 
   return (
-    <div className="flex flex-col gap-10 w-full">
+    <div className="flex min-w-0 w-full max-w-full flex-col gap-10">
       {lesson.questions?.map((question) => (
         <LessonTestQuestion
           key={question.id}
@@ -62,9 +62,9 @@ export const LessonTest = ({ lesson, courseSlug, moduleSlug, lessonSlug }: Lesso
       ))}
       <div className="flex">
         {isCompleted ? (
-          <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} />
+          <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} className="max-sm:w-full" />
         ) : (
-          <Button disabled={!isAllAnswersSelected} onClick={handleSubmit}>
+          <Button disabled={!isAllAnswersSelected} className="px-[60px] max-sm:w-full" onClick={handleSubmit}>
             <Text variant="caps-20">Submit</Text>
           </Button>
         )}

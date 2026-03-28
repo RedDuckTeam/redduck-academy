@@ -4,8 +4,8 @@ import { Slot } from '@radix-ui/react-slot'
 
 import { cn } from '@/lib/utils'
 
-function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
+function Breadcrumb({ className, ...props }: React.ComponentProps<'nav'>) {
+  return <nav aria-label="breadcrumb" data-slot="breadcrumb" className={cn('w-full min-w-0', className)} {...props} />
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
@@ -13,7 +13,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
     <ol
       data-slot="breadcrumb-list"
       className={cn(
-        'text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm break-words sm:gap-5',
+        'text-muted-foreground flex w-full min-w-0 flex-nowrap items-center gap-2.5 overflow-x-auto overflow-y-hidden text-sm [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-5 [&::-webkit-scrollbar]:hidden',
         className,
       )}
       {...props}
@@ -25,7 +25,7 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
       data-slot="breadcrumb-item"
-      className={cn('inline-flex items-center text-[16px] gap-1.5', className)}
+      className={cn('inline-flex shrink-0 items-center gap-1.5 text-[16px] whitespace-nowrap', className)}
       {...props}
     />
   )
@@ -64,7 +64,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn('h-2.5 w-2.5 bg-black', className)}
+      className={cn('h-2.5 w-2.5 shrink-0 bg-black', className)}
       {...props}
     >
       {children}

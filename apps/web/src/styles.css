@@ -48,6 +48,9 @@ code {
   --sidebar: #000000;
   --sidebar-border: #565653;
   --radius: 0.5rem;
+  /* Scrollbar surfaces (landing app.scss) */
+  --gray: #e0deda;
+  --dark-gray: #9b9b9b;
 }
 
 .dark {
@@ -73,6 +76,8 @@ code {
   --header-foreground: #ffffff;
   --sidebar: #000000;
   --sidebar-border: #565653;
+  --gray: #1a1a1a;
+  --dark-gray: #9b9b9b;
 }
 
 @theme {
@@ -105,15 +110,105 @@ code {
 }
 
 @layer base {
+  /* Scrollbars (ported from landing app.scss): default on all elements, narrower on document. */
+  *::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--gray);
+    border-radius: 1px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--dark-gray);
+    border-radius: 1px;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track {
+    background: black;
+    border-radius: 1px;
+  }
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb {
+    background: var(--dark-gray);
+    border-radius: 1px;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--dark-gray) var(--gray);
+    }
+
+    html,
+    body {
+      scrollbar-color: var(--dark-gray) black;
+    }
+  }
+
   body {
     @apply bg-input text-text min-h-screen overflow-x-hidden;
   }
+
   hr {
     @apply text-border;
   }
 }
 
 @layer components {
+  /* Optional utility classes (same visuals as global rules above). */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: black;
+    border-radius: 1px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--dark-gray);
+    border-radius: 1px;
+  }
+
+  .element-custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .element-custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--gray);
+    border-radius: 1px;
+  }
+
+  .element-custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--dark-gray);
+    border-radius: 1px;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: var(--dark-gray) black;
+    }
+
+    .element-custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: var(--dark-gray) var(--gray);
+    }
+  }
+
   .loader-fit {
     width: fit-content;
     height: fit-content;

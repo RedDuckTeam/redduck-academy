@@ -8,5 +8,5 @@ interface LessonLectureProps {
 }
 
 export const LessonLecture = ({ lesson, courseSlug, moduleSlug }: LessonLectureProps) => {
-  return <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} />
+  return <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} className="max-sm:w-full" />
 }

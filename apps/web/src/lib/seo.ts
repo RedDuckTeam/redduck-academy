@@ -195,7 +195,24 @@ export function createCourseCertificateMeta({
   return createPageMeta({ title, description, path })
 }
 
-export function createCoursesMeta({ courses = [] }: { courses?: Course[] } = {}): HeadConfig {
+export function createCoursesMeta({
+  courses = [],
+  focusedCourse,
+}: {
+  courses?: Course[]
+  /** When set (valid slug on /courses), title/description/canonical target that course. */
+  focusedCourse?: Course
+} = {}): HeadConfig {
+  if (focusedCourse) {
+    const title = focusedCourse.title
+    const rawDescription = focusedCourse.description?.trim() || ''
+    const description = rawDescription
+      ? truncateDescription(rawDescription)
+      : `Explore ${focusedCourse.title} — blockchain development course at ${SITE_NAME}.`
+    const path = `/courses/${encodeURIComponent(focusedCourse.slug)}`
+    return createPageMeta({ title, description, path })
+  }
+
   const title = 'Courses'
   const courseCount = courses.length
   const description =

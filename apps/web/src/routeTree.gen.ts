@@ -15,6 +15,7 @@ import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as CoursesCourseSlugRouteImport } from './routes/courses/$courseSlug'
 import { Route as CommunitySlugRouteImport } from './routes/community/$slug'
+import { Route as CoursesCourseSlugIndexRouteImport } from './routes/courses/$courseSlug.index'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
@@ -55,6 +56,11 @@ const CommunitySlugRoute = CommunitySlugRouteImport.update({
   id: '/community/$slug',
   path: '/community/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesCourseSlugIndexRoute = CoursesCourseSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CoursesCourseSlugRoute,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
   id: '/demo/start/server-funcs',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
+  '/courses/$courseSlug/': typeof CoursesCourseSlugIndexRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
@@ -131,7 +138,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
   '/community/$slug': typeof CommunitySlugRoute
-  '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses': typeof CoursesIndexRoute
   '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
@@ -139,6 +145,7 @@ export interface FileRoutesByTo {
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
+  '/courses/$courseSlug': typeof CoursesCourseSlugIndexRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
@@ -158,6 +165,7 @@ export interface FileRoutesById {
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
+  '/courses/$courseSlug/': typeof CoursesCourseSlugIndexRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
@@ -178,6 +186,7 @@ export interface FileRouteTypes {
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
+    | '/courses/$courseSlug/'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
@@ -188,7 +197,6 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-up'
     | '/community/$slug'
-    | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses'
     | '/courses/$courseSlug/certificate'
@@ -196,6 +204,7 @@ export interface FileRouteTypes {
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
+    | '/courses/$courseSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
+    | '/courses/$courseSlug/'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
@@ -281,6 +291,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/community/$slug'
       preLoaderRoute: typeof CommunitySlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/courses/$courseSlug/': {
+      id: '/courses/$courseSlug/'
+      path: '/'
+      fullPath: '/courses/$courseSlug/'
+      preLoaderRoute: typeof CoursesCourseSlugIndexRouteImport
+      parentRoute: typeof CoursesCourseSlugRoute
     }
     '/demo/start/server-funcs': {
       id: '/demo/start/server-funcs'
@@ -357,11 +374,13 @@ declare module '@tanstack/react-router' {
 
 interface CoursesCourseSlugRouteChildren {
   CoursesCourseSlugCertificateRoute: typeof CoursesCourseSlugCertificateRoute
+  CoursesCourseSlugIndexRoute: typeof CoursesCourseSlugIndexRoute
   CoursesCourseSlugModuleSlugLessonSlugRoute: typeof CoursesCourseSlugModuleSlugLessonSlugRoute
 }
 
 const CoursesCourseSlugRouteChildren: CoursesCourseSlugRouteChildren = {
   CoursesCourseSlugCertificateRoute: CoursesCourseSlugCertificateRoute,
+  CoursesCourseSlugIndexRoute: CoursesCourseSlugIndexRoute,
   CoursesCourseSlugModuleSlugLessonSlugRoute:
     CoursesCourseSlugModuleSlugLessonSlugRoute,
 }

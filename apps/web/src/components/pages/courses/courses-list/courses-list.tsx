@@ -9,13 +9,13 @@ import { CheckIcon } from '@/components/ui/icons/check'
 
 interface CoursesListProps {
   courses: Course[]
-  selectedCourse: number
+  courseSlug: string
   completedLessons: Set<number>
 }
 
-export const CoursesList = ({ courses, selectedCourse, completedLessons }: CoursesListProps) => {
+export const CoursesList = ({ courses, courseSlug, completedLessons }: CoursesListProps) => {
   if (!courses.length) return null
-  const course = courses[selectedCourse]
+  const course = courses.find((c) => c.slug === courseSlug) ?? courses[0]
   return (
     <div className="flex flex-col border border-border divide-y divide-border">
       {course.modules.map((module, index) => (

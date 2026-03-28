@@ -1,13 +1,14 @@
+import { HTTPException } from 'hono/http-exception'
 import { Octokit } from '@octokit/rest'
 import { env } from '../../env'
 import type { FetchExpectedFilesResult, RepoFile, ResolvedRepoRef } from './types/github'
-import { httpStatus, parseGitHubRepoUrl, toGitHubApiError } from './utils/github'
+import { httpStatus, parseGitHubRepoUrl, throwGitHubApiError } from './utils/github'
+import { expandReviewPatterns } from './utils/review-paths'
 
 /** Max bytes per file before decoding (decimal 1 MB; GitHub `size` is in bytes). */
 export const MAX_REVIEW_FILE_BYTES = 1_000_000
 
 export type { FetchExpectedFilesResult, ParsedGitHubRepoUrl, RepoFile, ResolvedRepoRef } from './types/github'
-export { GitHubApiError, GitHubUrlError } from './errors/github'
 export { parseGitHubRepoUrl } from './utils/github'
 
 export class GitHubService {
@@ -31,10 +32,10 @@ export class GitHubService {
           })
           return data.sha
         } catch {
-          throw toGitHubApiError(e)
+          throwGitHubApiError(e)
         }
       }
-      throw toGitHubApiError(e)
+      throwGitHubApiError(e)
     }
   }
 
@@ -53,7 +54,47 @@ export class GitHubService {
       const commitSha = await this.resolveRefToSha(owner, repo, branch)
       return { commitSha, resolvedRef: branch }
     } catch (e) {
-      throw toGitHubApiError(e)
+      throwGitHubApiError(e)
+    }
+  }
+
+  /**
+   * When `templateRepoUrl` is set on the lesson, require a GitHub **fork** whose `source` matches that template.
+   * Uses the root of the fork network (`source`) so nested forks still count if they trace back to the template.
+   */
+  async assertRepoIsForkOfTemplate(submissionRepoUrl: string, templateRepoUrl: string): Promise<void> {
+    const submitted = parseGitHubRepoUrl(submissionRepoUrl)
+    const template = parseGitHubRepoUrl(templateRepoUrl)
+    const expectedFullName = repoFullName(template.owner, template.repo)
+
+    if (repoFullName(submitted.owner, submitted.repo).toLowerCase() === expectedFullName.toLowerCase()) {
+      throw new HTTPException(400, {
+        message:
+          "Submit your fork of the repository, not the original. Use GitHub's Fork button on the template repo, then paste your fork's URL.",
+      })
+    }
+
+    let data: { fork: boolean; source?: { full_name?: string } | null }
+    try {
+      const res = await this.octokit.repos.get({ owner: submitted.owner, repo: submitted.repo })
+      data = res.data
+    } catch (e) {
+      throwGitHubApiError(e)
+    }
+
+    if (!data.fork) {
+      throw new HTTPException(400, {
+        message:
+          "This repository is not a GitHub fork. Fork the course template with the Fork button, work in your fork, then submit your fork's URL.",
+      })
+    }
+
+    const sourceFullName = data.source?.full_name?.toLowerCase()
+    if (!sourceFullName || sourceFullName !== expectedFullName.toLowerCase()) {
+      const upstream = data.source?.full_name ?? 'unknown'
+      throw new HTTPException(400, {
+        message: `This repository is a fork of "${upstream}", but this lesson only accepts forks of "${expectedFullName}".`,
+      })
     }
   }
 
@@ -75,7 +116,7 @@ export class GitHubService {
         .map((e) => e.path as string)
         .sort()
     } catch (e) {
-      throw toGitHubApiError(e)
+      throwGitHubApiError(e)
     }
   }
 
@@ -145,7 +186,7 @@ export class GitHubService {
       if (httpStatus(e) === 404) {
         return { type: 'missing' }
       }
-      throw toGitHubApiError(e)
+      throwGitHubApiError(e)
     }
   }
 
@@ -175,11 +216,13 @@ export class GitHubService {
 
     const fileTreePaths = await this.listBlobPathsAtCommit(owner, repo, commitSha)
 
+    const { concretePaths, missingPatterns } = expandReviewPatterns(expectedPaths, fileTreePaths)
+
     const files: RepoFile[] = []
-    const missingPaths: string[] = []
+    const missingPaths: string[] = [...missingPatterns]
     const oversizedPaths: { path: string; sizeBytes: number }[] = []
 
-    for (const path of expectedPaths) {
+    for (const path of concretePaths) {
       const result = await this.#getFileContentForReview(owner, repo, path, commitSha, MAX_REVIEW_FILE_BYTES)
       if (result.type === 'missing') {
         missingPaths.push(path)
@@ -204,3 +247,7 @@ export class GitHubService {
 }
 
 export const githubService = new GitHubService()
+
+function repoFullName(owner: string, repo: string): string {
+  return `${owner}/${repo}`
+}

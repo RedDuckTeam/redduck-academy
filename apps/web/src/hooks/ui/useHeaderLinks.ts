@@ -10,10 +10,6 @@ export const headerLinks = [
     to: '/courses',
     text: 'COURSE PROGRAM',
   },
-  {
-    to: '/demo/start/api-request',
-    text: 'RATING',
-  },
 ]
 
 export const useHeaderLinks = () => {

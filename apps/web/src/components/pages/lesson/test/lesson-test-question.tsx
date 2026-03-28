@@ -24,13 +24,13 @@ export const LessonTestQuestion = ({
   const isMultiple = question.isMultipleChoices
 
   return (
-    <div className="flex flex-col gap-5">
-      <Text variant="main-18">
+    <div className="flex min-w-0 w-full max-w-full flex-col gap-5">
+      <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
         {question.order}. {question.question}
       </Text>
 
       {isMultiple ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-3">
           {question.options.map((option) => {
             const isCorrect = rightAnswerIds.includes(option.id)
             const isSelected = selectedIds.includes(option.id)
@@ -38,7 +38,7 @@ export const LessonTestQuestion = ({
               <label
                 key={option.id}
                 className={cn(
-                  'flex items-center gap-3 cursor-pointer',
+                  'flex min-w-0 w-full max-w-full cursor-pointer items-center gap-3',
                   isCompleted && isCorrect && 'text-success',
                   isCompleted && isSelected && !isCorrect && 'text-primary',
                 )}
@@ -54,25 +54,29 @@ export const LessonTestQuestion = ({
                   onCheckedChange={() => onSelect(option.id)}
                   disabled={isCompleted}
                 />
-                <Text className="flex-1">{option.label}</Text>
+                <Text className="min-w-0 flex-1 wrap-anywhere">{option.label}</Text>
               </label>
             )
           })}
         </div>
       ) : (
         <RadioGroup
+          className="min-w-0"
           value={selectedIds[0] ?? ''}
           onValueChange={(value) => value && onSelect(value)}
           disabled={isCompleted}
         >
-          <div className="flex flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-3">
             {question.options.map((option) => {
               const isCorrect = rightAnswerIds.includes(option.id)
               const isSelected = selectedIds.includes(option.id)
               return (
                 <label
                   key={option.id}
-                  className={cn('flex items-center gap-3 cursor-pointer', isCompleted && isCorrect && 'text-success')}
+                  className={cn(
+                    'flex min-w-0 w-full max-w-full cursor-pointer items-center gap-3',
+                    isCompleted && isCorrect && 'text-success',
+                  )}
                 >
                   <RadioGroupItem
                     value={option.id}
@@ -89,7 +93,7 @@ export const LessonTestQuestion = ({
                         '[&_[data-slot=radio-group-indicator]_span]:bg-primary border-primary',
                     )}
                   />
-                  <Text className="flex-1">{option.label}</Text>
+                  <Text className="min-w-0 flex-1 wrap-anywhere">{option.label}</Text>
                 </label>
               )
             })}
