@@ -1,10 +1,8 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
-import { z } from 'zod'
 import { getCommunityEventDesc, listCommunityDesc } from '../../descriptions/community'
+import { slugParamSchema } from '../../lib/schemas'
 import { CommunityService } from './community.service'
-
-const slugParamSchema = z.object({ slug: z.string() })
 
 const communityApp = new Hono()
 

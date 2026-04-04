@@ -3,6 +3,8 @@ import { validator } from 'hono-openapi'
 import { z } from 'zod'
 import { getLessonDesc, markLessonAsCompletedDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
 import { requireAuth } from '../../lib/middleware'
+import { courseLessonParamSchema } from '../../lib/schemas'
+import type { AuthVariables } from '../../lib/types'
 import { HTTPException } from 'hono/http-exception'
 import { CoursesTestService } from '../courses/courses-test.service'
 import { ReviewService } from '../review/review.service'
@@ -20,17 +22,7 @@ const submitProjectBodySchema = z.object({
   repoUrl: z.string().url(),
 })
 
-const courseLessonParamSchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
-})
-
-type LessonsVariables = {
-  user: { id: string }
-  session: unknown
-}
-
-const lessonsApp = new Hono<{ Variables: LessonsVariables }>()
+const lessonsApp = new Hono<{ Variables: AuthVariables }>()
 
 lessonsApp.post('/submit-test', requireAuth, submitTestDesc, validator('json', submitTestBodySchema), async (c) => {
   const user = c.get('user')

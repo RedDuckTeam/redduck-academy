@@ -1,15 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { getCoursesInfo } from '@/lib/api/courses'
-
-const coursesInfoQueryKey = ['courses', 'info'] as const
+import { queryKeys } from '@/lib/query-keys'
 
 export const useCoursesInfo = () => {
   return useQuery({
-    queryKey: coursesInfoQueryKey,
+    queryKey: queryKeys.courses.info(),
     queryFn: getCoursesInfo,
-    staleTime: 1000 * 30 * 60, // 30 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   })
 }

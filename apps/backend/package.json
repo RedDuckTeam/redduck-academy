@@ -12,5 +12,8 @@
     "drizzle:migrate": "drizzle-kit migrate",
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:push": "drizzle-kit push"
+  },
+  "devDependencies": {
+    "@types/picomatch": "^4.0.3"
   }
 }

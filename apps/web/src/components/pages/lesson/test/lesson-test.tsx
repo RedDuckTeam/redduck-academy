@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
 import { NextButton } from '../lecture/next-button'
 import { LessonTestQuestion } from './lesson-test-question'
 import type { Lesson } from '@/types/lesson'
@@ -18,7 +17,7 @@ interface LessonTestProps {
 export const LessonTest = ({ lesson, courseSlug, moduleSlug, lessonSlug }: LessonTestProps) => {
   const [answers, setAnswers] = useState<Record<string, string[]>>({})
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
-  const { mutateAsync: submitTest } = useSubmitTest(courseSlug, lessonSlug)
+  const { mutate: submitTest, isPending } = useSubmitTest(courseSlug, lessonSlug)
 
   const handleSelect = useCallback((questionId: string, optionId: string, isMultiple: boolean) => {
     setAnswers((prev) => {
@@ -32,12 +31,8 @@ export const LessonTest = ({ lesson, courseSlug, moduleSlug, lessonSlug }: Lesso
     })
   }, [])
 
-  const handleSubmit = async () => {
-    try {
-      await submitTest({ courseSlug, lessonSlug, answers })
-    } catch (error) {
-      toast.error('Failed to submit test')
-    }
+  const handleSubmit = () => {
+    submitTest({ courseSlug, lessonSlug, answers })
   }
 
   const isAllAnswersSelected =
@@ -64,7 +59,7 @@ export const LessonTest = ({ lesson, courseSlug, moduleSlug, lessonSlug }: Lesso
         {isCompleted ? (
           <NextButton courseSlug={courseSlug} moduleSlug={moduleSlug} lesson={lesson} className="max-sm:w-full" />
         ) : (
-          <Button disabled={!isAllAnswersSelected} className="px-[60px] max-sm:w-full" onClick={handleSubmit}>
+          <Button disabled={!isAllAnswersSelected || isPending} className="px-[60px] max-sm:w-full" onClick={handleSubmit}>
             <Text variant="caps-20">Submit</Text>
           </Button>
         )}

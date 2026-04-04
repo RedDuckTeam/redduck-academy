@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { InProgressDialog } from './inprogress-dialog'
 import { SubmissionReviewTabs } from './submission-review-tabs'
 import type { Lesson } from '@/types/lesson'
@@ -22,25 +21,12 @@ interface ProjectSubmissionProps {
 export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }: ProjectSubmissionProps) {
   const [link, setLink] = useState('')
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
-  const { mutateAsync: submitProject, isPending } = useSubmitProject(courseSlug, lessonSlug)
+  const { mutate: submitProject, isPending } = useSubmitProject(courseSlug, lessonSlug)
   const submissions = userLesson?.submissions ?? []
   const latest = submissions.at(-1)
 
-  const handleSubmit = async () => {
-    try {
-      await submitProject({ courseSlug, lessonSlug, repoUrl: link })
-    } catch (error) {
-      console.error(error)
-      if (error instanceof Error) {
-        if (error.message === 'No valid files were fetched') {
-          toast.error('The repository does not contain the expected files')
-        } else {
-          toast.error('Failed to submit project')
-        }
-      } else {
-        toast.error('Failed to submit project')
-      }
-    }
+  const handleSubmit = () => {
+    submitProject({ courseSlug, lessonSlug, repoUrl: link })
   }
 
   const handlePaste = () => {

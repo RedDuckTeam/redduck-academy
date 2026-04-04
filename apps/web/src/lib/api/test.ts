@@ -9,7 +9,7 @@ export interface SubmitTestPayload {
 export const submitTest = async (payload: SubmitTestPayload): Promise<void> => {
   const response = await api({ credentials: 'include' }).post(
     '/api/lessons/submit-test',
-    payload as unknown as Record<string, unknown>,
+    payload,
   )
   if (!response.data && response.status >= 400) {
     throw new Error(response.error ?? 'Failed to submit test')

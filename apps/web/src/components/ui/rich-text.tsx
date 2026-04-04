@@ -1,6 +1,12 @@
-import { RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
+import { RichText as PayloadRichText, ListJSXConverter } from '@payloadcms/richtext-lexical/react'
+import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+
+type EnrichedLessonDoc = {
+  href?: string
+  navigation?: { courseSlug: string; moduleSlug: string; lessonSlug: string }
+}
 
 interface CustomRichTextProps {
   data?: Record<string, any> | null
@@ -13,6 +19,9 @@ const anchorStyles = '[&_a]:text-primary [&_a]:underline'
 
 const codeStyles =
   '[&_code]:bg-border/40 [&_code]:border [&_code]:border-border [&_code]:rounded-[2px] [&_code]:px-[3px] [&_code]:py-[2px]'
+
+const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
+
 export function RichText({ data, className }: CustomRichTextProps) {
   if (!data) return null
 
@@ -50,6 +59,95 @@ export function RichText({ data, className }: CustomRichTextProps) {
               <Text variant="main-18" className="">
                 {nodesToJSX({ nodes: node.children })}
               </Text>
+            )
+          },
+          link: ({ node, nodesToJSX }) => {
+            const children = nodesToJSX({ nodes: node.children })
+            const rel = node.fields.newTab ? 'noopener noreferrer' : undefined
+            const target = node.fields.newTab ? '_blank' : undefined
+            const doc = node.fields.doc as EnrichedLessonDoc | null | undefined
+
+            if (node.fields.linkType === 'internal' && doc?.navigation) {
+              const href =
+                doc.href ??
+                `/courses/${doc.navigation.courseSlug}/${doc.navigation.moduleSlug}/${doc.navigation.lessonSlug}`
+              if (node.fields.newTab) {
+                return (
+                  <a href={href} rel={rel} target={target} className="text-primary underline">
+                    {children}
+                  </a>
+                )
+              }
+              return (
+                <Link
+                  to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+                  params={{
+                    courseSlug: doc.navigation.courseSlug,
+                    moduleSlug: doc.navigation.moduleSlug,
+                    lessonSlug: doc.navigation.lessonSlug,
+                  }}
+                  className="text-primary underline"
+                >
+                  {children}
+                </Link>
+              )
+            }
+
+            let href = node.fields.url ?? ''
+            if (node.fields.linkType === 'internal') {
+              href = typeof doc?.href === 'string' ? doc.href : '#'
+            }
+            return (
+              <a href={href} rel={rel} target={target} className="text-primary underline">
+                {children}
+              </a>
+            )
+          },
+          list: (args) => {
+            const { node, nodesToJSX } = args
+            if (node.listType === 'check') {
+              const listConverter = ListJSXConverter.list
+              if (typeof listConverter === 'function') {
+                return listConverter(args)
+              }
+            }
+            const children = nodesToJSX({ nodes: node.children })
+            const Tag = node.tag
+            if (node.listType === 'number') {
+              return <Tag className={cn('my-2 list-decimal list-outside space-y-1 pl-6 ml-1')}>{children}</Tag>
+            }
+            return <Tag className={cn('my-2 list-none space-y-1')}>{children}</Tag>
+          },
+          listitem: (args) => {
+            const { node, nodesToJSX, parent } = args
+            if ('listType' in parent && parent.listType === 'check') {
+              const listItemConverter = ListJSXConverter.listitem
+              if (typeof listItemConverter === 'function') {
+                return listItemConverter(args)
+              }
+            }
+            const hasSubLists = node.children.some((child) => child.type === 'list')
+            const children = nodesToJSX({ nodes: node.children })
+            if ('listType' in parent && parent.listType === 'number') {
+              return (
+                <li
+                  className={cn(hasSubLists && 'nestedListItem')}
+                  style={hasSubLists ? { listStyleType: 'none' } : undefined}
+                  value={node.value}
+                >
+                  {children}
+                </li>
+              )
+            }
+            return (
+              <li
+                className={cn('flex gap-4 items-start', hasSubLists && 'nestedListItem')}
+                style={hasSubLists ? { listStyleType: 'none' } : undefined}
+                value={node.value}
+              >
+                <span className={ulMarkerClassName} aria-hidden />
+                <div className="min-w-0 flex-1">{children}</div>
+              </li>
             )
           },
           blocks: {

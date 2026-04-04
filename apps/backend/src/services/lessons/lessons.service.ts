@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import { db, payloadDb } from '../../db'
 import { Lesson, payloadSchema } from '@redduck/payload-config'
 import { userLessons } from '../../db/schema'
+import { enrichLessonContentInternalLinks } from './lesson-link-resolution'
 
 const { courses, lessons, modules } = payloadSchema
 
@@ -32,19 +33,19 @@ export class LessonsService {
 
     const next = await LessonsService.#getNextLessonSlug(courseSlug, lesson.id)
 
-    // @ts-expect-error - next is not typed
-    lesson.next = next
+    const content = lesson.content != null ? await enrichLessonContentInternalLinks(lesson.content) : lesson.content
+    const lessonWithNext = { ...lesson, next, content }
 
-    if (lesson.type === 'review_task') {
-      return LessonsService.#toPublicReviewLesson(lesson)
+    if (lessonWithNext.type === 'review_task') {
+      return LessonsService.#toPublicReviewLesson(lessonWithNext)
     }
 
-    if (lesson.type === 'test') {
-      if (!lesson.questions) return lesson
+    if (lessonWithNext.type === 'test') {
+      if (!lessonWithNext.questions) return lessonWithNext
 
       return {
-        ...lesson,
-        questions: lesson.questions.map((q) => {
+        ...lessonWithNext,
+        questions: lessonWithNext.questions.map((q) => {
           const correctCount = q.options?.filter((o) => o.isCorrect).length ?? 0
           return {
             ...q,
@@ -56,7 +57,7 @@ export class LessonsService {
       }
     }
 
-    return lesson
+    return lessonWithNext
   }
 
   /**

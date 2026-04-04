@@ -6,11 +6,16 @@ import { CourseProgramSidebar } from '@/components/pages/courses/course-program-
 import { createCoursesMeta } from '@/lib/seo'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { resolveFocusedCourse } from '@/lib/routes/courses-index-search'
+import { queryKeys } from '@/lib/query-keys'
 
 export const Route = createFileRoute('/courses/$courseSlug/')({
   ssr: true,
-  loader: async ({ params }) => {
-    const res = await getCourses()
+  loader: async ({ params, context: { queryClient } }) => {
+    const res = await queryClient.ensureQueryData({
+      queryKey: queryKeys.courses.all(),
+      queryFn: getCourses,
+      staleTime: 30 * 60 * 1000,
+    })
     const courses = res?.data ?? []
 
     if (!courses.some((c) => c.slug === params.courseSlug)) {

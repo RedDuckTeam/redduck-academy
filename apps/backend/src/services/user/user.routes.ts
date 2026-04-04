@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
-import { z } from 'zod'
 import { requireAuth } from '../../lib/middleware'
+import { courseLessonParamSchema } from '../../lib/schemas'
+import type { AuthVariables } from '../../lib/types'
 import {
   getUserStatsDesc,
   getUserCompletedLessonsDesc,
@@ -11,17 +12,7 @@ import {
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
 
-type UserVariables = {
-  user: { id: string }
-  session: unknown
-}
-
-const userApp = new Hono<{ Variables: UserVariables }>()
-
-const courseLessonParamSchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
-})
+const userApp = new Hono<{ Variables: AuthVariables }>()
 
 userApp.get(
   '/lessons/:courseSlug/:lessonSlug',

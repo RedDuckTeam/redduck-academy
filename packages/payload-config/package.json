@@ -15,8 +15,10 @@
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/storage-s3": "3.80.0",
     "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
     "payload": "3.80.0"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

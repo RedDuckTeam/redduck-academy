@@ -36,7 +36,7 @@ export class Fetcher {
     )
   }
 
-  public async post<T>(url: string, body?: Record<string, unknown>) {
+  public async post<T>(url: string, body?: unknown) {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
         ...this._fetchOptions(),

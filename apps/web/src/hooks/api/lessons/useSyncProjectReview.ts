@@ -1,18 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { completedLessonsQueryKey } from '../user/useCompletedLessons'
-import { lessonForUserQueryKey } from './useLessonForUser'
+import { toast } from 'sonner'
 import { syncProjectReview } from '@/lib/api/courses'
+import { queryKeys } from '@/lib/query-keys'
 
 export const useSyncProjectReview = (courseSlug: string, lessonSlug: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async () => {
-      await syncProjectReview(courseSlug, lessonSlug)
-    },
+    mutationFn: () => syncProjectReview(courseSlug, lessonSlug),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lessonForUserQueryKey(courseSlug, lessonSlug) })
-      queryClient.invalidateQueries({ queryKey: completedLessonsQueryKey })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.lesson(courseSlug, lessonSlug) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons() })
+    },
+    onError: () => {
+      toast.error('Failed to check review status')
     },
   })
 }

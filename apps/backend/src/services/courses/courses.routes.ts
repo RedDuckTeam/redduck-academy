@@ -7,25 +7,24 @@ import {
   listCoursesInfoDesc,
   validateTestLessonDesc,
 } from '../../descriptions/courses'
-import { auth } from '../../lib/auth'
-import { HTTPException } from 'hono/http-exception'
+import { requireAuth } from '../../lib/middleware'
+import { slugParamSchema, courseLessonParamSchema } from '../../lib/schemas'
+import type { AuthVariables } from '../../lib/types'
 import { CoursesService } from './courses.service'
 import { CoursesTestService } from './courses-test.service'
-
-const coursesApp = new Hono()
-
-const slugParamSchema = z.object({ slug: z.string() })
-
-const courseLessonParamSchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
-})
 
 /** User answers: question ID -> array of selected option IDs */
 const validateAnswersSchema = z.record(z.string(), z.array(z.string()))
 
+const coursesApp = new Hono<{ Variables: AuthVariables }>()
+
 coursesApp.get('/', listCoursesDesc, async (c) => {
   const data = await CoursesService.listCourses()
+  return c.json({ data })
+})
+
+coursesApp.get('/info', listCoursesInfoDesc, async (c) => {
+  const data = await CoursesService.listCoursesInfo()
   return c.json({ data })
 })
 
@@ -35,29 +34,21 @@ coursesApp.get('/:slug', getCourseDesc, validator('param', slugParamSchema), asy
   return c.json({ data })
 })
 
-coursesApp.get('/info', listCoursesInfoDesc, async (c) => {
-  const data = await CoursesService.listCoursesInfo()
-  return c.json({ data })
-})
-
 coursesApp.post(
   '/:courseSlug/lessons/:lessonSlug/validate',
   validateTestLessonDesc,
+  requireAuth,
   validator('param', courseLessonParamSchema),
   validator('json', validateAnswersSchema),
   async (c) => {
     const { courseSlug, lessonSlug } = c.req.valid('param')
     const userAnswers = c.req.valid('json')
-
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    if (!session || !session.user) {
-      throw new HTTPException(401, { message: 'Unauthorized' })
-    }
+    const user = c.get('user')
 
     const { score, correctAnswers } = await CoursesTestService.validateTestLesson(
       courseSlug,
       lessonSlug,
-      session.user.id,
+      user.id,
       userAnswers,
     )
 

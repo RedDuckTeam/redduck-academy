@@ -6,60 +6,6 @@ import { HTTPException } from 'hono/http-exception'
 import { CoursesService } from './courses.service'
 
 export class CoursesTestService {
-  static async validateTestLessonById(
-    courseId: number,
-    lessonId: number,
-    userId: string,
-    userAnswers: Record<string, string[]>,
-  ) {
-    const result = await CoursesService.getTestLessonWithQuestionsById(courseId, lessonId)
-    if (!result) {
-      throw new HTTPException(404, { message: 'Lesson not found or not a test' })
-    }
-
-    const [existing] = await db
-      .select({ score: userLessons.score, userAnswers: userLessons.userAnswers })
-      .from(userLessons)
-      .where(
-        and(eq(userLessons.userId, userId), eq(userLessons.lessonId, lessonId), eq(userLessons.isCompleted, true)),
-      )
-      .limit(1)
-
-    if (existing) return
-
-    const { lesson: foundLesson, questions } = result
-
-    let totalScore = 0
-    questions.forEach((q) => {
-      const correctOptionIds = q.options.filter((o) => o.isCorrect).map((o) => o.id)
-      const submission = userAnswers[q.id] || []
-      const isCorrect =
-        correctOptionIds.length === submission.length && correctOptionIds.every((id) => submission.includes(id))
-      if (isCorrect) {
-        totalScore += q.points ?? 5
-      }
-    })
-
-    await db.transaction(async (tx) => {
-      if (totalScore > 0) {
-        await tx
-          .update(user)
-          .set({
-            points: sql`${user.points} + ${totalScore}`,
-          })
-          .where(eq(user.id, userId))
-      }
-
-      await tx.insert(userLessons).values({
-        userId: userId,
-        lessonId: foundLesson.id,
-        score: totalScore,
-        userAnswers: userAnswers,
-        isCompleted: true,
-      })
-    })
-  }
-
   static async validateTestLesson(
     courseSlug: string,
     lessonSlug: string,

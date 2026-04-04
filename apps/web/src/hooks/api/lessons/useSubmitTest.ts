@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { completedLessonsQueryKey } from '../user/useCompletedLessons'
-import { lessonForUserQueryKey } from './useLessonForUser'
+import { toast } from 'sonner'
 import { submitTest } from '@/lib/api/test'
+import { queryKeys } from '@/lib/query-keys'
 
 export const useSubmitTest = (courseSlug: string, lessonSlug: string) => {
   const queryClient = useQueryClient()
@@ -9,8 +9,11 @@ export const useSubmitTest = (courseSlug: string, lessonSlug: string) => {
   return useMutation({
     mutationFn: submitTest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lessonForUserQueryKey(courseSlug, lessonSlug) })
-      queryClient.invalidateQueries({ queryKey: completedLessonsQueryKey })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.lesson(courseSlug, lessonSlug) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons() })
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to submit test')
     },
   })
 }

@@ -3,6 +3,7 @@ import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
 import { getLesson } from '@/lib/api/courses'
+import { queryKeys } from '@/lib/query-keys'
 import { LessonTest } from '@/components/pages/lesson/test/lesson-test'
 import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
@@ -15,10 +16,13 @@ import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-s
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
-  loader: async ({ params }) => {
-    const lesson = await getLesson(params.courseSlug, params.lessonSlug)
+  loader: async ({ params, context: { queryClient } }) => {
+    const lesson = await queryClient.ensureQueryData({
+      queryKey: queryKeys.lessons.detail(params.courseSlug, params.lessonSlug),
+      queryFn: () => getLesson(params.courseSlug, params.lessonSlug),
+      staleTime: 30 * 60 * 1000,
+    })
     if (!lesson?.data) throw notFound()
-
     return {
       lesson: lesson.data,
       courseSlug: params.courseSlug,

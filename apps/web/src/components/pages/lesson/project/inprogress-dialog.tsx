@@ -1,6 +1,3 @@
-'use client'
-
-import { toast } from 'sonner'
 import { NextButton } from '../lecture/next-button'
 import type { Lesson } from '@/types/lesson'
 import { DialogBody, DialogContent } from '@/components/ui/dialog'
@@ -8,6 +5,7 @@ import { Loader } from '@/components/ui/loader'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { useSyncProjectReview } from '@/hooks/api/lessons/useSyncProjectReview'
+import { toast } from 'sonner'
 
 interface InProgressDialogProps {
   courseSlug: string

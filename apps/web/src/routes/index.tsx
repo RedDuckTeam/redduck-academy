@@ -6,11 +6,16 @@ import { useCourses } from '@/hooks/api/courses/useCourses'
 import { Community } from '@/components/pages/home/community/community'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { getCommunityEvents } from '@/lib/api/community'
+import { queryKeys } from '@/lib/query-keys'
 
 export const Route = createFileRoute('/')({
   ssr: true,
-  loader: async () => {
-    const res = await getCommunityEvents()
+  loader: async ({ context: { queryClient } }) => {
+    const res = await queryClient.ensureQueryData({
+      queryKey: queryKeys.community.all(),
+      queryFn: getCommunityEvents,
+      staleTime: 10 * 60 * 1000,
+    })
     return { communityEvents: res?.data ?? [] }
   },
   head: () =>
