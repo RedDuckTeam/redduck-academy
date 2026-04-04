@@ -1,12 +1,12 @@
-import { HTTPException } from 'hono/http-exception'
 import type { Lesson } from '@redduck/payload-config'
+import { AppError } from '../../../lib/errors'
 import { MAX_REVIEW_FILE_BYTES } from '../github.service'
 import type { FetchExpectedFilesResult } from '../types/github'
 
 export function getLessonTasks(lesson: Lesson) {
   const tasks = lesson.reviewGradingTasks ?? []
   if (tasks.length === 0) {
-    throw new HTTPException(400, { message: 'Review lesson has no grading tasks' })
+    throw new AppError(400, 'Review lesson has no grading tasks')
   }
   return tasks
 }
@@ -17,9 +17,7 @@ export function getLessonExpectedPaths(lesson: Lesson): string[] {
       ?.map((row) => (typeof row.path === 'string' ? row.path.trim() : ''))
       .filter((p) => p.length > 0) ?? []
   if (paths.length === 0) {
-    throw new HTTPException(400, {
-      message: 'This lesson has no review paths configured. Add at least one file path in the admin (Paths to review).',
-    })
+    throw new AppError(400, 'This lesson has no review paths configured. Add at least one file path in the admin (Paths to review).')
   }
   return paths
 }
@@ -32,11 +30,9 @@ export function getLessonTemplateUrl(lesson: Lesson): string | null {
 export function validateFetchResult(fetchResult: FetchExpectedFilesResult): void {
   if (fetchResult.oversizedPaths.length > 0) {
     const detail = fetchResult.oversizedPaths.map((o) => `${o.path} (${o.sizeBytes} bytes)`).join(', ')
-    throw new HTTPException(400, {
-      message: `These files exceed the maximum review size (${MAX_REVIEW_FILE_BYTES} bytes each): ${detail}`,
-    })
+    throw new AppError(400, `These files exceed the maximum review size (${MAX_REVIEW_FILE_BYTES} bytes each): ${detail}`)
   }
   if (fetchResult.files.length === 0) {
-    throw new HTTPException(400, { message: 'No valid files were fetched' })
+    throw new AppError(400, 'No valid files were fetched')
   }
 }

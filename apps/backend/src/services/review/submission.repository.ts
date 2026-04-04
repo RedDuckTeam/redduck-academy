@@ -1,6 +1,6 @@
 import { and, asc, eq, sql } from 'drizzle-orm'
-import { HTTPException } from 'hono/http-exception'
 import { db } from '../../db'
+import { AppError } from '../../lib/errors'
 import { projectUserSubmissions, userLessons } from '../../db/schema'
 import type { ReviewFeedback } from '../../types/review-feedback'
 
@@ -23,10 +23,10 @@ export const SubmissionRepository = {
         .returning()
 
       if (!userLesson) {
-        throw new HTTPException(500, { message: 'Failed to resolve user lesson row' })
+        throw new AppError(500, 'Failed to resolve user lesson row')
       }
       if ((userLesson.attemptsLeft ?? 0) <= 0) {
-        throw new HTTPException(400, { message: 'No review attempts left for this lesson' })
+        throw new AppError(400, 'No review attempts left for this lesson')
       }
 
       const [pending] = await tx
@@ -41,7 +41,7 @@ export const SubmissionRepository = {
         .limit(1)
 
       if (pending) {
-        throw new HTTPException(409, { message: 'A review is already in progress for this lesson' })
+        throw new AppError(409, 'A review is already in progress for this lesson')
       }
 
       const [submission] = await tx

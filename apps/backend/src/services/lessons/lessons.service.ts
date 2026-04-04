@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm'
-import { HTTPException } from 'hono/http-exception'
 import { db, payloadDb } from '../../db'
+import { AppError } from '../../lib/errors'
 import { Lesson, payloadSchema } from '@redduck/payload-config'
 import { userLessons } from '../../db/schema'
 import { enrichLessonContentInternalLinks } from './lesson-link-resolution'
@@ -24,11 +24,12 @@ export class LessonsService {
         reviewGradingTasks: {
           orderBy: (tasks, { asc }) => [asc(tasks._order)],
         },
+        codingTestCases: true,
       },
     })
 
     if (!lesson) {
-      throw new HTTPException(404, { message: 'Lesson not found' })
+      throw new AppError(404, 'Lesson not found')
     }
 
     const next = await LessonsService.#getNextLessonSlug(courseSlug, lesson.id)
@@ -38,6 +39,10 @@ export class LessonsService {
 
     if (lessonWithNext.type === 'review_task') {
       return LessonsService.#toPublicReviewLesson(lessonWithNext)
+    }
+
+    if (lessonWithNext.type === 'coding_task') {
+      return LessonsService.#toPublicCodingLesson(lessonWithNext)
     }
 
     if (lessonWithNext.type === 'test') {
@@ -58,6 +63,34 @@ export class LessonsService {
     }
 
     return lessonWithNext
+  }
+
+  /**
+   * Server-only: coding task lesson with AI fields for the given course.
+   */
+  static async getCodingTaskLesson(courseSlug: string, lessonSlug: string): Promise<Lesson> {
+    const lesson = await payloadDb.query.lessons.findFirst({
+      where: and(
+        eq(lessons.slug, lessonSlug),
+        sql`exists (
+          select 1 from ${modules} m
+          inner join ${courses} c on c.id = m.course_id
+          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+        )`,
+      ),
+      with: {
+        codingTestCases: true,
+      },
+    })
+
+    if (!lesson) {
+      throw new AppError(404, 'Lesson not found')
+    }
+    if (lesson.type !== 'coding_task') {
+      throw new AppError(400, 'Lesson is not a coding task')
+    }
+
+    return lesson as unknown as Lesson
   }
 
   /**
@@ -84,10 +117,10 @@ export class LessonsService {
     })
 
     if (!lesson) {
-      throw new HTTPException(404, { message: 'Lesson not found' })
+      throw new AppError(404, 'Lesson not found')
     }
     if (lesson.type !== 'review_task') {
-      throw new HTTPException(400, { message: 'Lesson is not a review task' })
+      throw new AppError(400, 'Lesson is not a review task')
     }
 
     return lesson as Lesson
@@ -145,6 +178,14 @@ export class LessonsService {
     })
 
     return lesson || null
+  }
+
+  /**
+   * Strips AI-only fields from a coding_task lesson. Returns starterCode, codingLanguage, codingTestCases as-is.
+   */
+  static #toPublicCodingLesson<L extends Record<string, unknown>>(lesson: L) {
+    const { aiExpectedResult: _a, ...rest } = lesson
+    return rest
   }
 
   /**

@@ -101,6 +101,43 @@ export const submitProjectDesc = describeRoute({
   },
 })
 
+export const submitCodingTaskDesc = describeRoute({
+  summary: 'Submit coding task code for AI review',
+  description:
+    'Submits student code for a coding_task lesson. The AI reviews the code synchronously and returns a pass/fail result immediately. Decrements attemptsLeft on each call.',
+  tags: ['Lessons'],
+  responses: {
+    200: {
+      description: 'Review result with pass/fail and remaining attempts',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ passed: z.boolean(), attemptsLeft: z.number() })),
+        },
+      },
+    },
+    400: {
+      description: 'Lesson is not a coding task or no attempts left',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    404: {
+      description: 'Course or lesson not found',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    502: {
+      description: 'AI review failed',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const markLessonAsCompletedDesc = describeRoute({
   summary: 'Mark lecture as completed',
   description:

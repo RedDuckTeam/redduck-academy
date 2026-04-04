@@ -19,6 +19,18 @@ export interface Module {
   lessons: Lesson[]
 }
 
+export interface CodingTestCase {
+  id: string
+  title: string
+  description?: string
+}
+
+export interface CodingTaskSubmission {
+  id: number
+  passed: boolean
+  submittedAt: string
+}
+
 /** Public shape for review_task grading rows (from GET lesson); criteria omitted when criteriaHidden is true. */
 export interface PublicReviewGradingTask {
   id: string
@@ -46,6 +58,10 @@ export interface Lesson {
   next: string | null
   /** Review-task rubric rows (learner-safe; hidden rows have criteriaHidden and no criteria). */
   reviewGradingTasks?: PublicReviewGradingTask[]
+  /** Coding-task fields */
+  codingLanguage?: 'solidity' | 'rust' | 'typescript'
+  starterCode?: string | null
+  codingTestCases?: CodingTestCase[]
 }
 
 export interface ReviewCriterionFeedback {
@@ -78,7 +94,7 @@ export interface LessonForUser extends Lesson {
   correctAnswers: Record<string, string[]> | null
   attemptsLeft?: number
   /** Review-task submissions, oldest first; latest is `.at(-1)`. */
-  submissions?: LatestProjectSubmission[]
+  submissions?: LatestProjectSubmission[] | CodingTaskSubmission[]
 }
 
 export enum LessonTypeEnum {

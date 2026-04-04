@@ -240,6 +240,31 @@ export interface Lesson {
       }[]
     | null;
   /**
+   * Language used in the Monaco editor and passed to the AI reviewer.
+   */
+  codingLanguage?: ('solidity' | 'rust' | 'typescript') | null;
+  /**
+   * Initial code shown in the student's Monaco editor. Leave empty for a blank editor.
+   */
+  starterCode?: string | null;
+  /**
+   * What the student's code should achieve — fed to the AI reviewer. NOT shown to students. Example: "The contract must protect against reentrancy using checks-effects-interactions or ReentrancyGuard."
+   */
+  aiExpectedResult?: string | null;
+  /**
+   * Visible test case descriptions shown to the student (like LeetCode examples). Also included in the AI review prompt as additional context.
+   */
+  codingTestCases?:
+    | {
+        title: string;
+        /**
+         * Describe what this test case checks.
+         */
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Short context for the AI reviewer (not shown to students via the public API).
    */
   aiTaskSummary?: string | null;
@@ -496,6 +521,16 @@ export interface LessonsSelect<T extends boolean = true> {
               isCorrect?: T;
               id?: T;
             };
+        id?: T;
+      };
+  codingLanguage?: T;
+  starterCode?: T;
+  aiExpectedResult?: T;
+  codingTestCases?:
+    | T
+    | {
+        title?: T;
+        description?: T;
         id?: T;
       };
   aiTaskSummary?: T;

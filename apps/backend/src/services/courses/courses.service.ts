@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { HTTPException } from 'hono/http-exception'
 import { payloadDb } from '../../db'
+import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
 
 const { courses, lessons, modules } = payloadSchema
@@ -18,7 +18,7 @@ export class CoursesService {
       },
     })
     if (!result) {
-      throw new HTTPException(404, { message: 'Course not found' })
+      throw new AppError(404, 'Course not found')
     }
     return result
   }

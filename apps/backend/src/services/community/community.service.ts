@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
-import { HTTPException } from 'hono/http-exception'
 import { payloadDb } from '../../db'
+import { AppError } from '../../lib/errors'
 
 export class CommunityService {
   static async listEvents() {
@@ -34,7 +34,7 @@ export class CommunityService {
     })
 
     if (!event) {
-      throw new HTTPException(404, { message: 'Community event not found' })
+      throw new AppError(404, 'Community event not found')
     }
 
     return event

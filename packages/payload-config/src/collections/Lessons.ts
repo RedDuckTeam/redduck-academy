@@ -15,6 +15,17 @@ export const Lessons: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data }) => {
+        if (data?.type === 'coding_task') {
+          if (!data.codingLanguage) {
+            throw new APIError('Coding language is required for coding tasks.', 400)
+          }
+          const expectedResult = data.aiExpectedResult
+          if (expectedResult === undefined || expectedResult === null || String(expectedResult).trim() === '') {
+            throw new APIError('AI expected result is required for coding tasks.', 400)
+          }
+          return data
+        }
+
         if (data?.type !== 'review_task') {
           return data
         }
@@ -149,6 +160,54 @@ export const Lessons: CollectionConfig = {
               },
             },
           ],
+        },
+      ],
+    },
+    // --------------------------------------------------------------------------
+    // Coding Task Fields
+    {
+      name: 'codingLanguage',
+      type: 'select',
+      admin: {
+        condition: (data) => data?.type === 'coding_task',
+        description: 'Language used in the Monaco editor and passed to the AI reviewer.',
+      },
+      options: [
+        { label: 'Solidity', value: 'solidity' },
+        { label: 'Rust', value: 'rust' },
+        { label: 'TypeScript', value: 'typescript' },
+      ],
+    },
+    {
+      name: 'starterCode',
+      type: 'textarea',
+      admin: {
+        condition: (data) => data?.type === 'coding_task',
+        description: 'Initial code shown in the student\'s Monaco editor. Leave empty for a blank editor.',
+      },
+    },
+    {
+      name: 'aiExpectedResult',
+      type: 'textarea',
+      admin: {
+        condition: (data) => data?.type === 'coding_task',
+        description:
+          'What the student\'s code should achieve — fed to the AI reviewer. NOT shown to students. Example: "The contract must protect against reentrancy using checks-effects-interactions or ReentrancyGuard."',
+      },
+    },
+    {
+      name: 'codingTestCases',
+      type: 'array',
+      admin: {
+        condition: (data) => data?.type === 'coding_task',
+        description: 'Visible test case descriptions shown to the student (like LeetCode examples). Also included in the AI review prompt as additional context.',
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        {
+          name: 'description',
+          type: 'textarea',
+          admin: { description: 'Describe what this test case checks.' },
         },
       ],
     },

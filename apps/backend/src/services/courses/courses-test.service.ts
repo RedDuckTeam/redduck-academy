@@ -2,7 +2,7 @@ import { eq, and, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { user } from '../../db/auth-schema'
 import { userLessons } from '../../db/schema'
-import { HTTPException } from 'hono/http-exception'
+import { AppError } from '../../lib/errors'
 import { CoursesService } from './courses.service'
 
 export class CoursesTestService {
@@ -14,7 +14,7 @@ export class CoursesTestService {
   ) {
     const result = await CoursesService.getTestLessonWithQuestions(courseSlug, lessonSlug)
     if (!result) {
-      throw new HTTPException(404, { message: 'Lesson not found or not a test' })
+      throw new AppError(404, 'Lesson not found or not a test')
     }
 
     const [existing] = await db

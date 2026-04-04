@@ -1,6 +1,5 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 import { openAPIRouteHandler } from 'hono-openapi'
 import { cors } from 'hono/cors'
 import { healthCheckDesc } from './descriptions/root'
@@ -10,6 +9,7 @@ import lessonsApp from './services/lessons/lessons.routes'
 import userApp from './services/user/user.routes'
 import reviewApp from './services/review/review.routes'
 import communityApp from './services/community/community.routes'
+import { AppError } from './lib/errors'
 
 const port = Number(process.env.PORT) || 3001
 const backendOrigin = `http://localhost:${port}`
@@ -17,13 +17,12 @@ const backendOrigin = `http://localhost:${port}`
 const app = new Hono({ strict: false })
 
 app.onError((err, c) => {
-  console.error('Global Error Handler:', err)
-
-  if (err instanceof HTTPException) {
-    return err.getResponse()
+  if (err instanceof AppError) {
+    return c.json({ error: err.message }, err.statusCode as Parameters<typeof c.json>[1])
   }
 
-  return c.json({ error: err.message || 'Internal Server Error' }, 500)
+  console.error('Unhandled error:', err)
+  return c.json({ error: 'Internal Server Error' }, 500)
 })
 
 app.get('/', healthCheckDesc, (c) => {

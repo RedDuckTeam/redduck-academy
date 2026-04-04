@@ -1,4 +1,4 @@
-import { HTTPException } from 'hono/http-exception'
+import { AppError } from '../../lib/errors'
 import { LessonsService } from '../lessons/lessons.service'
 import { githubService } from './github.service'
 import { buildReviewPrompt } from './prompt.builder'
@@ -37,7 +37,7 @@ export class ReviewService {
       // Mark the submission failed so the user isn't stuck in a pending state with no batch.
       const message = err instanceof Error ? err.message : 'Failed to create OpenAI batch'
       await SubmissionRepository.markFailed(submissionId, message)
-      throw new HTTPException(502, { message })
+      throw new AppError(502, message)
     }
   }
 
@@ -46,7 +46,7 @@ export class ReviewService {
 
     const userLesson = await SubmissionRepository.getUserLesson(userId, lesson.id)
     if (!userLesson) {
-      throw new HTTPException(404, { message: 'Lesson not started' })
+      throw new AppError(404, 'Lesson not started')
     }
 
     const submissions = await SubmissionRepository.listForUserLesson(userLesson.id)

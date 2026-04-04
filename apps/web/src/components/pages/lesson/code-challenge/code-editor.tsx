@@ -6,7 +6,7 @@ import { registerLanguages } from '@/lib/monaco-languages'
 interface CodeEditorProps {
   value: string
   onChange: (value: string) => void
-  language?: 'solidity' | 'rust'
+  language?: 'solidity' | 'rust' | 'typescript'
 }
 
 export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEditorProps) {

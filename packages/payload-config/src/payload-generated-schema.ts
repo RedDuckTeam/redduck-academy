@@ -22,6 +22,11 @@ import {
 import { sql, relations } from 'drizzle-orm'
 export const db_schema = pgSchema('payload')
 export const enum_lessons_type = db_schema.enum('enum_lessons_type', ['lecture', 'test', 'coding_task', 'review_task'])
+export const enum_lessons_coding_language = db_schema.enum('enum_lessons_coding_language', [
+  'solidity',
+  'rust',
+  'typescript',
+])
 
 export const users_sessions = db_schema.table(
   'users_sessions',
@@ -176,6 +181,26 @@ export const lessons_questions = db_schema.table(
   ],
 )
 
+export const lessons_coding_test_cases = db_schema.table(
+  'lessons_coding_test_cases',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    title: varchar('title'),
+    description: varchar('description'),
+  },
+  (columns) => [
+    index('lessons_coding_test_cases_order_idx').on(columns._order),
+    index('lessons_coding_test_cases_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_coding_test_cases_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
 export const lessons_review_grading_tasks = db_schema.table(
   'lessons_review_grading_tasks',
   {
@@ -232,6 +257,9 @@ export const lessons = db_schema.table(
     order: numeric('order', { mode: 'number' }).notNull(),
     type: enum_lessons_type('type').notNull().default('lecture'),
     content: jsonb('content'),
+    codingLanguage: enum_lessons_coding_language('coding_language'),
+    starterCode: varchar('starter_code'),
+    aiExpectedResult: varchar('ai_expected_result'),
     aiTaskSummary: varchar('ai_task_summary'),
     aiPossibleSolutions: varchar('ai_possible_solutions'),
     templateRepoUrl: varchar('template_repo_url'),
@@ -460,6 +488,13 @@ export const relations_lessons_questions = relations(lessons_questions, ({ one, 
     relationName: 'options',
   }),
 }))
+export const relations_lessons_coding_test_cases = relations(lessons_coding_test_cases, ({ one }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_coding_test_cases._parentID],
+    references: [lessons.id],
+    relationName: 'codingTestCases',
+  }),
+}))
 export const relations_lessons_review_grading_tasks = relations(lessons_review_grading_tasks, ({ one }) => ({
   _parentID: one(lessons, {
     fields: [lessons_review_grading_tasks._parentID],
@@ -482,6 +517,9 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   }),
   questions: many(lessons_questions, {
     relationName: 'questions',
+  }),
+  codingTestCases: many(lessons_coding_test_cases, {
+    relationName: 'codingTestCases',
   }),
   reviewGradingTasks: many(lessons_review_grading_tasks, {
     relationName: 'reviewGradingTasks',
@@ -562,6 +600,7 @@ export const relations_payload_migrations = relations(payload_migrations, () => 
 type DatabaseSchema = {
   db_schema: typeof db_schema
   enum_lessons_type: typeof enum_lessons_type
+  enum_lessons_coding_language: typeof enum_lessons_coding_language
   users_sessions: typeof users_sessions
   users: typeof users
   media: typeof media
@@ -569,6 +608,7 @@ type DatabaseSchema = {
   modules: typeof modules
   lessons_questions_options: typeof lessons_questions_options
   lessons_questions: typeof lessons_questions
+  lessons_coding_test_cases: typeof lessons_coding_test_cases
   lessons_review_grading_tasks: typeof lessons_review_grading_tasks
   lessons_review_paths: typeof lessons_review_paths
   lessons: typeof lessons
@@ -586,6 +626,7 @@ type DatabaseSchema = {
   relations_modules: typeof relations_modules
   relations_lessons_questions_options: typeof relations_lessons_questions_options
   relations_lessons_questions: typeof relations_lessons_questions
+  relations_lessons_coding_test_cases: typeof relations_lessons_coding_test_cases
   relations_lessons_review_grading_tasks: typeof relations_lessons_review_grading_tasks
   relations_lessons_review_paths: typeof relations_lessons_review_paths
   relations_lessons: typeof relations_lessons

@@ -1,13 +1,14 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import { z } from 'zod'
-import { getLessonDesc, markLessonAsCompletedDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
+import { getLessonDesc, markLessonAsCompletedDesc, submitCodingTaskDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
 import { requireAuth } from '../../lib/middleware'
 import { courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
-import { HTTPException } from 'hono/http-exception'
+import { AppError } from '../../lib/errors'
 import { CoursesTestService } from '../courses/courses-test.service'
 import { ReviewService } from '../review/review.service'
+import { CodingTaskService } from '../coding-task/coding-task.service'
 import { LessonsService } from './lessons.service'
 
 const submitTestBodySchema = z.object({
@@ -20,6 +21,13 @@ const submitProjectBodySchema = z.object({
   courseSlug: z.string(),
   lessonSlug: z.string(),
   repoUrl: z.string().url(),
+})
+
+const submitCodingTaskBodySchema = z.object({
+  courseSlug: z.string(),
+  lessonSlug: z.string(),
+  code: z.string().min(1).max(100_000),
+  language: z.enum(['solidity', 'rust', 'typescript']),
 })
 
 const lessonsApp = new Hono<{ Variables: AuthVariables }>()
@@ -44,6 +52,19 @@ lessonsApp.post(
   },
 )
 
+lessonsApp.post(
+  '/submit-coding-task',
+  requireAuth,
+  submitCodingTaskDesc,
+  validator('json', submitCodingTaskBodySchema),
+  async (c) => {
+    const user = c.get('user')
+    const { courseSlug, lessonSlug, code, language } = c.req.valid('json')
+    const result = await CodingTaskService.submitCode(user.id, courseSlug, lessonSlug, code, language)
+    return c.json(result)
+  },
+)
+
 lessonsApp.get('/:courseSlug/:lessonSlug', getLessonDesc, validator('param', courseLessonParamSchema), async (c) => {
   const { courseSlug, lessonSlug } = c.req.valid('param')
   const data = await LessonsService.getLesson(courseSlug, lessonSlug)
@@ -61,9 +82,7 @@ lessonsApp.post(
     const lesson = await LessonsService.getLesson(courseSlug, lessonSlug)
 
     if (lesson.type !== 'lecture') {
-      throw new HTTPException(400, {
-        message: 'Only lectures can be marked as completed',
-      })
+      throw new AppError(400, 'Only lectures can be marked as completed')
     }
 
     await LessonsService.markLessonAsCompleted(user.id, courseSlug, lessonSlug)

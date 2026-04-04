@@ -1,5 +1,5 @@
-import { HTTPException } from 'hono/http-exception'
 import { Octokit } from '@octokit/rest'
+import { AppError } from '../../lib/errors'
 import { env } from '../../env'
 import type { FetchExpectedFilesResult, RepoFile, ResolvedRepoRef } from './types/github'
 import { httpStatus, parseGitHubRepoUrl, throwGitHubApiError } from './utils/github'
@@ -68,10 +68,10 @@ export class GitHubService {
     const expectedFullName = repoFullName(template.owner, template.repo)
 
     if (repoFullName(submitted.owner, submitted.repo).toLowerCase() === expectedFullName.toLowerCase()) {
-      throw new HTTPException(400, {
-        message:
-          "Submit your fork of the repository, not the original. Use GitHub's Fork button on the template repo, then paste your fork's URL.",
-      })
+      throw new AppError(
+        400,
+        "Submit your fork of the repository, not the original. Use GitHub's Fork button on the template repo, then paste your fork's URL.",
+      )
     }
 
     let data: { fork: boolean; source?: { full_name?: string } | null }
@@ -83,18 +83,19 @@ export class GitHubService {
     }
 
     if (!data.fork) {
-      throw new HTTPException(400, {
-        message:
-          "This repository is not a GitHub fork. Fork the course template with the Fork button, work in your fork, then submit your fork's URL.",
-      })
+      throw new AppError(
+        400,
+        "This repository is not a GitHub fork. Fork the course template with the Fork button, work in your fork, then submit your fork's URL.",
+      )
     }
 
     const sourceFullName = data.source?.full_name?.toLowerCase()
     if (!sourceFullName || sourceFullName !== expectedFullName.toLowerCase()) {
       const upstream = data.source?.full_name ?? 'unknown'
-      throw new HTTPException(400, {
-        message: `This repository is a fork of "${upstream}", but this lesson only accepts forks of "${expectedFullName}".`,
-      })
+      throw new AppError(
+        400,
+        `This repository is a fork of "${upstream}", but this lesson only accepts forks of "${expectedFullName}".`,
+      )
     }
   }
 

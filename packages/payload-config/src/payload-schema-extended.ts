@@ -56,4 +56,7 @@ export {
   relations_payload_preferences_rels,
   relations_payload_preferences,
   relations_payload_migrations,
+  lessons_coding_test_cases,
+  relations_lessons_coding_test_cases,
+  enum_lessons_coding_language,
 } from './payload-generated-schema'

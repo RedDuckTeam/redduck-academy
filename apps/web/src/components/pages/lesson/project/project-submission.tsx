@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { InProgressDialog } from './inprogress-dialog'
 import { SubmissionReviewTabs } from './submission-review-tabs'
-import type { Lesson } from '@/types/lesson'
+import type { Lesson, LatestProjectSubmission } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const [link, setLink] = useState('')
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const { mutate: submitProject, isPending } = useSubmitProject(courseSlug, lessonSlug)
-  const submissions = userLesson?.submissions ?? []
+  const submissions = (userLesson?.submissions ?? []) as LatestProjectSubmission[]
   const latest = submissions.at(-1)
 
   const handleSubmit = () => {

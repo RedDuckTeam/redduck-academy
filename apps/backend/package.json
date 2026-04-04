@@ -8,10 +8,8 @@
     "db:auth:generate": "npx @better-auth/cli generate --output ./src/db/auth-schema.ts -y",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
-    "better-auth:migrate": "yarn dlx @better-auth/cli migrate --config ./src/lib/auth.ts",
-    "drizzle:migrate": "drizzle-kit migrate",
-    "drizzle:generate": "drizzle-kit generate",
-    "drizzle:push": "drizzle-kit push"
+    "db:push": "npx drizzle-kit push",
+    "better-auth:migrate": "yarn dlx @better-auth/cli migrate --config ./src/lib/auth.ts"
   },
   "devDependencies": {
     "@types/picomatch": "^4.0.3"

@@ -53,7 +53,12 @@ function LessonPage() {
       <div className="flex min-w-0 gap-10">
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
-          <LessonCodeChallenge lesson={lesson} />
+          <LessonCodeChallenge
+            lesson={userLesson ?? { ...lesson, earnedPoints: null, userAnswers: null, isCompleted: false, correctAnswers: null }}
+            courseSlug={courseSlug}
+            lessonSlug={lessonSlug}
+            moduleSlug={moduleSlug}
+          />
         ) : (
           <LessonContentContainer>
             <>

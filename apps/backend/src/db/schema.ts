@@ -64,13 +64,38 @@ export const projectUserSubmissions = pgTable(
   }),
 )
 
+export const codingTaskSubmissions = pgTable(
+  'coding_task_submissions',
+  {
+    id: serial('id').primaryKey(),
+    userLessonId: integer('user_lesson_id')
+      .notNull()
+      .references(() => userLessons.id, { onDelete: 'cascade' }),
+    submittedCode: text('submitted_code').notNull(),
+    language: text('language').notNull(),
+    passed: boolean('passed').notNull(),
+    submittedAt: timestamp('submitted_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    userLessonIdIdx: index('coding_task_submissions_user_lesson_id_idx').on(t.userLessonId),
+  }),
+)
+
 export const userLessonsRelations = relations(userLessons, ({ many }) => ({
   projectSubmissions: many(projectUserSubmissions),
+  codingTaskSubmissions: many(codingTaskSubmissions),
 }))
 
 export const projectUserSubmissionsRelations = relations(projectUserSubmissions, ({ one }) => ({
   userLesson: one(userLessons, {
     fields: [projectUserSubmissions.userLessonId],
+    references: [userLessons.id],
+  }),
+}))
+
+export const codingTaskSubmissionsRelations = relations(codingTaskSubmissions, ({ one }) => ({
+  userLesson: one(userLessons, {
+    fields: [codingTaskSubmissions.userLessonId],
     references: [userLessons.id],
   }),
 }))

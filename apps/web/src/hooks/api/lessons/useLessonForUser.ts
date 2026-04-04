@@ -15,7 +15,8 @@ export const useLessonForUser = (courseSlug: string, lessonSlug: string) => {
     refetchInterval: (query) => {
       const d = query.state.data
       if (!d || d.type !== LessonTypeEnum.REVIEW_TASK) return false
-      return d.submissions?.at(-1)?.status === 'pending' ? 60_000 : false
+      const latest = d.submissions?.at(-1)
+      return latest && 'status' in latest && latest.status === 'pending' ? 60_000 : false
     },
   })
 }

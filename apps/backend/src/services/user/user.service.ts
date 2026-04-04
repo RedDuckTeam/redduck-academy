@@ -8,6 +8,7 @@ import type { ReviewFeedback } from '../../types/review-feedback'
 import { LessonsService } from '../lessons/lessons.service'
 import { CoursesService } from '../courses/courses.service'
 import { ReviewService } from '../review/review.service'
+import { CodingTaskService } from '../coding-task/coding-task.service'
 import { sanitizeReviewFeedbackForLearner } from '../review/sanitize-review-feedback-for-learner'
 
 const { lessons } = payloadSchema
@@ -39,6 +40,11 @@ export class UserService {
       }
     }
 
+    let codingTaskSubmissions: Awaited<ReturnType<typeof CodingTaskService.getSubmissionsForUserLesson>> = []
+    if (lesson.type === 'coding_task' && userLesson?.id) {
+      codingTaskSubmissions = await CodingTaskService.getSubmissionsForUserLesson(userLesson.id)
+    }
+
     let submissions: Awaited<ReturnType<typeof ReviewService.getSubmissionsForUserLesson>> = []
     if (lesson.type === 'review_task' && userLesson?.id) {
       const raw = await ReviewService.getSubmissionsForUserLesson(userLesson.id)
@@ -65,6 +71,12 @@ export class UserService {
         ? {
             attemptsLeft: userLesson?.attemptsLeft ?? 3,
             submissions,
+          }
+        : {}),
+      ...(lesson.type === 'coding_task'
+        ? {
+            attemptsLeft: userLesson?.attemptsLeft ?? 3,
+            submissions: codingTaskSubmissions,
           }
         : {}),
     }
