@@ -15,7 +15,7 @@ export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextBu
   const router = useRouter()
   const { mutate: markCompleted } = useMarkLessonCompleted()
   const hasNext = lesson.next !== null
-  const link = hasNext ? `/courses/${courseSlug}/${moduleSlug}/${lesson.next}` : '/courses'
+  const link = hasNext ? `/courses/${courseSlug}/${moduleSlug}/${lesson.next}` : `/courses/${courseSlug}`
   const isLecture = lesson.type === 'lecture'
   const handleClick = () => {
     if (isLecture) {

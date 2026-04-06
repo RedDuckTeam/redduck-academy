@@ -16,12 +16,14 @@ const buttonVariants = cva(
           'border border-foreground bg-transparent text-foreground',
           'hover:bg-header hover:text-header-foreground',
         ),
+        ghost: 'bg-transparent hover:bg-accent hover:text-accent-foreground',
       },
       size: {
         default: 'py-[15px] px-6',
         sm: 'py-1 px-3',
         md: 'py-2 px-4',
         link: 'h-[56px] w-[56px]',
+        icon: 'h-9 w-9',
       },
     },
     defaultVariants: {

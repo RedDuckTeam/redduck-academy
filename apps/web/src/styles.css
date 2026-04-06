@@ -159,7 +159,7 @@ code {
   }
 
   body {
-    @apply bg-input text-text min-h-screen overflow-x-hidden;
+    @apply bg-input text-text min-h-screen overflow-x-hidden !transition-colors;
   }
 
   hr {

@@ -179,6 +179,7 @@ export interface Course {
   slug?: string | null;
   description?: string | null;
   coverImage?: (number | null) | Media;
+  order: number;
   publishedAt?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -482,6 +483,7 @@ export interface CoursesSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   coverImage?: T;
+  order?: T;
   publishedAt?: T;
   updatedAt?: T;
   createdAt?: T;

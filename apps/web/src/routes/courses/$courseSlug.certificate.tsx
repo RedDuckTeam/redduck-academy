@@ -23,7 +23,7 @@ function CourseCertificateRoute() {
   const { course } = Route.useLoaderData()
 
   return (
-    <main className="certificate-print-page mb-[60px] flex min-h-screen flex-col gap-3.5 bg-background mx-[60px]">
+    <main className="mb-[60px] flex min-h-screen flex-col gap-5 mx-[60px]">
       <div className="print:hidden">
         <PageBreadcrumbs variant="certificate" />
       </div>

@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { CoursesList } from '@/components/pages/courses/courses-list/courses-list'
 import { getCourses } from '@/lib/api/courses'
 import { CourseProgramSidebar } from '@/components/pages/courses/course-program-sidebar/course-program-sidebar'
+import { CourseProgramHeader } from '@/components/pages/courses/course-program-header/course-program-header'
 import { createCoursesMeta } from '@/lib/seo'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { resolveFocusedCourse } from '@/lib/routes/courses-index-search'
@@ -49,6 +50,8 @@ function CourseProgramHubPage() {
     [courses, navigate],
   )
 
+  const focusedCourse = courses.find((c) => c.slug === courseSlug) ?? courses[0]
+
   return (
     <main className="flex min-h-screen gap-10 md:mx-[60px] mx-5 items-start">
       <CourseProgramSidebar
@@ -58,6 +61,7 @@ function CourseProgramHubPage() {
         className="max-md:hidden"
       />
       <div className="flex flex-col gap-5 w-full">
+        <CourseProgramHeader course={focusedCourse} completedLessons={completedLessonIds} />
         <CoursesList courses={courses} courseSlug={courseSlug} completedLessons={completedLessonIds} />
       </div>
     </main>

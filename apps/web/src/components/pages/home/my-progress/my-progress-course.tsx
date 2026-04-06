@@ -33,7 +33,9 @@ export const MyProgressCourse = ({
         <Text className="text-primary" variant={'caps-20'}>
           {index < 10 ? `0${index + 1}` : index + 1}.
         </Text>
-        <Text variant={'caps-20'}>{course.title}</Text>
+        <Link to="/courses/$courseSlug" params={{ courseSlug: course.slug }}>
+          <Text variant={'caps-20'}>{course.title}</Text>
+        </Link>
       </div>
       <div className="p-5 col-span-2 flex items-center justify-center border-r border-border border-t ">
         <Text variant={'caps-20'}>{totalPoints > 0 ? `${earnedPoints}/${totalPoints}` : '-'}</Text>

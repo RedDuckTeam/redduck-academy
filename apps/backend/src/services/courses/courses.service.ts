@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
@@ -25,6 +25,7 @@ export class CoursesService {
 
   static async listCourses() {
     return payloadDb.query.courses.findMany({
+      orderBy: (c, { asc }) => [asc(c.order)],
       with: {
         modules: {
           with: {
@@ -49,6 +50,7 @@ export class CoursesService {
 
   static async listCoursesInfo() {
     const allCourses = await payloadDb.query.courses.findMany({
+      orderBy: (c, { asc }) => [asc(c.order)],
       with: {
         modules: {
           with: {

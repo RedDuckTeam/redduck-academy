@@ -1,108 +1,91 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { RedDuckIcon } from '@/components/ui/icons/redduck'
-import { CertificateSeal } from '@/components/ui/certificate-seal'
-import { CertificateStampDark } from './icons/certificate-stamp-dark'
+import { CertificateStamp } from './icons/certificate-stamp'
+import { MarkSignature } from './icons/mark-signature'
+import { Text } from './text'
 
 export interface CertificateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
-  /** Recipient's full name */
   recipientName: string
-  /** Course or achievement title (e.g. "Blockchain development course by RedDuck") */
   courseName: string
-  /** Date of completion (formatted string) */
   completionDate: string
-  /** Signatory's printed name */
-  signatoryName: string
-  /** Signatory's title (e.g. "Chief Executive Officer & Co-Founder") */
-  signatoryTitle: string
-  /** Signatory's signature - text rendered in script style, or image URL */
-  signature?: string
-  /** Short course name for seal inner ring (e.g. "BLOCKCHAIN DEVELOPMENT") */
-  sealCourseName?: string
 }
 
+// All sizes derived from Figma canvas 1920×1080.
+// Padding/margin %  → always relative to containing block WIDTH (CSS spec).
+// Width %           → relative to parent width.
+// Height % on abs   → relative to containing block HEIGHT.
+// Font sizes        → cqw (container query width unit, requires container-type below).
+
 const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
-  (
-    {
-      recipientName,
-      courseName,
-      completionDate,
-      signatoryName,
-      signatoryTitle,
-      signature,
-      sealCourseName,
-      className,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ recipientName, courseName, completionDate, className, ...props }, ref) => {
     return (
       <article
         ref={ref}
         role="document"
         aria-label={`Course certificate for ${courseName}`}
         className={cn(
-          'relative flex w-full max-w-[900px] overflow-hidden',
-          'bg-background border border-border',
-          'shadow-[6px_6px_0px_0px_var(--foreground)]',
+          // aspect ratio + layout
+          'relative aspect-[1920/1080] flex flex-col w-full overflow-hidden bg-[#E0DEDA]',
+          // padding: px % from 1920 (60/1920, 60/1920, 180/1920)
+          'py-[3.125%] pl-[3.125%] pr-[9.375%]',
+          // enable container queries so cqw works for font sizes
+          '[container-type:inline-size]',
           className,
         )}
         {...props}
       >
-        {/* Left section - main content */}
-        <div className="relative flex flex-1 flex-col px-8 py-10 md:px-12 md:py-14">
-          {/* Logo top left */}
-          <div className="flex items-center gap-4">
-            <RedDuckIcon className="h-6 w-auto [&_path:first-of-type]:fill-primary [&_path:not(:first-of-type)]:fill-foreground md:h-7" />
-            <div className="h-px flex-1 bg-border" aria-hidden />
+        {/* ── Header row ──────────────────────────────────────────── */}
+        <div className="flex">
+          {/* logo cell: pl/pt/pb/pr → 20/1920, 20/1920, 40/1920, 40/1920 */}
+          <div className="pl-[1.042%] pt-[1.042%] pb-[2.083%] pr-[2.083%] border-b border-border">
+            <RedDuckIcon className="w-full h-full" isDark />
           </div>
-
-          {/* Date */}
-          <p className="mt-6 font-inter text-[14px] text-secondary">{completionDate}</p>
-
-          {/* Recipient name - prominent */}
-          <h2 className="mt-4 font-inter text-[28px] font-bold text-foreground md:text-[32px]">{recipientName}</h2>
-
-          {/* Completion phrase */}
-          <p className="mt-2 font-inter text-[16px] text-secondary md:text-[18px]">has successfully completed</p>
-
-          {/* Course name */}
-          <p className="mt-2 font-inter text-[20px] font-bold text-foreground md:text-[24px]">{courseName}</p>
-
-          {/* Signature block */}
-          <div className="mt-auto pt-12">
-            {signature && (
-              <p
-                className="font-[cursive] text-[24px] text-foreground md:text-[28px]"
-                style={{ fontFamily: 'Dancing Script, Segoe Script, cursive' }}
-              >
-                {signature}
-              </p>
-            )}
-            <div className="mt-2 h-px w-32 bg-border" aria-hidden />
-            <p className="mt-1 font-inter text-[16px] font-medium text-foreground">{signatoryName}</p>
-            <p className="font-inter text-[14px] text-secondary">{signatoryTitle}</p>
-          </div>
-
-          {/* Decorative square - bottom left */}
-          <div className="absolute bottom-0 left-0 h-4 w-4 bg-foreground" aria-hidden />
+          <div className="w-full flex-1 border-t border-l h-full border-border" />
         </div>
 
-        {/* Right section - black strip with seal */}
-        <div className="relative flex w-[min(280px,35%)] flex-col items-center justify-between bg-header px-6 py-10">
-          {/* Course certificate title - top right */}
-          <p className="self-end font-inter text-[12px] font-medium uppercase tracking-widest text-header-foreground md:text-[14px]">
-            Course Certificate
+        {/* ── Body ────────────────────────────────────────────────── */}
+        {/* pl: 120/1920=6.25%  pt: 180/1920=9.375% */}
+        <div className="w-full h-full flex pl-[6.25%] pt-[9.375%] flex-col border-b border-x border-border">
+          {/* date — 10/1920=0.521% */}
+          <p style={{ fontSize: '1.458cqw', lineHeight: 1.143 }} className="text-[#565653] mb-[0.521%]">
+            {completionDate}
           </p>
-
-          {/* Circular seal */}
-          <div className="flex flex-1 items-center justify-center py-6">
-            <CertificateStampDark isLight={true} className="size-[262px]" />
+          {/* recipient — 40/1920=2.083% */}
+          <p style={{ fontSize: '2.396cqw' }} className="text-[#000] font-medium mb-[2.083%]">
+            {recipientName}
+          </p>
+          <p style={{ fontSize: '1.458cqw' }} className="text-[#565653] mb-[0.521%]">
+            has successfully completed
+          </p>
+          {/* course — 120/1920=6.25% */}
+          <p style={{ fontSize: '2.396cqw' }} className="text-[#000] font-medium mb-[6.25%]">
+            {courseName}
+          </p>
+          {/* signature — 20/1920=1.042%  w: 400/1920=20.833% */}
+          <div className="flex flex-col w-[20.833%]">
+            <MarkSignature className="w-full" />
+            <Text style={{ fontSize: '1.25cqw' }} className="border-t w-full text-[#9b9b9b] border-border">
+              Mark Virchenko
+            </Text>
+            <p style={{ fontSize: '1.25cqw' }} className="text-[#9b9b9b]">
+              Chief Executive Officer & Co-Founder
+            </p>
           </div>
-
-          {/* Decorative square - bottom right (cutout effect) */}
-          <div className="absolute bottom-0 right-0 h-4 w-4 bg-background" aria-hidden />
         </div>
+
+        {/* ── Right panel ─────────────────────────────────────────── */}
+        {/* right: 60/1920=3.125%  w: 366/1920=19.0625%  h: 900/1080=83.333% */}
+        {/* px: 28/1920=1.458%  py: 130/1920=6.771% */}
+        <div className="absolute top-0 right-[3.125%] w-[19.0625%] h-[83.333%] flex bg-primary flex-col items-center justify-between px-[1.458%] py-[6.771%]">
+          <p style={{ fontSize: '1.458cqw' }} className="text-[#000] text-center uppercase font-medium leading-tight">
+            Course certificate
+          </p>
+          <CertificateStamp className="w-[71.585%] h-fit" />
+        </div>
+
+        {/* w/h: 95/1920, 95/1080 — bottom: 60/1080, right: 443/1920 */}
+        <div className="absolute bottom-[5.556%] right-[23.073%] w-[4.948%] h-[8.796%] bg-primary" />
       </article>
     )
   },

@@ -48,7 +48,10 @@ export const LessonTestQuestion = ({
                   className={cn(
                     'disabled:opacity-100',
                     isCompleted && isCorrect && 'border-success',
-                    isCompleted && isSelected && isCorrect && 'data-[state=checked]:bg-success',
+                    isCompleted &&
+                      isSelected &&
+                      isCorrect &&
+                      'data-[state=checked]:bg-success data-[state=checked]:dark:bg-success',
                     isCompleted && isSelected && !isCorrect && 'data-[state=checked]:bg-primary border-primary',
                   )}
                   onCheckedChange={() => onSelect(option.id)}

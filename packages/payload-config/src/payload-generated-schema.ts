@@ -107,6 +107,7 @@ export const courses = db_schema.table(
     coverImage: integer('cover_image_id').references(() => media.id, {
       onDelete: 'set null',
     }),
+    order: numeric('order', { mode: 'number' }).notNull().default(0),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true, precision: 3 }),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),

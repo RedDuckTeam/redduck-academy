@@ -36,6 +36,15 @@ export const Courses: CollectionConfig = {
       relationTo: 'media',
     },
     {
+      name: 'order',
+      type: 'number',
+      required: true,
+      defaultValue: 0,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'publishedAt',
       type: 'date',
       admin: {
