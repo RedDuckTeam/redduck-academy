@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
 import { CodePanel } from './code-panel'
@@ -20,9 +20,18 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
 
   const starterCode = lesson.starterCode ?? ''
-  const submissions = (userLesson?.submissions as CodingTaskSubmission[]) ?? []
-  const latestCode = submissions?.at(-1)?.submittedCode ?? starterCode
-  const [code, setCode] = useState(latestCode)
+  const [code, setCode] = useState(starterCode)
+  const restoredRef = useRef(false)
+
+  useEffect(() => {
+    if (restoredRef.current || !userLesson) return
+    const submissions = (userLesson.submissions as CodingTaskSubmission[]) ?? []
+    const lastCode = submissions.at(-1)?.submittedCode
+    if (lastCode) {
+      setCode(lastCode)
+    }
+    restoredRef.current = true
+  }, [userLesson])
 
   const language = lesson.codingLanguage
   const { mutate: submit, isPending } = useSubmitCodingTask(courseSlug, lessonSlug)
