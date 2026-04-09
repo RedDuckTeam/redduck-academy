@@ -27,7 +27,7 @@ export const userLessons = pgTable(
     score: integer('score'),
     userAnswers: jsonb('user_answers'),
     isCompleted: boolean('is_completed').default(false).notNull(),
-    attemptsLeft: integer('attempts_left').default(3).notNull(),
+    attemptsLeft: integer('attempts_left').default(50).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
@@ -78,6 +78,23 @@ export const codingTaskSubmissions = pgTable(
   },
   (t) => ({
     userLessonIdIdx: index('coding_task_submissions_user_lesson_id_idx').on(t.userLessonId),
+  }),
+)
+
+export const codingTaskReviewCache = pgTable(
+  'coding_task_review_cache',
+  {
+    id: serial('id').primaryKey(),
+    lessonId: integer('lesson_id').notNull(),
+    codeHash: text('code_hash').notNull(),
+    passed: boolean('passed').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    lessonCodeHashUnique: uniqueIndex('coding_task_review_cache_lesson_id_code_hash_unique').on(
+      t.lessonId,
+      t.codeHash,
+    ),
   }),
 )
 

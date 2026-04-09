@@ -69,13 +69,13 @@ export class UserService {
       correctAnswers,
       ...(lesson.type === 'review_task'
         ? {
-            attemptsLeft: userLesson?.attemptsLeft ?? 3,
+            attemptsLeft: userLesson?.attemptsLeft ?? 50,
             submissions,
           }
         : {}),
       ...(lesson.type === 'coding_task'
         ? {
-            attemptsLeft: userLesson?.attemptsLeft ?? 3,
+            attemptsLeft: userLesson?.attemptsLeft ?? 50,
             submissions: codingTaskSubmissions,
           }
         : {}),

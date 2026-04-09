@@ -54,7 +54,7 @@ function LessonPage() {
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
           <LessonCodeChallenge
-            lesson={userLesson ?? { ...lesson, earnedPoints: null, userAnswers: null, isCompleted: false, correctAnswers: null }}
+            lesson={lesson}
             courseSlug={courseSlug}
             lessonSlug={lessonSlug}
             moduleSlug={moduleSlug}

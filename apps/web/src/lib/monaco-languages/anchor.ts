@@ -1,63 +1,30 @@
 import type { Monaco } from '@monaco-editor/react'
 
-export const rustLanguage: Monaco['languages']['IMonarchLanguage'] = {
+export const anchorLanguage: Monaco['languages']['IMonarchLanguage'] = {
   defaultToken: 'invalid',
   tokenPostfix: '.rs',
   ignoreCase: false,
 
   keywords: [
-    'as',
-    'async',
-    'await',
-    'break',
-    'const',
-    'continue',
-    'crate',
-    'dyn',
-    'else',
-    'enum',
-    'extern',
-    'false',
-    'fn',
-    'for',
-    'if',
-    'impl',
-    'in',
-    'let',
-    'loop',
-    'match',
-    'mod',
-    'move',
-    'mut',
-    'pub',
-    'ref',
-    'return',
-    'self',
-    'Self',
-    'static',
-    'struct',
-    'super',
-    'trait',
-    'true',
-    'type',
-    'unsafe',
-    'use',
-    'where',
-    'while',
-    'box',
-    'macro_rules',
-    'union',
-    'static',
-    'abstract',
-    'become',
-    'macro',
-    'override',
-    'priv',
-    'try',
-    'typeof',
-    'unsized',
-    'virtual',
-    'yield',
+    'as', 'async', 'await', 'break', 'const', 'continue', 'crate', 'dyn',
+    'else', 'enum', 'extern', 'false', 'fn', 'for', 'if', 'impl', 'in',
+    'let', 'loop', 'match', 'mod', 'move', 'mut', 'pub', 'ref', 'return',
+    'self', 'Self', 'static', 'struct', 'super', 'trait', 'true', 'type',
+    'unsafe', 'use', 'where', 'while', 'box', 'macro_rules', 'union',
+    'abstract', 'become', 'macro', 'override', 'priv', 'try', 'typeof',
+    'unsized', 'virtual', 'yield',
+  ],
+
+  // Anchor-specific types
+  anchorTypes: [
+    'Account', 'AccountInfo', 'AccountLoader', 'Accounts', 'AnchorDeserialize',
+    'AnchorSerialize', 'Box', 'CpiContext', 'Id', 'Interface', 'InterfaceAccount',
+    'Key', 'Loader', 'Owner', 'Program', 'ProgramAccount', 'ProgramError',
+    'Rent', 'Result', 'Signer', 'State', 'StateContext', 'System',
+    'Sysvar', 'ToAccountInfo', 'ToAccountInfos', 'ToAccountMetas', 'Token',
+    'UncheckedAccount', 'anchor_lang', 'anchor_spl', 'solana_program',
+    'Pubkey', 'AccountMeta', 'Instruction', 'Clock',
+    'Context', 'ErrorCode',
   ],
 
   tokenizer: {
@@ -74,6 +41,7 @@ export const rustLanguage: Monaco['languages']['IMonarchLanguage'] = {
         /[a-zA-Z_]\w*/,
         {
           cases: {
+            '@anchorTypes': 'type.identifier',
             '@keywords': 'keyword',
             '@default': 'identifier',
           },
@@ -83,10 +51,7 @@ export const rustLanguage: Monaco['languages']['IMonarchLanguage'] = {
       [/[\u005B\u005D]/, 'delimiter.square'],
       [/[()]/, 'delimiter.parenthesis'],
       [/[<>]/, 'delimiter.angle'],
-      [
-        /[=><!~?:&|+*/%^-]+/,
-        'operator',
-      ],
+      [/[=><!~?:&|+*/%^-]+/, 'operator'],
       [/[;,.]/, 'delimiter'],
     ],
 
@@ -107,29 +72,12 @@ export const rustLanguage: Monaco['languages']['IMonarchLanguage'] = {
     strings: [
       [/"([^"\\]|\\.)*$/, 'string.invalid'],
       [/"/, 'string', '@string'],
-      [/'([^'\\]|\\.)*$/, 'string.invalid'],
-      [/'/, 'string', '@stringSingle'],
     ],
 
     string: [
       [/[^\\"]+/, 'string'],
       [/\\./, 'string.escape'],
       [/"/, 'string', '@pop'],
-    ],
-
-    stringSingle: [
-      [/[^\\']+/, 'string'],
-      [/\\./, 'string.escape'],
-      [/'/, 'string', '@pop'],
-    ],
-
-    attributes: [
-      [/#\[/, 'annotation', '@attribute'],
-    ],
-
-    attribute: [
-      [/[^\]]+/, 'annotation'],
-      [/\]/, 'annotation', '@pop'],
     ],
 
     rawStrings: [
@@ -141,10 +89,19 @@ export const rustLanguage: Monaco['languages']['IMonarchLanguage'] = {
       [/"/, 'string', '@pop'],
     ],
 
+    attributes: [
+      [/#\[/, 'annotation', '@attribute'],
+    ],
+
+    attribute: [
+      [/[^\]]+/, 'annotation'],
+      [/\]/, 'annotation', '@pop'],
+    ],
+
     comments: [
       [/\/\*/, 'comment', '@comment'],
+      [/\/\/\/.*$/, 'comment.doc'],
       [/\/\/.*$/, 'comment'],
-      [/\/\/.*$/, 'comment.doc'],
     ],
 
     comment: [

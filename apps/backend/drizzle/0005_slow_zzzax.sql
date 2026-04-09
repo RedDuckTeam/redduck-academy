@@ -1,0 +1,1 @@
+ALTER TABLE "user_lessons" ALTER COLUMN "attempts_left" SET DEFAULT 50;

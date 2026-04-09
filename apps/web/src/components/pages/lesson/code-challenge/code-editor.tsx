@@ -40,10 +40,11 @@ export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEdito
   }, [])
 
   return (
-    <div ref={containerRef} className="monaco-transparent">
+    <div ref={containerRef} className="monaco-transparent py-5">
       <Editor
         key={monacoTheme}
         height="560px"
+        width="100%"
         defaultLanguage={language}
         language={language}
         theme={monacoTheme}

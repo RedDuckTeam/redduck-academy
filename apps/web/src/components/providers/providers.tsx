@@ -8,6 +8,7 @@ import {
   wagmiAdapter,
 } from '@/constants/wallet-config'
 import { ThemeProvider } from '@/components/providers/theme-context'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 const queryClient = new QueryClient()
 
@@ -31,7 +32,9 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )

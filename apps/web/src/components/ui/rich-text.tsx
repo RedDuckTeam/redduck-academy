@@ -11,6 +11,7 @@ type EnrichedLessonDoc = {
 interface CustomRichTextProps {
   data?: Record<string, any> | null
   className?: string
+  paragraphClassName?: string
 }
 
 const blockquoteStyles =
@@ -22,7 +23,7 @@ const codeStyles =
 
 const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
 
-export function RichText({ data, className }: CustomRichTextProps) {
+export function RichText({ data, className, paragraphClassName }: CustomRichTextProps) {
   if (!data) return null
 
   return (
@@ -56,7 +57,7 @@ export function RichText({ data, className }: CustomRichTextProps) {
           },
           paragraph: ({ node, nodesToJSX }) => {
             return (
-              <Text variant="main-18" className="">
+              <Text variant="main-18" className={paragraphClassName}>
                 {nodesToJSX({ nodes: node.children })}
               </Text>
             )

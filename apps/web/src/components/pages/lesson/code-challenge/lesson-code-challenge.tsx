@@ -2,35 +2,46 @@ import { useState } from 'react'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
 import { CodePanel } from './code-panel'
-import { CodingTaskResult } from './coding-task-result'
-import type { LessonForUser } from '@/types/lesson'
+import type { CodingTaskSubmission, Lesson } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { FileIcon } from '@/components/ui/icons/file'
 import { CodeIcon } from '@/components/ui/icons/code'
-import { CheckSquare, RotateCcw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
+import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 
 interface LessonCodeChallengeProps {
-  lesson: LessonForUser
+  lesson: Lesson
   courseSlug: string
   lessonSlug: string
   moduleSlug: string
 }
 
 export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCodeChallengeProps) {
+  const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
+
   const starterCode = lesson.starterCode ?? ''
-  const [code, setCode] = useState(starterCode)
+  const submissions = (userLesson?.submissions as CodingTaskSubmission[]) ?? []
+  const latestCode = submissions?.at(-1)?.submittedCode ?? starterCode
+  const [code, setCode] = useState(latestCode)
+
+  const language = lesson.codingLanguage
+  const { mutate: submit, isPending } = useSubmitCodingTask(courseSlug, lessonSlug)
+
+  if (!language) {
+    return <div>No language found</div>
+  }
+  const attemptsLeft = userLesson?.attemptsLeft ?? 50
+  const canSubmit = code.trim().length > 0 && !isPending && attemptsLeft > 0
 
   return (
-    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 lg:flex-row">
-      <div className="flex flex-col w-full ">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 xl:flex-row xl:items-stretch">
+      <div className="flex flex-col w-full">
         <PanelHeader>
           <FileIcon className="w-5 h-5" />
           <Text variant="caps-14">DESCRIPTION</Text>
         </PanelHeader>
-        <div className="flex flex-col p-5 border-b border-x border-border">
-          <DescriptionPanel lesson={lesson} />
+        <div className="flex flex-col flex-1 p-5 border-b border-x border-border overflow-y-auto">
+          <DescriptionPanel lesson={lesson} userLesson={userLesson ?? null} />
         </div>
       </div>
       <div className="gap-2.5 flex flex-col w-full">
@@ -38,43 +49,19 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
           <PanelHeader>
             <CodeIcon className="w-5 h-5" />
             <Text variant="caps-14">CODE</Text>
-            <div className="ml-auto">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6 text-[#e0deda] hover:text-white hover:bg-white/10"
-                      onClick={() => setCode(starterCode)}
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reset code to starter template</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
           </PanelHeader>
-          <div className="flex flex-col py-5 border-b border-x border-border">
+          <div className="flex flex-col flex-1 border-b border-x border-border overflow-hidden">
             <CodePanel
               lesson={lesson}
-              courseSlug={courseSlug}
-              lessonSlug={lessonSlug}
+              userLesson={userLesson ?? null}
               code={code}
               onCodeChange={setCode}
+              onReset={() => setCode(starterCode)}
+              onSubmit={() => submit({ courseSlug, lessonSlug, code, language })}
+              isPending={isPending}
+              canSubmit={canSubmit}
+              attemptsLeft={attemptsLeft}
             />
-          </div>
-        </div>
-        <div className="flex flex-col flex-1 w-full">
-          <PanelHeader>
-            <CheckSquare className="w-5 h-5" />
-            <Text variant="caps-14">RESULT</Text>
-          </PanelHeader>
-          <div className="flex flex-col border-b border-x border-border">
-            <CodingTaskResult lesson={lesson} />
           </div>
         </div>
       </div>

@@ -29,6 +29,7 @@ export interface CodingTaskSubmission {
   id: number
   passed: boolean
   submittedAt: string
+  submittedCode: string
 }
 
 /** Public shape for review_task grading rows (from GET lesson); criteria omitted when criteriaHidden is true. */

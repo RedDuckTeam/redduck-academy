@@ -1,7 +1,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { AppError } from '../../lib/errors'
-import { codingTaskSubmissions, userLessons } from '../../db/schema'
+import { codingTaskReviewCache, codingTaskSubmissions, userLessons } from '../../db/schema'
 
 export const CodingTaskRepository = {
   /**
@@ -61,6 +61,7 @@ export const CodingTaskRepository = {
         id: codingTaskSubmissions.id,
         passed: codingTaskSubmissions.passed,
         submittedAt: codingTaskSubmissions.submittedAt,
+        submittedCode: codingTaskSubmissions.submittedCode,
       })
       .from(codingTaskSubmissions)
       .where(eq(codingTaskSubmissions.userLessonId, userLessonId))
@@ -74,5 +75,21 @@ export const CodingTaskRepository = {
       .where(and(eq(userLessons.userId, userId), eq(userLessons.lessonId, lessonId)))
       .limit(1)
     return row ?? null
+  },
+
+  async getCachedReview(lessonId: number, codeHash: string): Promise<boolean | null> {
+    const [row] = await db
+      .select({ passed: codingTaskReviewCache.passed })
+      .from(codingTaskReviewCache)
+      .where(and(eq(codingTaskReviewCache.lessonId, lessonId), eq(codingTaskReviewCache.codeHash, codeHash)))
+      .limit(1)
+    return row?.passed ?? null
+  },
+
+  async setCachedReview(lessonId: number, codeHash: string, passed: boolean): Promise<void> {
+    await db
+      .insert(codingTaskReviewCache)
+      .values({ lessonId, codeHash, passed })
+      .onConflictDoNothing()
   },
 }

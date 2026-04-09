@@ -36,6 +36,20 @@
       "when": 1775319423914,
       "tag": "0004_late_lady_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775763806584,
+      "tag": "0005_slow_zzzax",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1744185600000,
+      "tag": "0006_coding_task_review_cache",
+      "breakpoints": true
     }
   ]
 }

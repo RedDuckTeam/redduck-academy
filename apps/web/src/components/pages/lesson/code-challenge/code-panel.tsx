@@ -1,47 +1,96 @@
 import { CodeEditor } from './code-editor'
-import { TestCaseTabs } from './test-case-tabs'
-import type { LessonForUser } from '@/types/lesson'
-import { Button } from '@/components/ui/button'
+import type { CodingTaskSubmission, Lesson, LessonForUser } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
-import { Loader2 } from 'lucide-react'
-import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { CheckCircle, RotateCcw, XCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface CodePanelProps {
-  lesson: LessonForUser
-  courseSlug: string
-  lessonSlug: string
+  lesson: Lesson
+  userLesson: LessonForUser | null
   code: string
   onCodeChange: (value: string) => void
+  onReset: () => void
+  onSubmit: () => void
+  isPending: boolean
+  canSubmit: boolean
+  attemptsLeft: number
 }
 
-export function CodePanel({ lesson, courseSlug, lessonSlug, code, onCodeChange }: CodePanelProps) {
+export function CodePanel({
+  lesson,
+  userLesson,
+  code,
+  onCodeChange,
+  onReset,
+  onSubmit,
+  isPending,
+  canSubmit,
+  attemptsLeft,
+}: CodePanelProps) {
   const language = lesson.codingLanguage ?? 'solidity'
-
-  const { mutate: submit, isPending } = useSubmitCodingTask(courseSlug, lessonSlug)
-
-  const attemptsLeft = lesson.attemptsLeft ?? 3
-  const canSubmit = code.trim().length > 0 && !isPending && attemptsLeft > 0
-
-  function handleSubmit() {
-    submit({ courseSlug, lessonSlug, code, language })
-  }
+  const submissions = (userLesson?.submissions as CodingTaskSubmission[]) ?? []
+  const latest = submissions?.at(-1)
 
   return (
     <div className="flex flex-col">
-      <CodeEditor value={code} onChange={onCodeChange} language={language} />
-
-      <div className="flex items-center gap-2 px-4 py-2 border-t border-border bg-[#2d2d2d]">
-        <Button size="sm" variant="secondary" onClick={handleSubmit} disabled={!canSubmit}>
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Text variant="caps-14">Submit</Text>}
-        </Button>
-        {attemptsLeft <= 3 && (
-          <Text variant="main-14" className="text-muted-foreground">
-            {attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} left
-          </Text>
-        )}
+      <div className="flex items-center border-b border-border py-2 px-4 justify-between">
+        <Text variant={'main-16'} className="capitalize">
+          {lesson.codingLanguage}
+        </Text>
+        <div className="ml-auto flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-[#e0deda] hover:text-white hover:bg-white/10"
+                onClick={onReset}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Reset code to starter template</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" variant="default" onClick={onSubmit} disabled={!canSubmit}>
+                  <Text variant="caps-14" className="flex items-center gap-1">
+                    {isPending ? 'Pending' : 'Submit'}
+                  </Text>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {attemptsLeft === 0 && (
+              <TooltipContent>
+                <p>You have no attempts remaining</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </div>
       </div>
-
-      <TestCaseTabs testCases={lesson.codingTestCases ?? []} />
+      <CodeEditor value={code} onChange={onCodeChange} language={language} />
+      {latest && (
+        <div
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 border-t transition-colors border-border',
+            latest.passed ? 'bg-success/10' : 'bg-primary/10',
+          )}
+        >
+          {latest.passed ? (
+            <CheckCircle className="h-4 w-4 text-success shrink-0" />
+          ) : (
+            <XCircle className="h-4 w-4 text-primary shrink-0" />
+          )}
+          <Text variant="main-14" className={latest.passed ? 'text-success' : 'text-primary'}>
+            {latest.passed ? 'Passed' : 'Not passed'}
+          </Text>
+        </div>
+      )}
     </div>
   )
 }
