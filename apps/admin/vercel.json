@@ -1,4 +1,4 @@
 {
   "installCommand": "cd ../.. && yarn install",
-  "buildCommand": "cd ../.. && yarn admin:db:migrate && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build"
+  "buildCommand": "cd ../.. && yarn admin:db:migrate && cd apps/admin && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build"
 }
