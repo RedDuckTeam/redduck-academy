@@ -11742,6 +11742,7 @@ __metadata:
   dependencies:
     "@types/node": "npm:^25.6.0"
     "@types/picomatch": "npm:^4.0.3"
+    drizzle-kit: "npm:^0.31.8"
     esbuild: "npm:^0.28.0"
     typescript: "npm:^6.0.2"
   languageName: unknown
