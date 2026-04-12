@@ -30,7 +30,7 @@ app.get('/', healthCheckDesc, (c) => {
   return c.text('Hello Hono!')
 })
 
-// CORS configuration for auth routes
+// CORS configuration for auth route
 app.use(
   '/api/*',
   cors({
