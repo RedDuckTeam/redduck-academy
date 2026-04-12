@@ -17,12 +17,14 @@ const serverFunction: ServerFunctionClient = async function (args) {
   'use server'
   return handleServerFunctions({
     ...args,
+    // @ts-expect-error - config is a promise
     config,
     importMap,
   })
 }
 
 const Layout = ({ children }: Args) => (
+  // @ts-expect-error - config is a promise
   <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
     {children}
   </RootLayout>

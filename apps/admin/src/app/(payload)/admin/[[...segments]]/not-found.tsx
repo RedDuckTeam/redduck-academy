@@ -16,9 +16,11 @@ type Args = {
 }
 
 export const generateMetadata = ({ params, searchParams }: Args): Promise<Metadata> =>
+  // @ts-expect-error - config is a promise
   generatePageMetadata({ config, params, searchParams })
 
 const NotFound = ({ params, searchParams }: Args) =>
+  // @ts-expect-error - config is a promise
   NotFoundPage({ config, params, searchParams, importMap })
 
 export default NotFound

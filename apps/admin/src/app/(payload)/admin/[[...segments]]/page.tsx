@@ -16,9 +16,11 @@ type Args = {
 }
 
 export const generateMetadata = ({ params, searchParams }: Args): Promise<Metadata> =>
+  // @ts-expect-error - config is a promise
   generatePageMetadata({ config, params, searchParams })
 
 const Page = ({ params, searchParams }: Args) =>
+  // @ts-expect-error - config is a promise
   RootPage({ config, params, searchParams, importMap })
 
 export default Page
