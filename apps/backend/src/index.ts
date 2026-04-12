@@ -34,7 +34,7 @@ app.get('/', healthCheckDesc, (c) => {
 app.use(
   '/api/*',
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:8787'],
+    origin: ['http://localhost:3000', 'http://localhost:8787', 'https://redduck-academy.jeleika.com'],
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['POST', 'GET', 'OPTIONS'],
     exposeHeaders: ['Content-Length'],
