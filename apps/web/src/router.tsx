@@ -5,7 +5,7 @@ import * as Providers from './integrations/tanstack-query/root-provider'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 
-// Create a new router instance
+// Create a new router instanc
 export const getRouter = () => {
   const providersContext = Providers.getContext()
 
