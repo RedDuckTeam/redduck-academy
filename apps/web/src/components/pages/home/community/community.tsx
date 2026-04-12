@@ -13,7 +13,7 @@ export const Community = ({ events }: CommunitySectionProps) => {
   }
 
   return (
-    <div className="p-[60px] flex flex-col gap-10">
+    <div className="flex flex-col gap-5 sm:gap-10 px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px]">
       <Text variant={'subtitle-32'}>_COMMUNITY</Text>
       <Carousel opts={{ align: 'start', loop: false }} className="w-full">
         <CarouselContent className="-ml-5">

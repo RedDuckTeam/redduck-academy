@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { IconProps } from './types'
 
 interface HomepageGridProps extends IconProps {
@@ -13,7 +14,7 @@ export const HomepageGrid = ({ className, fill = '#E0DEDA', lines = '#CCCCCC', .
       viewBox="0 0 1800 491"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={cn('[&_path]:transition-colors', className)}
       {...props}
     >
       <mask id="path-1-inside-1_29_837" fill="white">

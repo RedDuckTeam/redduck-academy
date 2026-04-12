@@ -17,16 +17,15 @@ interface CommunityEventCardProps {
 export const CommunityEventCard = ({ event }: CommunityEventCardProps) => {
   const slug = event.slug
 
-  console.log({ event })
   const dateLabel = formatEventDate(event.eventDate)
   const imageSrc = resolveMediaUrl(event.photo?.url)
 
   const inner = (
-    <div className="p-5 flex flex-col gap-5 bg-primary h-full">
+    <div className="p-5 flex flex-col gap-5 bg-primary h-full transition-colors">
       <Text variant={'caps-24'}>{event.title}</Text>
       <Text variant={'main-16'}>{event.description}</Text>
       {dateLabel ? (
-        <div className="px-4 py-1 w-fit rounded-[16px] bg-background">
+        <div className="px-4 py-1 w-fit rounded-[16px] bg-background transition-colors">
           <Text variant={'caps-12'}>{dateLabel}</Text>
         </div>
       ) : null}
@@ -45,7 +44,7 @@ export const CommunityEventCard = ({ event }: CommunityEventCardProps) => {
   }
 
   return (
-    <Link to="/community/$slug" params={{ slug }} className="block h-full">
+    <Link to="/community/$slug" params={{ slug }} className="block h-full transition-colors">
       {inner}
     </Link>
   )

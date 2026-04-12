@@ -1,35 +1,41 @@
-import { useMemo, useRef, useState } from 'react'
-import { authClient } from '@/lib/auth-client'
+import { useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { Certificate } from '@/components/ui/certificate'
 import { Button } from '@/components/ui/button'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
+import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificates'
+import { useClaimCertificate } from '@/hooks/api/certificates/useClaimCertificate'
+import { SetNameScreen } from './set-name-screen'
 
 export interface CourseCertificatePageProps {
   course: Course
 }
 
 export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
-  const { data: session, isPending } = authClient.useSession()
   const certRef = useRef<HTMLDivElement>(null)
   const [isDownloading, setIsDownloading] = useState(false)
 
-  const recipientName = useMemo(() => {
-    const user = session?.user as { name?: string; email?: string } | undefined
-    if (user?.name?.trim()) return user.name.trim()
-    const email = user?.email
-    if (email) return email.split('@')[0] ?? 'Student'
-    return 'Student'
-  }, [session?.user])
+  const { data: certificates, isLoading } = useUserCertificates()
+  const { mutate: claim, isPending: isClaiming } = useClaimCertificate()
 
-  const completionDate = useMemo(() => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date()), [])
+  const certificate = certificates?.find((c) => c.courseSlug === course.slug)
+
+  const completionDate = certificate
+    ? new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(certificate.issuedAt))
+    : ''
 
   const courseLine = `${course.title} by RedDuck`
   const subtitle = `You finished ${course.title.toLowerCase()} by RedDuck`
 
-  const handleShareLinkedIn = () => {
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`
-    window.open(url, '_blank', 'noopener,noreferrer')
+  const handleClaim = (name: string) => {
+    claim({ courseSlug: course.slug, name })
+  }
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/certificates/${certificate?.id}`
+    await navigator.clipboard.writeText(url)
+    toast.success('Certificate link copied to clipboard')
   }
 
   const handleDownloadImage = async () => {
@@ -52,6 +58,12 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
     }
   }
 
+  if (isLoading) return null
+
+  if (!certificate) {
+    return <SetNameScreen onClaim={handleClaim} isLoading={isClaiming} />
+  }
+
   return (
     <div className="w-full flex flex-col gap-10 px-6 py-14 md:px-10 md:py-[60px] bg-[#000]">
       <div className="mx-auto flex max-w-[880px] flex-col items-center gap-10 text-center text-white">
@@ -72,7 +84,7 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
       <div className="certificate-print-root mx-auto flex w-full max-w-[880px] justify-center print:max-w-none print:py-0">
         <Certificate
           ref={certRef}
-          recipientName={isPending ? '…' : recipientName}
+          recipientName={certificate.name}
           courseName={courseLine}
           completionDate={completionDate}
         />
@@ -83,9 +95,9 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
           type="button"
           variant="outline"
           className="h-[60px] min-h-[60px] flex-1 border-white bg-transparent text-white hover:bg-white/10 hover:text-white"
-          onClick={handleShareLinkedIn}
+          onClick={handleShare}
         >
-          Share to LinkedIn
+          Share
         </Button>
         <Button
           type="button"

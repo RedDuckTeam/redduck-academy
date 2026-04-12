@@ -4,27 +4,39 @@ import { Button } from '@/components/ui/button'
 import { LongArrowRight } from '@/components/ui/icons/long-arrow-right'
 import { HomepageGrid } from '@/components/ui/icons/homepage-grid'
 import { useTheme } from '@/components/providers/theme-context'
+import { GhostIcon } from '@/components/ui/icons/ghost'
+import { PacmanIcon } from '@/components/ui/icons/pacman'
 
 export const Progress = () => {
   const { theme } = useTheme()
   return (
-    <div className="pb-[60px] px-[60px] flex flex-col gap-9">
+    <div className="flex flex-col gap-9 px-6 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]">
       <HomepageGrid
-        className="absolute top-0 left-[60px] w-[calc(100%-120px)] z-[-1]"
+        className="absolute top-0 left-[60px] w-[calc(100%-121px)] z-[-1]"
         fill={theme === 'dark' ? '#222222' : '#E0DEDA'}
         lines={theme === 'dark' ? '#333333' : '#CCCCCC'}
       />
-      <div className="flex justify-between">
+      <div className="flex  max-xl:w-full xl:justify-between ">
         <div></div>
         <ProgressCards />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="bg-primary py-6 px-10">
+      <div className="flex items-center max-2xl:flex-col max-2xl:w-full justify-between relative">
+        <div className="bg-primary p-5 sm:py-6 sm:px-10 max-2xl:w-full max-lg:w-screen">
           <Text variant="subtitle-45" className="text-[#000]">
             blockchain development course_
           </Text>
         </div>
-        <Button variant="secondary" className="p-[60px] flex items-center gap-5">
+        <div className="absolute max-sm:left-[10%] sm:right-[480px] -bottom-12 2xl:bottom-16">
+          <PacmanIcon />
+        </div>
+        <div className="absolute right-[10%] sm:right-[330px] -bottom-12 2xl:bottom-0">
+          <GhostIcon />
+        </div>
+        <Button
+          variant="secondary"
+          size={'free'}
+          className="flex items-center px-10 !h-[108px] gap-5 max-2xl:w-full max-lg:w-screen"
+        >
           <Text variant="caps-20" className="text-header-foreground">
             START
           </Text>

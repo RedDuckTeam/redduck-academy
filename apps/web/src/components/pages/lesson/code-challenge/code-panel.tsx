@@ -1,9 +1,10 @@
-import { CodeEditor } from './code-editor'
+import { useRef } from 'react'
+import { CodeEditor, type CodeEditorHandle } from './code-editor'
 import type { CodingTaskSubmission, Lesson, LessonForUser } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { CheckCircle, RotateCcw, XCircle } from 'lucide-react'
+import { CheckCircle, RotateCcw, WrapText, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CodePanelProps {
@@ -29,6 +30,7 @@ export function CodePanel({
   canSubmit,
   attemptsLeft,
 }: CodePanelProps) {
+  const editorRef = useRef<CodeEditorHandle>(null)
   const language = lesson.codingLanguage ?? 'solidity'
   const submissions = (userLesson?.submissions as CodingTaskSubmission[]) ?? []
   const latest = submissions?.at(-1)
@@ -40,6 +42,21 @@ export function CodePanel({
           {lesson.codingLanguage}
         </Text>
         <div className="ml-auto flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-[#e0deda] hover:text-white hover:bg-white/10"
+                onClick={() => editorRef.current?.format()}
+              >
+                <WrapText className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Format code</p>
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -73,7 +90,7 @@ export function CodePanel({
           </Tooltip>
         </div>
       </div>
-      <CodeEditor value={code} onChange={onCodeChange} language={language} />
+      <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={language} />
       {latest && (
         <div
           className={cn(

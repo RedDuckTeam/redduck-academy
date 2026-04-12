@@ -11,7 +11,7 @@ import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { sanitizeReviewFeedbackForLearner } from '../review/sanitize-review-feedback-for-learner'
 
-const { lessons } = payloadSchema
+const { lessons, courses } = payloadSchema
 
 export class UserService {
   static async getLessonForUser(userId: string, courseSlug: string, lessonSlug: string) {
@@ -130,6 +130,67 @@ export class UserService {
           maxPoints,
         }
       })
+  }
+
+  static async getProgressCards(userId: string) {
+    const [userRecord] = await db.select({ points: user.points }).from(user).where(eq(user.id, userId)).limit(1)
+
+    const completedLessonRows = await db
+      .select({ lessonId: userLessons.lessonId, updatedAt: userLessons.updatedAt })
+      .from(userLessons)
+      .where(and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true)))
+
+    const completedLessonsCount = completedLessonRows.length
+
+    let completedCoursesCount = 0
+    if (completedLessonRows.length > 0) {
+      const lessonIds = completedLessonRows.map((l) => l.lessonId)
+      const payloadLessons = await payloadDb.query.lessons.findMany({
+        where: inArray(lessons.id, lessonIds),
+        with: { module: { with: { course: true } } },
+      })
+      const uniqueCourseIds = new Set(
+        payloadLessons.filter((l) => l.module?.course?.id).map((l) => l.module!.course!.id),
+      )
+      completedCoursesCount = uniqueCourseIds.size
+    }
+
+    const totalCoursesCount = await payloadDb.query.courses.findMany({ columns: { id: true } }).then((r) => r.length)
+
+    const uniqueDateStrings = new Set(
+      completedLessonRows.map((l) => new Date(l.updatedAt).toISOString().split('T')[0]),
+    )
+    const sortedDates = [...uniqueDateStrings].sort().reverse()
+
+    let currentStreak = 0
+    const today = new Date()
+    for (let i = 0; i < sortedDates.length; i++) {
+      const expected = new Date(today)
+      expected.setUTCDate(expected.getUTCDate() - i)
+      const expectedStr = expected.toISOString().split('T')[0]
+      if (sortedDates[i] === expectedStr) {
+        currentStreak++
+      } else {
+        break
+      }
+    }
+
+    return {
+      points: userRecord?.points ?? 0,
+      completedLessonsCount,
+      completedCoursesCount,
+      totalCoursesCount,
+      currentStreak,
+    }
+  }
+
+  static async updateUserName(userId: string, name: string) {
+    const [updated] = await db
+      .update(user)
+      .set({ name })
+      .where(eq(user.id, userId))
+      .returning({ name: user.name })
+    return { name: updated.name }
   }
 
   static async getUserStats(userId: string) {

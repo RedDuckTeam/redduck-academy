@@ -50,6 +50,13 @@
       "when": 1744185600000,
       "tag": "0006_coding_task_review_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1744416000000,
+      "tag": "0007_user_certificates",
+      "breakpoints": true
     }
   ]
 }

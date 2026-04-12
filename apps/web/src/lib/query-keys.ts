@@ -10,8 +10,12 @@ export const queryKeys = {
   },
   user: {
     completedLessons: () => ['user', 'completed-lessons'] as const,
+    progressCards: () => ['user', 'progress-cards'] as const,
     lesson: (courseSlug: string, lessonSlug: string) =>
       ['user', 'lesson', courseSlug, lessonSlug] as const,
+  },
+  certificates: {
+    all: () => ['certificates'] as const,
   },
   community: {
     all: () => ['community'] as const,

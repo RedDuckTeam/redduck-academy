@@ -101,6 +101,68 @@ export const syncProjectReviewDesc = describeRoute({
   },
 })
 
+export const updateUserNameBodySchema = z.object({
+  name: z.string().min(1).max(42),
+})
+
+export const updateUserNameDesc = describeRoute({
+  summary: 'Update user name',
+  description: 'Updates the display name for the authenticated user. Does not retroactively update names stored on issued certificates.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'Updated user name',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.object({ name: z.string() }) })),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+export const getProgressCardsDesc = describeRoute({
+  summary: 'Get progress cards data',
+  description: 'Returns progress data for the home page cards: points, completed lessons, completed courses, and current streak.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'Progress cards data',
+      content: {
+        'application/json': {
+          schema: resolver(
+            z.object({
+              data: z.object({
+                points: z.number(),
+                completedLessonsCount: z.number(),
+                completedCoursesCount: z.number(),
+                totalCoursesCount: z.number(),
+                currentStreak: z.number(),
+              }),
+            }),
+          ),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const getUserStatsDesc = describeRoute({
   summary: 'Get user stats',
   description: 'Returns the authenticated user stats (points and completed lessons count).',

@@ -11,6 +11,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
@@ -80,6 +81,32 @@ export const codingTaskSubmissions = pgTable(
     userLessonIdIdx: index('coding_task_submissions_user_lesson_id_idx').on(t.userLessonId),
   }),
 )
+
+export const userCertificates = pgTable(
+  'user_certificates',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    courseSlug: text('course_slug').notNull(),
+    issuedAt: timestamp('issued_at').defaultNow().notNull(),
+    name: text('name').notNull(),
+  },
+  (t) => ({
+    userCourseUnique: uniqueIndex('user_certificates_user_id_course_slug_unique').on(
+      t.userId,
+      t.courseSlug,
+    ),
+  }),
+)
+
+export const userCertificatesRelations = relations(userCertificates, ({ one }) => ({
+  user: one(user, {
+    fields: [userCertificates.userId],
+    references: [user.id],
+  }),
+}))
 
 export const codingTaskReviewCache = pgTable(
   'coding_task_review_cache',

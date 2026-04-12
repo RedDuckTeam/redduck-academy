@@ -57,9 +57,9 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
   }, [courses, completedLessons, completedLessonIds])
 
   return (
-    <div className="flex flex-col gap-10 bg-header p-[60px] text-[#e0deda]">
+    <div className="flex flex-col  gap-5 sm:gap-10 bg-header px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px] text-[#e0deda]">
       <Text variant={'subtitle-32'}>_MY PROGRESS</Text>
-      <div className="grid grid-cols-10 border border-border">
+      <div className="hidden lg:grid grid-cols-10 border border-border">
         <div className="p-5 col-span-6">
           <Text variant={'caps-20'}>Courses</Text>
         </div>
@@ -72,6 +72,21 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
         {courses.map((course, index) => (
           <MyProgressCourse
             key={course.id}
+            layout="table"
+            course={course}
+            index={index}
+            earnedPoints={courseProgress[index].earnedPoints}
+            totalPoints={courseProgress[index].totalCoursePoints}
+            nextLesson={courseProgress[index].nextLesson}
+            status={courseProgress[index].status}
+          />
+        ))}
+      </div>
+      <div className="flex flex-col gap-4 lg:hidden">
+        {courses.map((course, index) => (
+          <MyProgressCourse
+            key={course.id}
+            layout="card"
             course={course}
             index={index}
             earnedPoints={courseProgress[index].earnedPoints}

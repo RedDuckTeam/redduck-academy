@@ -26,7 +26,7 @@ function CommunityEventPage() {
   const { event } = Route.useLoaderData()
 
   return (
-    <main className="flex flex-col min-h-screen gap-3.5 mx-[60px] mb-[60px]">
+    <main className="mx-5 mb-[60px] flex min-h-screen min-w-0 flex-col gap-3.5 md:mx-[60px]">
       <PageBreadcrumbs variant="community" eventTitle={event.title} />
       <LessonContentContainer>
         <LessonTitle title={event.title} />

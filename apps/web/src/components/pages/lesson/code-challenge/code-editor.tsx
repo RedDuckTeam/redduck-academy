@@ -1,5 +1,6 @@
-import { Editor } from '@monaco-editor/react'
-import { useEffect, useRef } from 'react'
+import { Editor, type OnMount } from '@monaco-editor/react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import type { editor } from 'monaco-editor'
 import { useTheme } from '@/components/providers/theme-context'
 import { registerLanguages } from '@/lib/monaco-languages'
 
@@ -9,10 +10,26 @@ interface CodeEditorProps {
   language?: 'solidity' | 'rust' | 'typescript'
 }
 
-export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEditorProps) {
+export interface CodeEditorHandle {
+  format: () => void
+}
+
+export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function CodeEditor(
+  { value, onChange, language = 'solidity' },
+  ref,
+) {
   const { theme } = useTheme()
   const containerRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const monacoTheme = theme === 'dark' ? 'vs-dark' : 'vs-light'
+
+  useImperativeHandle(ref, () => ({
+    format: () => editorRef.current?.getAction('editor.action.formatDocument')?.run(),
+  }))
+
+  const handleMount: OnMount = (editorInstance) => {
+    editorRef.current = editorInstance
+  }
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -50,6 +67,7 @@ export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEdito
         theme={monacoTheme}
         value={value}
         onChange={(val) => onChange(val ?? '')}
+        onMount={handleMount}
         beforeMount={(monaco) => {
           registerLanguages(monaco)
         }}
@@ -72,4 +90,4 @@ export function CodeEditor({ value, onChange, language = 'solidity' }: CodeEdito
       />
     </div>
   )
-}
+})

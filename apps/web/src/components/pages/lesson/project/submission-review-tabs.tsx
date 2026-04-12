@@ -47,7 +47,12 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
                       <Text variant="main-18" className={cn(c.passed ? 'text-success' : 'text-primary')}>
                         {i + 1}. {c.name}
                       </Text>
-                      <DucksBadge className="bg-transparent p-0" ducks={c.maxPoints} myDucks={c.points} />
+                      <DucksBadge
+                        themeAware
+                        className="bg-transparent p-0"
+                        ducks={c.maxPoints}
+                        myDucks={c.points}
+                      />
                     </div>
                     <Text variant="main-18" className="text-muted-foreground text-justify">
                       {c.comment}

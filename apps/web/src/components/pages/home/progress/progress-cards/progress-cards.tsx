@@ -1,12 +1,28 @@
+import { useProgressCards } from '@/hooks/api/user/useProgressCards'
 import { ProgressCard } from './progress-card'
 
 export const ProgressCards = () => {
+  const { data } = useProgressCards()
+
   return (
-    <div className="flex border border-border divide-x divide-border">
-      <ProgressCard firstNum="150" secondNum="/200" text="points received" />
-      <ProgressCard firstNum="75%" text="my success index" />
-      <ProgressCard firstNum="2" secondNum="/6" text="tests passed " />
-      <ProgressCard firstNum="1" text="place in ranking " />
+    <div className="xl:flex max-xl:grid max-xl:w-full grid-cols-2 border border-border">
+      <ProgressCard
+        firstNum={String(data?.points ?? 0)}
+        text="points received"
+        className="border-r max-xl:border-b border-border"
+      />
+      <ProgressCard
+        firstNum={String(data?.completedLessonsCount ?? 0)}
+        text="lessons completed"
+        className="xl:border-r max-xl:border-b border-border"
+      />
+      <ProgressCard
+        firstNum={String(data?.completedCoursesCount ?? 0)}
+        secondNum={`/${data?.totalCoursesCount ?? 0}`}
+        text="courses completed"
+        className="border-r border-border"
+      />
+      <ProgressCard firstNum={String(data?.currentStreak ?? 0)} text="day streak" />
     </div>
   )
 }

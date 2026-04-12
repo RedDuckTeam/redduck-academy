@@ -15,6 +15,7 @@ import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as CoursesCourseSlugRouteImport } from './routes/courses/$courseSlug'
 import { Route as CommunitySlugRouteImport } from './routes/community/$slug'
+import { Route as CertificatesCertificateIdRouteImport } from './routes/certificates/$certificateId'
 import { Route as CoursesCourseSlugIndexRouteImport } from './routes/courses/$courseSlug.index'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
@@ -57,6 +58,12 @@ const CommunitySlugRoute = CommunitySlugRouteImport.update({
   path: '/community/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CertificatesCertificateIdRoute =
+  CertificatesCertificateIdRouteImport.update({
+    id: '/certificates/$certificateId',
+    path: '/certificates/$certificateId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CoursesCourseSlugIndexRoute = CoursesCourseSlugIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -118,6 +125,7 @@ const CoursesCourseSlugModuleSlugLessonSlugRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
+  '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
@@ -137,6 +145,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
+  '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses': typeof CoursesIndexRoute
@@ -156,6 +165,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/sign-up': typeof SignUpRoute
+  '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/sign-up'
+    | '/certificates/$certificateId'
     | '/community/$slug'
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/sign-up'
+    | '/certificates/$certificateId'
     | '/community/$slug'
     | '/demo/tanstack-query'
     | '/courses'
@@ -214,6 +226,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/sign-up'
+    | '/certificates/$certificateId'
     | '/community/$slug'
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
@@ -234,6 +247,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SignUpRoute: typeof SignUpRoute
+  CertificatesCertificateIdRoute: typeof CertificatesCertificateIdRoute
   CommunitySlugRoute: typeof CommunitySlugRoute
   CoursesCourseSlugRoute: typeof CoursesCourseSlugRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
@@ -290,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/community/$slug'
       fullPath: '/community/$slug'
       preLoaderRoute: typeof CommunitySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/certificates/$certificateId': {
+      id: '/certificates/$certificateId'
+      path: '/certificates/$certificateId'
+      fullPath: '/certificates/$certificateId'
+      preLoaderRoute: typeof CertificatesCertificateIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/courses/$courseSlug/': {
@@ -391,6 +412,7 @@ const CoursesCourseSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SignUpRoute: SignUpRoute,
+  CertificatesCertificateIdRoute: CertificatesCertificateIdRoute,
   CommunitySlugRoute: CommunitySlugRoute,
   CoursesCourseSlugRoute: CoursesCourseSlugRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,

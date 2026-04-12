@@ -22,7 +22,9 @@ export const useHeaderLinks = () => {
 
   useEffect(() => {
     const currentPath = router.state.location.pathname
-    const activeIndex = headerLinks.findIndex((link) => link.to === currentPath)
+    const activeIndex = headerLinks.findIndex((link) =>
+      link.to === '/' ? currentPath === '/' : currentPath === link.to || currentPath.startsWith(link.to + '/'),
+    )
 
     if (activeIndex !== -1 && refs[activeIndex]) {
       setActiveLinkRef(refs[activeIndex])

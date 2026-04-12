@@ -8,6 +8,9 @@ import {
   getUserCompletedLessonsDesc,
   getUserLessonDesc,
   syncProjectReviewDesc,
+  getProgressCardsDesc,
+  updateUserNameDesc,
+  updateUserNameBodySchema,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
@@ -43,6 +46,19 @@ userApp.post(
 userApp.get('/completed-lessons', requireAuth, getUserCompletedLessonsDesc, async (c) => {
   const authUser = c.get('user')
   const data = await UserService.getUserCompletedLessons(authUser.id)
+  return c.json({ data })
+})
+
+userApp.get('/progress-cards', requireAuth, getProgressCardsDesc, async (c) => {
+  const authUser = c.get('user')
+  const data = await UserService.getProgressCards(authUser.id)
+  return c.json({ data })
+})
+
+userApp.patch('/name', requireAuth, updateUserNameDesc, validator('json', updateUserNameBodySchema), async (c) => {
+  const authUser = c.get('user')
+  const { name } = c.req.valid('json')
+  const data = await UserService.updateUserName(authUser.id, name)
   return c.json({ data })
 })
 

@@ -1,14 +1,21 @@
 import { Text } from '@/components/ui/text'
+import { cn } from '@/lib/utils'
 
 interface Props {
   firstNum: string
   secondNum?: string
   text: string
+  className?: string
 }
 
-export const ProgressCard = ({ firstNum, secondNum, text }: Props) => {
+export const ProgressCard = ({ firstNum, secondNum, text, className }: Props) => {
   return (
-    <div className="py-6 px-[30px] min-w-[288px] bg-background flex flex-col gap-2.5">
+    <div
+      className={cn(
+        'sm:py-6 p-2.5 sm:px-[30px] max-xl:w-full xl:min-w-[288px] bg-background flex flex-col gap-1 sm:gap-2.5',
+        className,
+      )}
+    >
       <div className="flex items-end gap-2.5">
         <Text variant="subtitle-45">{firstNum}</Text>
         {secondNum && (
