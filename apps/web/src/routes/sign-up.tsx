@@ -1,25 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router'
 import Marquee from 'react-fast-marquee'
-import { lazy, Suspense } from 'react'
 import { ThemeToggle } from '@/components/header/theme-toggle'
 import { SignUpGoogleButton } from '@/components/pages/sign-up/sign-up-google-button'
 import { SignUpStartText } from '@/components/pages/sign-up/sign-up-start-text'
-
+import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-button'
 import { DuckIcon } from '@/components/ui/icons/duck'
 import { Text } from '@/components/ui/text'
-
-const SignUpWalletButton = lazy(() =>
-  import('@/components/pages/sign-up/sign-up-wallet-button').then((m) => ({
-    default: m.SignUpWalletButton,
-  })),
-)
 
 const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
 
 /** Repeated so the strip reads as one long loop; autoFill also clones to cover ultra-wide viewports. */
 const MARQUEE_ITEMS = [...MARQUEE_LABELS, ...MARQUEE_LABELS, ...MARQUEE_LABELS] as const
 
-export const Route = createFileRoute('/sign-up')({ component: SignUp })
+export const Route = createFileRoute('/sign-up')({ ssr: false, component: SignUp })
 
 function SignUp() {
   return (
@@ -38,9 +31,7 @@ function SignUp() {
         </div>
         <div className="mx-auto flex h-full w-full md:max-w-[calc(100%-80px)] lg:max-w-[850px] flex-1 flex-col items-center justify-center gap-4 md:gap-5">
           <SignUpGoogleButton />
-          <Suspense fallback={null}>
-            <SignUpWalletButton />
-          </Suspense>
+          <SignUpWalletButton />
         </div>
         <SignUpStartText />
       </div>
