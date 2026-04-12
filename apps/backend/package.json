@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --packages=external",
     "db:auth:generate": "npx @better-auth/cli generate --output ./src/db/auth-schema.ts -y",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
@@ -14,6 +14,7 @@
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/picomatch": "^4.0.3",
+    "esbuild": "^0.28.0",
     "typescript": "^6.0.2"
   }
 }
