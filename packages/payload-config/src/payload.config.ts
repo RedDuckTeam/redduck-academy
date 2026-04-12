@@ -66,7 +66,7 @@ export default buildConfig({
     schemaName: 'payload',
     push: false,
     pool: {
-      ssl: false,
+      ssl: { rejectUnauthorized: false },
       connectionString: process.env.DATABASE_URL,
     },
   }),
