@@ -10,6 +10,7 @@ import './styles.css'
 export default async function HomePage() {
   const headers = await getHeaders()
   const payloadConfig = await config
+  // @ts-expect-error - payloadConfig is a promise
   const payload = await getPayload({ config: payloadConfig })
   const { user } = await payload.auth({ headers })
 
