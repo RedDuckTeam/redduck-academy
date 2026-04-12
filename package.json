@@ -62,8 +62,12 @@
     "payload-config:generate": "yarn workspace @redduck/payload-config generate",
     "admin:build": "yarn workspace admin build",
     "admin:dev": "yarn workspace admin dev",
+    "admin:db:generate": "yarn workspace admin payload migrate:create",
+    "admin:db:migrate": "yarn workspace admin payload migrate",
     "backend:build": "yarn workspace backend build",
     "backend:dev": "yarn workspace backend dev",
+    "backend:db:generate": "yarn workspace backend db:generate",
+    "backend:db:migrate": "yarn workspace backend db:migrate",
     "web:build": "yarn workspace web build",
     "web:dev": "yarn workspace web dev"
   }
