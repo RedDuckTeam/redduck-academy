@@ -1,42 +1,47 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WagmiProvider } from 'wagmi'
 import { useEffect, useRef, useState } from 'react'
-import {
-  metadata,
-  networks,
-  projectId,
-  createWagmiAdapter,
-} from '@/constants/wallet-config'
 import { ThemeProvider } from '@/components/providers/theme-context'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 const queryClient = new QueryClient()
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
-  const [wagmiAdapter] = useState(() => createWagmiAdapter())
+  const [WagmiProvider, setWagmiProvider] = useState<React.ComponentType<{
+    config: unknown
+    children: React.ReactNode
+  }> | null>(null)
+  const [wagmiConfig, setWagmiConfig] = useState<unknown>(null)
   const initialized = useRef(false)
 
   useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true
+    if (initialized.current) return
+    initialized.current = true
+
+    Promise.all([
+      import('wagmi'),
+      import('@/constants/wallet-config'),
+    ]).then(([{ WagmiProvider }, { createWagmiAdapter, metadata, networks, projectId }]) => {
+      const adapter = createWagmiAdapter()
+      setWagmiConfig(adapter.wagmiConfig)
+      setWagmiProvider(() => WagmiProvider)
+
       import('@reown/appkit/react').then(({ createAppKit }) => {
-        createAppKit({
-          adapters: [wagmiAdapter],
-          networks,
-          projectId,
-          metadata,
-        })
+        createAppKit({ adapters: [adapter], networks, projectId, metadata })
       })
-    }
+    })
   }, [])
 
-  return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-          </ThemeProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+  const content = (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
+
+  if (!WagmiProvider || !wagmiConfig) {
+    return content
+  }
+
+  return <WagmiProvider config={wagmiConfig}>{content}</WagmiProvider>
 }
