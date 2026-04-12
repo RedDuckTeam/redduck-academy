@@ -1,7 +1,0 @@
-{
-  "version": 2,
-  "framework": "nextjs",
-  "installCommand": "yarn install",
-  "buildCommand": "yarn admin:db:migrate && yarn admin:build",
-  "outputDirectory": "apps/admin/.next"
-}
