@@ -40,10 +40,12 @@ jobs:
       - name: Build
         run: yarn workspace backend build
 
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
       - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.13.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          appdir: 'apps/backend'
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku git:remote -a ${{ secrets.HEROKU_APP_NAME }}
+          git subtree push --prefix apps/backend heroku main
