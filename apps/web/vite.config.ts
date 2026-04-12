@@ -19,11 +19,8 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart({
-      pages: [{ path: '/courses' }, ...getCoursePrerenderPaths()],
       prerender: {
-        enabled: true,
-        autoStaticPathsDiscovery: true,
-        crawlLinks: true,
+        enabled: false,
       },
     }),
     viteReact(),

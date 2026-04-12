@@ -3,7 +3,7 @@ import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCallback, useEffect } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
-import { authClient } from '@/lib/auth-client'
+import { getAuthClient } from '@/lib/auth-client'
 
 export const SignUpWalletButton = () => {
   const { address } = useAccount()
@@ -11,7 +11,7 @@ export const SignUpWalletButton = () => {
 
   const handleSignInWithMessage = async () => {
     if (!address) return
-    const { data: nonce, error: nonceError } = await authClient.siwe.nonce({
+    const { data: nonce, error: nonceError } = await getAuthClient().siwe.nonce({
       walletAddress: address,
     })
 
@@ -20,7 +20,7 @@ export const SignUpWalletButton = () => {
     const message = `Sign in with Ethereum. \n\nNonce: ${nonce.nonce}`
     const signature = await signMessageAsync({ message })
 
-    const { data } = await authClient.siwe.verify({
+    const { data } = await getAuthClient().siwe.verify({
       message,
       signature,
       walletAddress: address,
