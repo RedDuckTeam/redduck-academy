@@ -9,7 +9,7 @@ import { db } from '../db'
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   appName: 'Redduck Academy',
-  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001'],
+  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001', 'https://redduck-academy.jeleika.com'],
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
   socialProviders: {
