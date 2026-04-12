@@ -13,11 +13,12 @@ export const metadata = {
 
 export const networks = [mainnet] as [Chain, ...Chain[]]
 
-export const wagmiAdapter = new WagmiAdapter({
-  networks,
-  projectId,
-  ssr: true,
-  storage: createStorage({
-    storage: cookieStorage,
-  }),
-})
+export const createWagmiAdapter = () =>
+  new WagmiAdapter({
+    networks,
+    projectId,
+    ssr: true,
+    storage: createStorage({
+      storage: cookieStorage,
+    }),
+  })

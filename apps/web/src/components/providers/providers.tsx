@@ -1,11 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   metadata,
   networks,
   projectId,
-  wagmiAdapter,
+  createWagmiAdapter,
 } from '@/constants/wallet-config'
 import { ThemeProvider } from '@/components/providers/theme-context'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -13,6 +13,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 const queryClient = new QueryClient()
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
+  const [wagmiAdapter] = useState(() => createWagmiAdapter())
   const initialized = useRef(false)
 
   useEffect(() => {
