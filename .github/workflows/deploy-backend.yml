@@ -20,26 +20,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Setup Node.js with cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Build
-        run: yarn workspace backend build
-
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
@@ -48,4 +28,4 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           git remote add heroku https://heroku:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
-          git subtree push --prefix apps/backend heroku main
+          git push heroku main

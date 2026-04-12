@@ -12,10 +12,8 @@
     "better-auth:migrate": "yarn dlx @better-auth/cli migrate --config ./src/lib/auth.ts"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "@types/picomatch": "^4.0.3",
     "typescript": "^6.0.2"
-  },
-  "dependencies": {
-    "@types/node": "^25.6.0"
   }
 }

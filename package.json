@@ -69,6 +69,7 @@
     "backend:db:generate": "yarn workspace backend db:generate",
     "backend:db:migrate": "yarn workspace backend db:migrate",
     "web:build": "yarn workspace web build",
-    "web:dev": "yarn workspace web dev"
+    "web:dev": "yarn workspace web dev",
+    "heroku-postbuild": "yarn workspace backend build"
   }
 }
