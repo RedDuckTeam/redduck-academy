@@ -3,14 +3,17 @@ import type { LessonForUser } from '@/types/lesson'
 import { LessonTypeEnum } from '@/types/lesson'
 import { getLessonForUser } from '@/lib/api/courses'
 import { queryKeys } from '@/lib/query-keys'
+import { useSession } from '@/hooks/useSession'
 
 export const useLessonForUser = (courseSlug: string, lessonSlug: string) => {
+  const { session } = useSession()
   return useQuery({
     queryKey: queryKeys.user.lesson(courseSlug, lessonSlug),
     queryFn: async (): Promise<LessonForUser | null> => {
       const res = await getLessonForUser(courseSlug, lessonSlug)
       return res?.data ?? null
     },
+    enabled: !!session,
     staleTime: 60 * 1000,
     refetchInterval: (query) => {
       const d = query.state.data

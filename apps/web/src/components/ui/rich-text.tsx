@@ -62,6 +62,17 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               </Text>
             )
           },
+          upload: ({ node }) => {
+            const value = node.value as unknown as { url: string; alt: string; width: number; height: number }
+            return (
+              <img
+                src={value.url}
+                alt={value.alt}
+                className={cn(paragraphClassName, 'max-w-full max-h-full object-contain')}
+                style={{ maxWidth: value.width, maxHeight: value.height }}
+              />
+            )
+          },
           link: ({ node, nodesToJSX }) => {
             const children = nodesToJSX({ nodes: node.children })
             const rel = node.fields.newTab ? 'noopener noreferrer' : undefined

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useRouter } from '@tanstack/react-router'
 import { InProgressDialog } from './inprogress-dialog'
 import { SubmissionReviewTabs } from './submission-review-tabs'
 import type { Lesson, LatestProjectSubmission } from '@/types/lesson'
@@ -10,6 +11,7 @@ import { ClipboardIcon } from '@/components/ui/icons/clipboard'
 import { useSubmitProject } from '@/hooks/api/lessons/useSubmitProject'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { Dialog } from '@/components/ui/dialog'
+import { useSession } from '@/hooks/useSession'
 
 interface ProjectSubmissionProps {
   lesson: Lesson
@@ -19,6 +21,8 @@ interface ProjectSubmissionProps {
 }
 
 export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }: ProjectSubmissionProps) {
+  const router = useRouter()
+  const { session } = useSession()
   const [link, setLink] = useState('')
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const { mutate: submitProject, isPending } = useSubmitProject(courseSlug, lessonSlug)
@@ -80,9 +84,15 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
             <ClipboardIcon />
           </button>
         </div>
-        <Button disabled={!link || isPending || !userLesson?.attemptsLeft} onClick={handleSubmit} className="w-full">
-          <Text variant="caps-20">SEND TO REVIEW</Text>
-        </Button>
+        {!session ? (
+          <Button onClick={() => router.navigate({ to: '/sign-up' })} className="w-full">
+            <Text variant="caps-20">Sign in</Text>
+          </Button>
+        ) : (
+          <Button disabled={!link || isPending || !userLesson?.attemptsLeft} onClick={handleSubmit} className="w-full">
+            <Text variant="caps-20">SEND TO REVIEW</Text>
+          </Button>
+        )}
 
         {submissions.length > 0 && (
           <div className="flex flex-col gap-3 mt-2 ">

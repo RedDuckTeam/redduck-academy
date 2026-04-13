@@ -13,6 +13,6 @@ export default defineConfig({
     user: url.username,
     password: url.password,
     database: url.pathname.slice(1),
-    ssl: { rejectUnauthorized: false },
+    ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   },
 })

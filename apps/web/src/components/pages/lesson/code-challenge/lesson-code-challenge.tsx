@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from '@tanstack/react-router'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
 import { CodePanel } from './code-panel'
@@ -8,6 +9,7 @@ import { FileIcon } from '@/components/ui/icons/file'
 import { CodeIcon } from '@/components/ui/icons/code'
 import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
+import { useSession } from '@/hooks/useSession'
 
 interface LessonCodeChallengeProps {
   lesson: Lesson
@@ -17,6 +19,8 @@ interface LessonCodeChallengeProps {
 }
 
 export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCodeChallengeProps) {
+  const router = useRouter()
+  const { session } = useSession()
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
 
   const starterCode = lesson.starterCode ?? ''
@@ -67,6 +71,8 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
               onCodeChange={setCode}
               onReset={() => setCode(starterCode)}
               onSubmit={() => submit({ courseSlug, lessonSlug, code, language })}
+              onSignIn={() => router.navigate({ to: '/sign-up' })}
+              isAuthenticated={!!session}
               isPending={isPending}
               canSubmit={canSubmit}
               attemptsLeft={attemptsLeft}

@@ -1,15 +1,16 @@
 import { cn } from '@/lib/utils'
 import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
+import { useRouter } from '@tanstack/react-router'
 import { getAuthClient } from '@/lib/auth-client'
-import { env } from '@/env'
 import { toast } from 'sonner'
 
 export const SignUpWalletButton = () => {
   const { address } = useAccount()
   const { signMessageAsync } = useSignMessage()
+  const router = useRouter()
 
   const handleSignInWithMessage = async () => {
     if (!address) return
@@ -23,15 +24,15 @@ export const SignUpWalletButton = () => {
       const message = `Sign in with Ethereum. \n\nNonce: ${nonce.nonce}`
       const signature = await signMessageAsync({ message })
 
-      const { data } = await getAuthClient().siwe.verify({
+      const { data, error } = await getAuthClient().siwe.verify({
         message,
         signature,
         walletAddress: address,
       })
 
-      if (data) {
-        window.location.assign(env.VITE_APP_URL)
-      }
+      if (error || !data) throw new Error(error?.message ?? 'Verification failed')
+
+      router.navigate({ to: '/' })
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('User rejected the request.')) return
@@ -40,12 +41,6 @@ export const SignUpWalletButton = () => {
       toast.error('Failed to sign in with wallet. Please try again.')
     }
   }
-
-  useEffect(() => {
-    if (!address) return
-
-    handleSignInWithMessage()
-  }, [address])
 
   const handleOpenAppKit = useCallback(async () => {
     const { useAppKit } = await import('@reown/appkit/react')

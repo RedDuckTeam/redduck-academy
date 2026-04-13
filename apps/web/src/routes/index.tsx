@@ -7,6 +7,7 @@ import { Community } from '@/components/pages/home/community/community'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { getCommunityEvents } from '@/lib/api/community'
 import { queryKeys } from '@/lib/query-keys'
+import { useSession } from '@/hooks/useSession'
 //
 export const Route = createFileRoute('/')({
   ssr: true,

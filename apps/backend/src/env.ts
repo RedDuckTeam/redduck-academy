@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production']).default('development'),
   GITHUB_TOKEN: z.string().min(1),
   BETTER_AUTH_SECRET: z.string().min(1),
   BETTER_AUTH_URL: z.string().min(1),

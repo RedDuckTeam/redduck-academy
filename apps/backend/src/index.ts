@@ -26,10 +26,6 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal Server Error' }, 500)
 })
 
-app.get('/', healthCheckDesc, (c) => {
-  return c.text('Hello Hono!')
-})
-
 // CORS configuration for auth route
 app.use(
   '/api/*',

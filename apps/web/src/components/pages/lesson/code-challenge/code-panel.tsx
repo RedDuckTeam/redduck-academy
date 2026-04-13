@@ -14,6 +14,8 @@ interface CodePanelProps {
   onCodeChange: (value: string) => void
   onReset: () => void
   onSubmit: () => void
+  onSignIn: () => void
+  isAuthenticated: boolean
   isPending: boolean
   canSubmit: boolean
   attemptsLeft: number
@@ -26,6 +28,8 @@ export function CodePanel({
   onCodeChange,
   onReset,
   onSubmit,
+  onSignIn,
+  isAuthenticated,
   isPending,
   canSubmit,
   attemptsLeft,
@@ -72,22 +76,28 @@ export function CodePanel({
               <p>Reset code to starter template</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button size="sm" variant="default" onClick={onSubmit} disabled={!canSubmit}>
-                  <Text variant="caps-14" className="flex items-center gap-1">
-                    {isPending ? 'Pending' : 'Submit'}
-                  </Text>
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {attemptsLeft === 0 && (
-              <TooltipContent>
-                <p>You have no attempts remaining</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
+          {!isAuthenticated ? (
+            <Button size="sm" variant="default" onClick={onSignIn}>
+              <Text variant="caps-14">Sign in</Text>
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button size="sm" variant="default" onClick={onSubmit} disabled={!canSubmit}>
+                    <Text variant="caps-14" className="flex items-center gap-1">
+                      {isPending ? 'Pending' : 'Submit'}
+                    </Text>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {attemptsLeft === 0 && (
+                <TooltipContent>
+                  <p>You have no attempts remaining</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          )}
         </div>
       </div>
       <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={language} />

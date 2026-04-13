@@ -67,7 +67,7 @@ export default buildConfig({
     schemaName: 'payload',
     push: false,
     pool: {
-      ssl: { rejectUnauthorized: false },
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
       connectionString: process.env.DATABASE_URL,
     },
   }),

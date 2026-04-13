@@ -3,6 +3,7 @@ import type { Lesson } from '@/types/lesson'
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useMarkLessonCompleted } from '@/hooks/api/lessons/useMarkLessonCompleted'
+import { useSession } from '@/hooks/useSession'
 
 interface NextButtonProps {
   courseSlug: string
@@ -13,10 +14,20 @@ interface NextButtonProps {
 
 export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextButtonProps) => {
   const router = useRouter()
+  const { session } = useSession()
   const { mutate: markCompleted } = useMarkLessonCompleted()
   const hasNext = lesson.next !== null
   const link = hasNext ? `/courses/${courseSlug}/${moduleSlug}/${lesson.next}` : `/courses/${courseSlug}`
   const isLecture = lesson.type === 'lecture'
+
+  if (!session) {
+    return (
+      <Button onClick={() => router.navigate({ to: '/sign-up' })} className={className}>
+        <Text variant={'caps-20'}>Sign in</Text>
+      </Button>
+    )
+  }
+
   const handleClick = () => {
     if (isLecture) {
       markCompleted({ courseSlug, lessonSlug: lesson.slug })
