@@ -3,7 +3,7 @@ import { cache } from '../../lib/cache'
 import { payloadDb } from '../../db'
 import { payloadSchema } from '@redduck/payload-config'
 
-const { lessons } = payloadSchema
+const { lessons, media } = payloadSchema
 
 export const LESSON_NAV_CACHE_TTL_SEC = 600
 
@@ -112,16 +112,81 @@ export async function getLessonNavigationByIds(ids: number[]): Promise<Map<numbe
   return map
 }
 
+export type MediaInfo = {
+  id: number
+  url: string | null
+  alt: string
+  width: number | null
+  height: number | null
+}
+
+export function collectMediaUploadIds(content: unknown): number[] {
+  if (content == null || typeof content !== 'object') return []
+  const root = (content as Record<string, unknown>).root
+  if (root == null) return []
+
+  const ids = new Set<number>()
+  visitLexicalNodes(root, (n) => {
+    if (n.type !== 'upload' || n.relationTo !== 'media') return
+    const id = parseLessonDocId(n.value)
+    if (id != null) ids.add(id)
+  })
+  return [...ids]
+}
+
+export async function getMediaByIds(ids: number[]): Promise<Map<number, MediaInfo>> {
+  const map = new Map<number, MediaInfo>()
+  if (ids.length === 0) return map
+
+  const rows = await payloadDb
+    .select({
+      id: media.id,
+      url: media.url,
+      alt: media.alt,
+      width: media.width,
+      height: media.height,
+    })
+    .from(media)
+    .where(inArray(media.id, ids))
+
+  for (const row of rows) {
+    map.set(row.id, row)
+  }
+  return map
+}
+
+function walkAndEnrichMediaUploads(node: unknown, map: Map<number, MediaInfo>): void {
+  if (node == null || typeof node !== 'object') return
+  const n = node as Record<string, unknown>
+  if (n.type === 'upload' && n.relationTo === 'media') {
+    const id = parseLessonDocId(n.value)
+    if (id != null) {
+      const info = map.get(id)
+      if (info) n.value = info
+    }
+  }
+  const children = n.children
+  if (!Array.isArray(children)) return
+  for (const child of children) walkAndEnrichMediaUploads(child, map)
+}
+
 export async function enrichLessonContentInternalLinks(content: unknown): Promise<unknown> {
   if (content == null) return content
   if (typeof content !== 'object') return content
 
-  const ids = collectLessonLinkIds(content)
-  if (ids.length === 0) return content
+  const linkIds = collectLessonLinkIds(content)
+  const mediaIds = collectMediaUploadIds(content)
 
-  const navMap = await getLessonNavigationByIds(ids)
+  const [navMap, mediaMap] = await Promise.all([
+    getLessonNavigationByIds(linkIds),
+    getMediaByIds(mediaIds),
+  ])
+
   const clone = structuredClone(content) as Record<string, unknown>
   const root = clone.root
-  if (root != null) walkAndEnrich(root, navMap)
+  if (root != null) {
+    walkAndEnrich(root, navMap)
+    walkAndEnrichMediaUploads(root, mediaMap)
+  }
   return clone
 }

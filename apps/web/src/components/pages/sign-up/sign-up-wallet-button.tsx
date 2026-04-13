@@ -4,6 +4,8 @@ import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCallback, useEffect } from 'react'
 import { useAccount, useSignMessage } from 'wagmi'
 import { getAuthClient } from '@/lib/auth-client'
+import { env } from '@/env'
+import { toast } from 'sonner'
 
 export const SignUpWalletButton = () => {
   const { address } = useAccount()
@@ -11,23 +13,31 @@ export const SignUpWalletButton = () => {
 
   const handleSignInWithMessage = async () => {
     if (!address) return
-    const { data: nonce, error: nonceError } = await getAuthClient().siwe.nonce({
-      walletAddress: address,
-    })
+    try {
+      const { data: nonce, error: nonceError } = await getAuthClient().siwe.nonce({
+        walletAddress: address,
+      })
 
-    if (nonceError || !nonce) throw new Error('Failed to get nonce')
+      if (nonceError || !nonce) throw new Error('Failed to get nonce')
 
-    const message = `Sign in with Ethereum. \n\nNonce: ${nonce.nonce}`
-    const signature = await signMessageAsync({ message })
+      const message = `Sign in with Ethereum. \n\nNonce: ${nonce.nonce}`
+      const signature = await signMessageAsync({ message })
 
-    const { data } = await getAuthClient().siwe.verify({
-      message,
-      signature,
-      walletAddress: address,
-    })
+      const { data } = await getAuthClient().siwe.verify({
+        message,
+        signature,
+        walletAddress: address,
+      })
 
-    if (data) {
-      console.log('Authentication successful:', data.user)
+      if (data) {
+        window.location.assign(env.VITE_APP_URL)
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('User rejected the request.')) return
+      }
+      console.error(error)
+      toast.error('Failed to sign in with wallet. Please try again.')
     }
   }
 

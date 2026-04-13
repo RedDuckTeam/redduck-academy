@@ -46,7 +46,7 @@ function LessonPage() {
   const isCodingChallenge = lesson.type === 'coding_task'
   const isLecture = lesson.type === 'lecture'
   const earnedPoints = isLecture ? null : (userLesson?.earnedPoints ?? null)
-
+  console.log(lesson)
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen min-w-0 flex-col gap-3.5 md:mx-[60px]">
       <PageBreadcrumbs variant="lesson" courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
