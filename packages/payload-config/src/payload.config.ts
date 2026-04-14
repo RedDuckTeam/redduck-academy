@@ -1,5 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { BlocksFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
+import { BlocksFeature, HeadingFeature, lexicalEditor, EXPERIMENTAL_TableFeature } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -28,6 +28,7 @@ export default buildConfig({
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [
       ...defaultFeatures,
+      EXPERIMENTAL_TableFeature(),
       HeadingFeature({
         enabledHeadingSizes: ['h1', 'h2', 'h3'],
       }),
