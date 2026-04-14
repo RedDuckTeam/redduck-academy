@@ -2,14 +2,17 @@
 
 @import 'tw-animate-css';
 
-@import '@fontsource/ibm-plex-mono/300.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/600.css';
-@import '@fontsource/ibm-plex-mono/700.css';
+@import '@fontsource/ibm-plex-mono/latin-300.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
+@import '@fontsource/ibm-plex-mono/latin-700.css';
 
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/latin-300.css';
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -132,15 +135,13 @@ code {
   *::-webkit-scrollbar-track {
     background: var(--gray);
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   *::-webkit-scrollbar-thumb {
     background: var(--dark-gray);
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   html::-webkit-scrollbar,
@@ -152,16 +153,14 @@ code {
   body::-webkit-scrollbar-track {
     background: black;
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   html::-webkit-scrollbar-thumb,
   body::-webkit-scrollbar-thumb {
     background: var(--dark-gray);
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   html {
@@ -198,15 +197,13 @@ code {
   .custom-scrollbar::-webkit-scrollbar-track {
     background: black;
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--dark-gray);
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   .element-custom-scrollbar::-webkit-scrollbar {
@@ -216,15 +213,13 @@ code {
   .element-custom-scrollbar::-webkit-scrollbar-track {
     background: var(--gray);
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   .element-custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--dark-gray);
     border-radius: 1px;
-    transition: background-color var(--theme-color-transition-duration)
-      var(--theme-color-transition-timing);
+    transition: background-color var(--theme-color-transition-duration) var(--theme-color-transition-timing);
   }
 
   @supports not selector(::-webkit-scrollbar) {
