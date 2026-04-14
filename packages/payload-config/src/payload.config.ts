@@ -42,10 +42,8 @@ export default buildConfig({
                 defaultValue: 'typescript',
                 options: [
                   { label: 'TypeScript', value: 'typescript' },
-                  { label: 'JavaScript', value: 'javascript' },
-                  { label: 'CSS', value: 'css' },
-                  { label: 'HTML', value: 'html' },
-                  { label: 'JSON', value: 'json' },
+                  { label: 'Rust', value: 'rust' },
+                  { label: 'Solidity', value: 'solidity' },
                 ],
               },
               {

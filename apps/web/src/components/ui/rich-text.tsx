@@ -2,6 +2,7 @@ import { RichText as PayloadRichText, ListJSXConverter } from '@payloadcms/richt
 import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
 
 type EnrichedLessonDoc = {
   href?: string
@@ -19,9 +20,25 @@ const blockquoteStyles =
 const anchorStyles = '[&_a]:text-primary [&_a]:underline'
 
 const codeStyles =
-  '[&_code]:bg-border/40 [&_code]:border [&_code]:border-border [&_code]:rounded-[2px] [&_code]:px-[3px] [&_code]:py-[2px]'
+  '[&_p_code]:bg-border/40 [&_p_code]:border [&_p_code]:border-border [&_p_code]:rounded-[2px] [&_p_code]:px-[3px] [&_p_code]:py-[2px]'
 
 const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
+
+function getYoutubeEmbedUrl(text: string): string | null {
+  const trimmed = text.trim()
+  try {
+    const url = new URL(trimmed)
+    let videoId: string | null = null
+    if (url.hostname === 'youtu.be') {
+      videoId = url.pathname.slice(1).split('?')[0]
+    } else if (url.hostname === 'www.youtube.com' || url.hostname === 'youtube.com') {
+      videoId = url.searchParams.get('v')
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+  } catch {
+    return null
+  }
+}
 
 export function RichText({ data, className, paragraphClassName }: CustomRichTextProps) {
   if (!data) return null
@@ -56,6 +73,26 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
             )
           },
           paragraph: ({ node, nodesToJSX }) => {
+            const textNode = node.children[0] as unknown as { type?: 'autolink'; fields?: { url?: string } }
+            if (
+              textNode?.type === 'autolink' &&
+              (textNode.fields?.url?.includes('youtube.com') || textNode.fields?.url?.includes('youtu.be'))
+            ) {
+              const embedUrl = getYoutubeEmbedUrl(textNode.fields?.url ?? '')
+              if (embedUrl) {
+                return (
+                  <div className="aspect-video w-full overflow-hidden rounded-xl my-4">
+                    <iframe
+                      src={embedUrl}
+                      title="YouTube video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full"
+                    />
+                  </div>
+                )
+              }
+            }
             return (
               <Text variant="main-18" className={paragraphClassName}>
                 {nodesToJSX({ nodes: node.children })}
@@ -65,12 +102,14 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
           upload: ({ node }) => {
             const value = node.value as unknown as { url: string; alt: string; width: number; height: number }
             return (
-              <img
-                src={value.url}
-                alt={value.alt}
-                className={cn(paragraphClassName, 'max-w-full max-h-full object-contain')}
-                style={{ maxWidth: value.width, maxHeight: value.height }}
-              />
+              <div className="w-full">
+                <img
+                  src={value.url}
+                  alt={value.alt}
+                  className={cn(paragraphClassName, 'w-full object-contain')}
+                  style={{ maxWidth: value.width, maxHeight: value.height }}
+                />
+              </div>
             )
           },
           link: ({ node, nodesToJSX }) => {
@@ -166,19 +205,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
             ...defaultConverters.blocks,
             code: ({ node }: { node: { fields?: { code?: string; language?: string } } }) => {
               const { code, language } = node.fields ?? {}
-              return (
-                <div className="relative my-6 overflow-hidden rounded-xl border border-border bg-muted shadow-lg dark:border-white/10 dark:bg-[#1e1e1e]">
-                  <div className="flex items-center border-b border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground dark:border-white/10 dark:bg-[#2d2d2d] dark:text-white/50">
-                    {language || 'code'}
-                  </div>
-                  <pre
-                    className="overflow-x-auto p-4 font-mono text-[14px] leading-relaxed text-foreground dark:text-[#d4d4d4]"
-                    data-language={language}
-                  >
-                    <code lang={language}>{code ?? ''}</code>
-                  </pre>
-                </div>
-              )
+              return <HighlightedCodeBlock code={code ?? ''} language={language} />
             },
           },
         })}

@@ -1,3 +1,5 @@
+export type CodingLanguage = 'solidity' | 'rust' | 'typescript'
+
 export interface Course {
   id: number
   title: string
@@ -60,7 +62,7 @@ export interface Lesson {
   /** Review-task rubric rows (learner-safe; hidden rows have criteriaHidden and no criteria). */
   reviewGradingTasks?: PublicReviewGradingTask[]
   /** Coding-task fields */
-  codingLanguage?: 'solidity' | 'rust' | 'typescript'
+  codingLanguage?: CodingLanguage
   starterCode?: string | null
   codingTestCases?: CodingTestCase[]
 }

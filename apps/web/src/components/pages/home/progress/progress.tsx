@@ -20,22 +20,25 @@ export const Progress = () => {
         <div></div>
         <ProgressCards />
       </div>
-      <div className="flex items-center max-2xl:flex-col max-2xl:w-full justify-between relative">
-        <div className="bg-primary p-5 sm:py-6 sm:px-10 max-2xl:w-full max-lg:w-screen">
-          <Text variant="subtitle-45" className="text-[#000]">
+      <div className="flex items-center max-xl:flex-col max-xl:w-full justify-between relative">
+        <div className="bg-primary p-5 sm:py-6 sm:px-10 max-xl:w-full max-lg:w-screen">
+          <Text variant="subtitle-45" className="text-[#000] max-2xl:hidden">
+            blockchain development course_
+          </Text>
+          <Text variant="subtitle-32" className="text-[#000] 2xl:hidden">
             blockchain development course_
           </Text>
         </div>
-        <div className="absolute max-sm:left-[10%] sm:right-[480px] -bottom-12 2xl:bottom-16">
+        <div className="absolute max-sm:left-[10%] sm:right-[430px] xl:right-[480px] -bottom-12 xl:bottom-16">
           <PacmanIcon />
         </div>
-        <div className="absolute right-[10%] sm:right-[330px] -bottom-12 2xl:bottom-0">
+        <div className="absolute right-[10%] sm:right-[330px] -bottom-12 xl:bottom-0">
           <GhostIcon />
         </div>
         <Button
           variant="secondary"
           size={'free'}
-          className="flex items-center px-10 !h-[108px] gap-5 max-2xl:w-full max-lg:w-screen"
+          className="flex items-center px-10 !h-[108px] gap-5 max-xl:w-full max-lg:w-screen"
         >
           <Text variant="caps-20" className="text-header-foreground">
             START
