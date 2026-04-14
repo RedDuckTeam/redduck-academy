@@ -2,7 +2,8 @@ import { cn } from '@/lib/utils'
 import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCallback } from 'react'
-import { useAccount, useSignMessage } from 'wagmi'
+import { useAccount, useSignMessage, useConnect } from 'wagmi'
+import { injected } from 'wagmi/connectors'
 import { useRouter } from '@tanstack/react-router'
 import { getAuthClient } from '@/lib/auth-client'
 import { toast } from 'sonner'
@@ -10,6 +11,7 @@ import { toast } from 'sonner'
 export const SignUpWalletButton = () => {
   const { address } = useAccount()
   const { signMessageAsync } = useSignMessage()
+  const { connectAsync } = useConnect()
   const router = useRouter()
 
   const handleSignInWithMessage = async () => {
@@ -42,19 +44,21 @@ export const SignUpWalletButton = () => {
     }
   }
 
-  const handleOpenAppKit = useCallback(async () => {
-    const { useAppKit } = await import('@reown/appkit/react')
-    const { open } = useAppKit()
-    await open()
-  }, [])
-
   const handleSignInWithWallet = useCallback(async () => {
-    if (!address) {
-      await handleOpenAppKit()
-    } else {
+    try {
+      if (!address) {
+        await connectAsync({ connector: injected() })
+      }
       await handleSignInWithMessage()
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Provider not found.')) {
+        toast.error('No wallet extension found. Please install MetaMask or another wallet.')
+        return
+      }
+      if (error instanceof Error && error.message.includes('User rejected the request.')) return
+      toast.error('Failed to connect wallet. Please try again.')
     }
-  }, [])
+  }, [address])
 
   return (
     <button
