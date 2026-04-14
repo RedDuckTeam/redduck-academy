@@ -1,16 +1,21 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Check, Copy } from 'lucide-react'
-import { createHighlighter, type Highlighter } from 'shiki'
+import { createHighlighterCore } from 'shiki/core'
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
+import { bundledLanguages } from 'shiki/langs'
+import { bundledThemes } from 'shiki/themes'
+import type { HighlighterCore } from 'shiki/core'
 import type { CodingLanguage } from '@/types/lesson'
 import { CODING_LANGUAGES } from '@/lib/utils'
 
-let highlighterPromise: Promise<Highlighter> | null = null
+let highlighterPromise: Promise<HighlighterCore> | null = null
 
-function getHighlighter(): Promise<Highlighter> {
+function getHighlighter(): Promise<HighlighterCore> {
   if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      themes: ['vesper'],
-      langs: CODING_LANGUAGES,
+    highlighterPromise = createHighlighterCore({
+      themes: [bundledThemes['vitesse-dark']],
+      langs: [bundledLanguages.typescript, bundledLanguages.rust, bundledLanguages.solidity],
+      engine: createJavaScriptRegexEngine(),
     })
   }
   return highlighterPromise
@@ -40,7 +45,7 @@ export function HighlightedCodeBlock({ code, language }: HighlightedCodeBlockPro
     let cancelled = false
     getHighlighter().then((hl) => {
       if (cancelled) return
-      const result = hl.codeToHtml(code, { lang, theme: 'vesper' })
+      const result = hl.codeToHtml(code, { lang, theme: 'vitesse-dark' })
       setHtml(result)
     })
     return () => {
@@ -52,7 +57,7 @@ export function HighlightedCodeBlock({ code, language }: HighlightedCodeBlockPro
     <div className="relative my-6 overflow-hidden border border-border">
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground dark:bg-[#2d2d2d] dark:text-white/50">
         <span>{language || 'code'}</span>
-        <button type="button" onClick={handleCopy} aria-label="Copy code" className="flex items-center gap-1.5 ">
+        <button type="button" onClick={handleCopy} aria-label="Copy code" className="flex items-center gap-1.5">
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         </button>
       </div>
