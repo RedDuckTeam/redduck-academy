@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
 import { Lesson, payloadSchema } from '@redduck/payload-config'
@@ -12,10 +12,14 @@ export class LessonsService {
     const lesson = await payloadDb.query.lessons.findFirst({
       where: and(
         eq(lessons.slug, lessonSlug),
+        ne(lessons.isHidden, true),
         sql`exists (
           select 1 from ${modules} m
           inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+          where m.id = ${lessons.module}
+            and c.slug = ${courseSlug}
+            and coalesce(c.is_hidden, false) = false
+            and coalesce(m.is_hidden, false) = false
         )`,
       ),
       with: {
@@ -72,10 +76,14 @@ export class LessonsService {
     const lesson = await payloadDb.query.lessons.findFirst({
       where: and(
         eq(lessons.slug, lessonSlug),
+        ne(lessons.isHidden, true),
         sql`exists (
           select 1 from ${modules} m
           inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+          where m.id = ${lessons.module}
+            and c.slug = ${courseSlug}
+            and coalesce(c.is_hidden, false) = false
+            and coalesce(m.is_hidden, false) = false
         )`,
       ),
       with: {
@@ -100,10 +108,14 @@ export class LessonsService {
     const lesson = await payloadDb.query.lessons.findFirst({
       where: and(
         eq(lessons.slug, lessonSlug),
+        ne(lessons.isHidden, true),
         sql`exists (
           select 1 from ${modules} m
           inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+          where m.id = ${lessons.module}
+            and c.slug = ${courseSlug}
+            and coalesce(c.is_hidden, false) = false
+            and coalesce(m.is_hidden, false) = false
         )`,
       ),
       with: {
@@ -128,13 +140,15 @@ export class LessonsService {
 
   static async #getNextLessonSlug(courseSlug: string, lessonId: number): Promise<string | null> {
     const course = await payloadDb.query.courses.findFirst({
-      where: eq(courses.slug, courseSlug),
+      where: (c, { and }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
       with: {
         modules: {
+          where: (m) => ne(m.isHidden, true),
           orderBy: (modules, { asc }) => [asc(modules.order)],
           columns: { id: true, order: true },
           with: {
             lessons: {
+              where: (l) => ne(l.isHidden, true),
               orderBy: (lessons, { asc }) => [asc(lessons.order)],
               columns: { id: true, slug: true },
             },
@@ -169,10 +183,14 @@ export class LessonsService {
     const lesson = await payloadDb.query.lessons.findFirst({
       where: and(
         eq(lessons.slug, lessonSlug),
+        ne(lessons.isHidden, true),
         sql`exists (
           select 1 from ${modules} m
           inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module} and c.slug = ${courseSlug}
+          where m.id = ${lessons.module}
+            and c.slug = ${courseSlug}
+            and coalesce(c.is_hidden, false) = false
+            and coalesce(m.is_hidden, false) = false
         )`,
       ),
     })

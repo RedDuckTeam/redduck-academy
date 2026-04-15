@@ -181,6 +181,10 @@ export interface Course {
   coverImage?: (number | null) | Media;
   order: number;
   publishedAt?: string | null;
+  /**
+   * When checked, this course is excluded from the public API and all calculations.
+   */
+  isHidden?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -194,6 +198,10 @@ export interface Module {
   slug?: string | null;
   course: number | Course;
   order: number;
+  /**
+   * When checked, this module is excluded from the public API and all calculations.
+   */
+  isHidden?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -312,6 +320,10 @@ export interface Lesson {
    * Tests: auto from question points. Review tasks: auto from grading tasks. Coding tasks: enter manually.
    */
   maxPoints?: number | null;
+  /**
+   * When checked, this lesson is excluded from the public API and all calculations.
+   */
+  isHidden?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -485,6 +497,7 @@ export interface CoursesSelect<T extends boolean = true> {
   coverImage?: T;
   order?: T;
   publishedAt?: T;
+  isHidden?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -497,6 +510,7 @@ export interface ModulesSelect<T extends boolean = true> {
   slug?: T;
   course?: T;
   order?: T;
+  isHidden?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -555,6 +569,7 @@ export interface LessonsSelect<T extends boolean = true> {
         id?: T;
       };
   maxPoints?: T;
+  isHidden?: T;
   updatedAt?: T;
   createdAt?: T;
 }

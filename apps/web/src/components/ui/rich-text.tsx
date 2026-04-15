@@ -20,7 +20,7 @@ const blockquoteStyles =
 const anchorStyles = '[&_a]:text-primary [&_a]:underline'
 
 const codeStyles =
-  '[&_p_code]:bg-border/40 [&_p_code]:border [&_p_code]:border-border [&_p_code]:rounded-[2px] [&_p_code]:px-[3px] [&_p_code]:py-[2px]'
+  '[&_p_code]:bg-border/40 [&_p_code]:text-primary [&_p_code]:border [&_p_code]:border-border [&_p_code]:rounded-[2px] [&_p_code]:px-[3px] [&_p_code]:py-[2px]'
 
 const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
 
@@ -46,6 +46,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   return (
     <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className)}>
       <PayloadRichText
+        className="*:mb-6"
         data={data as any}
         converters={({ defaultConverters }) => ({
           ...defaultConverters,
@@ -67,7 +68,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               element: 'p' as const,
             }
             return (
-              <Text variant={variant} element={element} className="">
+              <Text variant={variant} element={element} className="mb-3! font-medium">
                 {nodesToJSX({ nodes: node.children })}
               </Text>
             )

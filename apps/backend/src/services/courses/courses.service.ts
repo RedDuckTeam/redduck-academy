@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, ne } from 'drizzle-orm'
 import { payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
@@ -8,11 +8,14 @@ const { courses, lessons, modules } = payloadSchema
 export class CoursesService {
   static async getCourseBySlug(slug: string) {
     const result = await payloadDb.query.courses.findFirst({
-      where: eq(courses.slug, slug),
+      where: (c, { and }) => and(eq(c.slug, slug), ne(c.isHidden, true)),
       with: {
         modules: {
+          where: (m) => ne(m.isHidden, true),
           with: {
-            lessons: true,
+            lessons: {
+              where: (l) => ne(l.isHidden, true),
+            },
           },
         },
       },
@@ -25,11 +28,14 @@ export class CoursesService {
 
   static async listCourses() {
     return payloadDb.query.courses.findMany({
+      where: (c) => ne(c.isHidden, true),
       orderBy: (c, { asc }) => [asc(c.order)],
       with: {
         modules: {
+          where: (m) => ne(m.isHidden, true),
           with: {
             lessons: {
+              where: (l) => ne(l.isHidden, true),
               columns: {
                 id: true,
                 title: true,
@@ -50,11 +56,14 @@ export class CoursesService {
 
   static async listCoursesInfo() {
     const allCourses = await payloadDb.query.courses.findMany({
+      where: (c) => ne(c.isHidden, true),
       orderBy: (c, { asc }) => [asc(c.order)],
       with: {
         modules: {
+          where: (m) => ne(m.isHidden, true),
           with: {
             lessons: {
+              where: (l) => ne(l.isHidden, true),
               with: {
                 questions: true,
               },
@@ -88,7 +97,7 @@ export class CoursesService {
   /** Returns lesson + questions for validation by IDs. Used by CoursesTestService. */
   static async getTestLessonWithQuestionsById(courseId: number, lessonId: number) {
     const lesson = await payloadDb.query.lessons.findFirst({
-      where: eq(lessons.id, lessonId),
+      where: (l, { and }) => and(eq(l.id, lessonId), ne(l.isHidden, true)),
       with: {
         module: {
           with: {
@@ -103,7 +112,13 @@ export class CoursesService {
       },
     })
 
-    if (!lesson || lesson.type !== 'test' || lesson.module?.course?.id !== courseId) {
+    if (
+      !lesson ||
+      lesson.type !== 'test' ||
+      lesson.module?.course?.id !== courseId ||
+      lesson.module?.isHidden === true ||
+      lesson.module?.course?.isHidden === true
+    ) {
       return null
     }
 
@@ -117,7 +132,7 @@ export class CoursesService {
   /** Returns lesson + questions for validation. Used by CoursesTestService. */
   static async getTestLessonWithQuestions(courseSlug: string, lessonSlug: string) {
     const candidates = await payloadDb.query.lessons.findMany({
-      where: eq(lessons.slug, lessonSlug),
+      where: (l, { and }) => and(eq(l.slug, lessonSlug), ne(l.isHidden, true)),
       with: {
         module: {
           with: {
@@ -132,7 +147,12 @@ export class CoursesService {
       },
     })
 
-    const lesson = candidates.find((l) => l.module?.course?.slug === courseSlug)
+    const lesson = candidates.find(
+      (l) =>
+        l.module?.course?.slug === courseSlug &&
+        l.module?.isHidden !== true &&
+        l.module?.course?.isHidden !== true,
+    )
     if (!lesson || lesson.type !== 'test') return null
 
     return {

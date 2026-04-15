@@ -9,11 +9,13 @@ const { courses } = payloadSchema
 export class CertificatesService {
   static async claimCertificate(userId: string, courseSlug: string, name: string) {
     const course = await payloadDb.query.courses.findFirst({
-      where: eq(courses.slug, courseSlug),
+      where: (c, { and, ne }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
       with: {
         modules: {
+          where: (m, { ne }) => ne(m.isHidden, true),
           with: {
             lessons: {
+              where: (l, { ne }) => ne(l.isHidden, true),
               columns: { id: true, type: true },
             },
           },

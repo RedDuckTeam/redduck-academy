@@ -51,5 +51,14 @@ export const Courses: CollectionConfig = {
         position: 'sidebar',
       },
     },
+    {
+      name: 'isHidden',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'When checked, this course is excluded from the public API and all calculations.',
+      },
+    },
   ],
 }

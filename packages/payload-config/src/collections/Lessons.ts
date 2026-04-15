@@ -316,5 +316,14 @@ export const Lessons: CollectionConfig = {
           'Tests: auto from question points. Review tasks: auto from grading tasks. Coding tasks: enter manually.',
       },
     },
+    {
+      name: 'isHidden',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'When checked, this lesson is excluded from the public API and all calculations.',
+      },
+    },
   ],
 }

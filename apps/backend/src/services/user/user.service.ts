@@ -1,4 +1,4 @@
-import { eq, and, count, inArray, desc } from 'drizzle-orm'
+import { eq, and, count, inArray, desc, ne } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
 import { userLessons } from '../../db/schema'
@@ -155,7 +155,9 @@ export class UserService {
       completedCoursesCount = uniqueCourseIds.size
     }
 
-    const totalCoursesCount = await payloadDb.query.courses.findMany({ columns: { id: true } }).then((r) => r.length)
+    const totalCoursesCount = await payloadDb.query.courses
+      .findMany({ where: (c) => ne(c.isHidden, true), columns: { id: true } })
+      .then((r) => r.length)
 
     const uniqueDateStrings = new Set(
       completedLessonRows.map((l) => new Date(l.updatedAt).toISOString().split('T')[0]),

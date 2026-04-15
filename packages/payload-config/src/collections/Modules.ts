@@ -41,5 +41,14 @@ export const Modules: CollectionConfig = {
         position: 'sidebar',
       },
     },
+    {
+      name: 'isHidden',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'When checked, this module is excluded from the public API and all calculations.',
+      },
+    },
   ],
 }
