@@ -47,22 +47,8 @@
     {
       "idx": 6,
       "version": "7",
-      "when": 1744185600000,
-      "tag": "0006_coding_task_review_cache",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1744416000000,
-      "tag": "0007_user_certificates",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1744848000000,
-      "tag": "0008_remove_points_rate_limits_prerequisites",
+      "when": 1776363308428,
+      "tag": "0006_motionless_cable",
       "breakpoints": true
     }
   ]
