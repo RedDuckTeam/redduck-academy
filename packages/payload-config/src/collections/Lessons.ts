@@ -37,15 +37,11 @@ export const Lessons: CollectionConfig = {
 
         const tasks = data.reviewGradingTasks
         if (!Array.isArray(tasks) || tasks.length === 0) {
-          throw new APIError('Add at least one review grading task with points.', 400)
+          throw new APIError('Add at least one review grading task.', 400)
         }
 
         for (let i = 0; i < tasks.length; i++) {
-          const row = tasks[i] as { points?: unknown; title?: unknown }
-          const p = Number(row.points)
-          if (!Number.isFinite(p) || p < 1) {
-            throw new APIError(`Grading task ${i + 1}: points must be a number ≥ 1.`, 400)
-          }
+          const row = tasks[i] as { title?: unknown }
           if (row.title === undefined || row.title === null || String(row.title).trim() === '') {
             throw new APIError(`Grading task ${i + 1}: title is required.`, 400)
           }
@@ -62,21 +58,6 @@ export const Lessons: CollectionConfig = {
           }
         }
 
-        return data
-      },
-    ],
-    beforeChange: [
-      ({ data }) => {
-        if (data?.type === 'test' && Array.isArray(data.questions)) {
-          const maxPoints = data.questions.reduce((sum: number, q: { points?: number }) => sum + (q.points ?? 0), 0)
-          data.maxPoints = maxPoints
-        }
-        if (data?.type === 'review_task' && Array.isArray(data.reviewGradingTasks)) {
-          data.maxPoints = data.reviewGradingTasks.reduce(
-            (sum: number, row: { points?: number }) => sum + (Number(row.points) || 0),
-            0,
-          )
-        }
         return data
       },
     ],
@@ -141,11 +122,6 @@ export const Lessons: CollectionConfig = {
       },
       fields: [
         { name: 'question', type: 'text', required: true },
-        {
-          name: 'points',
-          type: 'number',
-          defaultValue: 5,
-        },
         {
           name: 'options',
           type: 'array',
@@ -234,20 +210,13 @@ export const Lessons: CollectionConfig = {
       type: 'array',
       admin: {
         condition: (data) => data?.type === 'review_task',
-        description:
-          'Each row is one graded item. Total points must match lesson max points (auto-summed into Max points below).',
+        description: 'Each row is one graded item the AI will evaluate as pass/fail.',
       },
       fields: [
         {
           name: 'title',
           type: 'text',
           required: true,
-        },
-        {
-          name: 'points',
-          type: 'number',
-          required: true,
-          min: 1,
         },
         {
           name: 'criteria',
@@ -305,16 +274,6 @@ export const Lessons: CollectionConfig = {
           required: true,
         },
       ],
-    },
-    {
-      name: 'maxPoints',
-      type: 'number',
-      defaultValue: 0,
-      admin: {
-        condition: (data) => data?.type === 'coding_task' || data?.type === 'review_task' || data?.type === 'test',
-        description:
-          'Tests: auto from question points. Review tasks: auto from grading tasks. Coding tasks: enter manually.',
-      },
     },
     {
       name: 'isHidden',

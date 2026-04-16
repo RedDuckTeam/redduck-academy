@@ -2,7 +2,6 @@ import type { LatestProjectSubmission } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { DucksBadge } from '@/components/ui/ducks-badge'
 
 interface SubmissionReviewTabsProps {
   submissions: LatestProjectSubmission[]
@@ -47,12 +46,6 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
                       <Text variant="main-18" className={cn(c.passed ? 'text-success' : 'text-primary')}>
                         {i + 1}. {c.name}
                       </Text>
-                      <DucksBadge
-                        themeAware
-                        className="bg-transparent p-0"
-                        ducks={c.maxPoints}
-                        myDucks={c.points}
-                      />
                     </div>
                     <Text variant="main-18" className="text-muted-foreground text-justify">
                       {c.comment}

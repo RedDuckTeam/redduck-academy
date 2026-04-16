@@ -4,8 +4,9 @@ import type { CodingTaskSubmission, Lesson, LessonForUser } from '@/types/lesson
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { CheckCircle, RotateCcw, WrapText, XCircle } from 'lucide-react'
+import { CheckCircle, Clock, RotateCcw, WrapText, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { RateLimitError } from '@/lib/api/coding-task'
 
 interface CodePanelProps {
   lesson: Lesson
@@ -18,7 +19,7 @@ interface CodePanelProps {
   isAuthenticated: boolean
   isPending: boolean
   canSubmit: boolean
-  attemptsLeft: number
+  rateLimitError: RateLimitError | null
 }
 
 export function CodePanel({
@@ -32,7 +33,7 @@ export function CodePanel({
   isAuthenticated,
   isPending,
   canSubmit,
-  attemptsLeft,
+  rateLimitError,
 }: CodePanelProps) {
   const editorRef = useRef<CodeEditorHandle>(null)
   const language = lesson.codingLanguage ?? 'solidity'
@@ -91,9 +92,9 @@ export function CodePanel({
                   </Button>
                 </span>
               </TooltipTrigger>
-              {attemptsLeft === 0 && (
+              {rateLimitError && (
                 <TooltipContent>
-                  <p>You have no attempts remaining</p>
+                  <p>{rateLimitError.message}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -101,7 +102,15 @@ export function CodePanel({
         </div>
       </div>
       <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={language} />
-      {latest && (
+      {rateLimitError && (
+        <div className="flex items-center gap-2 px-4 py-2 border-t border-border bg-yellow-500/10">
+          <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
+          <Text variant="main-14" className="text-yellow-500">
+            {rateLimitError.message}
+          </Text>
+        </div>
+      )}
+      {!rateLimitError && latest && (
         <div
           className={cn(
             'flex items-center gap-2 px-4 py-2 border-t transition-colors border-border',

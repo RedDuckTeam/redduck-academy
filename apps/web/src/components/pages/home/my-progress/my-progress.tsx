@@ -15,14 +15,6 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
 
   const courseProgress = useMemo(() => {
     return courses.map((course) => {
-      const totalCoursePoints = course.modules.reduce(
-        (acc, module) => acc + module.lessons.reduce((sum, lesson) => sum + lesson.maxPoints, 0),
-        0,
-      )
-      const earnedPoints = completedLessons
-        .filter((c) => c.courseSlug === course.slug)
-        .reduce((sum, c) => sum + c.pointsEarned, 0)
-
       const orderedLessons = course.modules
         .sort((a, b) => a.order - b.order)
         .flatMap((module) =>
@@ -52,7 +44,7 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
         status = CourseStatusEnum.CONTINUE
       }
 
-      return { earnedPoints, totalCoursePoints, nextLesson, status }
+      return { nextLesson, status }
     })
   }, [courses, completedLessons, completedLessonIds])
 
@@ -64,7 +56,7 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
           <Text variant={'caps-20'}>Courses</Text>
         </div>
         <div className="p-5 col-span-2 flex items-center justify-center">
-          <Text variant={'caps-20'}>Points</Text>
+          <Text variant={'caps-20'}>Lessons</Text>
         </div>
         <div className="p-5 col-span-2 flex items-center justify-center">
           <Text variant={'caps-20'}>Status</Text>
@@ -72,11 +64,11 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
         {courses.map((course, index) => (
           <MyProgressCourse
             key={course.id}
+            completedLessons={completedLessons.filter((c) => c.courseSlug === course.slug).length}
+            totalLessons={course.modules.flatMap((m) => m.lessons).length}
             layout="table"
             course={course}
             index={index}
-            earnedPoints={courseProgress[index].earnedPoints}
-            totalPoints={courseProgress[index].totalCoursePoints}
             nextLesson={courseProgress[index].nextLesson}
             status={courseProgress[index].status}
           />
@@ -86,11 +78,11 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
         {courses.map((course, index) => (
           <MyProgressCourse
             key={course.id}
+            completedLessons={completedLessons.filter((c) => c.courseSlug === course.slug).length}
+            totalLessons={course.modules.flatMap((m) => m.lessons).length}
             layout="card"
             course={course}
             index={index}
-            earnedPoints={courseProgress[index].earnedPoints}
-            totalPoints={courseProgress[index].totalCoursePoints}
             nextLesson={courseProgress[index].nextLesson}
             status={courseProgress[index].status}
           />

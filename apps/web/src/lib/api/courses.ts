@@ -8,8 +8,18 @@ export interface GetCoursesResponse {
 export interface CourseInfo {
   id: number
   title: string
-  totalPoints: number
   totalTasks: number
+}
+
+export class CourseLockedError extends Error {
+  prerequisiteCourseSlug: string
+  prerequisiteCourseTitle: string
+  constructor(prerequisiteCourseSlug: string, prerequisiteCourseTitle: string) {
+    super(`Course locked: complete "${prerequisiteCourseTitle}" first`)
+    this.name = 'CourseLockedError'
+    this.prerequisiteCourseSlug = prerequisiteCourseSlug
+    this.prerequisiteCourseTitle = prerequisiteCourseTitle
+  }
 }
 
 export interface GetCoursesInfoResponse {
@@ -22,7 +32,7 @@ export const getCoursesInfo = async () => {
 }
 
 export const getCourses = async () => {
-  const response = await api().get<GetCoursesResponse>('/api/courses')
+  const response = await api({ credentials: 'include' }).get<GetCoursesResponse>('/api/courses')
   return response.data
 }
 
@@ -51,6 +61,11 @@ export const getLessonForUser = async (
   const response = await api({ credentials: 'include' }).get<GetLessonForUserResponse>(
     `/api/user/lessons/${courseSlug}/${lessonSlug}`,
   )
+  if (response.status === 403) {
+    const slug = response.errorData?.prerequisiteCourseSlug as string | undefined
+    const title = response.errorData?.prerequisiteCourseTitle as string | undefined
+    if (slug && title) throw new CourseLockedError(slug, title)
+  }
   return response.data
 }
 

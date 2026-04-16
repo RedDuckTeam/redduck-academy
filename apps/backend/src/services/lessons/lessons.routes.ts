@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import { z } from 'zod'
 import { getLessonDesc, markLessonAsCompletedDesc, submitCodingTaskDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
-import { requireAuth } from '../../lib/middleware'
+import { requireAuth, getClientIp } from '../../lib/middleware'
 import { courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
 import { AppError } from '../../lib/errors'
@@ -47,7 +47,8 @@ lessonsApp.post(
   async (c) => {
     const user = c.get('user')
     const { courseSlug, lessonSlug, repoUrl } = c.req.valid('json')
-    await ReviewService.submitProject(user.id, courseSlug, lessonSlug, repoUrl)
+    const ipAddress = getClientIp(c)
+    await ReviewService.submitProject(user.id, courseSlug, lessonSlug, repoUrl, ipAddress)
     return c.json({ success: true })
   },
 )
@@ -60,7 +61,8 @@ lessonsApp.post(
   async (c) => {
     const user = c.get('user')
     const { courseSlug, lessonSlug, code, language } = c.req.valid('json')
-    const result = await CodingTaskService.submitCode(user.id, courseSlug, lessonSlug, code, language)
+    const ipAddress = getClientIp(c)
+    const result = await CodingTaskService.submitCode(user.id, courseSlug, lessonSlug, code, language, ipAddress)
     return c.json(result)
   },
 )

@@ -18,6 +18,7 @@ import {
   numeric,
   boolean,
   jsonb,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core'
 import { sql, relations } from 'drizzle-orm'
 export const db_schema = pgSchema('payload')
@@ -110,12 +111,16 @@ export const courses = db_schema.table(
     order: numeric('order', { mode: 'number' }).notNull().default(0),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true, precision: 3 }),
     isHidden: boolean('is_hidden').default(false),
+    prerequisiteCourse: integer('prerequisite_course_id').references((): AnyPgColumn => courses.id, {
+      onDelete: 'set null',
+    }),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
   },
   (columns) => [
     uniqueIndex('courses_slug_idx').on(columns.slug),
     index('courses_cover_image_idx').on(columns.coverImage),
+    index('courses_prerequisite_course_idx').on(columns.prerequisiteCourse),
     index('courses_updated_at_idx').on(columns.updatedAt),
     index('courses_created_at_idx').on(columns.createdAt),
   ],
@@ -171,7 +176,6 @@ export const lessons_questions = db_schema.table(
     _parentID: integer('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
     question: varchar('question'),
-    points: numeric('points', { mode: 'number' }).default(5),
   },
   (columns) => [
     index('lessons_questions_order_idx').on(columns._order),
@@ -211,7 +215,6 @@ export const lessons_review_grading_tasks = db_schema.table(
     _parentID: integer('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
     title: varchar('title'),
-    points: numeric('points', { mode: 'number' }),
     criteria: varchar('criteria'),
     hideCriteriaFromLearner: boolean('hide_criteria_from_learner').default(false),
     isRequired: boolean('is_required').default(false),
@@ -266,7 +269,6 @@ export const lessons = db_schema.table(
     aiTaskSummary: varchar('ai_task_summary'),
     aiPossibleSolutions: varchar('ai_possible_solutions'),
     templateRepoUrl: varchar('template_repo_url'),
-    maxPoints: numeric('max_points', { mode: 'number' }).default(0),
     isHidden: boolean('is_hidden').default(false),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
@@ -466,6 +468,11 @@ export const relations_courses = relations(courses, ({ one }) => ({
     fields: [courses.coverImage],
     references: [media.id],
     relationName: 'coverImage',
+  }),
+  prerequisiteCourse: one(courses, {
+    fields: [courses.prerequisiteCourse],
+    references: [courses.id],
+    relationName: 'prerequisiteCourse',
   }),
 }))
 export const relations_modules = relations(modules, ({ one }) => ({

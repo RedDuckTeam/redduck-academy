@@ -7,11 +7,6 @@ export const ProgressCards = () => {
   return (
     <div className="xl:flex max-xl:grid max-xl:w-full grid-cols-2 border border-border">
       <ProgressCard
-        firstNum={String(data?.points ?? 0)}
-        text="points received"
-        className="border-r max-xl:border-b border-border"
-      />
-      <ProgressCard
         firstNum={String(data?.completedLessonsCount ?? 0)}
         text="lessons completed"
         className="xl:border-r max-xl:border-b border-border"

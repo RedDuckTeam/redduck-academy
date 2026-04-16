@@ -5,14 +5,13 @@ import { errorSchema } from './schemas'
 const courseInfoSchema = z.object({
   id: z.number(),
   title: z.string(),
-  totalPoints: z.number(),
   totalTasks: z.number(),
 })
 
 export const listCoursesInfoDesc = describeRoute({
   summary: 'List courses info',
   description:
-    'Returns a lightweight array of courses with id, title, total points, and task count (non-lecture lessons).',
+    'Returns a lightweight array of courses with id, title, and task count (non-lecture lessons).',
   tags: ['Courses'],
   responses: {
     200: {
@@ -79,16 +78,15 @@ export const getCourseDesc = describeRoute({
 export const validateTestLessonDesc = describeRoute({
   summary: 'Validate test lesson answers',
   description:
-    'Submits user answers for a test lesson, calculates score, and records completion. Requires authentication.',
+    'Submits user answers for a test lesson and records completion. Requires authentication.',
   tags: ['Courses', 'Lessons'],
   responses: {
     200: {
-      description: 'Validation result with score and correct answers',
+      description: 'Validation result with correct answers',
       content: {
         'application/json': {
           schema: resolver(
             z.object({
-              score: z.number(),
               correctAnswers: z.record(z.string(), z.array(z.string())),
             }),
           ),

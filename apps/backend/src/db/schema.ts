@@ -25,10 +25,8 @@ export const userLessons = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     lessonId: integer('lesson_id').notNull(),
-    score: integer('score'),
     userAnswers: jsonb('user_answers'),
     isCompleted: boolean('is_completed').default(false).notNull(),
-    attemptsLeft: integer('attempts_left').default(50).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
@@ -122,6 +120,29 @@ export const codingTaskReviewCache = pgTable(
       t.lessonId,
       t.codeHash,
     ),
+  }),
+)
+
+export const submissionRateLimits = pgTable(
+  'submission_rate_limits',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    ipAddress: text('ip_address').notNull(),
+    lessonId: integer('lesson_id').notNull(),
+    attemptsUsed: integer('attempts_used').default(1).notNull(),
+    windowStart: timestamp('window_start').defaultNow().notNull(),
+    windowDurationHours: integer('window_duration_hours').default(1).notNull(),
+    exhaustCount: integer('exhaust_count').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdateFn(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    ipLessonIdx: index('submission_rate_limits_ip_lesson_idx').on(t.ipAddress, t.lessonId),
+    userLessonIdx: index('submission_rate_limits_user_lesson_idx').on(t.userId, t.lessonId),
   }),
 )
 

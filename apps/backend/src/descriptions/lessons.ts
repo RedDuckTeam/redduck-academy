@@ -5,7 +5,7 @@ import { errorSchema } from './schemas'
 export const getLessonDesc = describeRoute({
   summary: 'Get lesson by slug',
   description:
-    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, points, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden.',
+    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden.',
   tags: ['Lessons'],
   responses: {
     200: {
@@ -30,7 +30,7 @@ export const getLessonDesc = describeRoute({
 export const submitTestDesc = describeRoute({
   summary: 'Submit test lesson answers',
   description:
-    'Submits user answers for a test lesson by courseSlug and lessonSlug. Validates answers, calculates score, marks lesson as completed, and adds points. Re-submissions are ignored. Use GET /api/user/lessons/:courseSlug/:lessonSlug to fetch results including correct answers.',
+    'Submits user answers for a test lesson by courseSlug and lessonSlug. Marks lesson as completed. Re-submissions are ignored. Use GET /api/user/lessons/:courseSlug/:lessonSlug to fetch results including correct answers.',
   tags: ['Lessons'],
   responses: {
     200: {
@@ -71,7 +71,7 @@ export const submitProjectDesc = describeRoute({
       },
     },
     400: {
-      description: 'Lesson is not a review task or no attempts left',
+      description: 'Lesson is not a review task',
       content: { 'application/json': { schema: errorSchema } },
     },
     401: {
@@ -104,19 +104,23 @@ export const submitProjectDesc = describeRoute({
 export const submitCodingTaskDesc = describeRoute({
   summary: 'Submit coding task code for AI review',
   description:
-    'Submits student code for a coding_task lesson. The AI reviews the code synchronously and returns a pass/fail result immediately. Decrements attemptsLeft on each call.',
+    'Submits student code for a coding_task lesson. The AI reviews the code synchronously and returns a pass/fail result immediately. Subject to rate limiting.',
   tags: ['Lessons'],
   responses: {
     200: {
-      description: 'Review result with pass/fail and remaining attempts',
+      description: 'Review result with pass/fail and remaining attempts in current window',
       content: {
         'application/json': {
-          schema: resolver(z.object({ passed: z.boolean(), attemptsLeft: z.number() })),
+          schema: resolver(z.object({ passed: z.boolean(), attemptsRemaining: z.number() })),
         },
       },
     },
+    429: {
+      description: 'Rate limit exceeded',
+      content: { 'application/json': { schema: resolver(z.object({ error: z.string(), retryAfterMs: z.number() })) } },
+    },
     400: {
-      description: 'Lesson is not a coding task or no attempts left',
+      description: 'Lesson is not a coding task',
       content: { 'application/json': { schema: errorSchema } },
     },
     401: {

@@ -38,16 +38,14 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
                   description:
                     'Must exactly match the rubric task title for this taskId (same string as the title in the rubric XML).',
                 },
-                points: { type: 'number', description: 'Points earned for this criterion.' },
-                maxPoints: { type: 'number', description: 'Maximum points for this criterion.' },
                 passed: {
                   type: 'boolean',
                   description:
-                    'Your judgment for this row: true if the student met this criterion’s expectations well enough for credit.',
+                    "Your judgment for this row: true if the student met this criterion's expectations well enough for credit.",
                 },
                 comment: { type: 'string', description: 'Brief feedback for this criterion.' },
               },
-              required: ['taskId', 'name', 'points', 'maxPoints', 'passed', 'comment'],
+              required: ['taskId', 'name', 'passed', 'comment'],
             },
           },
         },

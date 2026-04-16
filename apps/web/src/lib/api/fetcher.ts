@@ -5,6 +5,7 @@ export interface FetcherResponse<T> {
   status: number
   statusText: string
   error?: string
+  errorData?: Record<string, unknown>
 }
 
 export class Fetcher {
@@ -80,6 +81,7 @@ export class Fetcher {
     let data: T | null = null
     let error = ''
     let responseText = ''
+    let errorData: Record<string, unknown> | undefined
 
     try {
       responseText = await response.text()
@@ -91,12 +93,12 @@ export class Fetcher {
         }
       } else {
         try {
-          const errorData = JSON.parse(responseText)
-
+          const parsed = JSON.parse(responseText)
+          errorData = parsed
           error =
-            errorData?.message ||
-            errorData?.description ||
-            errorData?.error ||
+            parsed?.message ||
+            parsed?.description ||
+            parsed?.error ||
             response.statusText
         } catch {
           error = responseText || response.statusText
@@ -111,6 +113,7 @@ export class Fetcher {
       status: response.status,
       statusText: response.statusText,
       error,
+      errorData,
     }
   }
 }

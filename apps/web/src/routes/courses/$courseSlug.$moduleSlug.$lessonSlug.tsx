@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
@@ -10,9 +10,10 @@ import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/le
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 import { createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
-import { DucksBadge } from '@/components/ui/ducks-badge'
-import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
+import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
+import { Text } from '@/components/ui/text'
+import { Lock } from 'lucide-react'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
@@ -42,17 +43,48 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
 
 function LessonPage() {
   const { lesson, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
-  const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
+  const { error: userLessonError } = useLessonForUser(courseSlug, lessonSlug)
   const isCodingChallenge = lesson.type === 'coding_task'
-  const isLecture = lesson.type === 'lecture'
-  const earnedPoints = isLecture ? null : (userLesson?.earnedPoints ?? null)
-  console.log(lesson)
+  const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
+
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen min-w-0 flex-col gap-3.5 md:mx-[60px]">
       <PageBreadcrumbs variant="lesson" courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
       <div className="flex min-w-0 gap-10">
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-        {isCodingChallenge ? (
+        {courseLockedError ? (
+          <LessonContentContainer>
+            <div className="flex flex-col items-start gap-6">
+              <div className="flex items-center gap-3">
+                <Lock className="h-6 w-6 text-primary" />
+                <LessonTitle title={lesson.title} />
+              </div>
+              <div className="flex flex-col gap-3 p-6 border border-primary/30 bg-primary/5">
+                <Text variant="caps-20" className="text-primary">
+                  Course Locked
+                </Text>
+                <Text variant="main-18">
+                  You need to complete{' '}
+                  <Link
+                    to="/courses/$courseSlug"
+                    params={{ courseSlug: courseLockedError.prerequisiteCourseSlug }}
+                    className="text-primary underline"
+                  >
+                    {courseLockedError.prerequisiteCourseTitle}
+                  </Link>{' '}
+                  before accessing this lesson.
+                </Text>
+                <Link
+                  to="/courses/$courseSlug"
+                  params={{ courseSlug: courseLockedError.prerequisiteCourseSlug }}
+                  className="inline-flex items-center gap-2 text-primary underline"
+                >
+                  <Text variant="caps-14">Go to prerequisite course</Text>
+                </Link>
+              </div>
+            </div>
+          </LessonContentContainer>
+        ) : isCodingChallenge ? (
           <LessonCodeChallenge
             lesson={lesson}
             courseSlug={courseSlug}
@@ -62,10 +94,7 @@ function LessonPage() {
         ) : (
           <LessonContentContainer>
             <>
-              <div className="flex max-md:gap-3 md:items-center max-md:flex-col md:justify-between w-full">
-                <LessonTitle title={lesson.title} />
-                <DucksBadge ducks={lesson.maxPoints} myDucks={earnedPoints} />
-              </div>
+              <LessonTitle title={lesson.title} />
               {lesson.content && <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />}
             </>
 

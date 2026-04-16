@@ -130,7 +130,7 @@ function parseReviewFeedback(content: string, submissionId: number): ReviewFeedb
   if (typeof parsed.summary !== 'string') throw new Error('Invalid feedback: summary')
   if (!Array.isArray(parsed.criteria)) throw new Error('Invalid feedback: criteria')
   for (const c of parsed.criteria) {
-    if (!isRecord(c) || typeof c.points !== 'number') throw new Error('Invalid feedback: criterion points')
+    if (!isRecord(c) || typeof c.passed !== 'boolean') throw new Error('Invalid feedback: criterion passed')
   }
   return parsed as unknown as ReviewFeedback
 }

@@ -19,7 +19,10 @@ const app = new Hono({ strict: false })
 
 app.onError((err, c) => {
   if (err instanceof AppError) {
-    return c.json({ error: err.message }, err.statusCode as Parameters<typeof c.json>[1])
+    return c.json(
+      { error: err.message, ...(err.extra ?? {}) },
+      err.statusCode as Parameters<typeof c.json>[1],
+    )
   }
 
   console.error('Unhandled error:', err)

@@ -7,8 +7,6 @@ export interface ReviewCriterionFeedback {
   /** Payload `reviewGradingTasks` row id (public lesson API) */
   taskId: string
   name: string
-  points: number
-  maxPoints: number
   passed: boolean
   comment: string
 }

@@ -10,12 +10,24 @@ import {
   getLessonTemplateUrl,
   validateFetchResult,
 } from './utils/review-lesson'
+import { SubmissionRateLimitService } from '../rate-limit/submission-rate-limit.service'
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export class ReviewService {
-  static async submitProject(userId: string, courseSlug: string, lessonSlug: string, repoUrl: string): Promise<void> {
+  static async submitProject(
+    userId: string,
+    courseSlug: string,
+    lessonSlug: string,
+    repoUrl: string,
+    ipAddress: string,
+  ): Promise<void> {
     const lesson = await LessonsService.getReviewLessonWithRubric(courseSlug, lessonSlug)
+
+    const rateLimit = await SubmissionRateLimitService.checkAndConsume(userId, ipAddress, lesson.id)
+    if (!rateLimit.allowed) {
+      throw new AppError(429, 'Rate limit exceeded', { retryAfterMs: rateLimit.retryAfterMs })
+    }
     const tasks = getLessonTasks(lesson)
     const expectedPaths = getLessonExpectedPaths(lesson)
     const templateUrl = getLessonTemplateUrl(lesson)
@@ -62,8 +74,7 @@ export class ReviewService {
     if (result.type === 'pending') return
 
     const { feedback } = result
-    const totalScore = feedback.criteria.reduce((sum, c) => sum + c.points, 0)
-    await SubmissionRepository.complete(latest.id, userLesson.id, feedback, totalScore, feedback.lessonPassed)
+    await SubmissionRepository.complete(latest.id, userLesson.id, feedback, feedback.lessonPassed)
   }
 
   static async getSubmissionsForUserLesson(userLessonId: number) {

@@ -2,6 +2,8 @@ import { LessonsService } from '../lessons/lessons.service'
 import { reviewCodingTask } from './coding-task.review'
 import { CodingTaskRepository } from './coding-task.repository'
 import { computeCodeHash } from './code-normalizer'
+import { SubmissionRateLimitService } from '../rate-limit/submission-rate-limit.service'
+import { AppError } from '../../lib/errors'
 
 export class CodingTaskService {
   static async submitCode(
@@ -10,8 +12,14 @@ export class CodingTaskService {
     lessonSlug: string,
     submittedCode: string,
     language: string,
-  ): Promise<{ passed: boolean; attemptsLeft: number }> {
+    ipAddress: string,
+  ): Promise<{ passed: boolean; attemptsRemaining: number }> {
     const lesson = await LessonsService.getCodingTaskLesson(courseSlug, lessonSlug)
+
+    const rateLimit = await SubmissionRateLimitService.checkAndConsume(userId, ipAddress, lesson.id)
+    if (!rateLimit.allowed) {
+      throw new AppError(429, 'Rate limit exceeded', { retryAfterMs: rateLimit.retryAfterMs })
+    }
 
     const codeHash = computeCodeHash(submittedCode, language)
     const cached = await CodingTaskRepository.getCachedReview(lesson.id, codeHash)
@@ -31,16 +39,9 @@ export class CodingTaskService {
       await CodingTaskRepository.setCachedReview(lesson.id, codeHash, passed)
     }
 
-    const { attemptsLeft } = await CodingTaskRepository.createSubmission(
-      userId,
-      lesson.id,
-      submittedCode,
-      language,
-      passed,
-      lesson.maxPoints ?? 0,
-    )
+    await CodingTaskRepository.createSubmission(userId, lesson.id, submittedCode, language, passed)
 
-    return { passed, attemptsLeft }
+    return { passed, attemptsRemaining: rateLimit.attemptsRemaining }
   }
 
   static async getSubmissionsForUserLesson(userLessonId: number) {

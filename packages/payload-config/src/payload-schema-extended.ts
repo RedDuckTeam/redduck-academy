@@ -9,6 +9,11 @@ export const relations_courses = relations(courses, ({ one, many }) => ({
     references: [media.id],
     relationName: 'coverImage',
   }),
+  prerequisiteCourse: one(courses, {
+    fields: [courses.prerequisiteCourse],
+    references: [courses.id],
+    relationName: 'prerequisiteCourse',
+  }),
   modules: many(modules, { relationName: 'course' }),
 }))
 

@@ -12,6 +12,7 @@ import { slugParamSchema, courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
 import { CoursesService } from './courses.service'
 import { CoursesTestService } from './courses-test.service'
+import { auth } from '../../lib/auth'
 
 /** User answers: question ID -> array of selected option IDs */
 const validateAnswersSchema = z.record(z.string(), z.array(z.string()))
@@ -19,7 +20,8 @@ const validateAnswersSchema = z.record(z.string(), z.array(z.string()))
 const coursesApp = new Hono<{ Variables: AuthVariables }>()
 
 coursesApp.get('/', listCoursesDesc, async (c) => {
-  const data = await CoursesService.listCourses()
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const data = await CoursesService.listCourses(session?.user?.id ?? null)
   return c.json({ data })
 })
 
@@ -45,14 +47,14 @@ coursesApp.post(
     const userAnswers = c.req.valid('json')
     const user = c.get('user')
 
-    const { score, correctAnswers } = await CoursesTestService.validateTestLesson(
+    const { correctAnswers } = await CoursesTestService.validateTestLesson(
       courseSlug,
       lessonSlug,
       user.id,
       userAnswers,
     )
 
-    return c.json({ score, correctAnswers })
+    return c.json({ correctAnswers })
   },
 )
 

@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import type { LessonForUser } from '@/types/lesson'
 import { LessonTypeEnum } from '@/types/lesson'
-import { getLessonForUser } from '@/lib/api/courses'
+import { CourseLockedError, getLessonForUser } from '@/lib/api/courses'
 import { queryKeys } from '@/lib/query-keys'
 import { useSession } from '@/hooks/useSession'
+
+export { CourseLockedError }
 
 export const useLessonForUser = (courseSlug: string, lessonSlug: string) => {
   const { session } = useSession()
@@ -15,6 +17,10 @@ export const useLessonForUser = (courseSlug: string, lessonSlug: string) => {
     },
     enabled: !!session,
     staleTime: 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error instanceof CourseLockedError) return false
+      return failureCount < 3
+    },
     refetchInterval: (query) => {
       const d = query.state.data
       if (!d || d.type !== LessonTypeEnum.REVIEW_TASK) return false

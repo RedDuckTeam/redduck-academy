@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useState, type RefObject } from 'react'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { Lock } from 'lucide-react'
 
 export interface CoursesProgramSidebarListProps {
   courses: Course[]
@@ -70,9 +71,10 @@ export const CoursesProgramSidebarList = ({
           <Text variant="main-16" className="font-ibm-plex-mono text-primary">
             {index < 10 ? `0${index + 1}` : index + 1}.
           </Text>
-          <Text variant="main-16" className="font-ibm-plex-mono uppercase text-white">
+          <Text variant="main-16" className={cn('font-ibm-plex-mono uppercase', course.isLocked ? 'text-white/40' : 'text-white')}>
             {course.title}
           </Text>
+          {course.isLocked && <Lock className="ml-auto h-4 w-4 text-white/40 shrink-0" />}
         </button>
       ))}
       {courses.length > 0 && selectedIndex >= 0 && selectedIndex < courses.length && (

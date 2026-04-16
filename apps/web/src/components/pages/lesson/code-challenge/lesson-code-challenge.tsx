@@ -10,6 +10,7 @@ import { CodeIcon } from '@/components/ui/icons/code'
 import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { useSession } from '@/hooks/useSession'
+import { RateLimitError } from '@/lib/api/coding-task'
 
 interface LessonCodeChallengeProps {
   lesson: Lesson
@@ -38,13 +39,14 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
   }, [userLesson])
 
   const language = lesson.codingLanguage
-  const { mutate: submit, isPending } = useSubmitCodingTask(courseSlug, lessonSlug)
+  const { mutate: submit, isPending, error: submitError } = useSubmitCodingTask(courseSlug, lessonSlug)
 
   if (!language) {
     return <div>No language found</div>
   }
-  const attemptsLeft = userLesson?.attemptsLeft ?? 50
-  const canSubmit = code.trim().length > 0 && !isPending && attemptsLeft > 0
+
+  const rateLimitError = submitError instanceof RateLimitError ? submitError : null
+  const canSubmit = code.trim().length > 0 && !isPending && !rateLimitError
 
   return (
     <div className="flex min-w-0 w-full flex-1 flex-col gap-6 xl:flex-row xl:items-stretch">
@@ -75,7 +77,7 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
               isAuthenticated={!!session}
               isPending={isPending}
               canSubmit={canSubmit}
-              attemptsLeft={attemptsLeft}
+              rateLimitError={rateLimitError}
             />
           </div>
         </div>

@@ -14,8 +14,8 @@ const statusLabels: Record<CourseStatus, string> = {
 interface MyProgressCourseProps {
   course: Course
   index: number
-  earnedPoints: number
-  totalPoints: number
+  completedLessons: number
+  totalLessons: number
   nextLesson: { moduleSlug: string; lessonSlug: string } | null
   status: CourseStatus
   layout: 'table' | 'card'
@@ -24,14 +24,14 @@ interface MyProgressCourseProps {
 export const MyProgressCourse = ({
   course,
   index,
-  earnedPoints,
-  totalPoints,
+  completedLessons,
+  totalLessons,
   nextLesson,
   status,
   layout,
 }: MyProgressCourseProps) => {
   const indexLabel = index < 10 ? `0${index + 1}` : index + 1
-  const pointsText = totalPoints > 0 ? `${earnedPoints}/${totalPoints}` : '-'
+  const pointsText = totalLessons > 0 ? `${completedLessons}/${totalLessons}` : '-'
 
   const titleInner = (
     <>
@@ -99,11 +99,11 @@ export const MyProgressCourse = ({
         <div className="flex justify-between gap-6">
           <div className="flex min-w-0 flex-col gap-1">
             <Text variant="caps-12" className="text-border">
-              Points
+              Lessons
             </Text>
             <Text variant={'caps-20'}>{pointsText}</Text>
           </div>
-          <div className="flex min-w-0 flex-col gap-1 items-end text-right">
+          <div className="flex min-w-0 flex-col gap-1 col-span-8">
             <Text variant="caps-12" className="text-border">
               Status
             </Text>

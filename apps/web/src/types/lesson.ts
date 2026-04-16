@@ -8,6 +8,12 @@ export interface Course {
   updatedAt: string
   createdAt: string
   modules: Module[]
+  isLocked?: boolean
+  prerequisiteCourseSlug?: string
+}
+
+export interface UserSettings {
+  skipPrerequisites: boolean
 }
 
 export interface Module {
@@ -38,7 +44,6 @@ export interface CodingTaskSubmission {
 export interface PublicReviewGradingTask {
   id: string
   title: string
-  points: number
   isRequired: boolean
   _order: number
   criteriaHidden: boolean
@@ -57,7 +62,6 @@ export interface Lesson {
   createdAt: string
   questions?: TestQuestion[]
   templateRepoUrl?: string
-  maxPoints: number
   next: string | null
   /** Review-task rubric rows (learner-safe; hidden rows have criteriaHidden and no criteria). */
   reviewGradingTasks?: PublicReviewGradingTask[]
@@ -70,8 +74,6 @@ export interface Lesson {
 export interface ReviewCriterionFeedback {
   taskId: string
   name: string
-  points: number
-  maxPoints: number
   passed: boolean
   comment: string
 }
@@ -91,11 +93,11 @@ export interface LatestProjectSubmission {
 }
 
 export interface LessonForUser extends Lesson {
-  earnedPoints: number | null
   userAnswers: Record<string, string[]> | null
   isCompleted: boolean
   correctAnswers: Record<string, string[]> | null
-  attemptsLeft?: number
+  /** Set when rate-limited; ms until retry is allowed. */
+  retryAfterMs?: number
   /** Review-task submissions, oldest first; latest is `.at(-1)`. */
   submissions?: LatestProjectSubmission[] | CodingTaskSubmission[]
 }
@@ -121,7 +123,6 @@ export interface TestQuestion {
   question: string
   order: number
   parentId: number
-  points: number | null
   isMultipleChoices: boolean
   id: string
   options?: TestQuestionOption[]

@@ -6,15 +6,13 @@ const completedLessonSchema = z.object({
   courseSlug: z.string(),
   lessonId: z.number(),
   lessonSlug: z.string(),
-  pointsEarned: z.number(),
-  maxPoints: z.number(),
 })
 
 export type CompletedLesson = z.infer<typeof completedLessonSchema>
 
 export const getUserCompletedLessonsDesc = describeRoute({
   summary: 'Get user completed lessons',
-  description: 'Returns the list of completed lessons with courseSlug, lessonSlug, points earned, and max points.',
+  description: 'Returns the list of completed lessons with courseSlug and lessonSlug.',
   tags: ['User'],
   responses: {
     200: {
@@ -43,7 +41,7 @@ export const getUserCompletedLessonsDesc = describeRoute({
 export const getUserLessonDesc = describeRoute({
   summary: 'Get lesson for authenticated user',
   description:
-    'Returns lesson data with user-specific fields: earnedPoints, userAnswers, isCompleted, correctAnswers (for completed tests). For review_task lessons, also attemptsLeft, reviewGradingTasks (learner-safe rubric rows), and submissions (all attempts, oldest first; latest is the last element). Per-criterion feedback comments for hidden rubric rows are redacted in submissions so hints are not leaked.',
+    'Returns lesson data with user-specific fields: userAnswers, isCompleted, correctAnswers (for completed tests). For review_task and coding_task lessons, also includes submissions (all attempts, oldest first; latest is the last element). Per-criterion feedback comments for hidden rubric rows are redacted in submissions so hints are not leaked.',
   tags: ['User'],
   responses: {
     200: {
@@ -131,7 +129,7 @@ export const updateUserNameDesc = describeRoute({
 
 export const getProgressCardsDesc = describeRoute({
   summary: 'Get progress cards data',
-  description: 'Returns progress data for the home page cards: points, completed lessons, completed courses, and current streak.',
+  description: 'Returns progress data for the home page cards: completed lessons, completed courses, and current streak.',
   tags: ['User'],
   responses: {
     200: {
@@ -141,7 +139,6 @@ export const getProgressCardsDesc = describeRoute({
           schema: resolver(
             z.object({
               data: z.object({
-                points: z.number(),
                 completedLessonsCount: z.number(),
                 completedCoursesCount: z.number(),
                 totalCoursesCount: z.number(),
@@ -165,7 +162,7 @@ export const getProgressCardsDesc = describeRoute({
 
 export const getUserStatsDesc = describeRoute({
   summary: 'Get user stats',
-  description: 'Returns the authenticated user stats (points and completed lessons count).',
+  description: 'Returns the authenticated user stats (completed lessons count).',
   tags: ['User'],
   responses: {
     200: {
@@ -175,11 +172,103 @@ export const getUserStatsDesc = describeRoute({
           schema: resolver(
             z.object({
               data: z.object({
-                points: z.number(),
                 completedLessonsCount: z.number(),
               }),
             }),
           ),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+export const userSettingsSchema = z.object({
+  skipPrerequisites: z.boolean(),
+})
+
+export const updateUserSettingsBodySchema = z.object({
+  skipPrerequisites: z.boolean().optional(),
+})
+
+export const getUserSettingsDesc = describeRoute({
+  summary: 'Get user settings',
+  description: 'Returns the authenticated user settings.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'User settings',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: userSettingsSchema })),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+export const getRatingDesc = describeRoute({
+  summary: 'Get user rating',
+  description:
+    'Returns the ranking for all users sorted by completed lessons (descending). Users with the same number of completed lessons share the same rank (dense rank).',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'User rating list',
+      content: {
+        'application/json': {
+          schema: resolver(
+            z.object({
+              data: z.array(
+                z.object({
+                  rank: z.number(),
+                  userId: z.string(),
+                  userName: z.string(),
+                  completedLessonsCount: z.number(),
+                  completedCoursesCount: z.number(),
+                }),
+              ),
+            }),
+          ),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+export const updateUserSettingsDesc = describeRoute({
+  summary: 'Update user settings',
+  description: 'Updates the authenticated user settings (e.g. skipPrerequisites).',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'Updated settings',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: userSettingsSchema })),
         },
       },
     },

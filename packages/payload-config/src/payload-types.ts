@@ -185,6 +185,10 @@ export interface Course {
    * When checked, this course is excluded from the public API and all calculations.
    */
   isHidden?: boolean | null;
+  /**
+   * This course is locked until the selected prerequisite course is fully completed. Lectures are always accessible.
+   */
+  prerequisiteCourse?: (number | null) | Course;
   updatedAt: string;
   createdAt: string;
 }
@@ -237,7 +241,6 @@ export interface Lesson {
   questions?:
     | {
         question: string;
-        points?: number | null;
         options?:
           | {
               label: string;
@@ -282,12 +285,11 @@ export interface Lesson {
    */
   aiPossibleSolutions?: string | null;
   /**
-   * Each row is one graded item. Total points must match lesson max points (auto-summed into Max points below).
+   * Each row is one graded item the AI will evaluate as pass/fail.
    */
   reviewGradingTasks?:
     | {
         title: string;
-        points: number;
         /**
          * What the AI should verify for this row (pass/fail per rubric).
          */
@@ -316,10 +318,6 @@ export interface Lesson {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Tests: auto from question points. Review tasks: auto from grading tasks. Coding tasks: enter manually.
-   */
-  maxPoints?: number | null;
   /**
    * When checked, this lesson is excluded from the public API and all calculations.
    */
@@ -498,6 +496,7 @@ export interface CoursesSelect<T extends boolean = true> {
   order?: T;
   publishedAt?: T;
   isHidden?: T;
+  prerequisiteCourse?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -529,7 +528,6 @@ export interface LessonsSelect<T extends boolean = true> {
     | T
     | {
         question?: T;
-        points?: T;
         options?:
           | T
           | {
@@ -555,7 +553,6 @@ export interface LessonsSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
-        points?: T;
         criteria?: T;
         hideCriteriaFromLearner?: T;
         isRequired?: T;
@@ -568,7 +565,6 @@ export interface LessonsSelect<T extends boolean = true> {
         path?: T;
         id?: T;
       };
-  maxPoints?: T;
   isHidden?: T;
   updatedAt?: T;
   createdAt?: T;

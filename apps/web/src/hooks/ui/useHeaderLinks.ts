@@ -10,6 +10,10 @@ export const headerLinks = [
     to: '/courses',
     text: 'COURSE PROGRAM',
   },
+  {
+    to: '/rating',
+    text: 'RATING',
+  },
 ]
 
 export const useHeaderLinks = () => {

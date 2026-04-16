@@ -5,9 +5,8 @@ import { codingTaskReviewCache, codingTaskSubmissions, userLessons } from '../..
 
 export const CodingTaskRepository = {
   /**
-   * Upserts the user-lesson row, enforces attempt limits, inserts the submission,
-   * and updates the user-lesson score/completion — all in one transaction.
-   * Returns the new submission id and updated attemptsLeft.
+   * Upserts the user-lesson row, inserts the submission, and updates completion — all in one transaction.
+   * Returns the new submission id.
    */
   async createSubmission(
     userId: string,
@@ -15,8 +14,7 @@ export const CodingTaskRepository = {
     submittedCode: string,
     language: string,
     passed: boolean,
-    lessonMaxPoints: number,
-  ): Promise<{ submissionId: number; attemptsLeft: number }> {
+  ): Promise<{ submissionId: number }> {
     return db.transaction(async (tx) => {
       const [userLesson] = await tx
         .insert(userLessons)
@@ -30,28 +28,20 @@ export const CodingTaskRepository = {
       if (!userLesson) {
         throw new AppError(500, 'Failed to resolve user lesson row')
       }
-      if ((userLesson.attemptsLeft ?? 0) <= 0) {
-        throw new AppError(400, 'No attempts left for this lesson')
-      }
 
       const [submission] = await tx
         .insert(codingTaskSubmissions)
         .values({ userLessonId: userLesson.id, submittedCode, language, passed })
         .returning({ id: codingTaskSubmissions.id })
 
-      const score = passed ? lessonMaxPoints : 0
-      const newAttemptsLeft = Math.max((userLesson.attemptsLeft ?? 1) - 1, 0)
+      if (passed) {
+        await tx
+          .update(userLessons)
+          .set({ isCompleted: true })
+          .where(eq(userLessons.id, userLesson.id))
+      }
 
-      await tx
-        .update(userLessons)
-        .set({
-          score: passed ? sql`GREATEST(COALESCE(${userLessons.score}, 0), ${score})` : userLessons.score,
-          isCompleted: passed ? true : userLessons.isCompleted,
-          attemptsLeft: sql`GREATEST(${userLessons.attemptsLeft} - 1, 0)`,
-        })
-        .where(eq(userLessons.id, userLesson.id))
-
-      return { submissionId: submission.id, attemptsLeft: newAttemptsLeft }
+      return { submissionId: submission.id }
     })
   },
 
@@ -70,7 +60,7 @@ export const CodingTaskRepository = {
 
   async getUserLesson(userId: string, lessonId: number) {
     const [row] = await db
-      .select({ id: userLessons.id, attemptsLeft: userLessons.attemptsLeft })
+      .select({ id: userLessons.id })
       .from(userLessons)
       .where(and(eq(userLessons.userId, userId), eq(userLessons.lessonId, lessonId)))
       .limit(1)

@@ -12,6 +12,7 @@ import { useSubmitProject } from '@/hooks/api/lessons/useSubmitProject'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { Dialog } from '@/components/ui/dialog'
 import { useSession } from '@/hooks/useSession'
+import { RateLimitError } from '@/lib/api/coding-task'
 
 interface ProjectSubmissionProps {
   lesson: Lesson
@@ -25,9 +26,10 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const { session } = useSession()
   const [link, setLink] = useState('')
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
-  const { mutate: submitProject, isPending } = useSubmitProject(courseSlug, lessonSlug)
+  const { mutate: submitProject, isPending, error: submitError } = useSubmitProject(courseSlug, lessonSlug)
   const submissions = (userLesson?.submissions ?? []) as LatestProjectSubmission[]
   const latest = submissions.at(-1)
+  const rateLimitError = submitError instanceof RateLimitError ? submitError : null
 
   const handleSubmit = () => {
     submitProject({ courseSlug, lessonSlug, repoUrl: link })
@@ -62,7 +64,11 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
           YOUR WORK
         </Text>
 
-        <Text variant="caps-20">{userLesson?.attemptsLeft} attempts left</Text>
+        {rateLimitError && (
+          <Text variant="caps-20" className="text-yellow-500">
+            {rateLimitError.message}
+          </Text>
+        )}
 
         <div className="flex items-center gap-2">
           <TerminalIcon className="" />
@@ -89,7 +95,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
             <Text variant="caps-20">Sign in</Text>
           </Button>
         ) : (
-          <Button disabled={!link || isPending || !userLesson?.attemptsLeft} onClick={handleSubmit} className="w-full">
+          <Button disabled={!link || isPending || !!rateLimitError} onClick={handleSubmit} className="w-full">
             <Text variant="caps-20">SEND TO REVIEW</Text>
           </Button>
         )}

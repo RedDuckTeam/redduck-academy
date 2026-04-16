@@ -2,6 +2,7 @@ import { asc, eq, ne } from 'drizzle-orm'
 import { payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
+import { CoursePrerequisitesService } from './course-prerequisites.service'
 
 const { courses, lessons, modules } = payloadSchema
 
@@ -26,11 +27,12 @@ export class CoursesService {
     return result
   }
 
-  static async listCourses() {
-    return payloadDb.query.courses.findMany({
+  static async listCourses(userId?: string | null) {
+    const rawCourses = await payloadDb.query.courses.findMany({
       where: (c) => ne(c.isHidden, true),
       orderBy: (c, { asc }) => [asc(c.order)],
       with: {
+        prerequisiteCourse: true,
         modules: {
           where: (m) => ne(m.isHidden, true),
           with: {
@@ -43,7 +45,6 @@ export class CoursesService {
                 module: true,
                 order: true,
                 type: true,
-                maxPoints: true,
                 updatedAt: true,
                 createdAt: true,
               },
@@ -51,6 +52,17 @@ export class CoursesService {
           },
         },
       },
+    })
+
+    const accessMap = await CoursePrerequisitesService.getCourseAccessMap(userId ?? null, rawCourses)
+
+    return rawCourses.map((course) => {
+      const access = course.slug ? accessMap.get(course.slug) : undefined
+      return {
+        ...course,
+        isLocked: access?.locked ?? false,
+        prerequisiteCourseSlug: access?.prerequisiteCourseSlug,
+      }
     })
   }
 
@@ -76,19 +88,10 @@ export class CoursesService {
     return allCourses.map((course) => {
       const courseLessons = (course.modules ?? []).flatMap((m) => m.lessons ?? [])
       const totalTasks = courseLessons.filter((l) => l.type !== 'lecture').length
-      const totalPoints = courseLessons.reduce((sum, lesson) => {
-        if (lesson.type === 'lecture') return sum
-        if (lesson.type === 'test') {
-          const qs = lesson.questions ?? []
-          return sum + qs.reduce((qSum, q) => qSum + (q.points ?? 5), 0)
-        }
-        return sum + (lesson.maxPoints ?? 0)
-      }, 0)
 
       return {
         id: course.id,
         title: course.title,
-        totalPoints,
         totalTasks,
       }
     })

@@ -1,7 +1,7 @@
 import { eq, and, count, inArray, desc, ne } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
-import { userLessons } from '../../db/schema'
+import { userLessons, userCertificates } from '../../db/schema'
 import { payloadSchema } from '@redduck/payload-config'
 import type { CompletedLesson } from '../../descriptions/user'
 import type { ReviewFeedback } from '../../types/review-feedback'
@@ -10,6 +10,8 @@ import { CoursesService } from '../courses/courses.service'
 import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { sanitizeReviewFeedbackForLearner } from '../review/sanitize-review-feedback-for-learner'
+import { AppError } from '../../lib/errors'
+import { CoursePrerequisitesService } from '../courses/course-prerequisites.service'
 
 const { lessons, courses } = payloadSchema
 
@@ -17,12 +19,25 @@ export class UserService {
   static async getLessonForUser(userId: string, courseSlug: string, lessonSlug: string) {
     const lesson = await LessonsService.getLesson(courseSlug, lessonSlug)
 
+    // Enforce course prerequisites for non-lecture lessons
+    if (lesson.type !== 'lecture') {
+      const access = await CoursePrerequisitesService.checkCourseAccess(userId, courseSlug)
+      if (!access.allowed) {
+        throw new AppError(
+          403,
+          `Course locked: complete "${access.prerequisiteCourseTitle}" first`,
+          {
+            prerequisiteCourseSlug: access.prerequisiteCourseSlug,
+            prerequisiteCourseTitle: access.prerequisiteCourseTitle,
+          },
+        )
+      }
+    }
+
     const [userLesson] = await db
       .select({
-        score: userLessons.score,
         userAnswers: userLessons.userAnswers,
         isCompleted: userLessons.isCompleted,
-        attemptsLeft: userLessons.attemptsLeft,
         id: userLessons.id,
       })
       .from(userLessons)
@@ -61,80 +76,41 @@ export class UserService {
 
     return {
       ...lesson,
-      earnedPoints: userLesson?.isCompleted ? (userLesson.score ?? null) : null,
       userAnswers: userLesson?.isCompleted
         ? ((userLesson.userAnswers as Record<string, string[]> | null) ?? null)
         : null,
       isCompleted: userLesson?.isCompleted ?? false,
       correctAnswers,
-      ...(lesson.type === 'review_task'
-        ? {
-            attemptsLeft: userLesson?.attemptsLeft ?? 50,
-            submissions,
-          }
-        : {}),
-      ...(lesson.type === 'coding_task'
-        ? {
-            attemptsLeft: userLesson?.attemptsLeft ?? 50,
-            submissions: codingTaskSubmissions,
-          }
-        : {}),
+      ...(lesson.type === 'review_task' ? { submissions } : {}),
+      ...(lesson.type === 'coding_task' ? { submissions: codingTaskSubmissions } : {}),
     }
   }
 
   static async getUserCompletedLessons(userId: string): Promise<CompletedLesson[]> {
     const completedLessons = await db.query.userLessons.findMany({
       where: and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true)),
-      columns: { lessonId: true, score: true },
+      columns: { lessonId: true },
       orderBy: desc(userLessons.createdAt),
     })
 
     if (completedLessons.length === 0) return []
 
-    const scoreByLessonId = new Map<number, number>()
-    for (const c of completedLessons) {
-      if (!scoreByLessonId.has(c.lessonId)) {
-        scoreByLessonId.set(c.lessonId, c.score ?? 0)
-      }
-    }
-
-    const lessonIds = [...scoreByLessonId.keys()]
+    const lessonIds = [...new Set(completedLessons.map((c) => c.lessonId))]
     const payloadLessons = await payloadDb.query.lessons.findMany({
       where: inArray(lessons.id, lessonIds),
-      with: {
-        module: {
-          with: {
-            course: true,
-          },
-        },
-        questions: true,
-      },
+      with: { module: { with: { course: true } } },
     })
 
     return payloadLessons
       .filter((l) => l.module?.course?.slug)
-      .map((lesson) => {
-        const courseSlug = lesson.module!.course!.slug ?? ''
-        const pointsEarned = scoreByLessonId.get(lesson.id) ?? 0
-
-        const maxPoints =
-          lesson.type === 'test'
-            ? (lesson.maxPoints ?? (lesson.questions ?? []).reduce((sum, q) => sum + (q.points ?? 0), 0))
-            : (lesson.maxPoints ?? 0)
-
-        return {
-          courseSlug,
-          lessonId: lesson.id,
-          lessonSlug: lesson.slug ?? '',
-          pointsEarned,
-          maxPoints,
-        }
-      })
+      .map((lesson) => ({
+        courseSlug: lesson.module!.course!.slug ?? '',
+        lessonId: lesson.id,
+        lessonSlug: lesson.slug ?? '',
+      }))
   }
 
   static async getProgressCards(userId: string) {
-    const [userRecord] = await db.select({ points: user.points }).from(user).where(eq(user.id, userId)).limit(1)
-
     const completedLessonRows = await db
       .select({ lessonId: userLessons.lessonId, updatedAt: userLessons.updatedAt })
       .from(userLessons)
@@ -177,13 +153,68 @@ export class UserService {
       }
     }
 
+    // Compute dense rank: count distinct lesson counts that are strictly higher than this user's
+    const allUserLessonCounts = await db
+      .select({ lessonCount: count(userLessons.id) })
+      .from(userLessons)
+      .where(eq(userLessons.isCompleted, true))
+      .groupBy(userLessons.userId)
+
+    const higherDistinctCounts = new Set(
+      allUserLessonCounts
+        .map((r) => Number(r.lessonCount))
+        .filter((c) => c > completedLessonsCount),
+    )
+    const placeInRanking = higherDistinctCounts.size + 1
+
     return {
-      points: userRecord?.points ?? 0,
       completedLessonsCount,
       completedCoursesCount,
       totalCoursesCount,
       currentStreak,
+      placeInRanking,
     }
+  }
+
+  static async getRating() {
+    const usersWithLessons = await db
+      .select({
+        userId: user.id,
+        userName: user.name,
+        completedLessonsCount: count(userLessons.id),
+      })
+      .from(user)
+      .leftJoin(userLessons, and(eq(userLessons.userId, user.id), eq(userLessons.isCompleted, true)))
+      .groupBy(user.id, user.name)
+      .orderBy(desc(count(userLessons.id)))
+
+    const certificateCounts = await db
+      .select({
+        userId: userCertificates.userId,
+        completedCoursesCount: count(userCertificates.id),
+      })
+      .from(userCertificates)
+      .groupBy(userCertificates.userId)
+
+    const certMap = new Map(certificateCounts.map((c) => [c.userId, Number(c.completedCoursesCount)]))
+
+    let currentRank = 0
+    let lastLessonsCount: number | null = null
+
+    return usersWithLessons.map((u) => {
+      const lessonCount = Number(u.completedLessonsCount)
+      if (lastLessonsCount === null || lessonCount !== lastLessonsCount) {
+        currentRank++
+        lastLessonsCount = lessonCount
+      }
+      return {
+        rank: currentRank,
+        userId: u.userId,
+        userName: u.userName,
+        completedLessonsCount: lessonCount,
+        completedCoursesCount: certMap.get(u.userId) ?? 0,
+      }
+    })
   }
 
   static async updateUserName(userId: string, name: string) {
@@ -196,16 +227,33 @@ export class UserService {
   }
 
   static async getUserStats(userId: string) {
-    const [userRecord] = await db.select({ points: user.points }).from(user).where(eq(user.id, userId)).limit(1)
-
     const [countResult] = await db
       .select({ count: count() })
       .from(userLessons)
       .where(and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true)))
 
     return {
-      points: userRecord?.points ?? 0,
       completedLessonsCount: countResult?.count ?? 0,
     }
+  }
+
+  static async getUserSettings(userId: string) {
+    const [row] = await db
+      .select({ skipPrerequisites: user.skipPrerequisites })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+    if (!row) throw new AppError(404, 'User not found')
+    return { skipPrerequisites: row.skipPrerequisites }
+  }
+
+  static async updateUserSettings(userId: string, settings: { skipPrerequisites?: boolean }) {
+    const [updated] = await db
+      .update(user)
+      .set({ ...(settings.skipPrerequisites !== undefined ? { skipPrerequisites: settings.skipPrerequisites } : {}) })
+      .where(eq(user.id, userId))
+      .returning({ skipPrerequisites: user.skipPrerequisites })
+    if (!updated) throw new AppError(404, 'User not found')
+    return { skipPrerequisites: updated.skipPrerequisites }
   }
 }

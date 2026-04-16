@@ -11,6 +11,10 @@ import {
   getProgressCardsDesc,
   updateUserNameDesc,
   updateUserNameBodySchema,
+  getUserSettingsDesc,
+  updateUserSettingsDesc,
+  updateUserSettingsBodySchema,
+  getRatingDesc,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
@@ -65,6 +69,30 @@ userApp.patch('/name', requireAuth, updateUserNameDesc, validator('json', update
 userApp.get('/stats', requireAuth, getUserStatsDesc, async (c) => {
   const authUser = c.get('user')
   const data = await UserService.getUserStats(authUser.id)
+  return c.json({ data })
+})
+
+userApp.get('/settings', requireAuth, getUserSettingsDesc, async (c) => {
+  const authUser = c.get('user')
+  const data = await UserService.getUserSettings(authUser.id)
+  return c.json({ data })
+})
+
+userApp.patch(
+  '/settings',
+  requireAuth,
+  updateUserSettingsDesc,
+  validator('json', updateUserSettingsBodySchema),
+  async (c) => {
+    const authUser = c.get('user')
+    const body = c.req.valid('json')
+    const data = await UserService.updateUserSettings(authUser.id, body)
+    return c.json({ data })
+  },
+)
+
+userApp.get('/rating', getRatingDesc, async (c) => {
+  const data = await UserService.getRating()
   return c.json({ data })
 })
 

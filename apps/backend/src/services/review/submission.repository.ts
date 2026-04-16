@@ -6,8 +6,8 @@ import type { ReviewFeedback } from '../../types/review-feedback'
 
 export const SubmissionRepository = {
   /**
-   * Upserts the user-lesson row, enforces attempt limits, guards against duplicate pending
-   * submissions, then creates a new submission record — all in one transaction.
+   * Upserts the user-lesson row, guards against duplicate pending submissions,
+   * then creates a new submission record — all in one transaction.
    * Returns the new submission id.
    */
   async createForReview(userId: string, lessonId: number, repoUrl: string): Promise<number> {
@@ -24,9 +24,6 @@ export const SubmissionRepository = {
 
       if (!userLesson) {
         throw new AppError(500, 'Failed to resolve user lesson row')
-      }
-      if ((userLesson.attemptsLeft ?? 0) <= 0) {
-        throw new AppError(400, 'No review attempts left for this lesson')
       }
 
       const [pending] = await tx
@@ -96,7 +93,6 @@ export const SubmissionRepository = {
     submissionId: number,
     userLessonId: number,
     feedback: ReviewFeedback,
-    totalScore: number,
     passed: boolean,
   ) {
     await db.transaction(async (tx) => {
@@ -115,11 +111,7 @@ export const SubmissionRepository = {
 
       await tx
         .update(userLessons)
-        .set({
-          score: sql`GREATEST(COALESCE(${userLessons.score}, 0), ${Math.round(totalScore)})`,
-          isCompleted: passed,
-          attemptsLeft: sql`GREATEST(${userLessons.attemptsLeft} - 1, 0)`,
-        })
+        .set({ isCompleted: passed })
         .where(eq(userLessons.id, userLessonId))
     })
   },

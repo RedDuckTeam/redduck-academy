@@ -19,7 +19,6 @@ function isCodingTaskSubmissions(
 export function CodingTaskResult({ lesson }: CodingTaskResultProps) {
   const submissions = isCodingTaskSubmissions(lesson.submissions) ? lesson.submissions : []
   const latest = submissions.at(-1)
-  const attemptsLeft = lesson.attemptsLeft ?? 50
 
   return (
     <div className="flex flex-col gap-4 p-5">
@@ -62,12 +61,6 @@ export function CodingTaskResult({ lesson }: CodingTaskResultProps) {
       ) : (
         <Text variant="main-14" className="text-muted-foreground">
           Submit your code to see results.
-        </Text>
-      )}
-
-      {attemptsLeft === 0 && (
-        <Text variant="main-14" className="text-muted-foreground">
-          No attempts remaining.
         </Text>
       )}
     </div>

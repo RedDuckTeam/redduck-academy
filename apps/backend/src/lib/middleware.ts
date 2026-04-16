@@ -1,4 +1,5 @@
 import { createMiddleware } from 'hono/factory'
+import type { Context } from 'hono'
 import { auth } from './auth'
 import { AppError } from './errors'
 
@@ -11,3 +12,11 @@ export const requireAuth = createMiddleware(async (c, next) => {
   c.set('session', session)
   await next()
 })
+
+export function getClientIp(c: Context): string {
+  return (
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
+    c.req.header('x-real-ip') ??
+    ''
+  )
+}
