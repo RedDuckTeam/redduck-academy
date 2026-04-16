@@ -177,6 +177,7 @@ export class UserService {
       })
       .from(user)
       .leftJoin(userLessons, and(eq(userLessons.userId, user.id), eq(userLessons.isCompleted, true)))
+      .where(eq(user.isPrivate, false))
       .groupBy(user.id, user.name)
       .orderBy(desc(count(userLessons.id)))
 
@@ -241,21 +242,24 @@ export class UserService {
 
   static async getUserSettings(userId: string) {
     const [row] = await db
-      .select({ skipPrerequisites: user.skipPrerequisites })
+      .select({ skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
     if (!row) throw new AppError(404, 'User not found')
-    return { skipPrerequisites: row.skipPrerequisites }
+    return { skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate }
   }
 
-  static async updateUserSettings(userId: string, settings: { skipPrerequisites?: boolean }) {
+  static async updateUserSettings(userId: string, settings: { skipPrerequisites?: boolean; isPrivate?: boolean }) {
     const [updated] = await db
       .update(user)
-      .set({ ...(settings.skipPrerequisites !== undefined ? { skipPrerequisites: settings.skipPrerequisites } : {}) })
+      .set({
+        ...(settings.skipPrerequisites !== undefined ? { skipPrerequisites: settings.skipPrerequisites } : {}),
+        ...(settings.isPrivate !== undefined ? { isPrivate: settings.isPrivate } : {}),
+      })
       .where(eq(user.id, userId))
-      .returning({ skipPrerequisites: user.skipPrerequisites })
+      .returning({ skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate })
     if (!updated) throw new AppError(404, 'User not found')
-    return { skipPrerequisites: updated.skipPrerequisites }
+    return { skipPrerequisites: updated.skipPrerequisites, isPrivate: updated.isPrivate }
   }
 }

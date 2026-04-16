@@ -57,6 +57,13 @@
       "when": 1776376027302,
       "tag": "0007_fluffy_fenris",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776378016528,
+      "tag": "0008_vengeful_toxin",
+      "breakpoints": true
     }
   ]
 }

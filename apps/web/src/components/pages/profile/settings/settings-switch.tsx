@@ -11,7 +11,7 @@ interface SettingsSwitchProps {
 export const SettingsSwitch = ({ label, checked, onChange }: SettingsSwitchProps) => {
   const id = useId()
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <label htmlFor={id} className={textVariants({ variant: 'caps-20' })}>
         {label}
       </label>

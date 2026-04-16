@@ -14,6 +14,7 @@ export interface Course {
 
 export interface UserSettings {
   skipPrerequisites: boolean
+  isPrivate: boolean
 }
 
 export interface Module {

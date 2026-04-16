@@ -192,10 +192,12 @@ export const getUserStatsDesc = describeRoute({
 
 export const userSettingsSchema = z.object({
   skipPrerequisites: z.boolean(),
+  isPrivate: z.boolean(),
 })
 
 export const updateUserSettingsBodySchema = z.object({
   skipPrerequisites: z.boolean().optional(),
+  isPrivate: z.boolean().optional(),
 })
 
 export const getUserSettingsDesc = describeRoute({
@@ -289,7 +291,7 @@ export const uploadAvatarDesc = describeRoute({
 
 export const updateUserSettingsDesc = describeRoute({
   summary: 'Update user settings',
-  description: 'Updates the authenticated user settings (e.g. skipPrerequisites).',
+  description: 'Updates the authenticated user settings (e.g. skipPrerequisites, isPrivate).',
   tags: ['User'],
   responses: {
     200: {
