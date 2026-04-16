@@ -8,6 +8,8 @@ import { Drawer, DrawerContent } from '../ui/drawer-menu'
 import { HeaderMenuIcon } from '../ui/icons/header-menu'
 import { HeaderDrawerContent } from './header-drawer-content'
 import { cn } from '@/lib/utils'
+import { useSession } from '@/hooks/useSession'
+import avatarPlaceholder from '/pages/images/avatar.webp'
 
 export default function Header() {
   const location = useLocation()
@@ -22,6 +24,8 @@ export default function Header() {
     if (isOpen) return
     setIsOpen(true)
   }
+
+  const { session } = useSession()
 
   return (
     <>
@@ -48,10 +52,23 @@ export default function Header() {
         <div className="flex-1 max-md:hidden">
           <HeaderLinks />
         </div>
-        <div className="flex xl:w-[15%] items-center max-md:w-10 justify-end gap-4">
+        <div className="flex xl:w-[15%] items-center justify-end gap-4 shrink-0">
           <div className="max-md:hidden">
             <ThemeToggle />
           </div>
+          <Link
+            to="/profile"
+            aria-label="Profile"
+            className="size-10 shrink-0 rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            {session?.user.image && (
+              <img
+                src={session?.user.image ?? avatarPlaceholder}
+                alt="Profile"
+                className="size-full object-cover rounded-full"
+              />
+            )}
+          </Link>
         </div>
       </header>
       <div className={cn('md:hidden', isOpen && 'h-[60px] mb-5 w-full')}></div>

@@ -9,7 +9,7 @@ interface TextProps extends Omit<HTMLAttributes<HTMLElement>, 'variant'>, Varian
   className?: string
 }
 
-const textVariants = cva('', {
+export const textVariants = cva('', {
   variants: {
     variant: {
       'main-14': 'font-inter text-[14px] leading-[18px] min-h-[18px]',

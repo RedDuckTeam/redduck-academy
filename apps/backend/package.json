@@ -12,6 +12,7 @@
     "better-auth:migrate": "yarn dlx @better-auth/cli migrate --config ./src/lib/auth.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1030.0",
     "drizzle-kit": "^0.31.8"
   },
   "devDependencies": {

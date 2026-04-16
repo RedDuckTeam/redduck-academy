@@ -15,9 +15,13 @@ import {
   updateUserSettingsDesc,
   updateUserSettingsBodySchema,
   getRatingDesc,
+  uploadAvatarDesc,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
+import { uploadToR2, deleteFromR2 } from '../../lib/r2'
+import { AppError } from '../../lib/errors'
+import { env } from '../../env'
 
 const userApp = new Hono<{ Variables: AuthVariables }>()
 
@@ -90,6 +94,48 @@ userApp.patch(
     return c.json({ data })
   },
 )
+
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2 MB
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+userApp.post('/avatar', requireAuth, uploadAvatarDesc, async (c) => {
+  const authUser = c.get('user')
+
+  const formData = await c.req.formData()
+  const file = formData.get('file')
+
+  if (!file || !(file instanceof File)) {
+    throw new AppError(400, 'Missing file field')
+  }
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    throw new AppError(400, 'Invalid file type. Allowed: jpeg, png, webp')
+  }
+  if (file.size > MAX_AVATAR_SIZE) {
+    throw new AppError(400, 'File exceeds 2 MB limit')
+  }
+
+  const existingImageUrl = await UserService.getUserImage(authUser.id)
+
+  const ext = EXTENSIONS[file.type]
+  const key = `avatars/${authUser.id}/${Date.now()}.${ext}`
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const imageUrl = await uploadToR2(key, buffer, file.type)
+
+  const data = await UserService.updateUserAvatar(authUser.id, imageUrl)
+
+  if (existingImageUrl) {
+    const oldKey = existingImageUrl.replace(`${env.R2_PUBLIC_URL}/`, '')
+    if (oldKey.startsWith('avatars/')) {
+      deleteFromR2(oldKey).catch(() => {})
+    }
+  }
+  return c.json({ data })
+})
 
 userApp.get('/rating', getRatingDesc, async (c) => {
   const data = await UserService.getRating()

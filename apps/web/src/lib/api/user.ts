@@ -14,9 +14,7 @@ interface GetProgressCardsResponse {
 }
 
 export const getProgressCards = async (): Promise<ProgressCards> => {
-  const response = await api({ credentials: 'include' }).get<GetProgressCardsResponse>(
-    '/api/user/progress-cards',
-  )
+  const response = await api({ credentials: 'include' }).get<GetProgressCardsResponse>('/api/user/progress-cards')
   return response.data!.data
 }
 
@@ -31,25 +29,43 @@ export interface GetCompletedLessonsResponse {
 }
 
 export const getCompletedLessons = async (): Promise<CompletedLesson[]> => {
-  const response = await api({ credentials: 'include' }).get<GetCompletedLessonsResponse>(
-    '/api/user/completed-lessons',
-  )
+  const response = await api({ credentials: 'include' }).get<GetCompletedLessonsResponse>('/api/user/completed-lessons')
   return response.data?.data ?? []
 }
 
 export const getUserSettings = async (): Promise<UserSettings> => {
-  const response = await api({ credentials: 'include' }).get<{ data: UserSettings }>(
-    '/api/user/settings',
-  )
+  const response = await api({ credentials: 'include' }).get<{ data: UserSettings }>('/api/user/settings')
   return response.data!.data
 }
 
 export const updateUserSettings = async (settings: Partial<UserSettings>): Promise<UserSettings> => {
-  const response = await api({ credentials: 'include' }).patch<{ data: UserSettings }>(
-    '/api/user/settings',
-    settings,
-  )
+  const response = await api({ credentials: 'include' }).patch<{ data: UserSettings }>('/api/user/settings', settings)
   return response.data!.data
+}
+
+export const updateUserName = async (name: string): Promise<{ name: string }> => {
+  const response = await api({ credentials: 'include' }).patch<{ data: { name: string } }>('/api/user/name', { name })
+  return response.data!.data
+}
+
+export const uploadUserAvatar = async (file: File): Promise<{ imageUrl: string }> => {
+  const { env } = await import('@/env')
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch(`${env.VITE_API_URL}/api/user/avatar`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error((data as { error?: string }).error ?? 'Failed to upload avatar')
+  }
+
+  const data = await response.json() as { data: { imageUrl: string } }
+  return data.data
 }
 
 export interface RatingEntry {
@@ -61,8 +77,6 @@ export interface RatingEntry {
 }
 
 export const getRating = async (): Promise<RatingEntry[]> => {
-  const response = await api({ credentials: 'include' }).get<{ data: RatingEntry[] }>(
-    '/api/user/rating',
-  )
+  const response = await api({ credentials: 'include' }).get<{ data: RatingEntry[] }>('/api/user/rating')
   return response.data?.data ?? []
 }

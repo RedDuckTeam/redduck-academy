@@ -12,7 +12,7 @@ export const HeaderLinks = () => {
 
       {activeLinkRef?.current && (
         <div
-          className="absolute -bottom-5 inline-block w-0 h-0 border-solid border-t-0 border-r-[15px] border-l-[15px] border-b-[16px] border-l-transparent border-r-transparent border-t-transparent border-primary transition-all duration-300"
+          className="absolute -bottom-[26px] inline-block w-0 h-0 border-solid border-t-0 border-r-[15px] border-l-[15px] border-b-[16px] border-l-transparent border-r-transparent border-t-transparent border-primary transition-all duration-300"
           style={{
             left: `${triangleLeft}px`,
           }}

@@ -1,0 +1,1 @@
+ALTER TABLE "wallet_address" ADD COLUMN "chain_id" integer NOT NULL;

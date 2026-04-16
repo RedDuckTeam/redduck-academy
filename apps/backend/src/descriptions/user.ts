@@ -259,6 +259,34 @@ export const getRatingDesc = describeRoute({
   },
 })
 
+export const uploadAvatarDesc = describeRoute({
+  summary: 'Upload user avatar',
+  description: 'Accepts a multipart/form-data request with an image file (max 2 MB). Uploads the image to R2 and saves the public URL to the user record.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'Updated avatar URL',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.object({ imageUrl: z.string() }) })),
+        },
+      },
+    },
+    400: {
+      description: 'Invalid file type or size exceeds 2 MB',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const updateUserSettingsDesc = describeRoute({
   summary: 'Update user settings',
   description: 'Updates the authenticated user settings (e.g. skipPrerequisites).',

@@ -1,62 +1,52 @@
 import { Text } from '@/components/ui/text'
-import { ProgressCard } from '@/components/pages/home/progress/progress-cards/progress-card'
+import { PageGridBackground } from '@/components/page-section/page-grid-background'
+import { PageStatsCards } from '@/components/page-section/page-stats-cards'
 import { useProgressCards } from '@/hooks/api/user/useProgressCards'
 import { useRating } from '@/hooks/api/user/useRating'
 import { useSession } from '@/hooks/useSession'
-import { HomepageGrid } from '@/components/ui/icons/homepage-grid'
-import { useTheme } from '@/components/providers/theme-context'
+import { ordinalSuffix } from '@/lib/format-ordinal'
 import { cn } from '@/lib/utils'
-
-const ordinalSuffix = (n: number) => {
-  const s = ['th', 'st', 'nd', 'rd']
-  const v = n % 100
-  return n + (s[(v - 20) % 10] || s[v] || s[0])
-}
+import { PageAvatar } from '@/components/page-section/avatar/page-avatar'
 
 export const RatingPage = () => {
-  const { theme } = useTheme()
-  const { session, isPending } = useSession()
+  const { session } = useSession()
   const { data: progressCards } = useProgressCards()
   const { data: rating = [] } = useRating()
 
-  const isLoggedIn = !isPending && !!session
+  const isLoggedIn = !!session
   const userName = session?.user?.name ?? session?.user?.email ?? null
   const placeInRanking = isLoggedIn ? (progressCards?.placeInRanking ?? 0) : 0
   const completedLessonsCount = isLoggedIn ? (progressCards?.completedLessonsCount ?? 0) : 0
 
+  const headline = userName ? `WELL DONE ${userName.toUpperCase()}!` : 'JOIN TO TRACK YOUR RANKING!'
+
   return (
     <main className="flex flex-col min-h-screen">
-      <div className="relative flex flex-col gap-9 px-6 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]">
-        <HomepageGrid
-          className="absolute top-0 left-[60px] w-[calc(100%-121px)] z-[-1]"
-          fill={theme === 'dark' ? '#222222' : '#E0DEDA'}
-          lines={theme === 'dark' ? '#333333' : '#CCCCCC'}
-        />
-        <div className="flex max-xl:flex-col xl:items-center xl:justify-between gap-6 pt-9">
-          <div className="flex items-center gap-6">
-            <div className="bg-primary p-4 text-black">
-              <Text variant="caps-20">
-                {userName ? `WELL DONE ${userName.toUpperCase()}!` : 'JOIN TO TRACK YOUR RANKING!'}
-              </Text>
-            </div>
-          </div>
-          <div className="xl:flex max-xl:grid max-xl:w-full grid-cols-2 border border-border">
-            <ProgressCard
-              firstNum={ordinalSuffix(placeInRanking)}
-              text="PLACE IN RANKING"
-              className="xl:border-r max-xl:border-b border-border"
-            />
-            <ProgressCard firstNum={String(completedLessonsCount)} text="LESSONS PASSED" />
-          </div>
+      <PageGridBackground>
+        <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-10">
+          <PageAvatar message={headline} />
+          <PageStatsCards
+            items={[
+              {
+                firstNum: placeInRanking ? placeInRanking.toString() : '-',
+                secondNum: placeInRanking ? ordinalSuffix(placeInRanking) : undefined,
+                text: 'PLACE IN RANKING',
+                className: 'xl:border-r max-xl:border-r border-border',
+              },
+              {
+                firstNum: completedLessonsCount ? completedLessonsCount.toString() : '-',
+                text: 'LESSONS PASSED',
+              },
+            ]}
+          />
         </div>
-      </div>
+      </PageGridBackground>
 
-      {/* Rating table section */}
       <div className="bg-header px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px] text-[#e0deda] flex flex-col gap-10">
         <Text variant="subtitle-32">_TOTAL RATING</Text>
 
         <div className="border border-border">
-          <div className="grid grid-cols-[100px_1fr_250px_250px] border-b border-border">
+          <div className="grid grid-cols-[120px_1fr_130px_130px] border-b border-border">
             <div className="p-5">
               <Text variant="caps-20">RATING</Text>
             </div>
@@ -64,10 +54,10 @@ export const RatingPage = () => {
               <Text variant="caps-20">STUDENT</Text>
             </div>
             <div className="p-5 text-center">
-              <Text variant="caps-20">COURSES COMPLETED</Text>
+              <Text variant="caps-20">COURSES</Text>
             </div>
             <div className="p-5 text-center">
-              <Text variant="caps-20">LESSONS COMPLETED</Text>
+              <Text variant="caps-20">LESSONS</Text>
             </div>
           </div>
 
@@ -77,8 +67,7 @@ export const RatingPage = () => {
               <div
                 key={entry.userId}
                 className={cn(
-                  'grid grid-cols-[80px_1fr_180px_180px] border-b border-border last:border-b-0',
-                  isCurrentUser && 'border border-primary',
+                  'grid grid-cols-[120px_1fr_130px_130px] border-b border-border divide-x divide-border last:border-b-0',
                 )}
               >
                 <div className="p-5">
@@ -86,7 +75,7 @@ export const RatingPage = () => {
                     {String(entry.rank).padStart(2, '0')}.
                   </Text>
                 </div>
-                <div className="p-5">
+                <div className={cn('p-5', isCurrentUser && 'text-primary')}>
                   <Text variant="caps-20">{entry.userName?.toUpperCase() ?? '—'}</Text>
                 </div>
                 <div className="p-5 text-center">

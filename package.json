@@ -19,6 +19,8 @@
     "@payloadcms/translations": "3.80.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1030.0",
+    "@aws-sdk/s3-request-presigner": "^3.1030.0",
     "@hono/node-server": "^1.13.8",
     "@hono/standard-validator": "^0.2.1",
     "@octokit/rest": "^22.0.1",

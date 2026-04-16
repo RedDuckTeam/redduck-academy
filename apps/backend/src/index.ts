@@ -19,10 +19,7 @@ const app = new Hono({ strict: false })
 
 app.onError((err, c) => {
   if (err instanceof AppError) {
-    return c.json(
-      { error: err.message, ...(err.extra ?? {}) },
-      err.statusCode as Parameters<typeof c.json>[1],
-    )
+    return c.json({ error: err.message, ...(err.extra ?? {}) }, err.statusCode as Parameters<typeof c.json>[1])
   }
 
   console.error('Unhandled error:', err)
@@ -35,7 +32,7 @@ app.use(
   cors({
     origin: ['http://localhost:3000', 'http://localhost:8787', 'https://redduck-academy.jeleika.com'],
     allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     exposeHeaders: ['Content-Length'],
     maxAge: 600,
     credentials: true,

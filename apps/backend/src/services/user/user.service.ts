@@ -23,14 +23,10 @@ export class UserService {
     if (lesson.type !== 'lecture') {
       const access = await CoursePrerequisitesService.checkCourseAccess(userId, courseSlug)
       if (!access.allowed) {
-        throw new AppError(
-          403,
-          `Course locked: complete "${access.prerequisiteCourseTitle}" first`,
-          {
-            prerequisiteCourseSlug: access.prerequisiteCourseSlug,
-            prerequisiteCourseTitle: access.prerequisiteCourseTitle,
-          },
-        )
+        throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`, {
+          prerequisiteCourseSlug: access.prerequisiteCourseSlug,
+          prerequisiteCourseTitle: access.prerequisiteCourseTitle,
+        })
       }
     }
 
@@ -135,9 +131,7 @@ export class UserService {
       .findMany({ where: (c) => ne(c.isHidden, true), columns: { id: true } })
       .then((r) => r.length)
 
-    const uniqueDateStrings = new Set(
-      completedLessonRows.map((l) => new Date(l.updatedAt).toISOString().split('T')[0]),
-    )
+    const uniqueDateStrings = new Set(completedLessonRows.map((l) => new Date(l.updatedAt).toISOString().split('T')[0]))
     const sortedDates = [...uniqueDateStrings].sort().reverse()
 
     let currentStreak = 0
@@ -161,9 +155,7 @@ export class UserService {
       .groupBy(userLessons.userId)
 
     const higherDistinctCounts = new Set(
-      allUserLessonCounts
-        .map((r) => Number(r.lessonCount))
-        .filter((c) => c > completedLessonsCount),
+      allUserLessonCounts.map((r) => Number(r.lessonCount)).filter((c) => c > completedLessonsCount),
     )
     const placeInRanking = higherDistinctCounts.size + 1
 
@@ -218,12 +210,22 @@ export class UserService {
   }
 
   static async updateUserName(userId: string, name: string) {
+    const [updated] = await db.update(user).set({ name }).where(eq(user.id, userId)).returning({ name: user.name })
+    return { name: updated.name }
+  }
+
+  static async getUserImage(userId: string): Promise<string | null> {
+    const [row] = await db.select({ image: user.image }).from(user).where(eq(user.id, userId)).limit(1)
+    return row?.image ?? null
+  }
+
+  static async updateUserAvatar(userId: string, imageUrl: string) {
     const [updated] = await db
       .update(user)
-      .set({ name })
+      .set({ image: imageUrl })
       .where(eq(user.id, userId))
-      .returning({ name: user.name })
-    return { name: updated.name }
+      .returning({ image: user.image })
+    return { imageUrl: updated.image }
   }
 
   static async getUserStats(userId: string) {
