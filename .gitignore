@@ -18,3 +18,4 @@ node_modules
 .vercel
 .env*.local
 .env
+apps/contracts

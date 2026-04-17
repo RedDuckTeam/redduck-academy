@@ -28,7 +28,7 @@ export function BaseTooltip({
   return (
     <Tooltip {...tooltipProps}>
       <TooltipTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" aria-label={triggerLabel} className={triggerClassName}>
+        <button type="button" aria-label={triggerLabel} className={cn(triggerClassName, 'flex items-center')}>
           {icon ?? (
             <span
               className="inline-flex size-5 shrink-0 items-center justify-center rounded-none border border-white text-[14px] font-semibold leading-none text-white"
@@ -37,7 +37,7 @@ export function BaseTooltip({
               ?
             </span>
           )}
-        </Button>
+        </button>
       </TooltipTrigger>
       <TooltipContent className={cn(contentClassName, '')} {...contentProps}>
         {children}

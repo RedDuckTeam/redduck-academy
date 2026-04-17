@@ -1,5 +1,11 @@
 export type CodingLanguage = 'solidity' | 'rust' | 'typescript'
 
+export interface CoursePrerequisite {
+  id: number
+  slug: string
+  title: string
+}
+
 export interface Course {
   id: number
   title: string
@@ -8,8 +14,7 @@ export interface Course {
   updatedAt: string
   createdAt: string
   modules: Module[]
-  isLocked?: boolean
-  prerequisiteCourseSlug?: string
+  prerequisiteCourse?: CoursePrerequisite | null
 }
 
 export interface UserSettings {

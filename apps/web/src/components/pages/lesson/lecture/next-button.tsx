@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { useMarkLessonCompleted } from '@/hooks/api/lessons/useMarkLessonCompleted'
 import { useSession } from '@/hooks/useSession'
+import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
 
 interface NextButtonProps {
   courseSlug: string
@@ -16,6 +17,8 @@ export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextBu
   const router = useRouter()
   const { session } = useSession()
   const { mutate: markCompleted } = useMarkLessonCompleted()
+  const courseAccess = useCourseAccess()
+  const isCourseLocked = courseAccess.lockedSlugs.has(courseSlug)
   const hasNext = lesson.next !== null
   const link = hasNext ? `/courses/${courseSlug}/${moduleSlug}/${lesson.next}` : `/courses/${courseSlug}`
   const isLecture = lesson.type === 'lecture'
@@ -29,7 +32,7 @@ export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextBu
   }
 
   const handleClick = () => {
-    if (isLecture) {
+    if (isLecture && !isCourseLocked) {
       markCompleted({ courseSlug, lessonSlug: lesson.slug })
     }
     router.navigate({ to: link })

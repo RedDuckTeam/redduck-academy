@@ -32,7 +32,7 @@ export const getCoursesInfo = async () => {
 }
 
 export const getCourses = async () => {
-  const response = await api({ credentials: 'include' }).get<GetCoursesResponse>('/api/courses')
+  const response = await api().get<GetCoursesResponse>('/api/courses')
   return response.data
 }
 

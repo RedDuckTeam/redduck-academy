@@ -1,15 +1,15 @@
 import { useUserSettings, useUpdateUserSettings } from '@/hooks/api/user/useUserSettings'
 import { SettingsSwitch } from './settings-switch'
 
-export const PrivateProfileSwitch = () => {
+export const SkipPrerequisitesSwitch = () => {
   const { data } = useUserSettings()
   const { mutate } = useUpdateUserSettings()
   return (
     <SettingsSwitch
-      label="Private Profile"
-      tooltip="Your profile will be hidden from other users and rating table."
-      checked={data?.isPrivate ?? true}
-      onChange={(isPrivate) => mutate({ isPrivate })}
+      label="Skip Prerequisites"
+      tooltip="Unlock all courses regardless of completion order."
+      checked={data?.skipPrerequisites ?? false}
+      onChange={(skipPrerequisites) => mutate({ skipPrerequisites })}
     />
   )
 }

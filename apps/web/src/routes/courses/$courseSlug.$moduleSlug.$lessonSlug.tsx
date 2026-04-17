@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
@@ -12,8 +12,7 @@ import { createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
-import { Text } from '@/components/ui/text'
-import { Lock } from 'lucide-react'
+import { CourseLockedModal } from '@/components/pages/lesson/course-locked-modal'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
@@ -52,39 +51,7 @@ function LessonPage() {
       <PageBreadcrumbs variant="lesson" courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
       <div className="flex min-w-0 gap-10">
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-        {courseLockedError ? (
-          <LessonContentContainer>
-            <div className="flex flex-col items-start gap-6">
-              <div className="flex items-center gap-3">
-                <Lock className="h-6 w-6 text-primary" />
-                <LessonTitle title={lesson.title} />
-              </div>
-              <div className="flex flex-col gap-3 p-6 border border-primary/30 bg-primary/5">
-                <Text variant="caps-20" className="text-primary">
-                  Course Locked
-                </Text>
-                <Text variant="main-18">
-                  You need to complete{' '}
-                  <Link
-                    to="/courses/$courseSlug"
-                    params={{ courseSlug: courseLockedError.prerequisiteCourseSlug }}
-                    className="text-primary underline"
-                  >
-                    {courseLockedError.prerequisiteCourseTitle}
-                  </Link>{' '}
-                  before accessing this lesson.
-                </Text>
-                <Link
-                  to="/courses/$courseSlug"
-                  params={{ courseSlug: courseLockedError.prerequisiteCourseSlug }}
-                  className="inline-flex items-center gap-2 text-primary underline"
-                >
-                  <Text variant="caps-14">Go to prerequisite course</Text>
-                </Link>
-              </div>
-            </div>
-          </LessonContentContainer>
-        ) : isCodingChallenge ? (
+        {isCodingChallenge ? (
           <LessonCodeChallenge
             lesson={lesson}
             courseSlug={courseSlug}
@@ -108,6 +75,13 @@ function LessonPage() {
               <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
             )}
           </LessonContentContainer>
+        )}
+        {courseLockedError && (
+          <CourseLockedModal
+            courseSlug={courseSlug}
+            prerequisiteCourseSlug={courseLockedError.prerequisiteCourseSlug}
+            prerequisiteCourseTitle={courseLockedError.prerequisiteCourseTitle}
+          />
         )}
       </div>
     </main>

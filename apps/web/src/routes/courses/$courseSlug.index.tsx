@@ -6,6 +6,7 @@ import { CourseProgramSidebar } from '@/components/pages/courses/course-program-
 import { CourseProgramHeader } from '@/components/pages/courses/course-program-header/course-program-header'
 import { createCoursesMeta } from '@/lib/seo'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
+import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
 import { resolveFocusedCourse } from '@/lib/routes/courses-index-search'
 import { queryKeys } from '@/lib/query-keys'
 
@@ -41,6 +42,7 @@ function CourseProgramHubPage() {
   const navigate = Route.useNavigate()
   const { data: completedLessonsData } = useCompletedLessons()
   const completedLessonIds = new Set(completedLessonsData?.map((d) => d.lessonId) ?? [])
+  const courseAccess = useCourseAccess()
 
   const selectCourse = useCallback(
     (slug: string) => {
@@ -61,8 +63,19 @@ function CourseProgramHubPage() {
         className="max-md:hidden"
       />
       <div className="flex flex-col gap-5 w-full">
-        <CourseProgramHeader course={focusedCourse} completedLessons={completedLessonIds} />
-        <CoursesList courses={courses} courseSlug={courseSlug} completedLessons={completedLessonIds} />
+        <CourseProgramHeader
+          course={focusedCourse}
+          completedLessons={completedLessonIds}
+          isLocked={courseAccess.lockedSlugs.has(focusedCourse?.slug ?? '')}
+          prerequisiteCourseSlug={courseAccess.prerequisiteSlugByCourseSlug.get(focusedCourse?.slug ?? '')}
+          prerequisiteCourseTitle={courseAccess.prerequisiteTitleByCourseSlug.get(focusedCourse?.slug ?? '')}
+        />
+        <CoursesList
+          courses={courses}
+          courseSlug={courseSlug}
+          completedLessons={completedLessonIds}
+          lockedCourses={courseAccess.lockedSlugs}
+        />
       </div>
     </main>
   )

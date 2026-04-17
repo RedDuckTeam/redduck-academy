@@ -14,7 +14,6 @@ interface HeaderMenuCoursesListProps {
 export function HeaderMenuCoursesList({ open, courseSlug, onSelect }: HeaderMenuCoursesListProps) {
   const { data: coursesData } = useCourses()
   const courses = coursesData?.data ?? []
-
   const navigate = courseProgramHubRoute.useNavigate()
 
   const selectCourse = useCallback(

@@ -4,13 +4,15 @@ import type { CompletedLesson } from '@/lib/api/user'
 import type { Course, CourseStatus } from '@/types/lesson'
 import { CourseStatusEnum } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
+import type { UserCourseAccessState } from '@/hooks/api/user/useUserCourseAccess'
 
 interface MyProgressProps {
   courses: Course[]
   completedLessons: CompletedLesson[]
+  courseAccess: UserCourseAccessState
 }
 
-export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
+export const MyProgress = ({ courses, completedLessons, courseAccess }: MyProgressProps) => {
   const completedLessonIds = useMemo(() => new Set(completedLessons.map((c) => c.lessonId)), [completedLessons])
 
   const courseProgress = useMemo(() => {
@@ -69,6 +71,9 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
             layout="table"
             course={course}
             index={index}
+            isLocked={courseAccess.lockedSlugs.has(course.slug)}
+            prerequisiteCourseTitle={courseAccess.prerequisiteTitleByCourseSlug.get(course.slug)}
+            prerequisiteCourseSlug={courseAccess.prerequisiteSlugByCourseSlug.get(course.slug)}
             nextLesson={courseProgress[index].nextLesson}
             status={courseProgress[index].status}
           />
@@ -83,6 +88,9 @@ export const MyProgress = ({ courses, completedLessons }: MyProgressProps) => {
             layout="card"
             course={course}
             index={index}
+            isLocked={courseAccess.lockedSlugs.has(course.slug)}
+            prerequisiteCourseTitle={courseAccess.prerequisiteTitleByCourseSlug.get(course.slug)}
+            prerequisiteCourseSlug={courseAccess.prerequisiteSlugByCourseSlug.get(course.slug)}
             nextLesson={courseProgress[index].nextLesson}
             status={courseProgress[index].status}
           />

@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
+import { LockedCourseBadge } from '@/components/pages/home/my-progress/locked-course-badge'
 import { isCourseFullyCompleted } from '@/lib/lessons/course-completion'
 import { cn } from '@/lib/utils'
 import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificates'
@@ -9,10 +10,20 @@ import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificate
 interface CourseProgramHeaderProps {
   course: Course
   completedLessons: Set<number>
+  isLocked?: boolean
+  prerequisiteCourseSlug?: string
+  prerequisiteCourseTitle?: string
   className?: string
 }
 
-export const CourseProgramHeader = ({ course, completedLessons, className }: CourseProgramHeaderProps) => {
+export const CourseProgramHeader = ({
+  course,
+  completedLessons,
+  isLocked,
+  prerequisiteCourseSlug,
+  prerequisiteCourseTitle,
+  className,
+}: CourseProgramHeaderProps) => {
   const showCertificate = isCourseFullyCompleted(course, completedLessons)
   const { data: certificates } = useUserCertificates()
   const isClaimed = certificates?.some((c) => c.courseSlug === course.slug) ?? false
@@ -27,7 +38,12 @@ export const CourseProgramHeader = ({ course, completedLessons, className }: Cou
           <Text id="course-program-title" element="h1" variant="subtitle-32" className="text-[#000]">
             {course.title}_
           </Text>
-          {showCertificate ? (
+          {isLocked ? (
+            <LockedCourseBadge
+              prerequisiteCourseTitle={prerequisiteCourseTitle}
+              prerequisiteCourseSlug={prerequisiteCourseSlug}
+            />
+          ) : showCertificate ? (
             <Button className="text-[#000]" asChild>
               <Link to="/courses/$courseSlug/certificate" params={{ courseSlug: course.slug }}>
                 {isClaimed ? 'View Certificate' : 'Claim Certificate'}

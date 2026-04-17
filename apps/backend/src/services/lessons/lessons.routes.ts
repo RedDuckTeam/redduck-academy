@@ -10,6 +10,7 @@ import { CoursesTestService } from '../courses/courses-test.service'
 import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { LessonsService } from './lessons.service'
+import { CoursePrerequisitesService } from '../courses/course-prerequisites.service'
 
 const submitTestBodySchema = z.object({
   courseSlug: z.string(),
@@ -35,6 +36,8 @@ const lessonsApp = new Hono<{ Variables: AuthVariables }>()
 lessonsApp.post('/submit-test', requireAuth, submitTestDesc, validator('json', submitTestBodySchema), async (c) => {
   const user = c.get('user')
   const { courseSlug, lessonSlug, answers } = c.req.valid('json')
+  const access = await CoursePrerequisitesService.checkCourseAccess(user.id, courseSlug)
+  if (!access.allowed) throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`)
   await CoursesTestService.validateTestLesson(courseSlug, lessonSlug, user.id, answers)
   return c.json({ success: true })
 })
@@ -47,6 +50,8 @@ lessonsApp.post(
   async (c) => {
     const user = c.get('user')
     const { courseSlug, lessonSlug, repoUrl } = c.req.valid('json')
+    const access = await CoursePrerequisitesService.checkCourseAccess(user.id, courseSlug)
+    if (!access.allowed) throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`)
     const ipAddress = getClientIp(c)
     await ReviewService.submitProject(user.id, courseSlug, lessonSlug, repoUrl, ipAddress)
     return c.json({ success: true })
@@ -61,6 +66,8 @@ lessonsApp.post(
   async (c) => {
     const user = c.get('user')
     const { courseSlug, lessonSlug, code, language } = c.req.valid('json')
+    const access = await CoursePrerequisitesService.checkCourseAccess(user.id, courseSlug)
+    if (!access.allowed) throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`)
     const ipAddress = getClientIp(c)
     const result = await CodingTaskService.submitCode(user.id, courseSlug, lessonSlug, code, language, ipAddress)
     return c.json(result)
@@ -86,6 +93,9 @@ lessonsApp.post(
     if (lesson.type !== 'lecture') {
       throw new AppError(400, 'Only lectures can be marked as completed')
     }
+
+    const access = await CoursePrerequisitesService.checkCourseAccess(user.id, courseSlug)
+    if (!access.allowed) throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`)
 
     await LessonsService.markLessonAsCompleted(user.id, courseSlug, lessonSlug)
     return c.json({ success: true })

@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router'
+import { ArrowUpRight } from 'lucide-react'
 import type { Course, CourseStatus } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { CheckIcon } from '@/components/ui/icons/check'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
+import { LockedCourseStatusTooltip } from '@/components/pages/home/my-progress/locked-course-status-tooltip'
 import { cn } from '@/lib/utils'
 
 const statusLabels: Record<CourseStatus, string> = {
@@ -19,6 +21,9 @@ interface MyProgressCourseProps {
   nextLesson: { moduleSlug: string; lessonSlug: string } | null
   status: CourseStatus
   layout: 'table' | 'card'
+  isLocked: boolean
+  prerequisiteCourseTitle?: string
+  prerequisiteCourseSlug?: string
 }
 
 export const MyProgressCourse = ({
@@ -29,6 +34,9 @@ export const MyProgressCourse = ({
   nextLesson,
   status,
   layout,
+  isLocked,
+  prerequisiteCourseTitle,
+  prerequisiteCourseSlug,
 }: MyProgressCourseProps) => {
   const indexLabel = index < 10 ? `0${index + 1}` : index + 1
   const pointsText = totalLessons > 0 ? `${completedLessons}/${totalLessons}` : '-'
@@ -38,13 +46,30 @@ export const MyProgressCourse = ({
       <Text className="text-primary" variant={'caps-20'}>
         {indexLabel}.
       </Text>
-      <Link to="/courses/$courseSlug" params={{ courseSlug: course.slug }}>
-        <Text variant={'caps-20'}>{course.title}</Text>
+      <Link
+        to="/courses/$courseSlug"
+        params={{ courseSlug: course.slug }}
+        className="group inline-flex min-w-0 items-center gap-1.5"
+      >
+        <Text variant={'caps-20'} className="underline-offset-[0.2em] group-hover:underline">
+          {course.title}
+        </Text>
+        <ArrowUpRight aria-hidden className="size-4 shrink-0" strokeWidth={2} />
       </Link>
     </>
   )
 
-  const statusBlock = nextLesson ? (
+  const statusBlock = isLocked ? (
+    <div
+      className={cn(
+        'gap-3 flex items-center justify-center',
+        layout === 'table' && 'p-5 col-span-2 border-t border-border min-h-[60px]',
+      )}
+    >
+      <Text variant={'caps-20'}>Not available</Text>
+      <LockedCourseStatusTooltip prerequisiteCourseTitle={prerequisiteCourseTitle} prerequisiteCourseSlug={prerequisiteCourseSlug} />
+    </div>
+  ) : nextLesson ? (
     <Link
       to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
       params={{
@@ -72,7 +97,12 @@ export const MyProgressCourse = ({
     </div>
   )
 
-  const cardStatusValue = nextLesson ? (
+  const cardStatusValue = isLocked ? (
+    <div className="inline-flex flex-wrap items-center gap-2">
+      <Text variant={'caps-20'}>Not available</Text>
+      <LockedCourseStatusTooltip prerequisiteCourseTitle={prerequisiteCourseTitle} prerequisiteCourseSlug={prerequisiteCourseSlug} />
+    </div>
+  ) : nextLesson ? (
     <Link
       to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
       params={{

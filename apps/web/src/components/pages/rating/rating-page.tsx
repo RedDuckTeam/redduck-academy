@@ -31,7 +31,7 @@ export const RatingPage = () => {
                 firstNum: placeInRanking ? placeInRanking.toString() : '-',
                 secondNum: placeInRanking ? ordinalSuffix(placeInRanking) : undefined,
                 text: 'PLACE IN RANKING',
-                className: 'xl:border-r max-xl:border-r border-border',
+                className: 'border-r border-border',
               },
               {
                 firstNum: completedLessonsCount ? completedLessonsCount.toString() : '-',

@@ -13,9 +13,10 @@ interface CoursesListProps {
   courses: Course[]
   courseSlug: string
   completedLessons: Set<number>
+  lockedCourses?: Set<string>
 }
 
-export const CoursesList = ({ courses, courseSlug, completedLessons }: CoursesListProps) => {
+export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCourses }: CoursesListProps) => {
   if (!courses.length) return null
   const course = courses.find((c) => c.slug === courseSlug) ?? courses[0]
   return (
@@ -32,7 +33,7 @@ export const CoursesList = ({ courses, courseSlug, completedLessons }: CoursesLi
             .map((lesson) => {
               const isCompleted = completedLessons.has(lesson.id)
               const isLecture = lesson.type === LessonTypeEnum.LECTURE
-              const isLocked = course.isLocked && !isLecture
+              const isLocked = (lockedCourses?.has(course.slug) ?? false) && !isLecture
 
               const inner = (
                 <>

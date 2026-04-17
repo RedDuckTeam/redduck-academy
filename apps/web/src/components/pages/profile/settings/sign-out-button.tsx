@@ -26,7 +26,7 @@ export const SignOutButton = () => {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="outline-white"
       className="self-start max-sm:w-full"
       disabled={isSigningOut}
       onClick={handleSignOut}

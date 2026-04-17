@@ -74,36 +74,3 @@ export const getCourseDesc = describeRoute({
     },
   },
 })
-
-export const validateTestLessonDesc = describeRoute({
-  summary: 'Validate test lesson answers',
-  description:
-    'Submits user answers for a test lesson and records completion. Requires authentication.',
-  tags: ['Courses', 'Lessons'],
-  responses: {
-    200: {
-      description: 'Validation result with correct answers',
-      content: {
-        'application/json': {
-          schema: resolver(
-            z.object({
-              correctAnswers: z.record(z.string(), z.array(z.string())),
-            }),
-          ),
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    404: {
-      description: 'Course, lesson not found, or lesson is not a test',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-  },
-})

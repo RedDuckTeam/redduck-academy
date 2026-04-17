@@ -1,10 +1,6 @@
-import { asc, eq, ne } from 'drizzle-orm'
+import { eq, ne } from 'drizzle-orm'
 import { payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
-import { payloadSchema } from '@redduck/payload-config'
-import { CoursePrerequisitesService } from './course-prerequisites.service'
-
-const { courses, lessons, modules } = payloadSchema
 
 export class CoursesService {
   static async getCourseBySlug(slug: string) {
@@ -27,12 +23,12 @@ export class CoursesService {
     return result
   }
 
-  static async listCourses(userId?: string | null) {
-    const rawCourses = await payloadDb.query.courses.findMany({
+  static async listCourses() {
+    return payloadDb.query.courses.findMany({
       where: (c) => ne(c.isHidden, true),
       orderBy: (c, { asc }) => [asc(c.order)],
       with: {
-        prerequisiteCourse: true,
+        prerequisiteCourse: { columns: { id: true, slug: true, title: true } },
         modules: {
           where: (m) => ne(m.isHidden, true),
           with: {
@@ -52,17 +48,6 @@ export class CoursesService {
           },
         },
       },
-    })
-
-    const accessMap = await CoursePrerequisitesService.getCourseAccessMap(userId ?? null, rawCourses)
-
-    return rawCourses.map((course) => {
-      const access = course.slug ? accessMap.get(course.slug) : undefined
-      return {
-        ...course,
-        isLocked: access?.locked ?? false,
-        prerequisiteCourseSlug: access?.prerequisiteCourseSlug,
-      }
     })
   }
 
@@ -152,9 +137,7 @@ export class CoursesService {
 
     const lesson = candidates.find(
       (l) =>
-        l.module?.course?.slug === courseSlug &&
-        l.module?.isHidden !== true &&
-        l.module?.course?.isHidden !== true,
+        l.module?.course?.slug === courseSlug && l.module?.isHidden !== true && l.module?.course?.isHidden !== true,
     )
     if (!lesson || lesson.type !== 'test') return null
 
