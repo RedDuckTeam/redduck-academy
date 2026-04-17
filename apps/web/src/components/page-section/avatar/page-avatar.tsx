@@ -8,10 +8,8 @@ interface PageAvatarProps extends PageAvatarImageProps, PageAvatarTextProps {
 
 export const PageAvatar = ({ imageUrl, message, imageSlot }: PageAvatarProps) => {
   return (
-    <div className="flex gap-5">
-      <div className="pt-2.5">
-        {imageSlot ?? <PageAvatarImage imageUrl={imageUrl} />}
-      </div>
+    <div className="flex sm:gap-5 gap-3">
+      <div className="pt-2.5">{imageSlot ?? <PageAvatarImage imageUrl={imageUrl} />}</div>
       <PageAvatarText message={message} />
     </div>
   )

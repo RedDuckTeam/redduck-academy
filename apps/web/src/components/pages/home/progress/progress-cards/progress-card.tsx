@@ -12,7 +12,7 @@ export const ProgressCard = ({ firstNum, secondNum, text, className }: Props) =>
   return (
     <div
       className={cn(
-        'sm:py-6 p-2.5 sm:px-[30px] max-xl:w-full xl:min-w-[288px] bg-background flex flex-col gap-1 sm:gap-2.5',
+        'sm:py-6 p-2.5 sm:px-[30px] max-xl:w-full xl:min-w-[260px] bg-background flex flex-col gap-1 sm:gap-2.5',
         className,
       )}
     >

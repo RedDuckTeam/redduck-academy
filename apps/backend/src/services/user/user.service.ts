@@ -107,10 +107,14 @@ export class UserService {
   }
 
   static async getProgressCards(userId: string) {
-    const completedLessonRows = await db
-      .select({ lessonId: userLessons.lessonId, updatedAt: userLessons.updatedAt })
-      .from(userLessons)
-      .where(and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true)))
+    const [completedLessonRows, [userRow]] = await Promise.all([
+      db
+        .select({ lessonId: userLessons.lessonId, updatedAt: userLessons.updatedAt })
+        .from(userLessons)
+        .where(and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true))),
+      db.select({ isPrivate: user.isPrivate }).from(user).where(eq(user.id, userId)).limit(1),
+    ])
+    if (!userRow) throw new AppError(404, 'User not found')
 
     const completedLessonsCount = completedLessonRows.length
 
@@ -147,17 +151,21 @@ export class UserService {
       }
     }
 
-    // Compute dense rank: count distinct lesson counts that are strictly higher than this user's
-    const allUserLessonCounts = await db
-      .select({ lessonCount: count(userLessons.id) })
-      .from(userLessons)
-      .where(eq(userLessons.isCompleted, true))
-      .groupBy(userLessons.userId)
+    // Dense rank among public profiles only; private users are not ranked
+    let placeInRanking = 0
+    if (!userRow.isPrivate) {
+      const allUserLessonCounts = await db
+        .select({ lessonCount: count(userLessons.id) })
+        .from(userLessons)
+        .innerJoin(user, eq(userLessons.userId, user.id))
+        .where(and(eq(userLessons.isCompleted, true), eq(user.isPrivate, false)))
+        .groupBy(userLessons.userId)
 
-    const higherDistinctCounts = new Set(
-      allUserLessonCounts.map((r) => Number(r.lessonCount)).filter((c) => c > completedLessonsCount),
-    )
-    const placeInRanking = higherDistinctCounts.size + 1
+      const higherDistinctCounts = new Set(
+        allUserLessonCounts.map((r) => Number(r.lessonCount)).filter((c) => c > completedLessonsCount),
+      )
+      placeInRanking = higherDistinctCounts.size + 1
+    }
 
     return {
       completedLessonsCount,
@@ -242,12 +250,18 @@ export class UserService {
 
   static async getUserSettings(userId: string) {
     const [row] = await db
-      .select({ skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate })
+      .select({ skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
     if (!row) throw new AppError(404, 'User not found')
-    return { skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate }
+    return { skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio }
+  }
+
+  static async updateUserBio(userId: string, bio: string | null) {
+    const [updated] = await db.update(user).set({ bio }).where(eq(user.id, userId)).returning({ bio: user.bio })
+    if (!updated) throw new AppError(404, 'User not found')
+    return { bio: updated.bio }
   }
 
   static async updateUserSettings(userId: string, settings: { skipPrerequisites?: boolean; isPrivate?: boolean }) {

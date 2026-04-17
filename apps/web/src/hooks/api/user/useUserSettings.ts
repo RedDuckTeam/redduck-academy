@@ -20,6 +20,7 @@ export const useUpdateUserSettings = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.user.settings(), data)
       queryClient.invalidateQueries({ queryKey: queryKeys.courses.all() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.rating() })
     },
   })
 }

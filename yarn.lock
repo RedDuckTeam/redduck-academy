@@ -20282,6 +20282,7 @@ __metadata:
   dependencies:
     "@aws-sdk/client-s3": "npm:^3.1030.0"
     "@aws-sdk/s3-request-presigner": "npm:^3.1030.0"
+    "@formkit/auto-animate": "npm:^0.9.0"
     "@hono/node-server": "npm:^1.13.8"
     "@hono/standard-validator": "npm:^0.2.1"
     "@octokit/rest": "npm:^22.0.1"

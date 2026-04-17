@@ -43,6 +43,13 @@ export const updateUserSettings = async (settings: Partial<UserSettings>): Promi
   return response.data!.data
 }
 
+export const updateUserBio = async (bio: string | null): Promise<{ bio: string | null }> => {
+  const response = await api({ credentials: 'include' }).patch<{ data: { bio: string | null } }>('/api/user/bio', {
+    bio,
+  })
+  return response.data!.data
+}
+
 export const updateUserName = async (name: string): Promise<{ name: string }> => {
   const response = await api({ credentials: 'include' }).patch<{ data: { name: string } }>('/api/user/name', { name })
   return response.data!.data

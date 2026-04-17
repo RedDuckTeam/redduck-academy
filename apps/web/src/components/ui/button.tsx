@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground',
         secondary: 'bg-header text-header-foreground',
         link: 'justify-center rounded-full border border-foreground bg-muted text-foreground',
-        outline: cn('border border-foreground bg-transparent text-foreground'),
+        outline: cn('border border-white bg-transparent text-white'),
         ghost: 'bg-transparent hover:bg-accent hover:text-accent-foreground',
       },
       size: {

@@ -1,6 +1,6 @@
-import { useId } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { textVariants } from '@/components/ui/text'
+import { BaseTooltip } from '@/components/ui/base-tooltip'
 
 interface SettingsSwitchProps {
   label: string
@@ -9,13 +9,13 @@ interface SettingsSwitchProps {
 }
 
 export const SettingsSwitch = ({ label, checked, onChange }: SettingsSwitchProps) => {
-  const id = useId()
   return (
     <div className="flex items-center gap-3">
-      <label htmlFor={id} className={textVariants({ variant: 'caps-20' })}>
-        {label}
-      </label>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+      <div className="flex items-center gap-1">
+        <p className={textVariants({ variant: 'caps-20' })}>{label}</p>
+        <BaseTooltip>Your profile will be hidden from other users and rating table.</BaseTooltip>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   )
 }

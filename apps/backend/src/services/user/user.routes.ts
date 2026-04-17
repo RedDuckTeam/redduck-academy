@@ -16,6 +16,8 @@ import {
   updateUserSettingsBodySchema,
   getRatingDesc,
   uploadAvatarDesc,
+  updateUserBioDesc,
+  updateUserBioBodySchema,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
@@ -134,6 +136,13 @@ userApp.post('/avatar', requireAuth, uploadAvatarDesc, async (c) => {
       deleteFromR2(oldKey).catch(() => {})
     }
   }
+  return c.json({ data })
+})
+
+userApp.patch('/bio', requireAuth, updateUserBioDesc, validator('json', updateUserBioBodySchema), async (c) => {
+  const authUser = c.get('user')
+  const { bio } = c.req.valid('json')
+  const data = await UserService.updateUserBio(authUser.id, bio)
   return c.json({ data })
 })
 

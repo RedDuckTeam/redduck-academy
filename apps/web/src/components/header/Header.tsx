@@ -9,6 +9,7 @@ import { HeaderMenuIcon } from '../ui/icons/header-menu'
 import { HeaderDrawerContent } from './header-drawer-content'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/hooks/useSession'
+import { Button } from '@/components/ui/button'
 import avatarPlaceholder from '/pages/images/avatar.webp'
 
 export default function Header() {
@@ -25,7 +26,7 @@ export default function Header() {
     setIsOpen(true)
   }
 
-  const { session } = useSession()
+  const { session, isPending } = useSession()
 
   return (
     <>
@@ -56,19 +57,28 @@ export default function Header() {
           <div className="max-md:hidden">
             <ThemeToggle />
           </div>
-          <Link
-            to="/profile"
-            aria-label="Profile"
-            className="size-10 shrink-0 rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            {session?.user.image && (
+          {isPending ? (
+            <div
+              className="size-10 shrink-0 rounded-full bg-muted animate-pulse"
+              aria-hidden
+            />
+          ) : session?.user ? (
+            <Link
+              to="/profile"
+              aria-label="Profile"
+              className="size-10 shrink-0 overflow-hidden rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
               <img
-                src={session?.user.image ?? avatarPlaceholder}
+                src={session.user.image ?? avatarPlaceholder}
                 alt="Profile"
-                className="size-full object-cover rounded-full"
+                className="size-full object-cover"
               />
-            )}
-          </Link>
+            </Link>
+          ) : (
+            <Button variant="outline" size="sm" className="shrink-0 uppercase" asChild>
+              <Link to="/sign-up">Sign in</Link>
+            </Button>
+          )}
         </div>
       </header>
       <div className={cn('md:hidden', isOpen && 'h-[60px] mb-5 w-full')}></div>

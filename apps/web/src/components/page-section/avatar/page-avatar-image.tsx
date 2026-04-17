@@ -6,7 +6,7 @@ export interface PageAvatarImageProps {
 
 export const PageAvatarImage = ({ imageUrl }: PageAvatarImageProps) => {
   return (
-    <div className="size-[160px] rounded-full overflow-hidden flex items-center justify-center bg-[#000]">
+    <div className="size-[110px] sm:size-[160px] rounded-full overflow-hidden flex items-center justify-center bg-[#000]">
       {imageUrl ? (
         <img src={imageUrl} alt="Avatar" className="size-[calc(100%-5px)] rounded-full object-cover" />
       ) : (

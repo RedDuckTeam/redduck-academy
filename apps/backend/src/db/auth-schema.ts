@@ -9,6 +9,7 @@ export const user = pgTable('user', {
   image: text('image'),
   skipPrerequisites: boolean('skip_prerequisites').default(false).notNull(),
   isPrivate: boolean('is_private').default(true).notNull(),
+  bio: text('bio'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()

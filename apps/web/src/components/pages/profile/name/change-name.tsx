@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 
 const inputTextClass = cn(
   textVariants({ variant: 'caps-20' }),
-  'text-white bg-transparent border-0 p-0 shadow-none outline-none ring-0 focus:ring-0 [field-sizing:content] min-w-[1ch] max-w-full',
+  'text-white bg-transparent border-0 p-0 shadow-none outline-none ring-0 focus:ring-0 [field-sizing:content] min-w-[1ch] max-w-full sm:text-[20px] text-[16px]',
 )
 
 export const ChangeName = () => {
@@ -88,7 +88,7 @@ export const ChangeName = () => {
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-2">
-        <Text variant="caps-20" className="text-white">
+        <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
           I'm
         </Text>
         {isEditing ? (
@@ -109,7 +109,7 @@ export const ChangeName = () => {
             aria-label="Display name"
           />
         ) : (
-          <Text variant="caps-20" className="text-white">
+          <Text variant="caps-20" className="text-white sm:text-[20px]  truncate max-w-[300px] xl text-[16px]">
             {displayName || '—'}
           </Text>
         )}

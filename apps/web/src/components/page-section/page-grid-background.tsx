@@ -13,7 +13,7 @@ export const PageGridBackground = ({ children, className }: PageGridBackgroundPr
   const { theme } = useTheme()
 
   return (
-    <div className={cn('flex flex-col gap-9 px-6 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]', className)}>
+    <div className={cn('flex flex-col gap-9 px-5 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]', className)}>
       <HomepageGrid
         className="absolute top-0 left-[60px] w-[calc(100%-121px)] z-[-1]"
         fill={theme === 'dark' ? '#222222' : '#E0DEDA'}

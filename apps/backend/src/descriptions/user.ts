@@ -129,7 +129,8 @@ export const updateUserNameDesc = describeRoute({
 
 export const getProgressCardsDesc = describeRoute({
   summary: 'Get progress cards data',
-  description: 'Returns progress data for the home page cards: completed lessons, completed courses, and current streak.',
+  description:
+    'Returns progress data for the home page cards: completed lessons, completed courses, current streak, and place in the public leaderboard. placeInRanking is 0 when the profile is private.',
   tags: ['User'],
   responses: {
     200: {
@@ -143,6 +144,7 @@ export const getProgressCardsDesc = describeRoute({
                 completedCoursesCount: z.number(),
                 totalCoursesCount: z.number(),
                 currentStreak: z.number(),
+                placeInRanking: z.number(),
               }),
             }),
           ),
@@ -190,9 +192,38 @@ export const getUserStatsDesc = describeRoute({
   },
 })
 
+export const updateUserBioBodySchema = z.object({
+  bio: z.string().max(300).nullable(),
+})
+
+export const updateUserBioDesc = describeRoute({
+  summary: 'Update user bio',
+  description: 'Updates the bio for the authenticated user. Max 300 characters. Pass null to clear.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'Updated bio',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.object({ bio: z.string().nullable() }) })),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const userSettingsSchema = z.object({
   skipPrerequisites: z.boolean(),
   isPrivate: z.boolean(),
+  bio: z.string().nullable(),
 })
 
 export const updateUserSettingsBodySchema = z.object({
@@ -227,7 +258,7 @@ export const getUserSettingsDesc = describeRoute({
 export const getRatingDesc = describeRoute({
   summary: 'Get user rating',
   description:
-    'Returns the ranking for all users sorted by completed lessons (descending). Users with the same number of completed lessons share the same rank (dense rank).',
+    'Returns the ranking for users with public profiles only, sorted by completed lessons (descending). Users with the same number of completed lessons share the same rank (dense rank). Private profiles are excluded.',
   tags: ['User'],
   responses: {
     200: {
