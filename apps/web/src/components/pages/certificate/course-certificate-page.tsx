@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Certificate } from '@/components/ui/certificate'
 import { Button } from '@/components/ui/button'
@@ -6,18 +6,19 @@ import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificates'
 import { useClaimCertificate } from '@/hooks/api/certificates/useClaimCertificate'
-import { SetNameScreen } from './set-name-screen'
+import { useRequestNft } from '@/hooks/api/certificates/useRequestNft'
 
 export interface CourseCertificatePageProps {
   course: Course
 }
 
 export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
-  const certRef = useRef<HTMLDivElement>(null)
   const [isDownloading, setIsDownloading] = useState(false)
+  const claimStarted = useRef(false)
 
   const { data: certificates, isLoading } = useUserCertificates()
-  const { mutate: claim, isPending: isClaiming } = useClaimCertificate()
+  const { mutate: claim, isPending: isClaiming, isError, isSuccess, reset } = useClaimCertificate()
+  const { mutate: requestNft, isPending: isRequestingNft } = useRequestNft()
 
   const certificate = certificates?.find((c) => c.courseSlug === course.slug)
 
@@ -28,9 +29,28 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
   const courseLine = `${course.title} by RedDuck`
   const subtitle = `You finished ${course.title.toLowerCase()} by RedDuck`
 
-  const handleClaim = (name: string) => {
-    claim({ courseSlug: course.slug, name })
-  }
+  const tryClaim = useCallback(() => {
+    claim(
+      { courseSlug: course.slug },
+      {
+        onError: () => {
+          toast.error('Could not issue certificate')
+        },
+      },
+    )
+  }, [claim, course.slug])
+
+  useEffect(() => {
+    reset()
+    claimStarted.current = false
+  }, [course.slug, reset])
+
+  useEffect(() => {
+    if (isLoading || certificate) return
+    if (claimStarted.current) return
+    claimStarted.current = true
+    tryClaim()
+  }, [isLoading, certificate, tryClaim])
 
   const handleShare = async () => {
     const url = `${window.location.origin}/certificates/${certificate?.id}`
@@ -38,31 +58,71 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
     toast.success('Certificate link copied to clipboard')
   }
 
-  const handleDownloadImage = async () => {
-    if (!certRef.current) return
+  const handleDownloadPdf = async () => {
+    if (!certificate) return
     setIsDownloading(true)
     try {
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(certRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-      })
-      const url = canvas.toDataURL('image/png')
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${course.title.replace(/\s+/g, '-').toLowerCase()}-certificate.png`
-      a.click()
+      const { downloadCertificatePdf } = await import('@/components/ui/certificate-pdf')
+      await downloadCertificatePdf(
+        certificate.name,
+        courseLine,
+        completionDate,
+        `${course.title.replace(/\s+/g, '-').toLowerCase()}-certificate.pdf`,
+      )
+    } catch {
+      toast.error('Could not generate PDF')
     } finally {
       setIsDownloading(false)
     }
   }
 
-  if (isLoading) return null
-
-  if (!certificate) {
-    return <SetNameScreen onClaim={handleClaim} isLoading={isClaiming} />
+  const handleRequestNft = () => {
+    if (!certificate) return
+    requestNft(
+      { certificateId: certificate.id },
+      {
+        onSuccess: () => toast.success('NFT request submitted'),
+        onError: () => toast.error('Could not request NFT'),
+      },
+    )
   }
+
+  if (isLoading || (!certificate && (isClaiming || isSuccess))) return null
+
+  if (!certificate && isError) {
+    return (
+      <div className="w-full flex flex-col gap-10 px-6 py-14 md:px-10 md:py-[60px] bg-[#000]">
+        <div className="mx-auto flex max-w-[880px] flex-col items-center gap-6 text-center text-white">
+          <Text variant="main-18" className="text-secondary">
+            We could not issue your certificate right now.
+          </Text>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-[60px] min-h-[60px] border-white bg-transparent text-white hover:bg-white/10 hover:text-white"
+            onClick={() => {
+              reset()
+              claimStarted.current = false
+              tryClaim()
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!certificate) return null
+
+  const nftButtonLabel =
+    certificate.status === 'claimed'
+      ? 'NFT Claimed'
+      : certificate.status === 'requested'
+        ? 'NFT Requested'
+        : isRequestingNft
+          ? 'Requesting…'
+          : 'Request NFT'
 
   return (
     <div className="w-full flex flex-col gap-10 px-6 py-14 md:px-10 md:py-[60px] bg-[#000]">
@@ -71,23 +131,16 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
           <Text variant={'subtitle-32'} className="font-medium">
             Congratulations!
           </Text>
-          <Text variant={'caps-20'} className="">
-            {subtitle}
-          </Text>
+          <Text variant={'caps-20'}>{subtitle}</Text>
         </div>
-        <Text variant={'main-18'} className=" max-w-[880px]">
-          This page shows your certificate for completing {course.title}. Use the buttons below to download a PNG copy
-          or share the page on LinkedIn.
+        <Text variant={'main-18'} className="max-w-[880px]">
+          This page shows your certificate for completing {course.title}. Download a PDF copy, share
+          the link, or request an NFT to put it on-chain.
         </Text>
       </div>
 
       <div className="certificate-print-root mx-auto flex w-full max-w-[880px] justify-center print:max-w-none print:py-0">
-        <Certificate
-          ref={certRef}
-          recipientName={certificate.name}
-          courseName={courseLine}
-          completionDate={completionDate}
-        />
+        <Certificate recipientName={certificate.name} courseName={courseLine} completionDate={completionDate} />
       </div>
 
       <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 sm:flex-row print:hidden">
@@ -103,12 +156,28 @@ export function CourseCertificatePage({ course }: CourseCertificatePageProps) {
           type="button"
           variant="outline"
           className="h-[60px] min-h-[60px] flex-1 border-white bg-transparent text-white hover:bg-white/10 hover:text-white"
-          onClick={handleDownloadImage}
+          onClick={handleDownloadPdf}
           disabled={isDownloading}
         >
-          {isDownloading ? 'Downloading…' : 'Download'}
+          {isDownloading ? 'Downloading…' : 'Download PDF'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-[60px] min-h-[60px] flex-1 border-white bg-transparent text-white hover:bg-white/10 hover:text-white"
+          onClick={handleRequestNft}
+          disabled={certificate.status !== 'created' || isRequestingNft}
+        >
+          {nftButtonLabel}
         </Button>
       </div>
+
+      {certificate.status === 'claimed' && certificate.tokenId && (
+        <div className="mx-auto flex w-full max-w-[880px] flex-col items-center gap-2 text-center text-white/60 text-sm print:hidden">
+          <p>Token ID: {certificate.tokenId}</p>
+          {certificate.txHash && <p>Tx: {certificate.txHash}</p>}
+        </div>
+      )}
     </div>
   )
 }

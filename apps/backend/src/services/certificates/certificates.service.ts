@@ -1,47 +1,62 @@
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
-import { userCertificates, userLessons } from '../../db/schema'
+import { user, userCertificates, userLessons } from '../../db/schema'
 import { payloadSchema } from '@redduck/payload-config'
 import { AppError } from '../../lib/errors'
 
 const { courses } = payloadSchema
 
+function formatCert(r: typeof userCertificates.$inferSelect) {
+  return {
+    id: r.id,
+    courseSlug: r.courseSlug,
+    issuedAt: r.issuedAt.toISOString(),
+    name: r.name,
+    status: r.status,
+    metadataUri: r.metadataUri ?? null,
+    imageUrl: r.imageUrl ?? null,
+    tokenId: r.tokenId ?? null,
+    txHash: r.txHash ?? null,
+  }
+}
+
 export class CertificatesService {
-  static async claimCertificate(userId: string, courseSlug: string, name: string) {
-    const course = await payloadDb.query.courses.findFirst({
-      where: (c, { and, ne }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
-      with: {
-        modules: {
-          where: (m, { ne }) => ne(m.isHidden, true),
-          with: {
-            lessons: {
-              where: (l, { ne }) => ne(l.isHidden, true),
-              columns: { id: true, type: true },
+  static async claimCertificate(userId: string, courseSlug: string) {
+    const [course, userRow] = await Promise.all([
+      payloadDb.query.courses.findFirst({
+        where: (c, { and, ne }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
+        with: {
+          modules: {
+            where: (m, { ne }) => ne(m.isHidden, true),
+            with: {
+              lessons: {
+                where: (l, { ne }) => ne(l.isHidden, true),
+                columns: { id: true, type: true },
+              },
             },
           },
         },
-      },
-    })
+      }),
+      db.query.user.findFirst({ where: eq(user.id, userId), columns: { name: true } }),
+    ])
 
-    if (!course) {
-      throw new AppError(404, 'Course not found')
-    }
+    if (!course) throw new AppError(404, 'Course not found')
+    if (!userRow) throw new AppError(404, 'User not found')
+
+    const name = userRow.name
 
     const existing = await db.query.userCertificates.findFirst({
       where: and(
         eq(userCertificates.userId, userId),
         eq(userCertificates.courseSlug, courseSlug),
+        eq(userCertificates.name, name),
       ),
     })
 
-    if (existing) {
-      throw new AppError(409, 'Certificate already claimed')
-    }
+    if (existing) return formatCert(existing)
 
     const allLessons = (course.modules ?? []).flatMap((m) => m.lessons ?? [])
-    const gradedLessonIds = allLessons
-      .filter((l) => l.type !== 'lecture')
-      .map((l) => l.id)
+    const gradedLessonIds = allLessons.filter((l) => l.type !== 'lecture').map((l) => l.id)
 
     if (gradedLessonIds.length > 0) {
       const completedRows = await db
@@ -56,24 +71,60 @@ export class CertificatesService {
         )
 
       const completedIds = new Set(completedRows.map((r) => r.lessonId))
-      const allCompleted = gradedLessonIds.every((id) => completedIds.has(id))
-
-      if (!allCompleted) {
+      if (!gradedLessonIds.every((id) => completedIds.has(id))) {
         throw new AppError(403, 'Not all lessons are completed')
       }
     }
 
     const [certificate] = await db
       .insert(userCertificates)
-      .values({ userId, courseSlug, name })
+      .values({ userId, courseSlug, name, status: 'created' })
       .returning()
 
-    return {
-      id: certificate.id,
-      courseSlug: certificate.courseSlug,
-      issuedAt: certificate.issuedAt.toISOString(),
-      name: certificate.name,
-    }
+    return formatCert(certificate)
+  }
+
+  static async requestNft(userId: string, certificateId: string) {
+    const cert = await db.query.userCertificates.findFirst({
+      where: eq(userCertificates.id, certificateId),
+    })
+
+    if (!cert) throw new AppError(404, 'Certificate not found')
+    if (cert.userId !== userId) throw new AppError(403, 'Forbidden')
+    if (cert.status === 'claimed') throw new AppError(400, 'Certificate already claimed')
+
+    const [updated] = await db
+      .update(userCertificates)
+      .set({ status: 'requested' })
+      .where(eq(userCertificates.id, certificateId))
+      .returning()
+
+    return formatCert(updated)
+  }
+
+  static async adminMarkClaimed(
+    certificateId: string,
+    data: { metadataUri: string; imageUrl: string; tokenId: string; txHash?: string },
+  ) {
+    const cert = await db.query.userCertificates.findFirst({
+      where: eq(userCertificates.id, certificateId),
+    })
+
+    if (!cert) throw new AppError(404, 'Certificate not found')
+
+    const [updated] = await db
+      .update(userCertificates)
+      .set({
+        status: 'claimed',
+        metadataUri: data.metadataUri,
+        imageUrl: data.imageUrl,
+        tokenId: data.tokenId,
+        txHash: data.txHash ?? null,
+      })
+      .where(eq(userCertificates.id, certificateId))
+      .returning()
+
+    return formatCert(updated)
   }
 
   static async getCertificateById(id: string) {
@@ -89,11 +140,8 @@ export class CertificatesService {
     })
 
     return {
-      id: row.id,
-      courseSlug: row.courseSlug,
+      ...formatCert(row),
       courseTitle: course?.title ?? row.courseSlug,
-      issuedAt: row.issuedAt.toISOString(),
-      name: row.name,
     }
   }
 
@@ -103,11 +151,6 @@ export class CertificatesService {
       .from(userCertificates)
       .where(eq(userCertificates.userId, userId))
 
-    return rows.map((r) => ({
-      id: r.id,
-      courseSlug: r.courseSlug,
-      issuedAt: r.issuedAt.toISOString(),
-      name: r.name,
-    }))
+    return rows.map(formatCert)
   }
 }

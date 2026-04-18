@@ -63,6 +63,51 @@ contract CourseCertificate is
         bytes32 pdfHash,
         string calldata metadataURI
     ) external onlyRole(ADMIN_ROLE) returns (uint256 tokenId) {
+        return _mintCertificate(recipient, courseId, pdfHash, metadataURI);
+    }
+
+    /**
+     * @notice Mint multiple certificate NFTs in one transaction. Gas cost scales linearly with batch size.
+     * @param recipients    One recipient address per certificate.
+     * @param courseIds       Course id per certificate (parallel to recipients).
+     * @param pdfHashes       PDF content hash per certificate.
+     * @param metadataURIs    Metadata URI per certificate.
+     */
+    function mintBatch(
+        address[] calldata recipients,
+        uint128[] calldata courseIds,
+        bytes32[] calldata pdfHashes,
+        string[] calldata metadataURIs
+    ) external onlyRole(ADMIN_ROLE) returns (uint256[] memory tokenIds) {
+        uint256 len = recipients.length;
+        require(
+            len > 0 &&
+                len == courseIds.length &&
+                len == pdfHashes.length &&
+                len == metadataURIs.length,
+            "CourseCertificate: invalid batch"
+        );
+
+        tokenIds = new uint256[](len);
+        for (uint256 i = 0; i < len; ) {
+            tokenIds[i] = _mintCertificate(
+                recipients[i],
+                courseIds[i],
+                pdfHashes[i],
+                metadataURIs[i]
+            );
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _mintCertificate(
+        address recipient,
+        uint128 courseId,
+        bytes32 pdfHash,
+        string memory metadataURI
+    ) internal returns (uint256 tokenId) {
         tokenId = ++_tokenIdCounter;
 
         certificates[tokenId] = CertificateData({
