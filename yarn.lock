@@ -1342,8 +1342,8 @@ __metadata:
   linkType: hard
 
 "@coinbase/cdp-sdk@npm:^1.0.0":
-  version: 1.47.0
-  resolution: "@coinbase/cdp-sdk@npm:1.47.0"
+  version: 1.48.0
+  resolution: "@coinbase/cdp-sdk@npm:1.48.0"
   dependencies:
     "@solana-program/system": "npm:^0.10.0"
     "@solana-program/token": "npm:^0.9.0"
@@ -1356,7 +1356,7 @@ __metadata:
     uncrypto: "npm:^0.1.3"
     viem: "npm:^2.47.0"
     zod: "npm:^3.25.76"
-  checksum: 10c0/598397d1a7859c7f82a6d890aa1be7790e127a3f34362b4299ddbf0caec9e08bb264e92d4901da0300b7e4b447e8c6abb39ef9314adf5c01a8deb89d497b4314
+  checksum: 10c0/a1185b96b38ac3354d2dc575bbd95150d8fcdd4216ef3a44620bf77966c1981ddba07d87882e3be8c2200018cd3e41b2520912e103593c6b7bf184c2e04b3f6c
   languageName: node
   linkType: hard
 
