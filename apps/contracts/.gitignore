@@ -1,27 +1,31 @@
-node_modules
-.env
+# Node modules
+/node_modules
 
-# Hardhat files
-/cache
+# Compilation output
+/dist
+
+# pnpm deploy output
+/bundle
+
+# Hardhat Build Artifacts
 /artifacts
 
-# TypeChain files
-/typechain
-/typechain-types
+# Hardhat compilation (v2) support directory
+/cache
 
-# solidity-coverage files
+# Typechain output
+/types
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Hardhat coverage reports
 /coverage
-/coverage.json
 
-# IDE files
-.idea
+# Gas snapshot files
+/.gas-snapshot
 
-.npmrc
-
-# abis
-abis
-
-# Docgen
-docgen
-
-.vscode/settings.json
+# Snapshot cheatcodes output
+/snapshots

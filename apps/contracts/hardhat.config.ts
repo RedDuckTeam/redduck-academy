@@ -1,22 +1,15 @@
-import { type HardhatUserConfig } from 'hardhat/config';
+import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
+import { configVariable, defineConfig } from "hardhat/config";
 
-import 'tsconfig-paths/register';
-import '@nomicfoundation/hardhat-toolbox-viem';
-import 'hardhat-contract-sizer';
-import 'hardhat-docgen';
-
-import {
-  getForkNetworkConfig,
-  getHardhatNetworkConfig,
-  getNetworkConfig,
-} from '@/config/networks';
-import { env } from '@/env';
-
-const config: HardhatUserConfig = {
+export default defineConfig({
+  plugins: [hardhatToolboxViemPlugin],
   solidity: {
-    compilers: [
-      {
-        version: '0.8.24',
+    profiles: {
+      default: {
+        version: "0.8.28",
+      },
+      production: {
+        version: "0.8.28",
         settings: {
           optimizer: {
             enabled: true,
@@ -24,35 +17,22 @@ const config: HardhatUserConfig = {
           },
         },
       },
-    ],
+    },
   },
   networks: {
-    main: getNetworkConfig('main'),
-    sepolia: getNetworkConfig('sepolia'),
-    ...(env.SOLIDITY_COVERAGE
-      ? {}
-      : {
-          hardhat: env.FORKING_NETWORK
-            ? getForkNetworkConfig(env.FORKING_NETWORK)
-            : getHardhatNetworkConfig(),
-        }),
-    localhost: getNetworkConfig('localhost'),
+    hardhatMainnet: {
+      type: "edr-simulated",
+      chainType: "l1",
+    },
+    hardhatOp: {
+      type: "edr-simulated",
+      chainType: "op",
+    },
+    sepolia: {
+      type: "http",
+      chainType: "l1",
+      url: configVariable("SEPOLIA_RPC_URL"),
+      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    },
   },
-  gasReporter: {
-    enabled: true,
-  },
-  contractSizer: {
-    alphaSort: true,
-    runOnCompile: true,
-  },
-  docgen: {
-    path: './docs',
-    clear: true,
-    runOnCompile: true,
-  },
-  etherscan: {
-    apiKey: env.ETHERSCAN_API_KEY,
-  },
-};
-
-export default config;
+});
