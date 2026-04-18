@@ -4,7 +4,7 @@ import { createCoursesMeta } from '@/lib/seo'
 
 export const coursesRoute = '/courses/' as const
 
-export const Route = createFileRoute(coursesRoute)({
+export const Route = createFileRoute('/courses/')({
   ssr: true,
   head: () => createCoursesMeta({ courses: [] }),
   loader: async () => {
