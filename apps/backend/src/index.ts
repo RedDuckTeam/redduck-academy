@@ -10,6 +10,7 @@ import userApp from './services/user/user.routes'
 import reviewApp from './services/review/review.routes'
 import communityApp from './services/community/community.routes'
 import certificatesApp from './services/certificates/certificates.routes'
+import adminApp from './services/admin/admin.routes'
 import { AppError } from './lib/errors'
 
 const port = Number(process.env.PORT) || 3001
@@ -46,6 +47,7 @@ app.route('/api/user', userApp)
 app.route('/api/review', reviewApp)
 app.route('/api/community', communityApp)
 app.route('/api/certificates', certificatesApp)
+app.route('/api/admin', adminApp)
 
 app.get(
   '/openapi',

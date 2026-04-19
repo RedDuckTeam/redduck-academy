@@ -15,3 +15,5 @@ export const getAuthClient = (): AuthClient => {
   }
   return _authClient
 }
+
+export type UserRole = 'user' | 'admin'

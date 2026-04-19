@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as RatingRouteImport } from './routes/rating'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
@@ -23,7 +24,6 @@ import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.se
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
-import { Route as CoursesCourseSlugCertificateRouteImport } from './routes/courses/$courseSlug.certificate'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
@@ -43,6 +43,11 @@ const RatingRoute = RatingRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -101,12 +106,6 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CoursesCourseSlugCertificateRoute =
-  CoursesCourseSlugCertificateRouteImport.update({
-    id: '/certificate',
-    path: '/certificate',
-    getParentRoute: () => CoursesCourseSlugRoute,
-  } as any)
 const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
   id: '/demo/start/ssr/',
   path: '/demo/start/ssr/',
@@ -136,6 +135,7 @@ const CoursesCourseSlugModuleSlugLessonSlugRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/profile': typeof ProfileRoute
   '/rating': typeof RatingRoute
   '/sign-up': typeof SignUpRoute
@@ -144,7 +144,6 @@ export interface FileRoutesByFullPath {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses/': typeof CoursesIndexRoute
-  '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -158,6 +157,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/profile': typeof ProfileRoute
   '/rating': typeof RatingRoute
   '/sign-up': typeof SignUpRoute
@@ -165,7 +165,6 @@ export interface FileRoutesByTo {
   '/community/$slug': typeof CommunitySlugRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses': typeof CoursesIndexRoute
-  '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -180,6 +179,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/profile': typeof ProfileRoute
   '/rating': typeof RatingRoute
   '/sign-up': typeof SignUpRoute
@@ -188,7 +188,6 @@ export interface FileRoutesById {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/courses/': typeof CoursesIndexRoute
-  '/courses/$courseSlug/certificate': typeof CoursesCourseSlugCertificateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -204,6 +203,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/profile'
     | '/rating'
     | '/sign-up'
@@ -212,7 +212,6 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses/'
-    | '/courses/$courseSlug/certificate'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -226,6 +225,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/profile'
     | '/rating'
     | '/sign-up'
@@ -233,7 +233,6 @@ export interface FileRouteTypes {
     | '/community/$slug'
     | '/demo/tanstack-query'
     | '/courses'
-    | '/courses/$courseSlug/certificate'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -247,6 +246,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/profile'
     | '/rating'
     | '/sign-up'
@@ -255,7 +255,6 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/courses/'
-    | '/courses/$courseSlug/certificate'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -270,6 +269,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   ProfileRoute: typeof ProfileRoute
   RatingRoute: typeof RatingRoute
   SignUpRoute: typeof SignUpRoute
@@ -309,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -388,13 +395,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/courses/$courseSlug/certificate': {
-      id: '/courses/$courseSlug/certificate'
-      path: '/certificate'
-      fullPath: '/courses/$courseSlug/certificate'
-      preLoaderRoute: typeof CoursesCourseSlugCertificateRouteImport
-      parentRoute: typeof CoursesCourseSlugRoute
-    }
     '/demo/start/ssr/': {
       id: '/demo/start/ssr/'
       path: '/demo/start/ssr'
@@ -434,13 +434,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface CoursesCourseSlugRouteChildren {
-  CoursesCourseSlugCertificateRoute: typeof CoursesCourseSlugCertificateRoute
   CoursesCourseSlugIndexRoute: typeof CoursesCourseSlugIndexRoute
   CoursesCourseSlugModuleSlugLessonSlugRoute: typeof CoursesCourseSlugModuleSlugLessonSlugRoute
 }
 
 const CoursesCourseSlugRouteChildren: CoursesCourseSlugRouteChildren = {
-  CoursesCourseSlugCertificateRoute: CoursesCourseSlugCertificateRoute,
   CoursesCourseSlugIndexRoute: CoursesCourseSlugIndexRoute,
   CoursesCourseSlugModuleSlugLessonSlugRoute:
     CoursesCourseSlugModuleSlugLessonSlugRoute,
@@ -451,6 +449,7 @@ const CoursesCourseSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   ProfileRoute: ProfileRoute,
   RatingRoute: RatingRoute,
   SignUpRoute: SignUpRoute,
