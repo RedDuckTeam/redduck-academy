@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import { ProgressCard } from '@/components/pages/home/progress/progress-cards/progress-card'
 import { cn } from '@/lib/utils'
 
 export type PageStatsCardItem = {
   firstNum: string
   secondNum?: string
-  text: string
+  text: ReactNode
   className?: string
 }
 
@@ -23,7 +24,7 @@ export const PageStatsCards = ({ items, className }: PageStatsCardsProps) => {
     >
       {items.map((item, index) => (
         <ProgressCard
-          key={`${item.text}-${index}`}
+          key={index}
           firstNum={item.firstNum}
           secondNum={item.secondNum}
           text={item.text}

@@ -51,7 +51,8 @@ function CertificateRoute() {
         completionDate,
         `${certificate.courseTitle.replace(/\s+/g, '-').toLowerCase()}-certificate.pdf`,
       )
-    } catch {
+    } catch (error) {
+      console.error(error)
       toast.error('Could not generate PDF')
     } finally {
       setIsDownloading(false)
@@ -79,7 +80,7 @@ function CertificateRoute() {
           : 'Request NFT'
 
   return (
-    <main className="mb-[60px] flex min-h-screen flex-col gap-5 mx-[60px]">
+    <main className="mb-[60px] flex min-h-screen flex-col gap-5 md:mx-[60px]">
       <div className="w-full flex flex-col gap-10 px-6 py-14 md:px-10 md:py-[60px] bg-[#000]">
         {isAuthenticated && (
           <div className="mx-auto flex max-w-[880px] flex-col items-center gap-10 text-center text-white">
@@ -87,23 +88,17 @@ function CertificateRoute() {
               <Text variant={'subtitle-32'} className="font-medium">
                 Congratulations!
               </Text>
-              <Text variant={'caps-20'}>
-                You finished {certificate.courseTitle.toLowerCase()} by RedDuck
-              </Text>
+              <Text variant={'caps-20'}>You finished {certificate.courseTitle.toLowerCase()} by RedDuck</Text>
             </div>
             <Text variant={'main-18'} className="max-w-[880px]">
-              This page shows your certificate for completing {certificate.courseTitle}. Download a
-              PDF copy, share the link, or request an NFT to put it on-chain.
+              This page shows your certificate for completing {certificate.courseTitle}. Download a PDF copy, share the
+              link, or request an NFT to put it on-chain.
             </Text>
           </div>
         )}
 
         <div className="certificate-print-root mx-auto flex w-full max-w-[880px] justify-center print:max-w-none print:py-0">
-          <Certificate
-            recipientName={certificate.name}
-            courseName={courseLine}
-            completionDate={completionDate}
-          />
+          <Certificate recipientName={certificate.name} courseName={courseLine} completionDate={completionDate} />
         </div>
 
         <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 print:hidden">

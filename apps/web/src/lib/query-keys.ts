@@ -23,4 +23,9 @@ export const queryKeys = {
     all: () => ['community'] as const,
     detail: (slug: string) => ['community', slug] as const,
   },
+  admin: {
+    stats: () => ['admin', 'stats'] as const,
+    users: (page: number) => ['admin', 'users', page] as const,
+    certificates: (page: number) => ['admin', 'certificates', page] as const,
+  },
 }

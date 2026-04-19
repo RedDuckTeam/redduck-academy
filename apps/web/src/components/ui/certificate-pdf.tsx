@@ -4,11 +4,11 @@ Font.register({
   family: 'Inter',
   fonts: [
     {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-400-normal.woff2',
+      src: 'https://cdn.jsdelivr.net/npm/@fontsource/inter@4/files/inter-latin-400-normal.woff',
       fontWeight: 400,
     },
     {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5/files/inter-latin-500-normal.woff2',
+      src: 'https://cdn.jsdelivr.net/npm/@fontsource/inter@4/files/inter-latin-500-normal.woff',
       fontWeight: 500,
     },
   ],
