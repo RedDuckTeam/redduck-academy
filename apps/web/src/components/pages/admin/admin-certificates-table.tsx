@@ -20,7 +20,7 @@ function StatusCell({ status }: { status: AdminCertificateRow['status'] }) {
   const label = status.toUpperCase()
   const highlight = status === 'requested'
   return (
-    <Text variant="caps-20" className={highlight ? 'text-primary' : undefined}>
+    <Text variant="caps-14" className={highlight ? 'text-primary' : undefined}>
       {label}
     </Text>
   )
@@ -28,14 +28,14 @@ function StatusCell({ status }: { status: AdminCertificateRow['status'] }) {
 
 function CertsForCourseCell({ count }: { count: number }) {
   if (count <= 1) {
-    return <Text variant="caps-20">{count}</Text>
+    return <Text variant="caps-14">{count}</Text>
   }
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="cursor-help underline decoration-dotted decoration-muted-foreground">
-            <Text variant="caps-20">{count}</Text>
+            <Text variant="caps-14">{count}</Text>
           </span>
         </TooltipTrigger>
         <TooltipContent>
@@ -52,7 +52,7 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
   if (certificates.length === 0) {
     return (
       <div className="border border-border p-10 text-center">
-        <Text variant="caps-20" className="text-muted-foreground">
+        <Text variant="caps-14" className="text-muted-foreground">
           NO CERTIFICATES ON THIS PAGE
         </Text>
       </div>
@@ -63,13 +63,13 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
     <>
       <div className="hidden lg:block border border-border">
         <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_100px_80px_120px_140px] border-b border-border">
-          <div className="p-5"><Text variant="caps-20">EMAIL</Text></div>
-          <div className="p-5"><Text variant="caps-20">NAME ON CERT</Text></div>
-          <div className="p-5"><Text variant="caps-20">COURSE</Text></div>
-          <div className="p-5 text-center"><Text variant="caps-20">STATUS</Text></div>
-          <div className="p-5 text-center"><Text variant="caps-20">CERTS</Text></div>
-          <div className="p-5 text-center"><Text variant="caps-20">ISSUED AT</Text></div>
-          <div className="p-5 text-center"><Text variant="caps-20">ACTION</Text></div>
+          <div className="p-3"><Text variant="caps-14">EMAIL</Text></div>
+          <div className="p-3"><Text variant="caps-14">NAME ON CERT</Text></div>
+          <div className="p-3"><Text variant="caps-14">COURSE</Text></div>
+          <div className="p-5 text-center"><Text variant="caps-14">STATUS</Text></div>
+          <div className="p-5 text-center"><Text variant="caps-14">CERTS</Text></div>
+          <div className="p-5 text-center"><Text variant="caps-14">ISSUED AT</Text></div>
+          <div className="p-5 text-center"><Text variant="caps-14">ACTION</Text></div>
         </div>
 
         {certificates.map((row) => (
@@ -78,13 +78,13 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
             className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_100px_80px_120px_140px] border-b border-border divide-x divide-border last:border-b-0"
           >
             <div className="p-5 min-w-0">
-              <Text variant="caps-20" className="truncate">{row.userEmail.toUpperCase()}</Text>
+              <Text variant="caps-14" className="truncate">{row.userEmail.toUpperCase()}</Text>
             </div>
             <div className="p-5 min-w-0">
-              <Text variant="caps-20" className="truncate">{row.name.toUpperCase()}</Text>
+              <Text variant="caps-14" className="truncate">{row.name.toUpperCase()}</Text>
             </div>
             <div className="p-5 min-w-0">
-              <Text variant="caps-20" className="truncate">{row.courseSlug.toUpperCase()}</Text>
+              <Text variant="caps-14" className="truncate">{row.courseSlug.toUpperCase()}</Text>
             </div>
             <div className="p-5 text-center">
               <StatusCell status={row.status} />
@@ -93,7 +93,7 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
               <CertsForCourseCell count={row.certsForCourse} />
             </div>
             <div className="p-5 text-center">
-              <Text variant="caps-20">{formatDate(row.issuedAt)}</Text>
+              <Text variant="caps-14">{formatDate(row.issuedAt)}</Text>
             </div>
             <div className="p-5 flex items-center justify-center">
               <Button
@@ -114,15 +114,15 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
           <div key={row.id} className="flex flex-col gap-4 border border-border p-5">
             <div className="flex flex-col gap-1 min-w-0">
               <Text variant="caps-14" className="text-border">EMAIL</Text>
-              <Text variant="caps-20" className="break-all">{row.userEmail.toUpperCase()}</Text>
+              <Text variant="caps-14" className="break-all">{row.userEmail.toUpperCase()}</Text>
             </div>
             <div className="flex flex-col gap-1">
               <Text variant="caps-14" className="text-border">NAME ON CERT</Text>
-              <Text variant="caps-20">{row.name.toUpperCase()}</Text>
+              <Text variant="caps-14">{row.name.toUpperCase()}</Text>
             </div>
             <div className="flex flex-col gap-1">
               <Text variant="caps-14" className="text-border">COURSE</Text>
-              <Text variant="caps-20">{row.courseSlug.toUpperCase()}</Text>
+              <Text variant="caps-14">{row.courseSlug.toUpperCase()}</Text>
             </div>
             <div className="grid grid-cols-3 gap-1">
               <div className="flex flex-col gap-1">
@@ -135,7 +135,7 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
               </div>
               <div className="flex flex-col gap-1">
                 <Text variant="caps-14" className="text-border">ISSUED</Text>
-                <Text variant="caps-20">{formatDate(row.issuedAt)}</Text>
+                <Text variant="caps-14">{formatDate(row.issuedAt)}</Text>
               </div>
             </div>
             <Button

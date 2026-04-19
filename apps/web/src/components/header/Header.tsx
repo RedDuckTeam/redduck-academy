@@ -58,10 +58,7 @@ export default function Header() {
             <ThemeToggle />
           </div>
           {isPending ? (
-            <div
-              className="size-10 shrink-0 rounded-full bg-muted animate-pulse"
-              aria-hidden
-            />
+            <div className="size-10 shrink-0 rounded-full bg-muted animate-pulse" aria-hidden />
           ) : session?.user ? (
             <Link
               to="/profile"
@@ -69,7 +66,7 @@ export default function Header() {
               className="size-10 shrink-0 overflow-hidden rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <img
-                src={session.user.image ?? avatarPlaceholder}
+                src={session.user.image?.trim() || avatarPlaceholder}
                 alt="Profile"
                 className="size-full object-cover"
               />

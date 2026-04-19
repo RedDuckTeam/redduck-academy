@@ -81,15 +81,23 @@ export const getAdminCertificates = async (input: {
   return response.data!.data
 }
 
+export type AdminMintParams = {
+  walletAddress: string
+  courseId: number
+  contentHash: string
+  metadataUri: string
+}
+
 export const generateAdminCertificate = async (input: {
   userId: string
   courseSlug: string
-}): Promise<void> => {
-  const response = await api({ credentials: 'include' }).post<{ data: unknown }>(
+}): Promise<AdminMintParams> => {
+  const response = await api({ credentials: 'include' }).post<{ data: AdminMintParams }>(
     '/api/certificates/admin/generate',
     input,
   )
   if (!response.data && response.status >= 400) {
     throw new Error(response.error ?? 'Failed to generate certificate')
   }
+  return response.data!.data
 }

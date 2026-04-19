@@ -8,7 +8,7 @@ function TruncatedTooltipText({ value, className }: { value: string; className?:
     <Tooltip>
       <TooltipTrigger asChild>
         <span className={cn('block min-w-0 cursor-default', className)}>
-          <Text variant="caps-20" className="block truncate">
+          <Text variant="caps-14" className="block truncate">
             {value}
           </Text>
         </span>
@@ -26,7 +26,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
   if (users.length === 0) {
     return (
       <div className="border border-border p-10 text-center">
-        <Text variant="caps-20" className="text-muted-foreground">
+        <Text variant="caps-14" className="text-muted-foreground">
           NO USERS ON THIS PAGE
         </Text>
       </div>
@@ -37,20 +37,20 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
     <>
       <div className="hidden lg:block border border-border">
         <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_100px_100px_100px] border-b border-border">
-          <div className="p-5">
-            <Text variant="caps-20">EMAIL</Text>
+          <div className="p-3">
+            <Text variant="caps-14">EMAIL</Text>
           </div>
-          <div className="p-5">
-            <Text variant="caps-20">NAME</Text>
-          </div>
-          <div className="p-5 text-center">
-            <Text variant="caps-20">PRIVATE</Text>
+          <div className="p-3">
+            <Text variant="caps-14">NAME</Text>
           </div>
           <div className="p-5 text-center">
-            <Text variant="caps-20">LESSONS</Text>
+            <Text variant="caps-14">PRIVATE</Text>
           </div>
           <div className="p-5 text-center">
-            <Text variant="caps-20">COURSES</Text>
+            <Text variant="caps-14">LESSONS</Text>
+          </div>
+          <div className="p-5 text-center">
+            <Text variant="caps-14">COURSES</Text>
           </div>
         </div>
 
@@ -66,13 +66,13 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
               <TruncatedTooltipText value={row.name?.toUpperCase() ?? '—'} />
             </div>
             <div className="p-5 text-center">
-              <Text variant="caps-20">{row.isPrivate ? 'YES' : 'NO'}</Text>
+              <Text variant="caps-14">{row.isPrivate ? 'YES' : 'NO'}</Text>
             </div>
             <div className="p-5 text-center">
-              <Text variant="caps-20">{row.lessonsPassed}</Text>
+              <Text variant="caps-14">{row.lessonsPassed}</Text>
             </div>
             <div className="p-5 text-center">
-              <Text variant="caps-20">{row.coursesPassed}</Text>
+              <Text variant="caps-14">{row.coursesPassed}</Text>
             </div>
           </div>
         ))}
@@ -98,19 +98,19 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                 <Text variant="caps-14" className="text-border">
                   PRIVATE
                 </Text>
-                <Text variant="caps-20">{row.isPrivate ? 'YES' : 'NO'}</Text>
+                <Text variant="caps-14">{row.isPrivate ? 'YES' : 'NO'}</Text>
               </div>
               <div className="flex flex-col gap-1">
                 <Text variant="caps-14" className="text-border">
                   LESSONS
                 </Text>
-                <Text variant="caps-20">{row.lessonsPassed}</Text>
+                <Text variant="caps-14">{row.lessonsPassed}</Text>
               </div>
               <div className="flex flex-col gap-1">
                 <Text variant="caps-14" className="text-border">
                   COURSES
                 </Text>
-                <Text variant="caps-20">{row.coursesPassed}</Text>
+                <Text variant="caps-14">{row.coursesPassed}</Text>
               </div>
             </div>
           </div>

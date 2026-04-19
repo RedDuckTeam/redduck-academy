@@ -1,18 +1,19 @@
 import { Document, Page, View, Text, Image, Font, StyleSheet, pdf } from '@react-pdf/renderer'
 
 Font.register({
-  family: 'Inter',
+  family: 'Verdana',
   fonts: [
     {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/inter@4/files/inter-latin-400-normal.woff',
+      src: `${window.location.origin}/fonts/Verdana-Regular.ttf`,
       fontWeight: 400,
     },
     {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/inter@4/files/inter-latin-500-normal.woff',
+      src: `${window.location.origin}/fonts/Verdana-Bold.ttf`,
       fontWeight: 500,
     },
   ],
 })
+
 
 // All values are proportional to a 960×540 pt page (0.5× of the 1920×1080 Figma canvas)
 const W = 960
@@ -32,7 +33,7 @@ const s = StyleSheet.create({
     width: W,
     height: H,
     backgroundColor: C.bg,
-    fontFamily: 'Inter',
+    fontFamily: 'Verdana',
   },
   certificate: {
     width: W,
@@ -55,7 +56,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: C.border,
   },
-  logo: { width: 93, height: 12 },
+  logo: { width: 140, height: 18 },
   headerLine: {
     flex: 1,
     borderTopWidth: 1,
@@ -79,9 +80,9 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   date: { fontSize: 14, color: C.muted, marginBottom: 5 },
-  recipient: { fontSize: 23, fontWeight: 500, color: C.dark, marginBottom: 20 },
+  recipient: { fontSize: 19, fontWeight: 400, color: C.dark, marginBottom: 20 },
   hasCompleted: { fontSize: 14, color: C.muted, marginBottom: 5 },
-  course: { fontSize: 23, fontWeight: 500, color: C.dark, marginBottom: 60 },
+  course: { fontSize: 19, fontWeight: 400, color: C.dark, marginBottom: 60 },
 
   // Signature block
   signatureBlock: { flexDirection: 'column', width: 200 },
@@ -107,11 +108,11 @@ const s = StyleSheet.create({
     paddingBottom: 65,
   },
   rightPanelTitle: {
-    fontSize: 14,
+    fontSize: 11,
     color: C.dark,
     textAlign: 'center',
     textTransform: 'uppercase',
-    fontWeight: 500,
+    fontWeight: 400,
   },
   stamp: { width: 131 },
 

@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
-import { user, walletAddress, userLessons } from '../../db/schema'
+import { user, walletAddress, userLessons, userCertificates } from '../../db/schema'
 import { uploadToR2, getJsonFromR2 } from '../../lib/r2'
 import { AppError } from '../../lib/errors'
 import { getBrowser } from '../../lib/browser'
@@ -22,6 +22,7 @@ export interface GenerateCertificateResult {
   contentHash: string
   walletAddress: string
   imageUrl: string
+  courseId: number
 }
 
 async function renderCertificateImage(
@@ -32,7 +33,7 @@ async function renderCertificateImage(
   const browser = await getBrowser()
   const page = await browser.newPage()
   try {
-    await page.setViewport({ width: 960, height: 540 })
+    await page.setViewport({ width: 960, height: 960 })
     await page.setContent(buildCertificateHtml(userName, courseTitle, issuedAt), {
       waitUntil: 'networkidle0',
     })
@@ -47,7 +48,7 @@ export class CertificateGenerationService {
     userId: string,
     courseSlug: string,
   ): Promise<GenerateCertificateResult> {
-    const [userRow, wallet, course] = await Promise.all([
+    const [userRow, wallet, course, certificate] = await Promise.all([
       db.query.user.findFirst({ where: eq(user.id, userId) }),
       db.query.walletAddress.findFirst({
         where: and(eq(walletAddress.userId, userId), eq(walletAddress.isPrimary, true)),
@@ -65,6 +66,11 @@ export class CertificateGenerationService {
             },
           },
         },
+      }),
+      db.query.userCertificates.findFirst({
+        where: and(eq(userCertificates.userId, userId), eq(userCertificates.courseSlug, courseSlug)),
+        columns: { id: true },
+        orderBy: (c, { desc }) => desc(c.issuedAt),
       }),
     ])
 
@@ -106,6 +112,7 @@ export class CertificateGenerationService {
         contentHash: existingManifest.contentHash,
         walletAddress: wallet.address,
         imageUrl: existingManifest.imageUrl,
+        courseId: course.id as number,
       }
     }
 
@@ -116,13 +123,14 @@ export class CertificateGenerationService {
       .digest('hex')
 
     const noCache = 'no-cache, no-store, must-revalidate'
-    const imageUrl = await uploadToR2(`${base}/preview.jpg`, imageBuffer, 'image/jpeg', noCache)
+    const imageHash = contentHash.slice(2, 10) // short prefix of content hash for cache-busting
+    const imageUrl = await uploadToR2(`${base}/preview-${imageHash}.jpg`, imageBuffer, 'image/jpeg')
 
     const metadata = {
-      name: `${courseTitle} — Course Certificate`,
-      description: `Awarded to ${userName} for completing ${courseTitle} on RedDuck Academy.`,
+      name: `${courseTitle} - RedDuck course certificate`,
+      description: `Awarded to ${wallet.address} for completing ${courseTitle} course on RedDuck Academy.`,
       image: imageUrl,
-      external_url: `https://redduck.academy/certificates/${courseSlug}`,
+      external_url: certificate ? `https://redduck.academy/certificates/${certificate.id}` : `https://redduck.academy/certificates/${courseSlug}`,
       attributes: [
         { trait_type: 'Course', value: courseTitle },
         { trait_type: 'Recipient', value: userName },
@@ -140,6 +148,6 @@ export class CertificateGenerationService {
     const manifest: CertificateManifest = { name: userName, imageUrl, metadataUri, contentHash }
     await uploadToR2(manifestKey, Buffer.from(JSON.stringify(manifest)), 'application/json', noCache)
 
-    return { metadataUri, contentHash, walletAddress: wallet.address, imageUrl }
+    return { metadataUri, contentHash, walletAddress: wallet.address, imageUrl, courseId: course.id as number }
   }
 }

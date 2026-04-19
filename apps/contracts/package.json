@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "clean": "hardhat clean",
-    "compile": "hardhat compile"
+    "compile": "hardhat compile",
+    "deploy:sepolia": "hardhat ignition deploy ./ignition/modules/CourseCertificate.ts --network sepolia",
+    "deploy:sepolia:verify": "hardhat ignition deploy ./ignition/modules/CourseCertificate.ts --network sepolia --verify"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.1.2",

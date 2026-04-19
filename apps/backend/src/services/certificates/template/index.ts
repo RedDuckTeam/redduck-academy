@@ -22,7 +22,7 @@ export function buildCertificateHtml(userName: string, courseTitle: string, issu
 
     body {
       width: 960px;
-      height: 540px;
+      height: 960px;
       overflow: hidden;
       background: #E0DEDA;
     }
@@ -32,6 +32,7 @@ export function buildCertificateHtml(userName: string, courseTitle: string, issu
       transform-origin: top left;
       width: 1920px;
       height: 1080px;
+      margin-top: 210px; /* (960 - 540) / 2 — centers the landscape cert vertically */
     }
 
     /* Certificate root — matches: relative aspect-[1920/1080] flex flex-col w-full overflow-hidden bg-[#E0DEDA] py-[3.125%] pl-[3.125%] pr-[9.375%] */
@@ -59,6 +60,11 @@ export function buildCertificateHtml(userName: string, courseTitle: string, issu
       padding: 20px 40px 40px 20px;
       border-bottom: 1px solid #9b9b9b;
       flex-shrink: 0;
+    }
+
+    .logo-cell svg {
+      width: 480px;
+      height: auto;
     }
 
     /* w-full flex-1 border-t border-l border-[#9b9b9b] */

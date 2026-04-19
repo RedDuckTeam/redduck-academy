@@ -4,7 +4,6 @@ import { PageStatsCards } from '@/components/page-section/page-stats-cards'
 import { useProgressCards } from '@/hooks/api/user/useProgressCards'
 import { useSession } from '@/hooks/useSession'
 import { createPageMeta } from '@/lib/seo'
-import { PageAvatar } from '@/components/page-section/avatar/page-avatar'
 import { ChangeName } from '@/components/pages/profile/name/change-name'
 import { ChangeAvatar } from '@/components/pages/profile/avatar/change-avatar'
 import { Text } from '@/components/ui/text'
@@ -40,7 +39,7 @@ function ProfilePage() {
   const completedLessonsCount = progressCards?.completedLessonsCount ?? 0
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <main className="flex flex-col">
       <PageGridBackground>
         <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-2">
           <div className="flex sm:gap-5 gap-3">

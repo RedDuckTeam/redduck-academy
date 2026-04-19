@@ -6,6 +6,7 @@ export const env = createEnv({
   client: {
     VITE_API_URL: z.string().min(1),
     VITE_APP_URL: z.string().min(1),
+    VITE_CHAIN_ENV: z.enum(['development', 'production']).default('development'),
   },
 
   // @ts-expect-error - import.meta.env is not typed

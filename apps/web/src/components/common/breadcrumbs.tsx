@@ -16,6 +16,7 @@ type PageBreadcrumbsProps =
   | {
       variant: 'lesson'
       courseSlug: string
+      courseTitle: string
       moduleSlug?: string
       lessonSlug?: string
     }
@@ -25,14 +26,16 @@ type PageBreadcrumbsProps =
     }
   | {
       variant: 'certificate'
+      courseTitle: string
+      courseSlug: string
     }
 
 export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
   const breadcrumbs = useMemo(() => {
     if (props.variant === 'certificate') {
       return [
-        { label: 'Dashboard', href: homeRoute },
-        { label: 'Course certificate', href: undefined },
+        { label: props.courseTitle, href: `${coursesRoute}${props.courseSlug}` },
+        { label: 'Certificate', href: undefined },
       ]
     }
     if (props.variant === 'community') {
@@ -41,9 +44,9 @@ export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
         { label: props.eventTitle, href: undefined },
       ]
     }
-    const { courseSlug, moduleSlug, lessonSlug } = props
+    const { courseSlug, courseTitle, moduleSlug, lessonSlug } = props
     return [
-      { label: 'Course program', href: coursesRoute },
+      { label: courseTitle, href: `${coursesRoute}${courseSlug}` },
       {
         label: lessonSlug,
         href: lessonSlug ? `${coursesRoute}${courseSlug}/${moduleSlug}/${lessonSlug}` : undefined,
@@ -52,10 +55,10 @@ export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
   }, [
     props.variant,
     ...(props.variant === 'certificate'
-      ? []
+      ? [props.courseTitle, props.courseSlug]
       : props.variant === 'community'
         ? [props.eventTitle]
-        : [props.courseSlug, props.moduleSlug, props.lessonSlug]),
+        : [props.courseSlug, props.courseTitle, props.moduleSlug, props.lessonSlug]),
   ])
 
   return (
