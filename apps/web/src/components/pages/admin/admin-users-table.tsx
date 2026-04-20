@@ -1,20 +1,14 @@
 import { Text } from '@/components/ui/text'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { AdminUserRow } from '@/lib/api/admin'
 
-function TruncatedTooltipText({ value, className }: { value: string; className?: string }) {
+function WrappedText({ value, className }: { value: string; className?: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className={cn('block min-w-0 cursor-default', className)}>
-          <Text variant="caps-14" className="block truncate">
-            {value}
-          </Text>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top">{value}</TooltipContent>
-    </Tooltip>
+    <span className={cn('block min-w-0', className)}>
+      <Text variant="caps-14" className="break-words">
+        {value}
+      </Text>
+    </span>
   )
 }
 
@@ -60,10 +54,10 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
             className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_100px_100px_100px] border-b border-border divide-x divide-border last:border-b-0"
           >
             <div className="p-5 min-w-0">
-              <TruncatedTooltipText value={row.email.toUpperCase()} />
+              <WrappedText value={row.email.toUpperCase()} />
             </div>
             <div className="p-5 min-w-0">
-              <TruncatedTooltipText value={row.name?.toUpperCase() ?? '—'} />
+              <WrappedText value={row.name?.toUpperCase() ?? '—'} />
             </div>
             <div className="p-5 text-center">
               <Text variant="caps-14">{row.isPrivate ? 'YES' : 'NO'}</Text>
@@ -85,13 +79,13 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
               <Text variant="caps-14" className="text-border">
                 EMAIL
               </Text>
-              <TruncatedTooltipText value={row.email.toUpperCase()} />
+              <WrappedText value={row.email.toUpperCase()} />
             </div>
             <div className="flex flex-col gap-1 min-w-0">
               <Text variant="caps-14" className="text-border">
                 NAME
               </Text>
-              <TruncatedTooltipText value={row.name?.toUpperCase() ?? '—'} />
+              <WrappedText value={row.name?.toUpperCase() ?? '—'} />
             </div>
             <div className="grid grid-cols-3 gap-1">
               <div className="flex flex-col gap-1">

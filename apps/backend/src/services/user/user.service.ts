@@ -7,6 +7,7 @@ import type { CompletedLesson } from '../../descriptions/user'
 import type { ReviewFeedback } from '../../types/review-feedback'
 import { LessonsService } from '../lessons/lessons.service'
 import { CoursesService } from '../courses/courses.service'
+import { CertificatesService } from '../certificates/certificates.service'
 import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { sanitizeReviewFeedbackForLearner } from '../review/sanitize-review-feedback-for-learner'
@@ -181,12 +182,13 @@ export class UserService {
       .select({
         userId: user.id,
         userName: user.name,
+        username: user.username,
         completedLessonsCount: count(userLessons.id),
       })
       .from(user)
       .leftJoin(userLessons, and(eq(userLessons.userId, user.id), eq(userLessons.isCompleted, true)))
       .where(eq(user.isPrivate, false))
-      .groupBy(user.id, user.name)
+      .groupBy(user.id, user.name, user.username)
       .orderBy(desc(count(userLessons.id)))
 
     const certificateCounts = await db
@@ -212,6 +214,7 @@ export class UserService {
         rank: currentRank,
         userId: u.userId,
         userName: u.userName,
+        username: u.username,
         completedLessonsCount: lessonCount,
         completedCoursesCount: certMap.get(u.userId) ?? 0,
       }
@@ -250,12 +253,52 @@ export class UserService {
 
   static async getUserSettings(userId: string) {
     const [row] = await db
-      .select({ skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio })
+      .select({ username: user.username, skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
     if (!row) throw new AppError(404, 'User not found')
-    return { skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio }
+    return { username: row.username, skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio }
+  }
+
+  static async getPublicProfile(username: string) {
+    const [userRow] = await db
+      .select({ id: user.id, name: user.name, bio: user.bio, image: user.image, isPrivate: user.isPrivate })
+      .from(user)
+      .where(eq(user.username, username))
+      .limit(1)
+
+    if (!userRow) throw new AppError(404, 'User not found')
+
+    if (userRow.isPrivate) {
+      return { username, isPrivate: true as const }
+    }
+
+    const [rating, certificates] = await Promise.all([
+      UserService.getRating(),
+      CertificatesService.getUserCertificates(userRow.id),
+    ])
+
+    const userRating = rating.find((r) => r.userId === userRow.id)
+
+    return {
+      username,
+      isPrivate: false as const,
+      name: userRow.name,
+      bio: userRow.bio,
+      image: userRow.image,
+      rank: userRating?.rank ?? 0,
+      completedLessonsCount: userRating?.completedLessonsCount ?? 0,
+      certificates,
+    }
+  }
+
+  static async updateUserUsername(userId: string, username: string) {
+    const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.username, username)).limit(1)
+    if (existing && existing.id !== userId) throw new AppError(400, 'Username already taken')
+    const [updated] = await db.update(user).set({ username }).where(eq(user.id, userId)).returning({ username: user.username })
+    if (!updated) throw new AppError(404, 'User not found')
+    return { username: updated.username! }
   }
 
   static async updateUserBio(userId: string, bio: string | null) {

@@ -61,7 +61,8 @@ export default function Header() {
             <div className="size-10 shrink-0 rounded-full bg-muted animate-pulse" aria-hidden />
           ) : session?.user ? (
             <Link
-              to="/profile"
+              to="/profile/$username"
+              params={{ username: (session.user as { username?: string }).username ?? '' }}
               aria-label="Profile"
               className="size-10 shrink-0 overflow-hidden rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
@@ -72,7 +73,7 @@ export default function Header() {
               />
             </Link>
           ) : (
-            <Button variant="outline" size="sm" className="shrink-0 uppercase" asChild>
+            <Button variant="default" size="sm" className="shrink-0 uppercase" asChild>
               <Link to="/sign-up">Sign in</Link>
             </Button>
           )}

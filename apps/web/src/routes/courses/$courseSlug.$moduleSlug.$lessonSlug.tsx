@@ -76,7 +76,9 @@ function LessonPage() {
           <LessonContentContainer>
             <>
               <LessonTitle title={lesson.title} />
-              {lesson.content && <RichText data={lesson.content} className="prose dark:prose-invert max-w-none" />}
+              {lesson.content && (
+                <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
+              )}
             </>
 
             {lesson.type === 'lecture' && (

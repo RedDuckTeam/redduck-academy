@@ -19,6 +19,9 @@ export const queryKeys = {
   certificates: {
     all: () => ['certificates'] as const,
   },
+  profile: {
+    detail: (username: string) => ['profile', username] as const,
+  },
   community: {
     all: () => ['community'] as const,
     detail: (slug: string) => ['community', slug] as const,

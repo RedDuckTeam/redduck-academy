@@ -3,6 +3,7 @@ import { api } from './fetcher'
 export interface Certificate {
   id: string
   courseSlug: string
+  courseTitle: string
   issuedAt: string
   name: string
   status: 'created' | 'requested' | 'claimed'

@@ -18,6 +18,7 @@ interface CertificateManifest {
 }
 
 export interface GenerateCertificateResult {
+  certificateId: string | null
   metadataUri: string
   contentHash: string
   walletAddress: string
@@ -108,6 +109,7 @@ export class CertificateGenerationService {
     const existingManifest = await getJsonFromR2<CertificateManifest>(manifestKey)
     if (existingManifest && existingManifest.name === userName) {
       return {
+        certificateId: certificate?.id ?? null,
         metadataUri: existingManifest.metadataUri,
         contentHash: existingManifest.contentHash,
         walletAddress: wallet.address,
@@ -148,6 +150,6 @@ export class CertificateGenerationService {
     const manifest: CertificateManifest = { name: userName, imageUrl, metadataUri, contentHash }
     await uploadToR2(manifestKey, Buffer.from(JSON.stringify(manifest)), 'application/json', noCache)
 
-    return { metadataUri, contentHash, walletAddress: wallet.address, imageUrl, courseId: course.id as number }
+    return { certificateId: certificate?.id ?? null, metadataUri, contentHash, walletAddress: wallet.address, imageUrl, courseId: course.id as number }
   }
 }

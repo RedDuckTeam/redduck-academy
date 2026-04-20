@@ -59,13 +59,6 @@ export function CertificateNftSection({ certificate }: CertificateNftSectionProp
         title="Certificate Requested"
         description="Your NFT certificate has been requested. It will appear in your wallet soon."
       />
-
-      {status === 'claimed' && certificate.tokenId && (
-        <div className="mx-auto flex w-full max-w-[880px] flex-col items-center gap-2 text-center text-sm text-white/60 print:hidden">
-          <p>Token ID: {certificate.tokenId}</p>
-          {certificate.txHash && <p>Tx: {certificate.txHash}</p>}
-        </div>
-      )}
     </>
   )
 }

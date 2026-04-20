@@ -17,9 +17,11 @@ const textareaClass = cn(
 
 interface ChangeBioProps {
   initialBio: string | null
+  editable?: boolean
+  isPrivate?: boolean
 }
 
-export const ChangeBio = ({ initialBio }: ChangeBioProps) => {
+export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: ChangeBioProps) => {
   const queryClient = useQueryClient()
   const [localOverride, setLocalOverride] = useState<string | null | undefined>(undefined)
   const bio = localOverride !== undefined ? localOverride : initialBio
@@ -90,6 +92,32 @@ export const ChangeBio = ({ initialBio }: ChangeBioProps) => {
 
   const discardEdit = () => {
     setIsEditing(false)
+  }
+
+  if (isPrivate) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Text variant="subtitle-32">_ABOUT ME</Text>
+        <div className="border border-border p-5">
+          <Text variant="caps-20" className="text-border sm:text-[20px] text-[16px]">
+            Private profile
+          </Text>
+        </div>
+      </div>
+    )
+  }
+
+  if (!editable) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Text variant="subtitle-32">_ABOUT ME</Text>
+        <div className="border border-border p-5">
+          <Text variant="caps-20" className="text-[#e0deda] sm:text-[20px] text-[16px] whitespace-pre-wrap break-words min-h-[2em]">
+            {initialBio || <span className="text-border">No bio yet.</span>}
+          </Text>
+        </div>
+      </div>
+    )
   }
 
   return (

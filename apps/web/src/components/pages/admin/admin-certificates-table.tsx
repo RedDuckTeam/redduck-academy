@@ -9,10 +9,12 @@ interface AdminCertificatesTableProps {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 }
 
@@ -78,13 +80,13 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
             className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_100px_80px_120px_140px] border-b border-border divide-x divide-border last:border-b-0"
           >
             <div className="p-5 min-w-0">
-              <Text variant="caps-14" className="truncate">{row.userEmail.toUpperCase()}</Text>
+              <Text variant="caps-14" className="break-words">{row.userEmail.toUpperCase()}</Text>
             </div>
             <div className="p-5 min-w-0">
-              <Text variant="caps-14" className="truncate">{row.name.toUpperCase()}</Text>
+              <Text variant="caps-14" className="break-words">{row.name.toUpperCase()}</Text>
             </div>
             <div className="p-5 min-w-0">
-              <Text variant="caps-14" className="truncate">{row.courseSlug.toUpperCase()}</Text>
+              <Text variant="caps-14" className="break-words">{row.courseSlug.toUpperCase()}</Text>
             </div>
             <div className="p-5 text-center">
               <StatusCell status={row.status} />
@@ -96,14 +98,16 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
               <Text variant="caps-14">{formatDate(row.issuedAt)}</Text>
             </div>
             <div className="p-5 flex items-center justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isPending || row.status === 'claimed'}
-                onClick={() => generate({ userId: row.userId, courseSlug: row.courseSlug })}
-              >
-                MINT
-              </Button>
+              {row.tokenId === null && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() => generate({ userId: row.userId, courseSlug: row.courseSlug })}
+                >
+                  MINT
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -138,15 +142,17 @@ export function AdminCertificatesTable({ certificates }: AdminCertificatesTableP
                 <Text variant="caps-14">{formatDate(row.issuedAt)}</Text>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isPending || row.status === 'claimed'}
-              onClick={() => generate({ userId: row.userId, courseSlug: row.courseSlug })}
-              className="self-start"
-            >
-              MINT
-            </Button>
+            {row.tokenId === null && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isPending}
+                onClick={() => generate({ userId: row.userId, courseSlug: row.courseSlug })}
+                className="self-start"
+              >
+                MINT
+              </Button>
+            )}
           </div>
         ))}
       </div>

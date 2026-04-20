@@ -151,6 +151,16 @@ export class CertificatesService {
       .from(userCertificates)
       .where(eq(userCertificates.userId, userId))
 
-    return rows.map(formatCert)
+    const slugs = [...new Set(rows.map((r) => r.courseSlug))]
+    const courseRows = await payloadDb.query.courses.findMany({
+      where: (c, { inArray }) => inArray(c.slug, slugs),
+      columns: { slug: true, title: true },
+    })
+    const titleBySlug = Object.fromEntries(courseRows.map((c) => [c.slug, c.title]))
+
+    return rows.map((r) => ({
+      ...formatCert(r),
+      courseTitle: titleBySlug[r.courseSlug] ?? r.courseSlug,
+    }))
   }
 }

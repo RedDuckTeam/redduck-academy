@@ -1,4 +1,24 @@
+import type { Certificate } from '@/lib/api/certificates'
+
 export type CodingLanguage = 'solidity' | 'rust' | 'typescript'
+
+export interface PublicUserProfile {
+  username: string
+  isPrivate: false
+  name: string
+  bio: string | null
+  image: string | null
+  rank: number
+  completedLessonsCount: number
+  certificates: Certificate[]
+}
+
+export interface PrivateUserProfile {
+  username: string
+  isPrivate: true
+}
+
+export type UserPublicProfile = PublicUserProfile | PrivateUserProfile
 
 export interface CoursePrerequisite {
   id: number
@@ -18,6 +38,7 @@ export interface Course {
 }
 
 export interface UserSettings {
+  username: string | null
   skipPrerequisites: boolean
   isPrivate: boolean
   bio: string | null

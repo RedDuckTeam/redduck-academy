@@ -82,10 +82,12 @@ export const getAdminCertificates = async (input: {
 }
 
 export type AdminMintParams = {
+  certificateId: string | null
   walletAddress: string
   courseId: number
   contentHash: string
   metadataUri: string
+  imageUrl: string
 }
 
 export const generateAdminCertificate = async (input: {
@@ -100,4 +102,17 @@ export const generateAdminCertificate = async (input: {
     throw new Error(response.error ?? 'Failed to generate certificate')
   }
   return response.data!.data
+}
+
+export const markAdminClaimed = async (
+  certificateId: string,
+  data: { metadataUri: string; imageUrl: string; tokenId: string; txHash: string },
+): Promise<void> => {
+  const response = await api({ credentials: 'include' }).post(
+    `/api/certificates/admin/${certificateId}/claim`,
+    data,
+  )
+  if (response.status >= 400) {
+    throw new Error((response as { error?: string }).error ?? 'Failed to mark certificate as claimed')
+  }
 }
