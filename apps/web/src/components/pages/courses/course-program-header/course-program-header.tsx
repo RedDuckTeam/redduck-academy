@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,8 @@ import { LockedCourseBadge } from '@/components/pages/home/my-progress/locked-co
 import { isCourseFullyCompleted } from '@/lib/lessons/course-completion'
 import { cn } from '@/lib/utils'
 import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificates'
+import { useClaimCertificate } from '@/hooks/api/certificates/useClaimCertificate'
+import { toast } from 'sonner'
 
 interface CourseProgramHeaderProps {
   course: Course
@@ -26,7 +28,22 @@ export const CourseProgramHeader = ({
 }: CourseProgramHeaderProps) => {
   const showCertificate = isCourseFullyCompleted(course, completedLessons)
   const { data: certificates } = useUserCertificates()
-  const isClaimed = certificates?.some((c) => c.courseSlug === course.slug) ?? false
+  const { mutate: claim, isPending: isClaiming } = useClaimCertificate()
+  const navigate = useNavigate()
+
+  const certificate = certificates?.find((c) => c.courseSlug === course.slug)
+
+  const handleClaim = () => {
+    claim(
+      { courseSlug: course.slug },
+      {
+        onSuccess: (data) => {
+          navigate({ to: '/certificates/$certificateId', params: { certificateId: data.id } })
+        },
+        onError: () => toast.error('Could not issue certificate'),
+      },
+    )
+  }
 
   return (
     <section
@@ -44,11 +61,20 @@ export const CourseProgramHeader = ({
               prerequisiteCourseSlug={prerequisiteCourseSlug}
             />
           ) : showCertificate ? (
-            <Button className="text-[#000]" asChild>
-              <Link to="/courses/$courseSlug/certificate" params={{ courseSlug: course.slug }}>
-                {isClaimed ? 'View Certificate' : 'Claim Certificate'}
-              </Link>
-            </Button>
+            certificate ? (
+              <Button className="text-[#000]" asChild>
+                <Link
+                  to="/certificates/$certificateId"
+                  params={{ certificateId: certificate.id }}
+                >
+                  View Certificate
+                </Link>
+              </Button>
+            ) : (
+              <Button className="text-[#000]" onClick={handleClaim} disabled={isClaiming}>
+                {isClaiming ? 'Claiming…' : 'Claim Certificate'}
+              </Button>
+            )
           ) : null}
         </div>
         <Text variant="main-16" className="text-[#000]">

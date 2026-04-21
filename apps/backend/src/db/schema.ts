@@ -90,11 +90,19 @@ export const userCertificates = pgTable(
     courseSlug: text('course_slug').notNull(),
     issuedAt: timestamp('issued_at').defaultNow().notNull(),
     name: text('name').notNull(),
+    status: text('status', { enum: ['created', 'requested', 'claimed'] })
+      .notNull()
+      .default('created'),
+    metadataUri: text('metadata_uri'),
+    imageUrl: text('image_url'),
+    tokenId: text('token_id'),
+    txHash: text('tx_hash'),
   },
   (t) => ({
-    userCourseUnique: uniqueIndex('user_certificates_user_id_course_slug_unique').on(
+    userCourseNameUnique: uniqueIndex('user_certificates_user_id_course_slug_name_unique').on(
       t.userId,
       t.courseSlug,
+      t.name,
     ),
   }),
 )

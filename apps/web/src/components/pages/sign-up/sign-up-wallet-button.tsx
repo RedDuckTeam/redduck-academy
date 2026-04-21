@@ -4,7 +4,6 @@ import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCallback } from 'react'
 import { useAccount, useSignMessage, useConnect } from 'wagmi'
 import { injected } from 'wagmi/connectors'
-import { useRouter } from '@tanstack/react-router'
 import { getAuthClient } from '@/lib/auth-client'
 import { toast } from 'sonner'
 
@@ -12,8 +11,6 @@ export const SignUpWalletButton = () => {
   const { address } = useAccount()
   const { signMessageAsync } = useSignMessage()
   const { connectAsync } = useConnect()
-  const router = useRouter()
-
   const handleSignInWithMessage = async () => {
     if (!address) return
     try {
@@ -34,7 +31,7 @@ export const SignUpWalletButton = () => {
 
       if (error || !data) throw new Error(error?.message ?? 'Verification failed')
 
-      router.navigate({ to: '/' })
+      window.location.assign('/')
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('User rejected the request.')) return

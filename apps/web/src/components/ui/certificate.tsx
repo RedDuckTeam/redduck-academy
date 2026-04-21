@@ -38,8 +38,9 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
         {/* ── Header row ──────────────────────────────────────────── */}
         <div className="flex">
           {/* logo cell: pl/pt/pb/pr → 20/1920, 20/1920, 40/1920, 40/1920 */}
-          <div className="pl-[1.042%] pt-[1.042%] pb-[2.083%] pr-[2.083%] border-b border-border">
-            <RedDuckIcon className="w-full h-full" isDark />
+          {/* logo: 186×24 @ 1920 — same as certificate-pdf (93×12 @ 960); w = 186/1920 → 9.6875cqw */}
+          <div className="pl-[1.042%] pt-[1.042%] pb-[2.083%] pr-[2.083%] border-b border-border shrink-0">
+            <RedDuckIcon className="w-[18cqw] h-auto max-w-full" isDark />
           </div>
           <div className="w-full flex-1 border-t border-l h-full border-border" />
         </div>

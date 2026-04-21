@@ -511,8 +511,8 @@ export const CertificateStamp = ({ className, isLight, ...props }: Props) => {
         strokeWidth="6"
         mask="url(#path-2-inside-1_13_431)"
       />
-      <circle cx="132.495" cy="132.5" r="79.2605" stroke={color} stroke-dasharray="2 2" />
-      <circle cx="132.5" cy="132.5" r="131" stroke={color} strokeWidth="3" stroke-dasharray="4 6" />
+      <circle cx="132.495" cy="132.5" r="79.2605" stroke={color} strokeDasharray="2 2" />
+      <circle cx="132.5" cy="132.5" r="131" stroke={color} strokeWidth="3" strokeDasharray="4 6" />
       <circle cx="132.498" cy="132.5" r="85.8655" stroke={color} />
       <circle cx="132.504" cy="132.5" r="124.395" stroke={color} strokeWidth="3" />
     </svg>

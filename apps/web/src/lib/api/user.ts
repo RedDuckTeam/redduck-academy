@@ -1,5 +1,5 @@
 import { api } from './fetcher'
-import type { UserSettings } from '@/types/lesson'
+import type { UserSettings, UserPublicProfile } from '@/types/lesson'
 
 export interface ProgressCards {
   completedLessonsCount: number
@@ -55,6 +55,17 @@ export const updateUserName = async (name: string): Promise<{ name: string }> =>
   return response.data!.data
 }
 
+export const updateUserUsername = async (username: string): Promise<{ username: string }> => {
+  const response = await api({ credentials: 'include' }).patch<{ data: { username: string } }>('/api/user/username', {
+    username,
+  })
+  if (response.error) {
+    throw new Error(response.error)
+  }
+
+  return response.data!.data
+}
+
 export const uploadUserAvatar = async (file: File): Promise<{ imageUrl: string }> => {
   const { env } = await import('@/env')
   const formData = new FormData()
@@ -71,7 +82,7 @@ export const uploadUserAvatar = async (file: File): Promise<{ imageUrl: string }
     throw new Error((data as { error?: string }).error ?? 'Failed to upload avatar')
   }
 
-  const data = await response.json() as { data: { imageUrl: string } }
+  const data = (await response.json()) as { data: { imageUrl: string } }
   return data.data
 }
 
@@ -79,8 +90,14 @@ export interface RatingEntry {
   rank: number
   userId: string
   userName: string
+  username: string | null
   completedLessonsCount: number
   completedCoursesCount: number
+}
+
+export const getPublicProfile = async (username: string): Promise<UserPublicProfile> => {
+  const response = await api().get<{ data: UserPublicProfile }>(`/api/user/profile/${username}`)
+  return response.data!.data
 }
 
 export const getRating = async (): Promise<RatingEntry[]> => {

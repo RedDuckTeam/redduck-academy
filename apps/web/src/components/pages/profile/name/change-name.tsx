@@ -11,9 +11,14 @@ const inputTextClass = cn(
   'text-white bg-transparent border-0 p-0 shadow-none outline-none ring-0 focus:ring-0 [field-sizing:content] min-w-[1ch] max-w-full sm:text-[20px] text-[16px]',
 )
 
-export const ChangeName = () => {
+interface ChangeNameProps {
+  name?: string
+  editable?: boolean
+}
+
+export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps) => {
   const { session, refetch } = useSession()
-  const serverName = session?.user.name ?? ''
+  const serverName = nameProp ?? session?.user.name ?? ''
   const [localOverride, setLocalOverride] = useState<string | null>(null)
   const displayName = localOverride ?? serverName
 
@@ -83,6 +88,19 @@ export const ChangeName = () => {
 
   const discardEdit = () => {
     setIsEditing(false)
+  }
+
+  if (!editable) {
+    return (
+      <div className="flex items-center gap-2">
+        <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
+          I'm
+        </Text>
+        <Text variant="caps-20" className="text-white sm:text-[20px] truncate max-w-[300px] text-[16px]">
+          {serverName || '—'}
+        </Text>
+      </div>
+    )
   }
 
   return (

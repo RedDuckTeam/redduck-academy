@@ -24,6 +24,19 @@ const codeStyles =
 
 const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
 
+function getEthBuildUrl(text: string): string | null {
+  const trimmed = text.trim()
+  try {
+    const url = new URL(trimmed)
+    if (url.hostname === 'sandbox.eth.build' || url.hostname === 'eth.build') {
+      return trimmed
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 function getYoutubeEmbedUrl(text: string): string | null {
   const trimmed = text.trim()
   try {
@@ -44,7 +57,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   if (!data) return null
 
   return (
-    <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className)}>
+    <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className, 'w-full')}>
       <PayloadRichText
         className="*:mb-6"
         data={data as any}
@@ -88,6 +101,25 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
                       title="YouTube video"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      className="h-full w-full"
+                    />
+                  </div>
+                )
+              }
+            }
+            if (
+              textNode?.type === 'autolink' &&
+              (textNode.fields?.url?.includes('sandbox.eth.build') || textNode.fields?.url?.includes('eth.build'))
+            ) {
+              const ethBuildUrl = getEthBuildUrl(textNode.fields?.url ?? '')
+              if (ethBuildUrl) {
+                return (
+                  <div className="aspect-video w-full overflow-hidden rounded-xl my-4">
+                    <iframe
+                      src={ethBuildUrl}
+                      title="eth.build interactive flow"
+                      sandbox="allow-scripts allow-same-origin"
+                      referrerPolicy="no-referrer"
                       className="h-full w-full"
                     />
                   </div>

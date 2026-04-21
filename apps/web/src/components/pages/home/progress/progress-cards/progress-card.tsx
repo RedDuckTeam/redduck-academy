@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 
 interface Props {
   firstNum: string
   secondNum?: string
-  text: string
+  text: ReactNode
   className?: string
 }
 
@@ -24,7 +25,11 @@ export const ProgressCard = ({ firstNum, secondNum, text, className }: Props) =>
           </Text>
         )}
       </div>
-      <Text variant="caps-20">{text}</Text>
+      {typeof text === 'string' ? (
+        <Text variant="caps-20">{text}</Text>
+      ) : (
+        <div className="flex min-w-0 items-center gap-1.5 flex-wrap">{text}</div>
+      )}
     </div>
   )
 }

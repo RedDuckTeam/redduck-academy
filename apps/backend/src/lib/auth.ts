@@ -5,10 +5,51 @@ import { env } from '../env'
 import { siwe } from 'better-auth/plugins'
 import { verifyMessage } from 'viem'
 import { db } from '../db'
+import { user as userTable } from '../db/auth-schema'
+import { eq } from 'drizzle-orm'
+
+const generateUsername = () => `user${Math.floor(10000000 + Math.random() * 90000000)}`
+
+const generateUniqueUsername = async (): Promise<string> => {
+  for (let i = 0; i < 10; i++) {
+    const candidate = generateUsername()
+    const [existing] = await db.select({ id: userTable.id }).from(userTable).where(eq(userTable.username, candidate)).limit(1)
+    if (!existing) return candidate
+  }
+  return generateUsername()
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   appName: 'Redduck Academy',
+  user: {
+    additionalFields: {
+      role: {
+        type: 'string',
+        defaultValue: 'user',
+        input: false,
+      },
+      username: {
+        type: 'string',
+        input: false,
+      },
+      blacklisted: {
+        type: 'boolean',
+        defaultValue: false,
+        input: false,
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (createdUser) => {
+          const username = await generateUniqueUsername()
+          await db.update(userTable).set({ username }).where(eq(userTable.id, createdUser.id))
+        },
+      },
+    },
+  },
   trustedOrigins: ['http://localhost:3000', 'http://localhost:3001', 'https://redduck-academy.jeleika.com'],
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,

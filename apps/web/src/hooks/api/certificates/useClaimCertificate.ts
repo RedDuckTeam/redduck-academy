@@ -6,8 +6,7 @@ export const useClaimCertificate = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ courseSlug, name }: { courseSlug: string; name: string }) =>
-      claimCertificate(courseSlug, name),
+    mutationFn: ({ courseSlug }: { courseSlug: string }) => claimCertificate(courseSlug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.certificates.all() })
     },

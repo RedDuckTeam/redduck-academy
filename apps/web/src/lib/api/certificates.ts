@@ -3,15 +3,21 @@ import { api } from './fetcher'
 export interface Certificate {
   id: string
   courseSlug: string
+  courseTitle: string
   issuedAt: string
   name: string
+  status: 'created' | 'requested' | 'claimed'
+  metadataUri: string | null
+  imageUrl: string | null
+  tokenId: string | null
+  txHash: string | null
 }
 
 interface GetCertificatesResponse {
   data: Certificate[]
 }
 
-interface ClaimCertificateResponse {
+interface CertificateResponse {
   data: Certificate
 }
 
@@ -35,10 +41,18 @@ export const getUserCertificates = async (): Promise<Certificate[]> => {
   return response.data?.data ?? []
 }
 
-export const claimCertificate = async (courseSlug: string, name: string): Promise<Certificate> => {
-  const response = await api({ credentials: 'include' }).post<ClaimCertificateResponse>(
+export const claimCertificate = async (courseSlug: string): Promise<Certificate> => {
+  const response = await api({ credentials: 'include' }).post<CertificateResponse>(
     `/api/certificates/${courseSlug}/claim`,
-    { name },
+    {},
+  )
+  return response.data!.data
+}
+
+export const requestNft = async (certificateId: string): Promise<Certificate> => {
+  const response = await api({ credentials: 'include' }).post<CertificateResponse>(
+    `/api/certificates/${certificateId}/request-nft`,
+    {},
   )
   return response.data!.data
 }

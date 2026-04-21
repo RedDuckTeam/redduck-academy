@@ -71,6 +71,27 @@
       "when": 1776448747740,
       "tag": "0009_groovy_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776551836758,
+      "tag": "0010_magenta_mother_askani",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1776598503412,
+      "tag": "0011_moaning_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776721866226,
+      "tag": "0012_known_bishop",
+      "breakpoints": true
     }
   ]
 }

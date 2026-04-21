@@ -220,7 +220,44 @@ export const updateUserBioDesc = describeRoute({
   },
 })
 
+export const updateUserUsernameBodySchema = z.object({
+  username: z
+    .string()
+    .min(3)
+    .max(30)
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+})
+
+export const updateUserUsernameDesc = describeRoute({
+  summary: 'Update username',
+  description: 'Updates the unique username for the authenticated user.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'Updated username',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.object({ username: z.string() }) })),
+        },
+      },
+    },
+    400: {
+      description: 'Username already taken or invalid',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
 export const userSettingsSchema = z.object({
+  username: z.string().nullable(),
   skipPrerequisites: z.boolean(),
   isPrivate: z.boolean(),
   bio: z.string().nullable(),
@@ -272,6 +309,7 @@ export const getRatingDesc = describeRoute({
                   rank: z.number(),
                   userId: z.string(),
                   userName: z.string(),
+                  username: z.string().nullable(),
                   completedLessonsCount: z.number(),
                   completedCoursesCount: z.number(),
                 }),
@@ -311,6 +349,60 @@ export const uploadAvatarDesc = describeRoute({
     },
     401: {
       description: 'Unauthorized',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: errorSchema } },
+    },
+  },
+})
+
+const certificateSchema = z.object({
+  id: z.string(),
+  courseSlug: z.string(),
+  courseTitle: z.string(),
+  issuedAt: z.string(),
+  name: z.string(),
+  status: z.enum(['created', 'requested', 'claimed']),
+  metadataUri: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  tokenId: z.string().nullable(),
+  txHash: z.string().nullable(),
+})
+
+export const publicProfileSchema = z.discriminatedUnion('isPrivate', [
+  z.object({
+    username: z.string(),
+    isPrivate: z.literal(true),
+  }),
+  z.object({
+    username: z.string(),
+    isPrivate: z.literal(false),
+    name: z.string(),
+    bio: z.string().nullable(),
+    image: z.string().nullable(),
+    rank: z.number(),
+    completedLessonsCount: z.number(),
+    certificates: z.array(certificateSchema),
+  }),
+])
+
+export const getPublicProfileDesc = describeRoute({
+  summary: 'Get public user profile',
+  description: 'Returns profile data for a user by username. Private profiles return only username and isPrivate flag.',
+  tags: ['User'],
+  responses: {
+    200: {
+      description: 'User profile',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: publicProfileSchema })),
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
       content: { 'application/json': { schema: errorSchema } },
     },
     500: {

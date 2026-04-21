@@ -10,9 +10,10 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 export interface ChangeAvatarProps {
   imageUrl?: string
+  editable?: boolean
 }
 
-export const ChangeAvatar = ({ imageUrl }: ChangeAvatarProps) => {
+export const ChangeAvatar = ({ imageUrl, editable = true }: ChangeAvatarProps) => {
   const { refetch } = useSession()
   const inputRef = useRef<HTMLInputElement>(null)
   const [localPreview, setLocalPreview] = useState<string | null>(null)
@@ -49,6 +50,10 @@ export const ChangeAvatar = ({ imageUrl }: ChangeAvatarProps) => {
       setIsUploading(false)
       URL.revokeObjectURL(preview)
     }
+  }
+
+  if (!editable) {
+    return <PageAvatarImage imageUrl={displayUrl} />
   }
 
   return (

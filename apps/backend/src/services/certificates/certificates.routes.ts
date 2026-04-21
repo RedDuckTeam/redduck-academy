@@ -7,10 +7,39 @@ import {
   claimCertificateBodySchema,
   getCertificateByIdDesc,
   getUserCertificatesDesc,
+  adminGenerateCertificateDesc,
+  adminGenerateCertificateBodySchema,
+  requestNftDesc,
+  adminMarkClaimedDesc,
+  adminMarkClaimedBodySchema,
 } from '../../descriptions/certificates'
 import { CertificatesService } from './certificates.service'
+import { CertificateGenerationService } from './certificate-generation.service'
 
 const certificatesApp = new Hono<{ Variables: AuthVariables }>()
+
+certificatesApp.post(
+  '/admin/generate',
+  adminGenerateCertificateDesc,
+  validator('json', adminGenerateCertificateBodySchema),
+  async (c) => {
+    const { userId, courseSlug } = c.req.valid('json')
+    const data = await CertificateGenerationService.generateCertificateAssets(userId, courseSlug)
+    return c.json({ data })
+  },
+)
+
+certificatesApp.post(
+  '/admin/:id/claim',
+  adminMarkClaimedDesc,
+  validator('json', adminMarkClaimedBodySchema),
+  async (c) => {
+    const id = c.req.param('id')
+    const body = c.req.valid('json')
+    const data = await CertificatesService.adminMarkClaimed(id, body)
+    return c.json({ data })
+  },
+)
 
 certificatesApp.get('/:id', getCertificateByIdDesc, async (c) => {
   const data = await CertificatesService.getCertificateById(c.req.param('id'))
@@ -31,8 +60,20 @@ certificatesApp.post(
   async (c) => {
     const authUser = c.get('user')
     const courseSlug = c.req.param('courseSlug')
-    const { name } = c.req.valid('json')
-    const data = await CertificatesService.claimCertificate(authUser.id, courseSlug, name)
+    void c.req.valid('json')
+    const data = await CertificatesService.claimCertificate(authUser.id, courseSlug)
+    return c.json({ data })
+  },
+)
+
+certificatesApp.post(
+  '/:id/request-nft',
+  requireAuth,
+  requestNftDesc,
+  async (c) => {
+    const authUser = c.get('user')
+    const id = c.req.param('id')
+    const data = await CertificatesService.requestNft(authUser.id, id)
     return c.json({ data })
   },
 )

@@ -18,6 +18,9 @@ import {
   uploadAvatarDesc,
   updateUserBioDesc,
   updateUserBioBodySchema,
+  updateUserUsernameDesc,
+  updateUserUsernameBodySchema,
+  getPublicProfileDesc,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
@@ -139,10 +142,23 @@ userApp.post('/avatar', requireAuth, uploadAvatarDesc, async (c) => {
   return c.json({ data })
 })
 
+userApp.patch('/username', requireAuth, updateUserUsernameDesc, validator('json', updateUserUsernameBodySchema), async (c) => {
+  const authUser = c.get('user')
+  const { username } = c.req.valid('json')
+  const data = await UserService.updateUserUsername(authUser.id, username)
+  return c.json({ data })
+})
+
 userApp.patch('/bio', requireAuth, updateUserBioDesc, validator('json', updateUserBioBodySchema), async (c) => {
   const authUser = c.get('user')
   const { bio } = c.req.valid('json')
   const data = await UserService.updateUserBio(authUser.id, bio)
+  return c.json({ data })
+})
+
+userApp.get('/profile/:username', getPublicProfileDesc, async (c) => {
+  const { username } = c.req.param()
+  const data = await UserService.getPublicProfile(username)
   return c.json({ data })
 })
 

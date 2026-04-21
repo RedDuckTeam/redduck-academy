@@ -19,7 +19,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#000000] text-white *:pb-0! print:hidden">
+    <footer className="bg-[#000000] text-white *:pb-0! print:hidden border-t border-white/20">
       <div className="border-x border-white/20 mx-auto w-full max-w-[1920px] py-[20px] md:py-[40px] 2xl:py-[60px]">
         <div className="grid grid-cols-1 grid-rows-[auto_auto] border-t border-white/20 lg:grid-cols-2 2xl:grid-cols-4">
           <div

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getUserSettings, updateUserSettings } from '@/lib/api/user'
+import { getUserSettings, updateUserSettings, updateUserUsername } from '@/lib/api/user'
 import { queryKeys } from '@/lib/query-keys'
 import { useSession } from '@/hooks/useSession'
 
@@ -21,6 +21,18 @@ export const useUpdateUserSettings = () => {
       queryClient.setQueryData(queryKeys.user.settings(), data)
       queryClient.invalidateQueries({ queryKey: queryKeys.courses.all() })
       queryClient.invalidateQueries({ queryKey: queryKeys.user.rating() })
+    },
+  })
+}
+
+export const useUpdateUserUsername = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: updateUserUsername,
+    onSuccess: ({ username }) => {
+      queryClient.setQueryData(queryKeys.user.settings(), (old: { username: string | null } | undefined) =>
+        old ? { ...old, username } : old,
+      )
     },
   })
 }

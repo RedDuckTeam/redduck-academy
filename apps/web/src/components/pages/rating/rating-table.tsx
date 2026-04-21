@@ -1,3 +1,5 @@
+import { Link } from '@tanstack/react-router'
+import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Text } from '@/components/ui/text'
 import type { RatingEntry } from '@/lib/api/user'
@@ -50,7 +52,20 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
                 </Text>
               </div>
               <div className={cn('p-5', isCurrentUser && 'text-primary')}>
-                <Text variant="caps-20">{entry.userName?.toUpperCase() ?? '—'}</Text>
+                {entry.username ? (
+                  <Link
+                    to="/profile/$username"
+                    params={{ username: entry.username }}
+                    className="group inline-flex items-center gap-1.5"
+                  >
+                    <Text variant="caps-20" className="underline-offset-[0.2em] group-hover:underline">
+                      {entry.userName?.toUpperCase() ?? '—'}
+                    </Text>
+                    <ArrowUpRight aria-hidden className="size-4 shrink-0" strokeWidth={2} />
+                  </Link>
+                ) : (
+                  <Text variant="caps-20">{entry.userName?.toUpperCase() ?? '—'}</Text>
+                )}
               </div>
               <div className="p-5 text-center">
                 <Text variant="caps-20">{entry.completedCoursesCount}</Text>
@@ -73,9 +88,22 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
                 <Text variant="caps-20" className="text-primary">
                   {String(entry.rank).padStart(2, '0')}.
                 </Text>
-                <Text variant="caps-20" className={cn(isCurrentUser && 'text-primary')}>
-                  {entry.userName?.toUpperCase() ?? '—'}
-                </Text>
+                {entry.username ? (
+                  <Link
+                    to="/profile/$username"
+                    params={{ username: entry.username }}
+                    className="group inline-flex items-center gap-1.5"
+                  >
+                    <Text variant="caps-20" className={cn('underline-offset-[0.2em] group-hover:underline', isCurrentUser && 'text-primary')}>
+                      {entry.userName?.toUpperCase() ?? '—'}
+                    </Text>
+                    <ArrowUpRight aria-hidden className="size-4 shrink-0" strokeWidth={2} />
+                  </Link>
+                ) : (
+                  <Text variant="caps-20" className={cn(isCurrentUser && 'text-primary')}>
+                    {entry.userName?.toUpperCase() ?? '—'}
+                  </Text>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="flex flex-col gap-1">

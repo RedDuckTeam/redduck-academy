@@ -5,6 +5,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 function getCoursePrerenderPaths(): Array<{ path: string }> {
   return []
@@ -12,6 +13,7 @@ function getCoursePrerenderPaths(): Array<{ path: string }> {
 
 const config = defineConfig({
   plugins: [
+    nodePolyfills({ include: ['buffer'], globals: { Buffer: true } }),
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
     viteTsConfigPaths({
