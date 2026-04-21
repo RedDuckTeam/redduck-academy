@@ -33,7 +33,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
     }
   }, [isEditing])
 
-  const commit = useCallback(() => {
+  const commit = useCallback(async () => {
     if (!isEditing) return
 
     const trimmed = draftName.trim()
@@ -56,15 +56,14 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
     setIsEditing(false)
     setLocalOverride(trimmed)
 
-    void updateUserName(trimmed)
-      .then(async () => {
-        await refetch()
-        setLocalOverride(null)
-      })
-      .catch(() => {
-        setLocalOverride(null)
-        toast.error('Failed to update name')
-      })
+    try {
+      await updateUserName(trimmed)
+      await refetch()
+      setLocalOverride(null)
+    } catch {
+      setLocalOverride(null)
+      toast.error('Failed to update name')
+    }
   }, [isEditing, draftName, displayName, refetch])
 
   useEffect(() => {
@@ -74,7 +73,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
       const el = inputRef.current
       if (!el || el.contains(e.target as Node)) return
       if (actionButtonRef.current?.contains(e.target as Node)) return
-      commit()
+      void commit()
     }
 
     document.addEventListener('pointerdown', onPointerDown, true)
@@ -118,7 +117,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
-                commit()
+                void commit()
               }
             }}
             className={inputTextClass}
@@ -127,7 +126,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
             aria-label="Display name"
           />
         ) : (
-          <Text variant="caps-20" className="text-white sm:text-[20px]  truncate max-w-[300px] xl text-[16px]">
+          <Text variant="caps-20" className="text-white sm:text-[20px] truncate max-w-[300px] text-[16px]">
             {displayName || '—'}
           </Text>
         )}
