@@ -18,7 +18,7 @@ type LockedCourseBadgeProps = {
 export function LockedCourseBadge({ prerequisiteCourseTitle, prerequisiteCourseSlug }: LockedCourseBadgeProps) {
   return (
     <div className="flex items-center gap-1.5 bg-primary px-4 py-2">
-      <Text variant="caps-14" className="text-black">
+      <Text variant="caps-14" className="text-[#000]">
         Not available
       </Text>
       <LockedCourseStatusTooltip

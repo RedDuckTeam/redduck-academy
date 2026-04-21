@@ -1,5 +1,6 @@
 import { textVariants } from '@/components/ui/text'
 import { useUserSettings, useUpdateUserUsername } from '@/hooks/api/user/useUserSettings'
+import { useSession } from '@/hooks/useSession'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useNavigate } from '@tanstack/react-router'
@@ -9,6 +10,7 @@ import { queryKeys } from '@/lib/query-keys'
 export const ChangeUsername = () => {
   const { data: settings } = useUserSettings()
   const { mutateAsync, isPending } = useUpdateUserUsername()
+  const { refetch: refetchSession } = useSession()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState<string | null>(null)
@@ -34,6 +36,7 @@ export const ChangeUsername = () => {
     try {
       const oldUsername = currentUsername
       await mutateAsync(trimmed)
+      await refetchSession()
       setDraft(null)
       toast.success('Username updated')
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile.detail(oldUsername) })
