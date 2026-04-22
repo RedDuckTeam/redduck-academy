@@ -20,11 +20,15 @@ import type { PublicUserProfile } from '@/types/lesson'
 export const Route = createFileRoute('/profile/$username')({
   ssr: true,
   loader: async ({ params, context: { queryClient } }) => {
-    const profile = await queryClient.ensureQueryData({
-      queryKey: queryKeys.profile.detail(params.username),
-      queryFn: () => getPublicProfile(params.username),
-      staleTime: 60 * 1000,
-    }).catch(() => { throw notFound() })
+    const profile = await queryClient
+      .ensureQueryData({
+        queryKey: queryKeys.profile.detail(params.username),
+        queryFn: () => getPublicProfile(params.username),
+        staleTime: 60 * 1000,
+      })
+      .catch(() => {
+        throw notFound()
+      })
     return { profile, username: params.username }
   },
   head: ({ loaderData, params }) => {

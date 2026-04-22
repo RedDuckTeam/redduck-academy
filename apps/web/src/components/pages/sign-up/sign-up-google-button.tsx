@@ -1,27 +1,38 @@
 import { cn } from '@/lib/utils'
 import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
-import { getAuthClient } from '@/lib/auth-client'
-import { env } from '@/env'
+import { useCreateWallet, useLoginWithOAuth } from '@privy-io/react-auth'
+
+// Privy's `onComplete` can fire more than once per login (StrictMode double-invoke in dev, and
+// re-fires on remount after the OAuth redirect). Without this guard, `createWallet()` runs twice
+// and provisions two embedded wallets for the same user. Module-level so it survives remounts.
+const walletCreationAttempted = new Set<string>()
 
 export const SignUpGoogleButton = () => {
-  const handleSignUpWithGoogle = async () => {
-    try {
-      await getAuthClient().signIn.social({
-        provider: 'google',
-        callbackURL: env.VITE_APP_URL,
-      })
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  const { createWallet } = useCreateWallet()
+  const { initOAuth } = useLoginWithOAuth({
+    onComplete: async ({ isNewUser, user }) => {
+      if (!isNewUser || !user?.id) return
+      if (walletCreationAttempted.has(user.id)) return
+      walletCreationAttempted.add(user.id)
+      const hasEmbedded = user.linkedAccounts.some(
+        (a) => a.type === 'wallet' && 'walletClientType' in a && a.walletClientType === 'privy',
+      )
+      if (hasEmbedded) return
+      try {
+        await createWallet()
+      } catch {
+        walletCreationAttempted.delete(user.id)
+      }
+    },
+  })
 
   return (
     <button
       className={cn(
         'flex w-full max-w-[850px] min-h-[100px] cursor-pointer items-center justify-between rounded-[80px] bg-foreground px-10 py-[18px] md:-translate-x-20 md:min-h-0 md:px-[70px]',
       )}
-      onClick={handleSignUpWithGoogle}
+      onClick={() => initOAuth({ provider: 'google' })}
     >
       <Text variant="title-80" className="min-h-0 text-background max-md:text-[32px] max-md:leading-none">
         01

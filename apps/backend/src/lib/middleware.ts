@@ -1,41 +1,49 @@
 import { createMiddleware } from 'hono/factory'
+import { getCookie } from 'hono/cookie'
 import type { Context } from 'hono'
 import { eq } from 'drizzle-orm'
-import { auth } from './auth'
+import { verifyPrivyToken } from './privy'
+import { ensureAppUser } from './ensure-app-user'
 import { AppError } from './errors'
 import { db } from '../db'
 import { user } from '../db/auth-schema'
 
-export const requireAuth = createMiddleware(async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session?.user) {
+async function resolveUser(c: Context): Promise<{ id: string; idToken: string; privyUserId: string }> {
+  const token = getCookie(c, 'privy-token')
+  if (!token) throw new AppError(401, 'Unauthorized')
+
+  let claims
+  try {
+    claims = await verifyPrivyToken(token)
+  } catch {
     throw new AppError(401, 'Unauthorized')
   }
-  c.set('user', session.user)
-  c.set('session', session)
+
+  const appUser = await ensureAppUser(claims.userId)
+  return { id: appUser.id, idToken: token, privyUserId: claims.userId }
+}
+
+export const requireAuth = createMiddleware(async (c, next) => {
+  const resolved = await resolveUser(c)
+  c.set('user', { id: resolved.id })
+  c.set('idToken', resolved.idToken)
+  c.set('privyUserId', resolved.privyUserId)
   await next()
 })
 
 export const requireAdmin = createMiddleware(async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session?.user) {
-    throw new AppError(401, 'Unauthorized')
-  }
-  c.set('user', session.user)
-  c.set('session', session)
+  const resolved = await resolveUser(c)
 
-  const [row] = await db.select({ role: user.role }).from(user).where(eq(user.id, session.user.id)).limit(1)
-  if (row?.role !== 'admin') {
-    throw new AppError(403, 'Forbidden')
-  }
+  const [row] = await db.select({ role: user.role }).from(user).where(eq(user.id, resolved.id)).limit(1)
 
+  if (row?.role !== 'admin') throw new AppError(403, 'Forbidden')
+
+  c.set('user', { id: resolved.id })
+  c.set('idToken', resolved.idToken)
+  c.set('privyUserId', resolved.privyUserId)
   await next()
 })
 
 export function getClientIp(c: Context): string {
-  return (
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
-    c.req.header('x-real-ip') ??
-    ''
-  )
+  return c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? ''
 }

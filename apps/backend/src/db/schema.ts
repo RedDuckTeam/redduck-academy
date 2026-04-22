@@ -97,6 +97,7 @@ export const userCertificates = pgTable(
     imageUrl: text('image_url'),
     tokenId: text('token_id'),
     txHash: text('tx_hash'),
+    walletAddress: text('wallet_address'),
   },
   (t) => ({
     userCourseNameUnique: uniqueIndex('user_certificates_user_id_course_slug_name_unique').on(

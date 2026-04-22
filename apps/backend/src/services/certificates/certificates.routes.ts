@@ -10,6 +10,7 @@ import {
   adminGenerateCertificateDesc,
   adminGenerateCertificateBodySchema,
   requestNftDesc,
+  requestNftBodySchema,
   adminMarkClaimedDesc,
   adminMarkClaimedBodySchema,
 } from '../../descriptions/certificates'
@@ -70,10 +71,13 @@ certificatesApp.post(
   '/:id/request-nft',
   requireAuth,
   requestNftDesc,
+  validator('json', requestNftBodySchema),
   async (c) => {
     const authUser = c.get('user')
+    const privyUserId = c.get('privyUserId')
     const id = c.req.param('id')
-    const data = await CertificatesService.requestNft(authUser.id, id)
+    const { walletAddress } = c.req.valid('json')
+    const data = await CertificatesService.requestNft(authUser.id, id, walletAddress, privyUserId)
     return c.json({ data })
   },
 )

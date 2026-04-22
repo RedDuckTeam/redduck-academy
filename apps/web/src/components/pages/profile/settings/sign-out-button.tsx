@@ -1,36 +1,22 @@
-import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { getAuthClient } from '@/lib/auth-client'
 import { Text } from '@/components/ui/text'
+import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 
 export const SignOutButton = () => {
+  const { logout } = usePrivyAuth()
+  const queryClient = useQueryClient()
   const router = useRouter()
-  const [isSigningOut, setIsSigningOut] = useState(false)
 
   const handleSignOut = async () => {
-    setIsSigningOut(true)
-    try {
-      const { error } = await getAuthClient().signOut()
-      if (error) {
-        toast.error('Failed to sign out. Please try again.')
-        return
-      }
-      router.navigate({ to: '/sign-up' })
-    } finally {
-      setIsSigningOut(false)
-    }
+    await logout()
+    queryClient.clear()
+    router.navigate({ to: '/sign-up' })
   }
 
   return (
-    <Button
-      type="button"
-      variant="outline-white"
-      className="self-start max-sm:w-full"
-      disabled={isSigningOut}
-      onClick={handleSignOut}
-    >
+    <Button type="button" variant="outline-white" className="self-start max-sm:w-full" onClick={handleSignOut}>
       <Text variant="caps-20">Sign out</Text>
     </Button>
   )

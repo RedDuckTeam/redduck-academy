@@ -3,6 +3,8 @@ import { db, payloadDb } from '../../db'
 import { user, userCertificates, userLessons } from '../../db/schema'
 import { payloadSchema } from '@redduck/payload-config'
 import { AppError } from '../../lib/errors'
+import { privy } from '../../lib/privy'
+import type { WalletWithMetadata } from '@privy-io/server-auth'
 
 const { courses } = payloadSchema
 
@@ -17,6 +19,7 @@ function formatCert(r: typeof userCertificates.$inferSelect) {
     imageUrl: r.imageUrl ?? null,
     tokenId: r.tokenId ?? null,
     txHash: r.txHash ?? null,
+    walletAddress: r.walletAddress ?? null,
   }
 }
 
@@ -84,7 +87,7 @@ export class CertificatesService {
     return formatCert(certificate)
   }
 
-  static async requestNft(userId: string, certificateId: string) {
+  static async requestNft(userId: string, certificateId: string, walletAddress: string, privyUserId: string) {
     const cert = await db.query.userCertificates.findFirst({
       where: eq(userCertificates.id, certificateId),
     })
@@ -93,9 +96,23 @@ export class CertificatesService {
     if (cert.userId !== userId) throw new AppError(403, 'Forbidden')
     if (cert.status === 'claimed') throw new AppError(400, 'Certificate already claimed')
 
+    const normalized = walletAddress.toLowerCase()
+    let privyUser
+    try {
+      privyUser = await privy.getUser(privyUserId)
+    } catch {
+      throw new AppError(401, 'Unauthorized')
+    }
+
+    const linked = privyUser.linkedAccounts.some(
+      (a): a is WalletWithMetadata =>
+        a.type === 'wallet' && a.chainType === 'ethereum' && a.address.toLowerCase() === normalized,
+    )
+    if (!linked) throw new AppError(400, 'Wallet is not linked to this user')
+
     const [updated] = await db
       .update(userCertificates)
-      .set({ status: 'requested' })
+      .set({ status: 'requested', walletAddress: normalized })
       .where(eq(userCertificates.id, certificateId))
       .returning()
 
@@ -146,10 +163,7 @@ export class CertificatesService {
   }
 
   static async getUserCertificates(userId: string) {
-    const rows = await db
-      .select()
-      .from(userCertificates)
-      .where(eq(userCertificates.userId, userId))
+    const rows = await db.select().from(userCertificates).where(eq(userCertificates.userId, userId))
 
     const slugs = [...new Set(rows.map((r) => r.courseSlug))]
     const courseRows = await payloadDb.query.courses.findMany({

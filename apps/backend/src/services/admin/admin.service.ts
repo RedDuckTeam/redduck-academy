@@ -12,7 +12,7 @@ export type AdminStats = {
 }
 
 export type AdminUserRow = {
-  email: string
+  email: string | null
   name: string
   isPrivate: boolean
   lessonsPassed: number
@@ -22,7 +22,7 @@ export type AdminUserRow = {
 export type AdminCertificateRow = {
   id: string
   userId: string
-  userEmail: string
+  userEmail: string | null
   userName: string
   courseSlug: string
   name: string

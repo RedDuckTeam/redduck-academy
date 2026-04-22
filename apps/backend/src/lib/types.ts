@@ -1,4 +1,5 @@
 export type AuthVariables = {
   user: { id: string }
-  session: unknown
+  idToken: string
+  privyUserId: string
 }

@@ -6,7 +6,8 @@ export const useRequestNft = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ certificateId }: { certificateId: string }) => requestNft(certificateId),
+    mutationFn: ({ certificateId, walletAddress }: { certificateId: string; walletAddress: string }) =>
+      requestNft(certificateId, walletAddress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.certificates.all() })
     },
