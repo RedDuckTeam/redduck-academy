@@ -13,6 +13,9 @@ on:
 env:
   VITE_API_URL: ${{ vars.VITE_API_URL }}
   VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+  VITE_PRIVY_APP_ID: ${{ vars.VITE_PRIVY_APP_ID }}
+  VITE_CHAIN_ENV: ${{ vars.VITE_CHAIN_ENV }}
+  VITE_PRIVY_COOKIE_AUTH: ${{ vars.VITE_PRIVY_COOKIE_AUTH }}
 
 jobs:
   deploy:
