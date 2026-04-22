@@ -27,6 +27,9 @@ function privySsrStub(): Plugin {
           export const useLogout = () => ({ logout: async () => {} });
           export const useLoginWithOAuth = () => ({ initOAuth: async () => {}, loading: false, state: {} });
           export const useWallets = () => ({ wallets: [] });
+          export const useCreateWallet = () => ({ createWallet: async () => ({}) });
+          export const useLinkAccount = () => ({ linkGoogle: () => {}, linkWallet: () => {} });
+          export const useExportWallet = () => ({ exportWallet: async () => {} });
         `
       }
     },
@@ -34,9 +37,18 @@ function privySsrStub(): Plugin {
 }
 
 const config = defineConfig({
+  resolve: {
+    alias: [
+      // `use-sidecar` (transitive via Radix) uses `detect-node-es` whose conditional
+      // resolution lands on the `node` variant in the Cloudflare SSR env, which
+      // references bare `process` and breaks the polyfill rewrite. Force the browser
+      // variant — both just return `isNode = false` in non-Node environments.
+      { find: /^detect-node-es$/, replacement: 'detect-node-es/esm/browser.js' },
+    ],
+  },
   plugins: [
     privySsrStub(),
-    nodePolyfills({ include: ['buffer'], globals: { Buffer: true } }),
+    nodePolyfills({ include: ['buffer', 'process'], globals: { Buffer: true, process: true } }),
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
     viteTsConfigPaths({

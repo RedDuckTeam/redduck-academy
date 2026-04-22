@@ -1,11 +1,11 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getWebRequest } from '@tanstack/react-start/server'
+import { getRequest } from '@tanstack/react-start/server'
 import { env } from '@/env'
 import type { UserSettings } from '@/types/lesson'
 
 export const fetchSessionFromCookie = createServerFn({ method: 'GET' }).handler(
   async (): Promise<UserSettings | null> => {
-    const request = getWebRequest()
+    const request = getRequest()
     const cookie = request?.headers.get('cookie')
     if (!cookie) return null
 
