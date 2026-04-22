@@ -94,6 +94,7 @@ console.log(`Server is running on ${backendOrigin}`)
 serve({
   fetch: app.fetch,
   port,
+  hostname: '0.0.0.0',
 })
 
 export default app
