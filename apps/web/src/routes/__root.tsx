@@ -17,7 +17,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { createDefaultMeta } from '@/lib/seo'
 import { env } from '@/env'
 import { queryKeys } from '@/lib/query-keys'
-import { fetchSessionFromCookie } from '@/lib/session/get-session.server'
+import { fetchSessionFromCookie } from '@/lib/session/get-session'
 
 interface MyRouterContext {
   queryClient: QueryClient
