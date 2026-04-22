@@ -10,12 +10,31 @@ import { user } from '../db/auth-schema'
 
 async function resolveUser(c: Context): Promise<{ id: string; idToken: string; privyUserId: string }> {
   const token = getCookie(c, 'privy-token')
-  if (!token) throw new AppError(401, 'Unauthorized')
+  const cookieHeader = c.req.header('cookie')
+  const origin = c.req.header('origin')
+  const path = c.req.path
+
+  if (!token) {
+    console.log('[auth] no privy-token', {
+      path,
+      origin,
+      hasCookieHeader: Boolean(cookieHeader),
+      cookieNames: cookieHeader ? cookieHeader.split(';').map((p) => p.trim().split('=')[0]) : [],
+    })
+    throw new AppError(401, 'Unauthorized')
+  }
 
   let claims
   try {
     claims = await verifyPrivyToken(token)
-  } catch {
+  } catch (err) {
+    console.log('[auth] verifyPrivyToken failed', {
+      path,
+      origin,
+      tokenPrefix: token.slice(0, 24),
+      tokenLength: token.length,
+      error: err instanceof Error ? err.message : String(err),
+    })
     throw new AppError(401, 'Unauthorized')
   }
 
