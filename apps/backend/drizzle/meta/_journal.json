@@ -92,6 +92,34 @@
       "when": 1776721866226,
       "tag": "0012_known_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776805308036,
+      "tag": "0013_rare_hydra",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776810097449,
+      "tag": "0014_cheerful_moondragon",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1776810696660,
+      "tag": "0015_strange_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1776892332412,
+      "tag": "0016_cloudy_nightshade",
+      "breakpoints": true
     }
   ]
 }

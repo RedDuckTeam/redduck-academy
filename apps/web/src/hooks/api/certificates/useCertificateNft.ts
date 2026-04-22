@@ -9,10 +9,10 @@ export function useCertificateNft(certificate: Pick<PublicCertificate, 'id' | 's
   const [showSuccess, setShowSuccess] = useState(false)
   const { mutate: requestNft, isPending } = useRequestNft()
 
-  const handleRequest = () => {
+  const handleRequest = (walletAddress: string) => {
     setShowConfirm(false)
     requestNft(
-      { certificateId: certificate.id },
+      { certificateId: certificate.id, walletAddress },
       {
         onSuccess: () => {
           setStatus('requested')

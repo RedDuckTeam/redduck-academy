@@ -14,7 +14,7 @@ export const RatingPage = () => {
   const { data: rating = [] } = useRating()
 
   const isLoggedIn = !!session
-  const userName = session?.user?.name ?? session?.user?.email ?? null
+  const userName = session?.user?.name ?? null
   const placeInRanking = isLoggedIn ? (progressCards?.placeInRanking ?? 0) : 0
   const completedLessonsCount = isLoggedIn ? (progressCards?.completedLessonsCount ?? 0) : 0
 

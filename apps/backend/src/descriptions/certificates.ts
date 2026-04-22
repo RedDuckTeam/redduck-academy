@@ -12,6 +12,11 @@ const certificateSchema = z.object({
   imageUrl: z.string().nullable(),
   tokenId: z.string().nullable(),
   txHash: z.string().nullable(),
+  walletAddress: z.string().nullable(),
+})
+
+export const requestNftBodySchema = z.object({
+  walletAddress: z.string().min(1),
 })
 
 export type Certificate = z.infer<typeof certificateSchema>

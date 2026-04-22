@@ -11,6 +11,7 @@ export interface Certificate {
   imageUrl: string | null
   tokenId: string | null
   txHash: string | null
+  walletAddress: string | null
 }
 
 interface GetCertificatesResponse {
@@ -49,10 +50,10 @@ export const claimCertificate = async (courseSlug: string): Promise<Certificate>
   return response.data!.data
 }
 
-export const requestNft = async (certificateId: string): Promise<Certificate> => {
+export const requestNft = async (certificateId: string, walletAddress: string): Promise<Certificate> => {
   const response = await api({ credentials: 'include' }).post<CertificateResponse>(
     `/api/certificates/${certificateId}/request-nft`,
-    {},
+    { walletAddress },
   )
   return response.data!.data
 }

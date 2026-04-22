@@ -15,6 +15,9 @@ import type { QueryClient } from '@tanstack/react-query'
 import { Providers } from '@/components/providers/providers'
 import { Toaster } from '@/components/ui/sonner'
 import { createDefaultMeta } from '@/lib/seo'
+import { env } from '@/env'
+import { queryKeys } from '@/lib/query-keys'
+import { fetchSessionFromCookie } from '@/lib/session/get-session.server'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -23,6 +26,14 @@ interface MyRouterContext {
 const themeInitScript = `(function(){try{var t=localStorage.getItem('redduck-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+  beforeLoad: async ({ context: { queryClient } }) => {
+    if (!env.VITE_PRIVY_COOKIE_AUTH) return
+    await queryClient.ensureQueryData({
+      queryKey: queryKeys.user.settings(),
+      queryFn: () => fetchSessionFromCookie(),
+      staleTime: 5 * 60 * 1000,
+    })
+  },
   head: () => {
     const defaultMeta = createDefaultMeta()
     return {

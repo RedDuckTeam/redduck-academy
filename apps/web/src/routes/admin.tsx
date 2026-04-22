@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { AdminPage } from '@/components/pages/admin/admin-page'
-import { getAuthClient } from '@/lib/auth-client'
-import type { UserRole } from '@/lib/auth-client'
+import { getUserSettings } from '@/lib/api/user'
 
 function parseAdminPage(raw: unknown): number {
   const n = typeof raw === 'number' ? raw : Number(raw)
@@ -16,19 +15,15 @@ export const Route = createFileRoute('/admin')({
     certPage: parseAdminPage(search.certPage),
   }),
   beforeLoad: async () => {
-    const authClient = getAuthClient()
-    const session = await authClient.getSession()
-    const user = session?.data
-      ? (session.data.user as typeof session.data.user & { role: UserRole })
-      : undefined
-
-    if (!user) {
+    let settings
+    try {
+      settings = await getUserSettings()
+    } catch {
       throw redirect({ to: '/sign-up' })
     }
 
-    if (user.role !== 'admin') {
-      throw redirect({ to: '/' })
-    }
+    if (!settings) throw redirect({ to: '/sign-up' })
+    if (settings.role !== 'admin') throw redirect({ to: '/' })
   },
   component: AdminPage,
 })

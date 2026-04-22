@@ -38,7 +38,11 @@ export interface Course {
 }
 
 export interface UserSettings {
+  id: string
+  name: string
+  image: string | null
   username: string | null
+  role: 'user' | 'admin'
   skipPrerequisites: boolean
   isPrivate: boolean
   bio: string | null
