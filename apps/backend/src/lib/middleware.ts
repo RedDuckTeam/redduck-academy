@@ -15,7 +15,7 @@ async function resolveUser(c: Context): Promise<{ id: string; idToken: string; p
   const path = c.req.path
 
   if (!token) {
-    console.log('[auth] no privy-token', {
+    console.log('[auth] no privy-token 2', {
       path,
       origin,
       hasCookieHeader: Boolean(cookieHeader),
