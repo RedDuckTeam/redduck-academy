@@ -42,8 +42,8 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
       setIsEditing(false)
       return
     }
-    if (trimmed.length > 42) {
-      toast.error('Name must be at most 42 characters')
+    if (trimmed.length > 35) {
+      toast.error('Name must be at most 35 characters')
       setIsEditing(false)
       return
     }
@@ -121,7 +121,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
               }
             }}
             className={inputTextClass}
-            maxLength={42}
+            maxLength={35}
             autoComplete="name"
             aria-label="Display name"
           />

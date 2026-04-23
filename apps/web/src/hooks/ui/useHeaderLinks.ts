@@ -11,8 +11,8 @@ export const headerLinks = [
     text: 'COURSE PROGRAM',
   },
   {
-    to: '/rating',
-    text: 'RATING',
+    to: '/ranking',
+    text: 'RANKING',
   },
 ]
 

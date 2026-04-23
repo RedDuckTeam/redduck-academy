@@ -139,16 +139,28 @@ export class UserService {
     const uniqueDateStrings = new Set(completedLessonRows.map((l) => new Date(l.updatedAt).toISOString().split('T')[0]))
     const sortedDates = [...uniqueDateStrings].sort().reverse()
 
+    const nowUtc = new Date()
+    const todayStr = nowUtc.toISOString().split('T')[0]
+    const yesterdayUtc = new Date(nowUtc)
+    yesterdayUtc.setUTCDate(yesterdayUtc.getUTCDate() - 1)
+    const yesterdayStr = yesterdayUtc.toISOString().split('T')[0]
+
     let currentStreak = 0
-    const today = new Date()
-    for (let i = 0; i < sortedDates.length; i++) {
-      const expected = new Date(today)
-      expected.setUTCDate(expected.getUTCDate() - i)
-      const expectedStr = expected.toISOString().split('T')[0]
-      if (sortedDates[i] === expectedStr) {
-        currentStreak++
-      } else {
-        break
+    const startOffset =
+      sortedDates[0] === todayStr ? 0 : sortedDates[0] === yesterdayStr ? 1 : null
+
+    if (startOffset !== null) {
+      const anchor = new Date(nowUtc)
+      anchor.setUTCDate(anchor.getUTCDate() - startOffset)
+      for (let i = 0; i < sortedDates.length; i++) {
+        const expected = new Date(anchor)
+        expected.setUTCDate(expected.getUTCDate() - i)
+        const expectedStr = expected.toISOString().split('T')[0]
+        if (sortedDates[i] === expectedStr) {
+          currentStreak++
+        } else {
+          break
+        }
       }
     }
 
@@ -190,6 +202,7 @@ export class UserService {
       .where(eq(user.isPrivate, false))
       .groupBy(user.id, user.name, user.username)
       .orderBy(desc(count(userLessons.id)))
+      .limit(10)
 
     const certificateCounts = await db
       .select({

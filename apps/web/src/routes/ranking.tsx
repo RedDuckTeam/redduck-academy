@@ -2,13 +2,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { RatingPage } from '@/components/pages/rating/rating-page'
 import { createPageMeta } from '@/lib/seo'
 
-export const Route = createFileRoute('/rating')({
+export const Route = createFileRoute('/ranking')({
   ssr: true,
   head: () =>
     createPageMeta({
-      title: 'Rating',
+      title: 'Ranking',
       description: 'See how you rank among other students on RedDuck Academy.',
-      path: '/rating',
+      path: '/ranking',
     }),
   component: RatingPage,
 })

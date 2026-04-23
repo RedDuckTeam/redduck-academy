@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
-import { Route as RatingRouteImport } from './routes/rating'
+import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
@@ -39,9 +39,9 @@ const SignUpRoute = SignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RatingRoute = RatingRouteImport.update({
-  id: '/rating',
-  path: '/rating',
+const RankingRoute = RankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -161,7 +161,7 @@ const AdminUsersUserIdCourseSlugLessonSlugRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/rating': typeof RatingRoute
+  '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
@@ -186,7 +186,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/rating': typeof RatingRoute
+  '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
@@ -211,7 +211,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/rating': typeof RatingRoute
+  '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
@@ -239,7 +239,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/rating'
+    | '/ranking'
     | '/sign-up'
     | '/certificates/$certificateId'
     | '/community/$slug'
@@ -264,7 +264,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/rating'
+    | '/ranking'
     | '/sign-up'
     | '/certificates/$certificateId'
     | '/community/$slug'
@@ -288,7 +288,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/rating'
+    | '/ranking'
     | '/sign-up'
     | '/certificates/$certificateId'
     | '/community/$slug'
@@ -315,7 +315,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  RatingRoute: typeof RatingRoute
+  RankingRoute: typeof RankingRoute
   SignUpRoute: typeof SignUpRoute
   CertificatesCertificateIdRoute: typeof CertificatesCertificateIdRoute
   CommunitySlugRoute: typeof CommunitySlugRoute
@@ -342,11 +342,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/rating': {
-      id: '/rating'
-      path: '/rating'
-      fullPath: '/rating'
-      preLoaderRoute: typeof RatingRouteImport
+    '/ranking': {
+      id: '/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -549,7 +549,7 @@ const CoursesCourseSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  RatingRoute: RatingRoute,
+  RankingRoute: RankingRoute,
   SignUpRoute: SignUpRoute,
   CertificatesCertificateIdRoute: CertificatesCertificateIdRoute,
   CommunitySlugRoute: CommunitySlugRoute,

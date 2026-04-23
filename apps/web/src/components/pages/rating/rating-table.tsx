@@ -26,7 +26,7 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
       <div className="hidden lg:block border border-border">
         <div className="grid grid-cols-[120px_1fr_130px_130px] border-b border-border">
           <div className="p-5">
-            <Text variant="caps-20">RATING</Text>
+            <Text variant="caps-20">RANK</Text>
           </div>
           <div className="p-5">
             <Text variant="caps-20">STUDENT</Text>
@@ -94,7 +94,10 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
                     params={{ username: entry.username }}
                     className="group inline-flex items-center gap-1.5"
                   >
-                    <Text variant="caps-20" className={cn('underline-offset-[0.2em] group-hover:underline', isCurrentUser && 'text-primary')}>
+                    <Text
+                      variant="caps-20"
+                      className={cn('underline-offset-[0.2em] group-hover:underline', isCurrentUser && 'text-primary')}
+                    >
                       {entry.userName?.toUpperCase() ?? '—'}
                     </Text>
                     <ArrowUpRight aria-hidden className="size-4 shrink-0" strokeWidth={2} />

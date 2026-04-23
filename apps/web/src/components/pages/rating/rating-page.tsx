@@ -18,7 +18,12 @@ export const RatingPage = () => {
   const placeInRanking = isLoggedIn ? (progressCards?.placeInRanking ?? 0) : 0
   const completedLessonsCount = isLoggedIn ? (progressCards?.completedLessonsCount ?? 0) : 0
 
-  const headline = userName ? `WELL DONE ${userName.toUpperCase()}!` : 'JOIN TO TRACK YOUR RANKING!'
+  const isInTop10 = placeInRanking > 0 && placeInRanking <= 10
+  const headline = userName
+    ? isInTop10
+      ? `WELL DONE ${userName.toUpperCase()}!`
+      : `KEEP GOING ${userName.toUpperCase()}!`
+    : 'JOIN TO TRACK YOUR RANKING!'
 
   return (
     <main className="flex flex-col min-h-screen">
@@ -43,7 +48,7 @@ export const RatingPage = () => {
       </PageGridBackground>
 
       <div className="bg-header px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px] text-[#e0deda] flex flex-col gap-10">
-        <Text variant="subtitle-32">_TOTAL RATING</Text>
+        <Text variant="subtitle-32">_RANKING</Text>
 
         <RatingTable rating={rating} currentUserId={session?.user?.id} />
       </div>

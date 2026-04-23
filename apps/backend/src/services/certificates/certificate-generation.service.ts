@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 import { keccak256, toBytes } from 'viem'
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
-import { user, userLessons, userCertificates } from '../../db/schema'
+import { userLessons, userCertificates } from '../../db/schema'
 import { uploadToR2, getJsonFromR2 } from '../../lib/r2'
 import { AppError } from '../../lib/errors'
 import { getBrowser } from '../../lib/browser'
@@ -50,8 +50,7 @@ export class CertificateGenerationService {
     userId: string,
     courseSlug: string,
   ): Promise<GenerateCertificateResult> {
-    const [userRow, course, certificate] = await Promise.all([
-      db.query.user.findFirst({ where: eq(user.id, userId) }),
+    const [course, certificate] = await Promise.all([
       payloadDb.query.courses.findFirst({
         where: (c, { and, ne }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
         with: {
@@ -68,12 +67,11 @@ export class CertificateGenerationService {
       }),
       db.query.userCertificates.findFirst({
         where: and(eq(userCertificates.userId, userId), eq(userCertificates.courseSlug, courseSlug)),
-        columns: { id: true, walletAddress: true },
+        columns: { id: true, walletAddress: true, name: true },
         orderBy: (c, { desc }) => desc(c.issuedAt),
       }),
     ])
 
-    if (!userRow) throw new AppError(404, 'User not found')
     if (!course) throw new AppError(404, 'Course not found')
     if (!certificate?.walletAddress) {
       throw new AppError(400, 'Certificate has no target wallet — user must request NFT first')
@@ -102,7 +100,7 @@ export class CertificateGenerationService {
       }
     }
 
-    const userName = userRow.name
+    const userName = certificate.name
     const courseTitle = course.title as string
     const certKey = createHash('sha256').update(`${userId}:${courseSlug}`).digest('base64url').slice(0, 24)
     const base = `certificates/${certKey}`
