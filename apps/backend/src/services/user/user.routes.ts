@@ -21,6 +21,7 @@ import {
   updateUserUsernameDesc,
   updateUserUsernameBodySchema,
   getPublicProfileDesc,
+  usernameParamSchema,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'
@@ -156,8 +157,8 @@ userApp.patch('/bio', requireAuth, updateUserBioDesc, validator('json', updateUs
   return c.json({ data })
 })
 
-userApp.get('/profile/:username', getPublicProfileDesc, async (c) => {
-  const { username } = c.req.param()
+userApp.get('/profile/:username', getPublicProfileDesc, validator('param', usernameParamSchema), async (c) => {
+  const { username } = c.req.valid('param')
   const data = await UserService.getPublicProfile(username)
   return c.json({ data })
 })

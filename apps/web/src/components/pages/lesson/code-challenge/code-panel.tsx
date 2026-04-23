@@ -101,15 +101,6 @@ export function CodePanel({
           )}
         </div>
       </div>
-      <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={language} />
-      {rateLimitError && (
-        <div className="flex items-center gap-2 px-4 py-2 border-t border-border bg-yellow-500/10">
-          <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
-          <Text variant="main-14" className="text-yellow-500">
-            {rateLimitError.message}
-          </Text>
-        </div>
-      )}
       {!rateLimitError && latest && (
         <div
           className={cn(
@@ -127,6 +118,15 @@ export function CodePanel({
           </Text>
         </div>
       )}
+      {rateLimitError && (
+        <div className="flex items-center gap-2 px-4 py-2 border-t border-border bg-yellow-500/10">
+          <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
+          <Text variant="main-14" className="text-yellow-500">
+            {rateLimitError.message}
+          </Text>
+        </div>
+      )}
+      <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={language} />
     </div>
   )
 }

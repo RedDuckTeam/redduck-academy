@@ -228,6 +228,14 @@ export const updateUserUsernameBodySchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
 })
 
+export const usernameParamSchema = z.object({
+  username: z
+    .string()
+    .min(3)
+    .max(30)
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+})
+
 export const updateUserUsernameDesc = describeRoute({
   summary: 'Update username',
   description: 'Updates the unique username for the authenticated user.',

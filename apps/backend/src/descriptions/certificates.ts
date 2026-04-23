@@ -19,6 +19,18 @@ export const requestNftBodySchema = z.object({
   walletAddress: z.string().min(1),
 })
 
+export const certificateIdParamSchema = z.object({
+  id: z.string().uuid(),
+})
+
+export const certificateCourseSlugParamSchema = z.object({
+  courseSlug: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, 'courseSlug must be lowercase letters, numbers, or hyphens'),
+})
+
 export type Certificate = z.infer<typeof certificateSchema>
 
 export const claimCertificateBodySchema = z.object({})
