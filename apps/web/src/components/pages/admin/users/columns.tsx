@@ -1,21 +1,53 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import type { AdminUserRow } from '@/lib/api/admin'
 import { formatDate } from '../shared/table-utils'
 
+const avatarPlaceholder = '/pages/images/avatar.webp'
+
 export const usersColumns: ColumnDef<AdminUserRow>[] = [
   {
-    accessorKey: 'email',
-    header: 'EMAIL',
-    cell: ({ getValue }) => (
-      <Text variant="caps-14" className="break-all">{String(getValue() ?? '').toUpperCase()}</Text>
-    ),
+    id: 'avatar',
+    header: '',
+    enableSorting: false,
+    cell: ({ row }) => {
+      const { email, username, image } = row.original
+      const avatar = (
+        <img
+          src={image ?? avatarPlaceholder}
+          alt={email}
+          className="w-9 h-9 rounded-full object-cover bg-black shrink-0"
+        />
+      )
+      if (!username) return avatar
+      return (
+        <Link to="/profile/$username" params={{ username }} className="block rounded-full">
+          {avatar}
+        </Link>
+      )
+    },
   },
   {
     accessorKey: 'name',
     header: 'NAME',
+    cell: ({ getValue, row }) => (
+      <Link
+        to="/admin/users/$userId"
+        params={{ userId: row.original.id }}
+        search={{ tab: 'users' as const, email: row.original.email }}
+        className="hover:underline"
+      >
+        <Text variant="caps-14">{(getValue() ? String(getValue()) : '—').toUpperCase()}</Text>
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'email',
+    header: 'EMAIL',
+    enableSorting: false,
     cell: ({ getValue }) => (
-      <Text variant="caps-14">{(getValue() ? String(getValue()) : '—').toUpperCase()}</Text>
+      <Text variant="caps-14" className="break-all text-secondary">{String(getValue() ?? '')}</Text>
     ),
   },
   {

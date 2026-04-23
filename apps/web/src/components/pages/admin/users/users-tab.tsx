@@ -1,5 +1,4 @@
-import { useRef, useCallback } from 'react'
-import { Link, getRouteApi, useNavigate } from '@tanstack/react-router'
+import { useState, useRef, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { useReactTable, getCoreRowModel, type SortingState } from '@tanstack/react-table'
 import { Text } from '@/components/ui/text'
@@ -12,11 +11,14 @@ import { AdminDataTable } from '../shared/data-table'
 import { visiblePages } from '../shared/table-utils'
 import { usersColumns, usersSortableColumns } from './columns'
 
-const adminRouteApi = getRouteApi('/admin')
+type UserSort = 'email' | 'name' | 'username' | 'createdAt' | 'lessonsPassed' | 'coursesPassed'
+type SortDir = 'asc' | 'desc'
 
 export function AdminUsersTab() {
-  const { page, userSort, userSortDir, userSearch } = adminRouteApi.useSearch()
-  const navigate = useNavigate()
+  const [page, setPage] = useState(1)
+  const [userSort, setUserSort] = useState<UserSort>('createdAt')
+  const [userSortDir, setUserSortDir] = useState<SortDir>('desc')
+  const [userSearch, setUserSearch] = useState('')
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const { data, isPending, isError, error } = useAdminUsers({
@@ -29,17 +31,20 @@ export function AdminUsersTab() {
   const handleSearchChange = (value: string) => {
     clearTimeout(searchTimeout.current)
     searchTimeout.current = setTimeout(() => {
-      navigate({ to: '/admin', search: (prev) => ({ ...prev, userSearch: value, page: 1 }) })
+      setUserSearch(value)
+      setPage(1)
     }, 300)
   }
 
-  const handleSortClick = useCallback((columnId: string) => {
-    const newDir = userSort === columnId && userSortDir === 'asc' ? 'desc' : 'asc'
-    navigate({
-      to: '/admin',
-      search: (prev) => ({ ...prev, userSort: columnId as typeof userSort, userSortDir: newDir, page: 1 }),
-    })
-  }, [userSort, userSortDir, navigate])
+  const handleSortClick = useCallback(
+    (columnId: string) => {
+      const newDir = userSort === columnId && userSortDir === 'asc' ? 'desc' : 'asc'
+      setUserSort(columnId as UserSort)
+      setUserSortDir(newDir)
+      setPage(1)
+    },
+    [userSort, userSortDir],
+  )
 
   const sorting: SortingState = [{ id: userSort, desc: userSortDir === 'desc' }]
   const table = useReactTable({
@@ -61,7 +66,9 @@ export function AdminUsersTab() {
   if (isPending) {
     return (
       <div className="border border-border p-10 text-center">
-        <Text variant="caps-20" className="text-muted-foreground">LOADING…</Text>
+        <Text variant="caps-20" className="text-muted-foreground">
+          LOADING…
+        </Text>
       </div>
     )
   }
@@ -93,7 +100,9 @@ export function AdminUsersTab() {
 
       {data.items.length === 0 ? (
         <div className="border border-border p-10 text-center">
-          <Text variant="caps-14" className="text-muted-foreground">NO USERS FOUND</Text>
+          <Text variant="caps-14" className="text-muted-foreground">
+            NO USERS FOUND
+          </Text>
         </div>
       ) : (
         <>
@@ -107,26 +116,38 @@ export function AdminUsersTab() {
 
           <div className="flex flex-col gap-4 lg:hidden">
             {data.items.map((row) => (
-              <div key={row.email} className="flex flex-col gap-4 border border-border p-5">
+              <div key={row.id} className="flex flex-col gap-4 border border-border p-5">
                 <div className="flex flex-col gap-1 min-w-0">
-                  <Text variant="caps-14" className="text-border">EMAIL</Text>
-                  <Text variant="caps-14" className="break-all">{(row.email ?? '').toUpperCase()}</Text>
+                  <Text variant="caps-14" className="text-border">
+                    EMAIL
+                  </Text>
+                  <Text variant="caps-14" className="break-all">
+                    {(row.email ?? '').toUpperCase()}
+                  </Text>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
-                  <Text variant="caps-14" className="text-border">NAME</Text>
+                  <Text variant="caps-14" className="text-border">
+                    NAME
+                  </Text>
                   <Text variant="caps-14">{row.name?.toUpperCase() ?? '—'}</Text>
                 </div>
                 <div className="grid grid-cols-3 gap-1">
                   <div className="flex flex-col gap-1">
-                    <Text variant="caps-14" className="text-border">PRIVATE</Text>
+                    <Text variant="caps-14" className="text-border">
+                      PRIVATE
+                    </Text>
                     <Text variant="caps-14">{row.isPrivate ? 'YES' : 'NO'}</Text>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Text variant="caps-14" className="text-border">LESSONS</Text>
+                    <Text variant="caps-14" className="text-border">
+                      LESSONS
+                    </Text>
                     <Text variant="caps-14">{row.lessonsPassed}</Text>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Text variant="caps-14" className="text-border">COURSES</Text>
+                    <Text variant="caps-14" className="text-border">
+                      COURSES
+                    </Text>
                     <Text variant="caps-14">{row.coursesPassed}</Text>
                   </div>
                 </div>
@@ -140,9 +161,8 @@ export function AdminUsersTab() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <Link
-                to="/admin"
-                search={(prev) => ({ ...prev, page: Math.max(1, page - 1) })}
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'sm' }),
@@ -153,7 +173,7 @@ export function AdminUsersTab() {
               >
                 <ChevronLeft className="size-4" />
                 <span>Previous</span>
-              </Link>
+              </button>
             </PaginationItem>
 
             {pages.map((item, idx) =>
@@ -163,23 +183,21 @@ export function AdminUsersTab() {
                 </PaginationItem>
               ) : (
                 <PaginationItem key={item}>
-                  <Link
-                    to="/admin"
-                    search={(prev) => ({ ...prev, page: item })}
+                  <button
+                    onClick={() => setPage(item)}
                     className={cn(buttonVariants({ variant: page === item ? 'outline' : 'ghost', size: 'icon' }))}
                     aria-label={`Go to page ${item}`}
                     aria-current={page === item ? 'page' : undefined}
                   >
                     {item}
-                  </Link>
+                  </button>
                 </PaginationItem>
               ),
             )}
 
             <PaginationItem>
-              <Link
-                to="/admin"
-                search={(prev) => ({ ...prev, page: Math.min(totalPages, page + 1) })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'sm' }),
@@ -190,7 +208,7 @@ export function AdminUsersTab() {
               >
                 <span>Next</span>
                 <ChevronRight className="size-4" />
-              </Link>
+              </button>
             </PaginationItem>
           </PaginationContent>
         </Pagination>

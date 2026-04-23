@@ -14,6 +14,7 @@ import { Route as RatingRouteImport } from './routes/rating'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ProfileUsernameRouteImport } from './routes/profile/$username'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as CoursesCourseSlugRouteImport } from './routes/courses/$courseSlug'
@@ -24,11 +25,14 @@ import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.se
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
+import { Route as AdminUsersUserIdIndexRouteImport } from './routes/admin/users/$userId.index'
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 import { Route as CoursesCourseSlugModuleSlugLessonSlugRouteImport } from './routes/courses/$courseSlug.$moduleSlug.$lessonSlug'
+import { Route as AdminUsersUserIdCourseSlugLessonSlugRouteImport } from './routes/admin/users/$userId.$courseSlug.$lessonSlug'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -54,6 +58,11 @@ const CoursesIndexRoute = CoursesIndexRouteImport.update({
   id: '/courses/',
   path: '/courses/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   id: '/profile/$username',
@@ -106,10 +115,20 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
+  getParentRoute: () => AdminRoute,
+} as any)
 const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
   id: '/demo/start/ssr/',
   path: '/demo/start/ssr/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersUserIdIndexRoute = AdminUsersUserIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminUsersUserIdRoute,
 } as any)
 const DemoStartSsrSpaModeRoute = DemoStartSsrSpaModeRouteImport.update({
   id: '/demo/start/ssr/spa-mode',
@@ -132,10 +151,16 @@ const CoursesCourseSlugModuleSlugLessonSlugRoute =
     path: '/$moduleSlug/$lessonSlug',
     getParentRoute: () => CoursesCourseSlugRoute,
   } as any)
+const AdminUsersUserIdCourseSlugLessonSlugRoute =
+  AdminUsersUserIdCourseSlugLessonSlugRouteImport.update({
+    id: '/$courseSlug/$lessonSlug',
+    path: '/$courseSlug/$lessonSlug',
+    getParentRoute: () => AdminUsersUserIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/rating': typeof RatingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
@@ -143,7 +168,9 @@ export interface FileRoutesByFullPath {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRouteWithChildren
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -153,17 +180,19 @@ export interface FileRoutesByFullPath {
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
+  '/admin/users/$userId/': typeof AdminUsersUserIdIndexRoute
   '/demo/start/ssr/': typeof DemoStartSsrIndexRoute
+  '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/rating': typeof RatingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/admin': typeof AdminIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -174,12 +203,14 @@ export interface FileRoutesByTo {
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdIndexRoute
   '/demo/start/ssr': typeof DemoStartSsrIndexRoute
+  '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/rating': typeof RatingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
@@ -187,7 +218,9 @@ export interface FileRoutesById {
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRouteWithChildren
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -197,7 +230,9 @@ export interface FileRoutesById {
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
+  '/admin/users/$userId/': typeof AdminUsersUserIdIndexRoute
   '/demo/start/ssr/': typeof DemoStartSsrIndexRoute
+  '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,7 +246,9 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/profile/$username'
+    | '/admin/'
     | '/courses/'
+    | '/admin/users/$userId'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -221,17 +258,19 @@ export interface FileRouteTypes {
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
+    | '/admin/users/$userId/'
     | '/demo/start/ssr/'
+    | '/admin/users/$userId/$courseSlug/$lessonSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/rating'
     | '/sign-up'
     | '/certificates/$certificateId'
     | '/community/$slug'
     | '/demo/tanstack-query'
     | '/profile/$username'
+    | '/admin'
     | '/courses'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -242,7 +281,9 @@ export interface FileRouteTypes {
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
+    | '/admin/users/$userId'
     | '/demo/start/ssr'
+    | '/admin/users/$userId/$courseSlug/$lessonSlug'
   id:
     | '__root__'
     | '/'
@@ -254,7 +295,9 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/demo/tanstack-query'
     | '/profile/$username'
+    | '/admin/'
     | '/courses/'
+    | '/admin/users/$userId'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -264,12 +307,14 @@ export interface FileRouteTypes {
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
+    | '/admin/users/$userId/'
     | '/demo/start/ssr/'
+    | '/admin/users/$userId/$courseSlug/$lessonSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   RatingRoute: typeof RatingRoute
   SignUpRoute: typeof SignUpRoute
   CertificatesCertificateIdRoute: typeof CertificatesCertificateIdRoute
@@ -324,6 +369,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/courses/'
       preLoaderRoute: typeof CoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/profile/$username': {
       id: '/profile/$username'
@@ -395,12 +447,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users/$userId': {
+      id: '/admin/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/admin/users/$userId'
+      preLoaderRoute: typeof AdminUsersUserIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/demo/start/ssr/': {
       id: '/demo/start/ssr/'
       path: '/demo/start/ssr'
       fullPath: '/demo/start/ssr/'
       preLoaderRoute: typeof DemoStartSsrIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/users/$userId/': {
+      id: '/admin/users/$userId/'
+      path: '/'
+      fullPath: '/admin/users/$userId/'
+      preLoaderRoute: typeof AdminUsersUserIdIndexRouteImport
+      parentRoute: typeof AdminUsersUserIdRoute
     }
     '/demo/start/ssr/spa-mode': {
       id: '/demo/start/ssr/spa-mode'
@@ -430,8 +496,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesCourseSlugModuleSlugLessonSlugRouteImport
       parentRoute: typeof CoursesCourseSlugRoute
     }
+    '/admin/users/$userId/$courseSlug/$lessonSlug': {
+      id: '/admin/users/$userId/$courseSlug/$lessonSlug'
+      path: '/$courseSlug/$lessonSlug'
+      fullPath: '/admin/users/$userId/$courseSlug/$lessonSlug'
+      preLoaderRoute: typeof AdminUsersUserIdCourseSlugLessonSlugRouteImport
+      parentRoute: typeof AdminUsersUserIdRoute
+    }
   }
 }
+
+interface AdminUsersUserIdRouteChildren {
+  AdminUsersUserIdIndexRoute: typeof AdminUsersUserIdIndexRoute
+  AdminUsersUserIdCourseSlugLessonSlugRoute: typeof AdminUsersUserIdCourseSlugLessonSlugRoute
+}
+
+const AdminUsersUserIdRouteChildren: AdminUsersUserIdRouteChildren = {
+  AdminUsersUserIdIndexRoute: AdminUsersUserIdIndexRoute,
+  AdminUsersUserIdCourseSlugLessonSlugRoute:
+    AdminUsersUserIdCourseSlugLessonSlugRoute,
+}
+
+const AdminUsersUserIdRouteWithChildren =
+  AdminUsersUserIdRoute._addFileChildren(AdminUsersUserIdRouteChildren)
+
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminUsersUserIdRoute: typeof AdminUsersUserIdRouteWithChildren
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+  AdminUsersUserIdRoute: AdminUsersUserIdRouteWithChildren,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CoursesCourseSlugRouteChildren {
   CoursesCourseSlugIndexRoute: typeof CoursesCourseSlugIndexRoute
@@ -449,7 +548,7 @@ const CoursesCourseSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   RatingRoute: RatingRoute,
   SignUpRoute: SignUpRoute,
   CertificatesCertificateIdRoute: CertificatesCertificateIdRoute,

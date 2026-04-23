@@ -30,5 +30,8 @@ export const queryKeys = {
     stats: () => ['admin', 'stats'] as const,
     users: (page: number) => ['admin', 'users', page] as const,
     certificates: (page: number) => ['admin', 'certificates', page] as const,
+    userCompletedLessons: (userId: string) => ['admin', 'users', userId, 'completed-lessons'] as const,
+    userLesson: (userId: string, courseSlug: string, lessonSlug: string) =>
+      ['admin', 'users', userId, 'lesson', courseSlug, lessonSlug] as const,
   },
 }

@@ -1,4 +1,6 @@
 import { api } from './fetcher'
+import type { LessonForUser } from '@/types/lesson'
+import type { CompletedLesson } from './user'
 
 export type AdminStats = {
   totalUsers: number
@@ -9,8 +11,11 @@ export type AdminStats = {
 }
 
 export type AdminUserRow = {
+  id: string
   email: string
   name: string
+  username: string | null
+  image: string | null
   isPrivate: boolean
   lessonsPassed: number
   coursesPassed: number
@@ -34,7 +39,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
 export const getAdminUsers = async (input: {
   page: number
   pageSize?: number
-  sortBy?: 'email' | 'name' | 'lessonsPassed' | 'coursesPassed'
+  sortBy?: 'email' | 'name' | 'username' | 'createdAt' | 'lessonsPassed' | 'coursesPassed'
   sortDir?: 'asc' | 'desc'
   search?: string
 }): Promise<AdminUsersPage> => {
@@ -117,6 +122,30 @@ export const generateAdminCertificate = async (input: {
   )
   if (!response.data && response.status >= 400) {
     throw new Error(response.error ?? 'Failed to generate certificate')
+  }
+  return response.data!.data
+}
+
+export const getAdminUserCompletedLessons = async (userId: string): Promise<CompletedLesson[]> => {
+  const response = await api({ credentials: 'include' }).get<{ data: CompletedLesson[] }>(
+    `/api/admin/users/${userId}/completed-lessons`,
+  )
+  if (!response.data && response.status >= 400) {
+    throw new Error(response.error ?? 'Failed to load completed lessons')
+  }
+  return response.data!.data
+}
+
+export const getAdminUserLessonDetail = async (
+  userId: string,
+  courseSlug: string,
+  lessonSlug: string,
+): Promise<LessonForUser> => {
+  const response = await api({ credentials: 'include' }).get<{ data: LessonForUser }>(
+    `/api/admin/users/${userId}/lessons/${courseSlug}/${lessonSlug}`,
+  )
+  if (!response.data && response.status >= 400) {
+    throw new Error(response.error ?? 'Failed to load lesson detail')
   }
   return response.data!.data
 }

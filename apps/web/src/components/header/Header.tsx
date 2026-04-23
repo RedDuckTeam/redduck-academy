@@ -27,6 +27,7 @@ export default function Header() {
   }
 
   const { session, isPending } = useSession()
+  console.log(session)
 
   return (
     <>

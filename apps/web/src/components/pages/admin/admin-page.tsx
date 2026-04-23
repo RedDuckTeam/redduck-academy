@@ -1,3 +1,4 @@
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { WagmiProvider } from 'wagmi'
 import { Text } from '@/components/ui/text'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -6,7 +7,12 @@ import { AdminGeneralTab } from './general/general-tab'
 import { AdminUsersTab } from './users/users-tab'
 import { AdminCertificatesTab } from './certificates/certificates-tab'
 
+const adminRouteApi = getRouteApi('/admin')
+
 export function AdminPage() {
+  const { tab } = adminRouteApi.useSearch()
+  const navigate = useNavigate()
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <main className="mx-5 min-h-screen py-10 md:mx-[60px] flex flex-col gap-8">
@@ -14,7 +20,11 @@ export function AdminPage() {
           Admin Panel
         </Text>
 
-        <Tabs defaultValue="general" className="flex w-full flex-col gap-6">
+        <Tabs
+          value={tab}
+          onValueChange={(t) => navigate({ to: '/admin', search: { tab: t as 'general' | 'users' | 'certificates' } })}
+          className="flex w-full flex-col gap-6"
+        >
           <TabsList variant="line" className="w-full max-w-lg justify-start">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>

@@ -2,7 +2,7 @@ import { describeRoute, resolver } from 'hono-openapi'
 import { z } from 'zod'
 import { errorSchema } from './schemas'
 
-const completedLessonSchema = z.object({
+export const completedLessonSchema = z.object({
   courseSlug: z.string(),
   lessonId: z.number(),
   lessonSlug: z.string(),

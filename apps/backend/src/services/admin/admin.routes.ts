@@ -7,6 +7,10 @@ import {
   adminStatsDesc,
   adminUsersDesc,
   adminUsersQuerySchema,
+  adminUserCompletedLessonsDesc,
+  adminUserLessonDetailDesc,
+  adminUserIdParamSchema,
+  adminUserLessonParamSchema,
 } from '../../descriptions/admin'
 import { parsePaginationQuery } from '../../lib/pagination'
 import { requireAdmin } from '../../lib/middleware'
@@ -66,6 +70,30 @@ adminApp.get(
       search: q.search,
     })
     return c.json({ data: { items: rows, total, page, pageSize } })
+  },
+)
+
+adminApp.get(
+  '/users/:userId/completed-lessons',
+  requireAdmin,
+  adminUserCompletedLessonsDesc,
+  validator('param', adminUserIdParamSchema),
+  async (c) => {
+    const { userId } = c.req.valid('param')
+    const data = await AdminService.getUserCompletedLessons(userId)
+    return c.json({ data })
+  },
+)
+
+adminApp.get(
+  '/users/:userId/lessons/:courseSlug/:lessonSlug',
+  requireAdmin,
+  adminUserLessonDetailDesc,
+  validator('param', adminUserLessonParamSchema),
+  async (c) => {
+    const { userId, courseSlug, lessonSlug } = c.req.valid('param')
+    const data = await AdminService.getLessonForUser(userId, courseSlug, lessonSlug)
+    return c.json({ data })
   },
 )
 

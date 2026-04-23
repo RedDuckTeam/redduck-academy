@@ -5,7 +5,7 @@ const PAGE_SIZE = 50
 
 export type AdminUsersParams = {
   page: number
-  sortBy?: 'email' | 'name' | 'lessonsPassed' | 'coursesPassed'
+  sortBy?: 'email' | 'name' | 'username' | 'createdAt' | 'lessonsPassed' | 'coursesPassed'
   sortDir?: 'asc' | 'desc'
   search?: string
 }

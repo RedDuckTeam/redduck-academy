@@ -1,5 +1,4 @@
-import { useRef, useCallback, useMemo, useState } from 'react'
-import { Link, getRouteApi, useNavigate } from '@tanstack/react-router'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { useReactTable, getCoreRowModel, type SortingState, type RowSelectionState } from '@tanstack/react-table'
 import { Text } from '@/components/ui/text'
@@ -14,19 +13,24 @@ import { AdminDataTable } from '../shared/data-table'
 import { visiblePages, formatDate } from '../shared/table-utils'
 import { getCertificatesColumns, certsSortableColumns } from './columns'
 
-const adminRouteApi = getRouteApi('/admin')
+type CertSort = 'issuedAt' | 'userEmail' | 'courseSlug' | 'status' | 'name'
+type SortDir = 'asc' | 'desc'
+type CertStatus = 'all' | 'created' | 'requested' | 'claimed'
 
-const STATUS_OPTIONS = ['all', 'created', 'requested', 'claimed'] as const
+const STATUS_OPTIONS: CertStatus[] = ['all', 'created', 'requested', 'claimed']
 
 export function AdminCertificatesTab() {
-  const { certPage, certSort, certSortDir, certStatus, certSearch } = adminRouteApi.useSearch()
-  const navigate = useNavigate()
+  const [page, setPage] = useState(1)
+  const [certSort, setCertSort] = useState<CertSort>('issuedAt')
+  const [certSortDir, setCertSortDir] = useState<SortDir>('desc')
+  const [certStatus, setCertStatus] = useState<CertStatus>('all')
+  const [certSearch, setCertSearch] = useState('')
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
   const { mutate: generate, isPending: isMintPending } = useGenerateCertificate()
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const { data, isPending, isError, error } = useAdminCertificates({
-    page: certPage,
+    page,
     sortBy: certSort,
     sortDir: certSortDir,
     status: certStatus,
@@ -36,17 +40,25 @@ export function AdminCertificatesTab() {
   const handleSearchChange = (value: string) => {
     clearTimeout(searchTimeout.current)
     searchTimeout.current = setTimeout(() => {
-      navigate({ to: '/admin', search: (prev) => ({ ...prev, certSearch: value, certPage: 1 }) })
+      setCertSearch(value)
+      setPage(1)
     }, 300)
   }
 
-  const handleSortClick = useCallback((columnId: string) => {
-    const newDir = certSort === columnId && certSortDir === 'asc' ? 'desc' : 'asc'
-    navigate({
-      to: '/admin',
-      search: (prev) => ({ ...prev, certSort: columnId as typeof certSort, certSortDir: newDir, certPage: 1 }),
-    })
-  }, [certSort, certSortDir, navigate])
+  const handleStatusChange = (s: CertStatus) => {
+    setCertStatus(s)
+    setPage(1)
+  }
+
+  const handleSortClick = useCallback(
+    (columnId: string) => {
+      const newDir = certSort === columnId && certSortDir === 'asc' ? 'desc' : 'asc'
+      setCertSort(columnId as CertSort)
+      setCertSortDir(newDir)
+      setPage(1)
+    },
+    [certSort, certSortDir],
+  )
 
   const sorting: SortingState = [{ id: certSort, desc: certSortDir === 'desc' }]
   const columns = useMemo(() => getCertificatesColumns(generate, isMintPending), [generate, isMintPending])
@@ -87,7 +99,7 @@ export function AdminCertificatesTab() {
   }
 
   const totalPages = Math.ceil(data.total / data.pageSize)
-  const pages = visiblePages(certPage, totalPages)
+  const pages = visiblePages(page, totalPages)
   const selectedCount = table.getSelectedRowModel().rows.length
 
   return (
@@ -108,7 +120,7 @@ export function AdminCertificatesTab() {
               key={s}
               variant={certStatus === s ? 'outline' : 'ghost'}
               size="sm"
-              onClick={() => navigate({ to: '/admin', search: (prev) => ({ ...prev, certStatus: s, certPage: 1 }) })}
+              onClick={() => handleStatusChange(s)}
             >
               <Text variant="caps-14">{s.toUpperCase()}</Text>
             </Button>
@@ -191,20 +203,19 @@ export function AdminCertificatesTab() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <Link
-                to="/admin"
-                search={(prev) => ({ ...prev, certPage: Math.max(1, certPage - 1) })}
-                disabled={certPage <= 1}
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'sm' }),
                   'gap-1 px-2.5',
-                  certPage <= 1 && 'pointer-events-none opacity-50',
+                  page <= 1 && 'pointer-events-none opacity-50',
                 )}
                 aria-label="Go to previous page"
               >
                 <ChevronLeft className="size-4" />
                 <span>Previous</span>
-              </Link>
+              </button>
             </PaginationItem>
 
             {pages.map((item, idx) =>
@@ -214,34 +225,32 @@ export function AdminCertificatesTab() {
                 </PaginationItem>
               ) : (
                 <PaginationItem key={item}>
-                  <Link
-                    to="/admin"
-                    search={(prev) => ({ ...prev, certPage: item })}
-                    className={cn(buttonVariants({ variant: certPage === item ? 'outline' : 'ghost', size: 'icon' }))}
+                  <button
+                    onClick={() => setPage(item)}
+                    className={cn(buttonVariants({ variant: page === item ? 'outline' : 'ghost', size: 'icon' }))}
                     aria-label={`Go to page ${item}`}
-                    aria-current={certPage === item ? 'page' : undefined}
+                    aria-current={page === item ? 'page' : undefined}
                   >
                     {item}
-                  </Link>
+                  </button>
                 </PaginationItem>
               ),
             )}
 
             <PaginationItem>
-              <Link
-                to="/admin"
-                search={(prev) => ({ ...prev, certPage: Math.min(totalPages, certPage + 1) })}
-                disabled={certPage >= totalPages}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'sm' }),
                   'gap-1 px-2.5',
-                  certPage >= totalPages && 'pointer-events-none opacity-50',
+                  page >= totalPages && 'pointer-events-none opacity-50',
                 )}
                 aria-label="Go to next page"
               >
                 <span>Next</span>
                 <ChevronRight className="size-4" />
-              </Link>
+              </button>
             </PaginationItem>
           </PaginationContent>
         </Pagination>

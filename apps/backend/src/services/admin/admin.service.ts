@@ -1,8 +1,16 @@
-import { asc, count, countDistinct, desc, eq, inArray, sql } from 'drizzle-orm'
-import { db } from '../../db'
+import { asc, count, countDistinct, desc, eq, inArray, sql, and } from 'drizzle-orm'
+import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
 import { userLessons, userCertificates } from '../../db/schema'
 import { buildSearchFilter, buildWhereClause } from '../../lib/query-builder'
+import { payloadSchema } from '@redduck/payload-config'
+import type { CompletedLesson } from '../../descriptions/user'
+import { LessonsService } from '../lessons/lessons.service'
+import { CoursesService } from '../courses/courses.service'
+import { ReviewService } from '../review/review.service'
+import { CodingTaskService } from '../coding-task/coding-task.service'
+
+const { lessons } = payloadSchema
 
 export type AdminStats = {
   totalUsers: number
@@ -17,6 +25,7 @@ export type AdminUserRow = {
   email: string | null
   name: string
   username: string | null
+  image: string | null
   role: 'user' | 'admin'
   isPrivate: boolean
   blacklisted: boolean
@@ -103,8 +112,8 @@ export class AdminService {
       name: user.name,
       username: user.username,
       createdAt: user.createdAt,
-      lessonsPassed: lessonsAgg.cnt,
-      coursesPassed: certsAgg.cnt,
+      lessonsPassed: sql<number>`coalesce(${lessonsAgg.cnt}, 0)`,
+      coursesPassed: sql<number>`coalesce(${certsAgg.cnt}, 0)`,
     }
     const orderExpr = sortDir === 'desc' ? desc(sortColMap[sortBy]) : asc(sortColMap[sortBy])
 
@@ -114,6 +123,7 @@ export class AdminService {
         email: user.email,
         name: user.name,
         username: user.username,
+        image: user.image,
         role: user.role,
         isPrivate: user.isPrivate,
         blacklisted: user.blacklisted,
@@ -134,6 +144,7 @@ export class AdminService {
       email: u.email,
       name: u.name,
       username: u.username,
+      image: u.image,
       role: u.role as 'user' | 'admin',
       isPrivate: u.isPrivate,
       blacklisted: u.blacklisted,
@@ -235,5 +246,76 @@ export class AdminService {
     }))
 
     return { rows, total }
+  }
+
+  static async getUserCompletedLessons(userId: string): Promise<CompletedLesson[]> {
+    const completedLessons = await db.query.userLessons.findMany({
+      where: and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true)),
+      columns: { lessonId: true },
+      orderBy: desc(userLessons.createdAt),
+    })
+
+    if (completedLessons.length === 0) return []
+
+    const lessonIds = [...new Set(completedLessons.map((c) => c.lessonId))]
+    const payloadLessons = await payloadDb.query.lessons.findMany({
+      where: inArray(lessons.id, lessonIds),
+      with: { module: { with: { course: true } } },
+    })
+
+    return payloadLessons
+      .filter((l) => l.module?.course?.slug)
+      .map((lesson) => ({
+        courseSlug: lesson.module!.course!.slug ?? '',
+        lessonId: lesson.id,
+        lessonSlug: lesson.slug ?? '',
+      }))
+  }
+
+  static async getLessonForUser(userId: string, courseSlug: string, lessonSlug: string) {
+    const lesson = await LessonsService.getLesson(courseSlug, lessonSlug)
+
+    const [userLesson] = await db
+      .select({
+        userAnswers: userLessons.userAnswers,
+        isCompleted: userLessons.isCompleted,
+        id: userLessons.id,
+      })
+      .from(userLessons)
+      .where(and(eq(userLessons.userId, userId), eq(userLessons.lessonId, lesson.id)))
+      .limit(1)
+
+    let correctAnswers: Record<string, string[]> | null = null
+    if (lesson.type === 'test' && userLesson?.isCompleted && lesson.module?.course?.id) {
+      const result = await CoursesService.getTestLessonWithQuestionsById(lesson.module.course.id as number, lesson.id)
+      if (result) {
+        correctAnswers = {}
+        result.questions.forEach((q) => {
+          correctAnswers![q.id] = q.options.filter((o) => o.isCorrect).map((o) => o.id)
+        })
+      }
+    }
+
+    let codingTaskSubmissions: Awaited<ReturnType<typeof CodingTaskService.getSubmissionsForUserLesson>> = []
+    if (lesson.type === 'coding_task' && userLesson?.id) {
+      codingTaskSubmissions = await CodingTaskService.getSubmissionsForUserLesson(userLesson.id)
+    }
+
+    // Admin sees raw review feedback — no sanitization of hidden criteria
+    let submissions: Awaited<ReturnType<typeof ReviewService.getSubmissionsForUserLesson>> = []
+    if (lesson.type === 'review_task' && userLesson?.id) {
+      submissions = await ReviewService.getSubmissionsForUserLesson(userLesson.id)
+    }
+
+    return {
+      ...lesson,
+      userAnswers: userLesson?.isCompleted
+        ? ((userLesson.userAnswers as Record<string, string[]> | null) ?? null)
+        : null,
+      isCompleted: userLesson?.isCompleted ?? false,
+      correctAnswers,
+      ...(lesson.type === 'review_task' ? { submissions } : {}),
+      ...(lesson.type === 'coding_task' ? { submissions: codingTaskSubmissions } : {}),
+    }
   }
 }

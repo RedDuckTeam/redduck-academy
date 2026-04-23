@@ -1,6 +1,7 @@
 import { describeRoute, resolver } from 'hono-openapi'
 import { z } from 'zod'
 import { errorSchema } from './schemas'
+import { completedLessonSchema } from './user'
 
 export const adminHealthDesc = describeRoute({
   summary: 'Admin health check',
@@ -42,12 +43,13 @@ export const adminStatsDesc = describeRoute({
 export const adminUsersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
-  sortBy: z.enum(['email', 'name', 'lessonsPassed', 'coursesPassed']).optional(),
+  sortBy: z.enum(['email', 'name', 'username', 'createdAt', 'lessonsPassed', 'coursesPassed']).optional(),
   sortDir: z.enum(['asc', 'desc']).optional(),
   search: z.string().optional(),
 })
 
 const adminUserItemSchema = z.object({
+  id: z.string(),
   email: z.string(),
   name: z.string(),
   isPrivate: z.boolean(),
@@ -106,6 +108,53 @@ export const adminCertificatesDesc = describeRoute({
     400: { description: 'Invalid pagination', content: { 'application/json': { schema: errorSchema } } },
     401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
     403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+export const adminUserIdParamSchema = z.object({
+  userId: z.string(),
+})
+
+export const adminUserLessonParamSchema = z.object({
+  userId: z.string(),
+  courseSlug: z.string(),
+  lessonSlug: z.string(),
+})
+
+export const adminUserCompletedLessonsDesc = describeRoute({
+  summary: 'Admin: get completed lessons for a user',
+  tags: ['Admin'],
+  responses: {
+    200: {
+      description: 'Completed lessons',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.array(completedLessonSchema) })),
+        },
+      },
+    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'User not found', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+export const adminUserLessonDetailDesc = describeRoute({
+  summary: 'Admin: get lesson detail with user progress',
+  description: 'Returns lesson data with user answers and submissions. No prerequisite enforcement. Review feedback is not sanitized.',
+  tags: ['Admin'],
+  responses: {
+    200: {
+      description: 'Lesson data with user progress',
+      content: {
+        'application/json': {
+          schema: resolver(z.object({ data: z.any() })),
+        },
+      },
+    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'Lesson not found', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
