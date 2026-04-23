@@ -14,9 +14,7 @@ export function AdminGeneralTab() {
   if (isPending) {
     return (
       <div className="border border-border p-10 text-center">
-        <Text variant="caps-20" className="text-muted-foreground">
-          LOADING…
-        </Text>
+        <Text variant="caps-20" className="text-muted-foreground">LOADING…</Text>
       </div>
     )
   }

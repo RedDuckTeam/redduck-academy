@@ -279,7 +279,7 @@ export const certificateAbi = [
       {
         indexed: false,
         internalType: 'bytes32',
-        name: 'pdfHash',
+        name: 'metadataHash',
         type: 'bytes32',
       },
     ],
@@ -536,7 +536,7 @@ export const certificateAbi = [
       },
       {
         internalType: 'bytes32',
-        name: 'pdfHash',
+        name: 'metadataHash',
         type: 'bytes32',
       },
     ],
@@ -698,7 +698,7 @@ export const certificateAbi = [
       },
       {
         internalType: 'bytes32',
-        name: 'pdfHash',
+        name: 'metadataHash',
         type: 'bytes32',
       },
       {
@@ -732,7 +732,7 @@ export const certificateAbi = [
       },
       {
         internalType: 'bytes32[]',
-        name: 'pdfHashes',
+        name: 'metadataHashes',
         type: 'bytes32[]',
       },
       {
@@ -1034,7 +1034,7 @@ export const certificateAbi = [
       },
       {
         internalType: 'bytes32',
-        name: 'pdfHash',
+        name: 'metadataHash',
         type: 'bytes32',
       },
     ],

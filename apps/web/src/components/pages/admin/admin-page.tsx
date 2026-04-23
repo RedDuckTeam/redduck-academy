@@ -2,9 +2,9 @@ import { WagmiProvider } from 'wagmi'
 import { Text } from '@/components/ui/text'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { wagmiConfig } from '@/constants/wallet-config'
-import { AdminGeneralTab } from './admin-general-tab'
-import { AdminUsersTab } from './admin-users-tab'
-import { AdminCertificatesTab } from './admin-certificates-tab'
+import { AdminGeneralTab } from './general/general-tab'
+import { AdminUsersTab } from './users/users-tab'
+import { AdminCertificatesTab } from './certificates/certificates-tab'
 
 export function AdminPage() {
   return (

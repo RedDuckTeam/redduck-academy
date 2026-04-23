@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import { keccak256, toBytes } from 'viem'
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { user, userLessons, userCertificates } from '../../db/schema'
@@ -14,13 +15,13 @@ interface CertificateManifest {
   name: string
   imageUrl: string
   metadataUri: string
-  contentHash: string
+  metadataHash: string
 }
 
 export interface GenerateCertificateResult {
   certificateId: string | null
   metadataUri: string
-  contentHash: string
+  metadataHash: string
   walletAddress: string
   imageUrl: string
   courseId: number
@@ -112,7 +113,7 @@ export class CertificateGenerationService {
       return {
         certificateId: certificate?.id ?? null,
         metadataUri: existingManifest.metadataUri,
-        contentHash: existingManifest.contentHash,
+        metadataHash: existingManifest.metadataHash,
         walletAddress: walletAddr,
         imageUrl: existingManifest.imageUrl,
         courseId: course.id as number,
@@ -121,13 +122,10 @@ export class CertificateGenerationService {
 
     const issuedAt = new Date()
     const imageBuffer = await renderCertificateImage(userName, courseTitle, issuedAt)
-    const contentHash = '0x' + createHash('sha256')
-      .update(`${userName}:${courseTitle}:${walletAddr}`)
-      .digest('hex')
+    const imageSuffix = createHash('sha256').update(imageBuffer).digest('hex').slice(0, 8)
 
     const noCache = 'no-cache, no-store, must-revalidate'
-    const imageHash = contentHash.slice(2, 10) // short prefix of content hash for cache-busting
-    const imageUrl = await uploadToR2(`${base}/preview-${imageHash}.jpg`, imageBuffer, 'image/jpeg')
+    const imageUrl = await uploadToR2(`${base}/preview-${imageSuffix}.jpg`, imageBuffer, 'image/jpeg')
 
     const metadata = {
       name: `${courseTitle} - RedDuck course certificate`,
@@ -141,16 +139,19 @@ export class CertificateGenerationService {
       ],
     }
 
+    const metadataJson = JSON.stringify(metadata, null, 2)
+    const metadataHash = keccak256(toBytes(metadataJson))
+
     const metadataUri = await uploadToR2(
       `${base}/metadata.json`,
-      Buffer.from(JSON.stringify(metadata, null, 2)),
+      Buffer.from(metadataJson),
       'application/json',
       noCache,
     )
 
-    const manifest: CertificateManifest = { name: userName, imageUrl, metadataUri, contentHash }
+    const manifest: CertificateManifest = { name: userName, imageUrl, metadataUri, metadataHash }
     await uploadToR2(manifestKey, Buffer.from(JSON.stringify(manifest)), 'application/json', noCache)
 
-    return { certificateId: certificate?.id ?? null, metadataUri, contentHash, walletAddress: walletAddr, imageUrl, courseId: course.id as number }
+    return { certificateId: certificate?.id ?? null, metadataUri, metadataHash, walletAddress: walletAddr, imageUrl, courseId: course.id as number }
   }
 }

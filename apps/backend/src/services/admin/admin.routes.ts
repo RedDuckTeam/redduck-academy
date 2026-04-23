@@ -35,7 +35,13 @@ adminApp.get(
       page: q.page,
       pageSize: q.pageSize,
     })
-    const { rows, total } = await AdminService.getUsersPage({ limit, offset })
+    const { rows, total } = await AdminService.getUsersPage({
+      limit,
+      offset,
+      sortBy: q.sortBy,
+      sortDir: q.sortDir,
+      search: q.search,
+    })
     return c.json({ data: { items: rows, total, page, pageSize } })
   },
 )
@@ -51,7 +57,14 @@ adminApp.get(
       page: q.page,
       pageSize: q.pageSize,
     })
-    const { rows, total } = await AdminService.getCertificatesPage({ limit, offset })
+    const { rows, total } = await AdminService.getCertificatesPage({
+      limit,
+      offset,
+      sortBy: q.sortBy,
+      sortDir: q.sortDir,
+      status: q.status,
+      search: q.search,
+    })
     return c.json({ data: { items: rows, total, page, pageSize } })
   },
 )

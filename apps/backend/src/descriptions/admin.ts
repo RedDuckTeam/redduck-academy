@@ -42,6 +42,9 @@ export const adminStatsDesc = describeRoute({
 export const adminUsersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  sortBy: z.enum(['email', 'name', 'lessonsPassed', 'coursesPassed']).optional(),
+  sortDir: z.enum(['asc', 'desc']).optional(),
+  search: z.string().optional(),
 })
 
 const adminUserItemSchema = z.object({
@@ -55,6 +58,10 @@ const adminUserItemSchema = z.object({
 export const adminCertificatesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  sortBy: z.enum(['issuedAt', 'userEmail', 'courseSlug', 'status', 'name']).optional(),
+  sortDir: z.enum(['asc', 'desc']).optional(),
+  status: z.enum(['all', 'created', 'requested', 'claimed']).optional(),
+  search: z.string().optional(),
 })
 
 const adminCertificateItemSchema = z.object({

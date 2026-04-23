@@ -28,7 +28,7 @@ export const useGenerateCertificate = () => {
           args: [
             mintParams.walletAddress as `0x${string}`,
             BigInt(mintParams.courseId),
-            mintParams.contentHash as `0x${string}`,
+            mintParams.metadataHash as `0x${string}`,
             mintParams.metadataUri,
           ],
           chainId: activeChain.id,

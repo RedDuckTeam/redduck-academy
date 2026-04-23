@@ -120,7 +120,7 @@ export const adminGenerateCertificateBodySchema = z.object({
 const generateCertificateResultSchema = z.object({
   certificateId: z.string().uuid().nullable(),
   metadataUri: z.string(),
-  contentHash: z.string(),
+  metadataHash: z.string(),
   walletAddress: z.string(),
   imageUrl: z.string(),
 })

@@ -14,6 +14,7 @@ export const useSession = () => {
     queryFn: getUserSettings,
     enabled: cookieAuth || authenticated,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   })
 
   const session = settings ? { user: settings } : null

@@ -1,7 +1,8 @@
-import { and, asc, count, countDistinct, desc, eq, inArray, sql } from 'drizzle-orm'
+import { asc, count, countDistinct, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { user } from '../../db/auth-schema'
 import { userLessons, userCertificates } from '../../db/schema'
+import { buildSearchFilter, buildWhereClause } from '../../lib/query-builder'
 
 export type AdminStats = {
   totalUsers: number
@@ -12,9 +13,14 @@ export type AdminStats = {
 }
 
 export type AdminUserRow = {
+  id: string
   email: string | null
   name: string
+  username: string | null
+  role: 'user' | 'admin'
   isPrivate: boolean
+  blacklisted: boolean
+  createdAt: string
   lessonsPassed: number
   coursesPassed: number
 }
@@ -63,70 +69,114 @@ export class AdminService {
     }
   }
 
-  static async getUsersPage(input: { limit: number; offset: number }): Promise<{
-    rows: AdminUserRow[]
-    total: number
-  }> {
-    const [{ total: totalRaw }] = await db.select({ total: count() }).from(user)
+  static async getUsersPage(input: {
+    limit: number
+    offset: number
+    sortBy?: 'email' | 'name' | 'username' | 'createdAt' | 'lessonsPassed' | 'coursesPassed'
+    sortDir?: 'asc' | 'desc'
+    search?: string
+  }): Promise<{ rows: AdminUserRow[]; total: number }> {
+    const { limit, offset, sortBy = 'createdAt', sortDir = 'desc', search } = input
+
+    const whereClause = buildWhereClause(
+      buildSearchFilter(search, [user.email, user.name, user.username]),
+    )
+
+    const [{ total: totalRaw }] = await db.select({ total: count() }).from(user).where(whereClause)
     const total = Number(totalRaw ?? 0)
+
+    const lessonsAgg = db
+      .select({ userId: userLessons.userId, cnt: count().as('lessons_cnt') })
+      .from(userLessons)
+      .where(eq(userLessons.isCompleted, true))
+      .groupBy(userLessons.userId)
+      .as('lessons_agg')
+
+    const certsAgg = db
+      .select({ userId: userCertificates.userId, cnt: count().as('certs_cnt') })
+      .from(userCertificates)
+      .groupBy(userCertificates.userId)
+      .as('certs_agg')
+
+    const sortColMap = {
+      email: user.email,
+      name: user.name,
+      username: user.username,
+      createdAt: user.createdAt,
+      lessonsPassed: lessonsAgg.cnt,
+      coursesPassed: certsAgg.cnt,
+    }
+    const orderExpr = sortDir === 'desc' ? desc(sortColMap[sortBy]) : asc(sortColMap[sortBy])
 
     const pageUsers = await db
       .select({
         id: user.id,
         email: user.email,
         name: user.name,
+        username: user.username,
+        role: user.role,
         isPrivate: user.isPrivate,
+        blacklisted: user.blacklisted,
+        createdAt: user.createdAt,
+        lessonsPassed: sql<number>`coalesce(${lessonsAgg.cnt}, 0)`,
+        coursesPassed: sql<number>`coalesce(${certsAgg.cnt}, 0)`,
       })
       .from(user)
-      .orderBy(asc(user.email))
-      .limit(input.limit)
-      .offset(input.offset)
-
-    if (pageUsers.length === 0) {
-      return { rows: [], total }
-    }
-
-    const ids = pageUsers.map((u) => u.id)
-
-    const [lessonAgg, certAgg] = await Promise.all([
-      db
-        .select({
-          userId: userLessons.userId,
-          n: count(),
-        })
-        .from(userLessons)
-        .where(and(inArray(userLessons.userId, ids), eq(userLessons.isCompleted, true)))
-        .groupBy(userLessons.userId),
-      db
-        .select({
-          userId: userCertificates.userId,
-          n: count(),
-        })
-        .from(userCertificates)
-        .where(inArray(userCertificates.userId, ids))
-        .groupBy(userCertificates.userId),
-    ])
-
-    const lessonMap = new Map(lessonAgg.map((r) => [r.userId, Number(r.n)]))
-    const certMap = new Map(certAgg.map((r) => [r.userId, Number(r.n)]))
+      .leftJoin(lessonsAgg, eq(user.id, lessonsAgg.userId))
+      .leftJoin(certsAgg, eq(user.id, certsAgg.userId))
+      .where(whereClause)
+      .orderBy(orderExpr)
+      .limit(limit)
+      .offset(offset)
 
     const rows: AdminUserRow[] = pageUsers.map((u) => ({
+      id: u.id,
       email: u.email,
       name: u.name,
+      username: u.username,
+      role: u.role as 'user' | 'admin',
       isPrivate: u.isPrivate,
-      lessonsPassed: lessonMap.get(u.id) ?? 0,
-      coursesPassed: certMap.get(u.id) ?? 0,
+      blacklisted: u.blacklisted,
+      createdAt: u.createdAt.toISOString(),
+      lessonsPassed: Number(u.lessonsPassed ?? 0),
+      coursesPassed: Number(u.coursesPassed ?? 0),
     }))
 
     return { rows, total }
   }
 
-  static async getCertificatesPage(input: { limit: number; offset: number }): Promise<{
-    rows: AdminCertificateRow[]
-    total: number
-  }> {
-    const [{ total: totalRaw }] = await db.select({ total: count() }).from(userCertificates)
+  static async getCertificatesPage(input: {
+    limit: number
+    offset: number
+    sortBy?: 'issuedAt' | 'userEmail' | 'courseSlug' | 'status' | 'name'
+    sortDir?: 'asc' | 'desc'
+    status?: 'all' | 'created' | 'requested' | 'claimed'
+    search?: string
+  }): Promise<{ rows: AdminCertificateRow[]; total: number }> {
+    const { limit, offset, sortBy = 'issuedAt', sortDir = 'desc', status, search } = input
+
+    const whereClause = buildWhereClause(
+      status && status !== 'all' ? eq(userCertificates.status, status) : undefined,
+      buildSearchFilter(search, [user.email, user.name, userCertificates.courseSlug]),
+    )
+
+    const [{ total: totalRaw }] = await db
+      .select({ total: count() })
+      .from(userCertificates)
+      .innerJoin(user, eq(userCertificates.userId, user.id))
+      .where(whereClause)
+
     const total = Number(totalRaw ?? 0)
+
+    const sortColMap = {
+      issuedAt: userCertificates.issuedAt,
+      userEmail: user.email,
+      courseSlug: userCertificates.courseSlug,
+      status: userCertificates.status,
+      name: userCertificates.name,
+    }
+    const sortCol = sortColMap[sortBy]
+    const orderExpr = sortDir === 'asc' ? asc(sortCol) : desc(sortCol)
 
     const pageRows = await db
       .select({
@@ -145,12 +195,10 @@ export class AdminService {
       })
       .from(userCertificates)
       .innerJoin(user, eq(userCertificates.userId, user.id))
-      .orderBy(
-        asc(sql`CASE WHEN ${userCertificates.status} = 'requested' THEN 0 ELSE 1 END`),
-        desc(userCertificates.issuedAt),
-      )
-      .limit(input.limit)
-      .offset(input.offset)
+      .where(whereClause)
+      .orderBy(orderExpr)
+      .limit(limit)
+      .offset(offset)
 
     if (pageRows.length === 0) {
       return { rows: [], total }
