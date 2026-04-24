@@ -1,8 +1,14 @@
 import { z } from 'zod'
 
-export const slugParamSchema = z.object({ slug: z.string() })
+const slugField = z
+  .string()
+  .min(1)
+  .max(100)
+  .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers, or hyphens')
+
+export const slugParamSchema = z.object({ slug: slugField })
 
 export const courseLessonParamSchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
+  courseSlug: slugField,
+  lessonSlug: slugField,
 })

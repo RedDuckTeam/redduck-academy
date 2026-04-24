@@ -1,7 +1,21 @@
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, lt, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { AppError } from '../../lib/errors'
 import { codingTaskReviewCache, codingTaskSubmissions, userLessons } from '../../db/schema'
+
+const CACHE_CLEANUP_PROBABILITY = 0.01
+const CACHE_RETENTION_DAYS = 30
+
+async function maybeCleanupReviewCache(): Promise<void> {
+  if (Math.random() >= CACHE_CLEANUP_PROBABILITY) return
+  try {
+    await db
+      .delete(codingTaskReviewCache)
+      .where(lt(codingTaskReviewCache.createdAt, sql`now() - interval '${sql.raw(String(CACHE_RETENTION_DAYS))} days'`))
+  } catch {
+    // best-effort; never block the caller
+  }
+}
 
 export const CodingTaskRepository = {
   /**
@@ -14,6 +28,7 @@ export const CodingTaskRepository = {
     submittedCode: string,
     language: string,
     passed: boolean,
+    ipAddress: string,
   ): Promise<{ submissionId: number }> {
     return db.transaction(async (tx) => {
       const [userLesson] = await tx
@@ -31,7 +46,7 @@ export const CodingTaskRepository = {
 
       const [submission] = await tx
         .insert(codingTaskSubmissions)
-        .values({ userLessonId: userLesson.id, submittedCode, language, passed })
+        .values({ userLessonId: userLesson.id, submittedCode, language, passed, ipAddress: ipAddress || null })
         .returning({ id: codingTaskSubmissions.id })
 
       if (passed) {
@@ -77,6 +92,7 @@ export const CodingTaskRepository = {
   },
 
   async setCachedReview(lessonId: number, codeHash: string, passed: boolean): Promise<void> {
+    void maybeCleanupReviewCache()
     await db
       .insert(codingTaskReviewCache)
       .values({ lessonId, codeHash, passed })

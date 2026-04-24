@@ -5,14 +5,14 @@ import { eq } from 'drizzle-orm'
 import { verifyPrivyToken } from './privy'
 import { ensureAppUser } from './ensure-app-user'
 import { AppError } from './errors'
+import { Logger } from './logger'
 import { db } from '../db'
 import { user } from '../db/auth-schema'
 
+const logger = new Logger('AuthMiddleware')
+
 async function resolveUser(c: Context): Promise<{ id: string; idToken: string; privyUserId: string }> {
   const token = getCookie(c, 'privy-token')
-  const cookieHeader = c.req.header('cookie')
-  const origin = c.req.header('origin')
-  const path = c.req.path
 
   if (!token) {
     throw new AppError(401, 'Unauthorized')
@@ -22,6 +22,7 @@ async function resolveUser(c: Context): Promise<{ id: string; idToken: string; p
   try {
     claims = await verifyPrivyToken(token)
   } catch (err) {
+    logger.error('Privy token verification failed', err, { path: c.req.path })
     throw new AppError(401, 'Unauthorized')
   }
 

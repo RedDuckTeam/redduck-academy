@@ -16,7 +16,9 @@ const certificateSchema = z.object({
 })
 
 export const requestNftBodySchema = z.object({
-  walletAddress: z.string().min(1),
+  walletAddress: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, 'Must be a valid EVM address (0x + 40 hex chars)'),
 })
 
 export const certificateIdParamSchema = z.object({
@@ -78,10 +80,13 @@ export const requestNftDesc = describeRoute({
 })
 
 export const adminMarkClaimedBodySchema = z.object({
-  metadataUri: z.string().min(1),
-  imageUrl: z.string().min(1),
-  tokenId: z.string().min(1),
-  txHash: z.string().optional(),
+  metadataUri: z.string().url(),
+  imageUrl: z.string().url(),
+  tokenId: z.string().min(1).max(78),
+  txHash: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, 'Must be a valid transaction hash (0x + 64 hex chars)')
+    .optional(),
 })
 
 export const adminMarkClaimedDesc = describeRoute({
@@ -125,8 +130,12 @@ export const getCertificateByIdDesc = describeRoute({
 })
 
 export const adminGenerateCertificateBodySchema = z.object({
-  userId: z.string().min(1),
-  courseSlug: z.string().min(1),
+  userId: z.string().min(1).max(255),
+  courseSlug: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers, or hyphens'),
 })
 
 const generateCertificateResultSchema = z.object({

@@ -1,5 +1,5 @@
 import { api } from './fetcher'
-import { RateLimitError } from './coding-task'
+import { RateLimitError } from './rate-limit'
 
 export interface SubmitProjectPayload {
   courseSlug: string
@@ -18,7 +18,7 @@ export const submitProject = async (payload: SubmitProjectPayload): Promise<Subm
   )
   if (response.status === 429) {
     const retryAfterMs = (response.errorData?.retryAfterMs as number | undefined) ?? 60_000
-    throw new RateLimitError(retryAfterMs)
+    throw new RateLimitError({ reason: null, retryAfterMs })
   }
   if (!response.data && response.status >= 400) {
     throw new Error(response.error ?? 'Failed to submit project')

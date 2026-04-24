@@ -1,5 +1,8 @@
 import type { Context } from 'hono'
 import type { CacheStore } from './types'
+import { Logger } from '../logger'
+
+const logger = new Logger('CacheMiddleware')
 
 type CacheableHandler = (c: Context) => Response | Promise<Response>
 
@@ -111,9 +114,7 @@ export function cacheHandler(
                 }
                 await cache.set(cacheKey, entry, ttl)
               })
-              .catch((err: unknown) =>
-                console.error(`Cache SWR refresh: ${cacheKey}`, err),
-              )
+              .catch((err: unknown) => logger.error('SWR refresh failed', err, { cacheKey }))
               .finally(() => refreshingKeys.delete(cacheKey))
           }
         }
@@ -124,7 +125,7 @@ export function cacheHandler(
         })
       }
     } catch (err: unknown) {
-      console.error(`Cache get error: ${cacheKey}`, err)
+      logger.error('Cache get failed', err, { cacheKey })
     }
 
     const res = await handler(c)
@@ -137,7 +138,7 @@ export function cacheHandler(
 
       await cache.set(cacheKey, toCache, ttl)
     } catch (err: unknown) {
-      console.error(`Cache set error: ${cacheKey}`, err)
+      logger.error('Cache set failed', err, { cacheKey })
     }
 
     return res

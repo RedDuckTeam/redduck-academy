@@ -12,7 +12,7 @@ import { useSubmitProject } from '@/hooks/api/lessons/useSubmitProject'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { Dialog } from '@/components/ui/dialog'
 import { useSession } from '@/hooks/useSession'
-import { RateLimitError } from '@/lib/api/coding-task'
+import { RateLimitError } from '@/lib/api/rate-limit'
 
 interface ProjectSubmissionProps {
   lesson: Lesson

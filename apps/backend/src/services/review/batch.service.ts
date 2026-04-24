@@ -7,6 +7,9 @@ import { env } from '../../env'
 import { DEFAULT_MODEL } from '../ai/openai-client'
 import type { ReviewFeedback } from '../../types/review-feedback'
 import { buildReviewFeedbackResponseFormat } from './review-feedback-json-schema'
+import { Logger } from '../../lib/logger'
+
+const logger = new Logger('ReviewBatchService')
 
 const ASSISTANT_OUTPUT_LOG_MAX_CHARS = 8_000
 
@@ -117,12 +120,12 @@ function parseReviewFeedback(content: string, submissionId: number): ReviewFeedb
   let parsed: unknown
   try {
     parsed = JSON.parse(content)
-  } catch {
+  } catch (err) {
     const preview =
       content.length > ASSISTANT_OUTPUT_LOG_MAX_CHARS
         ? `${content.slice(0, ASSISTANT_OUTPUT_LOG_MAX_CHARS)}… (${content.length} chars total)`
         : content
-    console.error(`[review sync] submission ${submissionId} assistant message is not valid JSON. Raw output:\n`, preview)
+    logger.error('Assistant message is not valid JSON', err, { submissionId, preview })
     throw new Error('Assistant output is not valid JSON')
   }
   if (!isRecord(parsed)) throw new Error('Invalid feedback shape')
@@ -162,16 +165,30 @@ export async function pollAndParse(
   tasks: NonNullable<Lesson['reviewGradingTasks']>,
 ): Promise<BatchPollResult> {
   const openai = getOpenAiClient()
-  const batch = await openai.batches.retrieve(batchRequestId)
+
+  let batch: Awaited<ReturnType<OpenAI['batches']['retrieve']>>
+  try {
+    batch = await openai.batches.retrieve(batchRequestId)
+  } catch (err) {
+    logger.error('Failed to retrieve batch status', err, { batchRequestId, submissionId })
+    return { type: 'failed', message: 'batch retrieval failed' }
+  }
 
   if (batch.status === 'failed' || batch.status === 'cancelled' || batch.status === 'expired') {
-    return { type: 'failed', message: extractBatchErrorMessage(batch) }
+    logger.error('Batch ended in terminal non-success state', undefined, {
+      batchRequestId,
+      submissionId,
+      status: batch.status,
+      detail: extractBatchErrorMessage(batch),
+    })
+    return { type: 'failed', message: `batch ${batch.status}` }
   }
   if (batch.status !== 'completed') {
     return { type: 'pending' }
   }
   if (!batch.output_file_id) {
-    return { type: 'failed', message: 'OpenAI batch completed but has no output file' }
+    logger.error('Batch completed with no output_file_id', undefined, { batchRequestId, submissionId })
+    return { type: 'failed', message: 'batch has no output file' }
   }
 
   let jsonlText: string
@@ -179,7 +196,12 @@ export async function pollAndParse(
     const fileResponse = await openai.files.content(batch.output_file_id)
     jsonlText = await fileResponse.text()
   } catch (err) {
-    return { type: 'failed', message: err instanceof Error ? err.message : 'Failed to download batch output' }
+    logger.error('Failed to download batch output', err, {
+      batchRequestId,
+      submissionId,
+      outputFileId: batch.output_file_id,
+    })
+    return { type: 'failed', message: 'batch output download failed' }
   }
 
   try {
@@ -187,6 +209,7 @@ export async function pollAndParse(
     const feedback = applyAdminTitles(parseReviewFeedback(content, submissionId), tasks)
     return { type: 'completed', feedback }
   } catch (err) {
-    return { type: 'failed', message: err instanceof Error ? err.message : 'Failed to parse review output' }
+    logger.error('Failed to parse batch output', err, { batchRequestId, submissionId })
+    return { type: 'failed', message: 'batch output parse failed' }
   }
 }

@@ -1,7 +1,10 @@
 import type { ParsedGitHubRepoUrl } from '../types/github'
 import { AppError } from '../../../lib/errors'
+import { Logger } from '../../../lib/logger'
 
 const INVALID_REPO_URL = 'Invalid or unsupported GitHub repository URL'
+
+const logger = new Logger('GitHubService')
 
 export function httpStatus(err: unknown): number | undefined {
   if (err && typeof err === 'object' && 'status' in err) {
@@ -11,10 +14,26 @@ export function httpStatus(err: unknown): number | undefined {
   return undefined
 }
 
-/** GitHub API / token failures — surfaced as 502 to the client. */
-export function throwGitHubApiError(err: unknown): never {
-  const message = err instanceof Error ? err.message : String(err)
-  throw new AppError(502, message)
+/**
+ * GitHub / Octokit failures.
+ *
+ * User-visible status codes (404 repo not found, 403 rate-limit, 401 bad token) get mapped to a
+ * short, safe message. Everything else becomes a generic 502 — the real error goes to the log only.
+ */
+export function throwGitHubApiError(err: unknown, context?: Record<string, unknown>): never {
+  const status = httpStatus(err)
+  logger.error('GitHub API call failed', err, { status, ...context })
+
+  if (status === 404) {
+    throw new AppError(404, 'Repository or branch not found on GitHub')
+  }
+  if (status === 403) {
+    throw new AppError(502, 'GitHub rate limit reached, please try again later')
+  }
+  if (status === 401) {
+    throw new AppError(502, 'Could not authenticate with GitHub')
+  }
+  throw new AppError(502, 'Could not read the repository from GitHub, please try again later')
 }
 
 /**

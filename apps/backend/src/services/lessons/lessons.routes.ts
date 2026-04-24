@@ -12,21 +12,32 @@ import { CodingTaskService } from '../coding-task/coding-task.service'
 import { LessonsService } from './lessons.service'
 import { CoursePrerequisitesService } from '../courses/course-prerequisites.service'
 
+const slugField = z
+  .string()
+  .min(1)
+  .max(100)
+  .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers, or hyphens')
+
 const submitTestBodySchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
-  answers: z.record(z.string(), z.array(z.string())),
+  courseSlug: slugField,
+  lessonSlug: slugField,
+  answers: z
+    .record(
+      z.string().min(1).max(64),
+      z.array(z.string().max(64)).max(10),
+    )
+    .refine((r) => Object.keys(r).length <= 50, 'Too many answer keys'),
 })
 
 const submitProjectBodySchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
+  courseSlug: slugField,
+  lessonSlug: slugField,
   repoUrl: z.string().url(),
 })
 
 const submitCodingTaskBodySchema = z.object({
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
+  courseSlug: slugField,
+  lessonSlug: slugField,
   code: z.string().min(1).max(100_000),
   language: z.enum(['solidity', 'rust', 'typescript']),
 })

@@ -45,7 +45,7 @@ export const adminUsersQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
   sortBy: z.enum(['email', 'name', 'username', 'createdAt', 'lessonsPassed', 'coursesPassed']).optional(),
   sortDir: z.enum(['asc', 'desc']).optional(),
-  search: z.string().optional(),
+  search: z.string().trim().min(1).max(100).optional(),
 })
 
 const adminUserItemSchema = z.object({
@@ -63,7 +63,7 @@ export const adminCertificatesQuerySchema = z.object({
   sortBy: z.enum(['issuedAt', 'userEmail', 'courseSlug', 'status', 'name']).optional(),
   sortDir: z.enum(['asc', 'desc']).optional(),
   status: z.enum(['all', 'created', 'requested', 'claimed']).optional(),
-  search: z.string().optional(),
+  search: z.string().trim().min(1).max(100).optional(),
 })
 
 const adminCertificateItemSchema = z.object({
@@ -111,14 +111,20 @@ export const adminCertificatesDesc = describeRoute({
   },
 })
 
+const slugField = z
+  .string()
+  .min(1)
+  .max(100)
+  .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers, or hyphens')
+
 export const adminUserIdParamSchema = z.object({
-  userId: z.string(),
+  userId: z.string().min(1).max(255),
 })
 
 export const adminUserLessonParamSchema = z.object({
-  userId: z.string(),
-  courseSlug: z.string(),
-  lessonSlug: z.string(),
+  userId: z.string().min(1).max(255),
+  courseSlug: slugField,
+  lessonSlug: slugField,
 })
 
 export const adminUserCompletedLessonsDesc = describeRoute({

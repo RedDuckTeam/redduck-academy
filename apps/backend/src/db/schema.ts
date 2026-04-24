@@ -1,6 +1,6 @@
 // Database schema
 // Better-auth tables are defined in auth-schema.ts
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   pgTable,
   text,
@@ -12,6 +12,7 @@ import {
   index,
   uniqueIndex,
   uuid,
+  check,
 } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
@@ -35,6 +36,13 @@ export const userLessons = pgTable(
   },
   (t) => ({
     userIdLessonIdUnique: uniqueIndex('user_lessons_user_id_lesson_id_unique').on(t.userId, t.lessonId),
+    userCompletedIdx: index('user_lessons_user_completed_idx')
+      .on(t.userId)
+      .where(sql`${t.isCompleted} = true`),
+    userAnswersSizeCheck: check(
+      'user_lessons_user_answers_size_check',
+      sql`${t.userAnswers} IS NULL OR pg_column_size(${t.userAnswers}) < 32768`,
+    ),
   }),
 )
 
@@ -73,10 +81,17 @@ export const codingTaskSubmissions = pgTable(
     submittedCode: text('submitted_code').notNull(),
     language: text('language').notNull(),
     passed: boolean('passed').notNull(),
+    // Internal-only: used for cross-account rate-limit enforcement. Never exposed to the client.
+    ipAddress: text('ip_address'),
     submittedAt: timestamp('submitted_at').defaultNow().notNull(),
   },
   (t) => ({
     userLessonIdIdx: index('coding_task_submissions_user_lesson_id_idx').on(t.userLessonId),
+    userLessonSubmittedAtIdx: index('coding_task_submissions_user_lesson_submitted_at_idx').on(
+      t.userLessonId,
+      t.submittedAt,
+    ),
+    ipSubmittedAtIdx: index('coding_task_submissions_ip_submitted_at_idx').on(t.ipAddress, t.submittedAt),
   }),
 )
 
@@ -105,6 +120,10 @@ export const userCertificates = pgTable(
       t.courseSlug,
       t.name,
     ),
+    statusIssuedAtIdx: index('user_certificates_status_issued_at_idx').on(t.status, t.issuedAt.desc()),
+    txHashUnique: uniqueIndex('user_certificates_tx_hash_unique')
+      .on(t.txHash)
+      .where(sql`${t.txHash} IS NOT NULL`),
   }),
 )
 

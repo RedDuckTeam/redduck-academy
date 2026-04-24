@@ -10,7 +10,7 @@ import { CodeIcon } from '@/components/ui/icons/code'
 import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { useSession } from '@/hooks/useSession'
-import { RateLimitError } from '@/lib/api/coding-task'
+import { RateLimitError } from '@/lib/api/rate-limit'
 
 interface LessonCodeChallengeProps {
   lesson: Lesson
@@ -46,11 +46,14 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
   }
 
   const rateLimitError = submitError instanceof RateLimitError ? submitError : null
-  const canSubmit = code.trim().length > 0 && !isPending && !rateLimitError
+  // Cooldown is short-lived and the FE can't auto-tick, so we let the user submit and rely on the
+  // backend to respond with a fresh 429 if they're still under cooldown.
+  const isHardBlocked = rateLimitError?.reason === 'daily' || rateLimitError?.reason === 'monthly'
+  const canSubmit = code.trim().length > 0 && !isPending && !isHardBlocked
 
   return (
-    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 xl:flex-row xl:items-stretch">
-      <div className="flex flex-col w-full">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 xl:flex-row xl:items-stretch xl:h-full xl:min-h-0">
+      <div className="flex flex-col w-full xl:h-full xl:min-h-0 xl:overflow-hidden">
         <PanelHeader>
           <FileIcon className="w-5 h-5" />
           <Text variant="caps-14">DESCRIPTION</Text>
@@ -59,13 +62,13 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
           <DescriptionPanel lesson={lesson} userLesson={userLesson ?? null} />
         </div>
       </div>
-      <div className="gap-2.5 flex flex-col w-full">
-        <div className="flex flex-col flex-1 w-full">
+      <div className="gap-2.5 flex flex-col w-full xl:h-full xl:min-h-0 xl:overflow-hidden">
+        <div className="flex flex-col flex-1 w-full xl:h-full xl:min-h-0">
           <PanelHeader>
             <CodeIcon className="w-5 h-5" />
             <Text variant="caps-14">CODE</Text>
           </PanelHeader>
-          <div className="flex flex-col flex-1 border-b border-x border-border overflow-hidden">
+          <div className="flex flex-col flex-1 border-b border-x border-border overflow-hidden xl:min-h-0">
             <CodePanel
               lesson={lesson}
               userLesson={userLesson ?? null}

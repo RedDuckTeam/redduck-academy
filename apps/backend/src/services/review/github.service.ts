@@ -1,9 +1,12 @@
 import { Octokit } from '@octokit/rest'
 import { AppError } from '../../lib/errors'
+import { Logger } from '../../lib/logger'
 import { env } from '../../env'
 import type { FetchExpectedFilesResult, RepoFile, ResolvedRepoRef } from './types/github'
 import { httpStatus, parseGitHubRepoUrl, throwGitHubApiError } from './utils/github'
 import { expandReviewPatterns } from './utils/review-paths'
+
+const logger = new Logger('GitHubService')
 
 /** Max bytes per file before decoding (decimal 1 MB; GitHub `size` is in bytes). */
 export const MAX_REVIEW_FILE_BYTES = 1_000_000
@@ -202,7 +205,8 @@ export class GitHubService {
       },
     })
     if (!res.ok) {
-      throw new Error(`Failed to download file from GitHub (${res.status})`)
+      logger.error('Authenticated raw download failed', undefined, { status: res.status, downloadUrl })
+      throw new AppError(502, 'Could not download a file from GitHub, please try again later')
     }
     return res.arrayBuffer()
   }

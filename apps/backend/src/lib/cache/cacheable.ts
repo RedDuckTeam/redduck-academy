@@ -1,4 +1,7 @@
 import type { CacheStore, CacheableOptions, CacheableSWROptions } from './types'
+import { Logger } from '../logger'
+
+const logger = new Logger('Cacheable')
 
 /** Internal wrapper for SWR mode */
 interface SWRCacheEntry<T = unknown> {
@@ -91,7 +94,7 @@ export function cacheable<TArgs extends unknown[], TResult>(
                 }
                 await cache.set(cacheKey, entry, hardTtlSeconds)
               })
-              .catch((err) => console.error(`Cache SWR refresh error: ${cacheKey}`, err))
+              .catch((err) => logger.error('SWR refresh failed', err, { cacheKey }))
               .finally(() => refreshingKeys.delete(cacheKey))
           }
 
@@ -101,7 +104,7 @@ export function cacheable<TArgs extends unknown[], TResult>(
         return cached as TResult
       }
     } catch (err) {
-      console.error(`Cache get error: ${cacheKey}`, err)
+      logger.error('Cache get failed', err, { cacheKey })
     }
 
     const result = await fn(...args)
@@ -118,7 +121,7 @@ export function cacheable<TArgs extends unknown[], TResult>(
         await cache.set(cacheKey, result, hardTtlSeconds)
       }
     } catch (err) {
-      console.error(`Cache set error: ${cacheKey}`, err)
+      logger.error('Cache set failed', err, { cacheKey })
     }
 
     return result

@@ -1,4 +1,5 @@
-import { AppError } from '../../lib/errors'
+import { AppError, GENERIC_ERROR_MESSAGE } from '../../lib/errors'
+import { Logger } from '../../lib/logger'
 import { LessonsService } from '../lessons/lessons.service'
 import { githubService } from './github.service'
 import { buildReviewPrompt } from './prompt.builder'
@@ -11,6 +12,8 @@ import {
   validateFetchResult,
 } from './utils/review-lesson'
 import { SubmissionRateLimitService } from '../rate-limit/submission-rate-limit.service'
+
+const logger = new Logger('ReviewService')
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -46,10 +49,11 @@ export class ReviewService {
       const batchId = await createBatch(prompt, submissionId, tasks.length)
       await SubmissionRepository.updateBatch(submissionId, batchId, fetchResult.commitSha)
     } catch (err) {
+      logger.error('Failed to create OpenAI batch', err, { submissionId, lessonId: lesson.id })
       // Mark the submission failed so the user isn't stuck in a pending state with no batch.
-      const message = err instanceof Error ? err.message : 'Failed to create OpenAI batch'
-      await SubmissionRepository.markFailed(submissionId, message)
-      throw new AppError(502, message)
+      // Store the safe message — the raw error would otherwise surface in the learner's submission history.
+      await SubmissionRepository.markFailed(submissionId, GENERIC_ERROR_MESSAGE)
+      throw new AppError(502, GENERIC_ERROR_MESSAGE)
     }
   }
 
@@ -68,7 +72,9 @@ export class ReviewService {
     const result = await pollAndParse(latest.batchRequestId, latest.id, lesson.reviewGradingTasks ?? [])
 
     if (result.type === 'failed') {
-      await SubmissionRepository.markFailed(latest.id, result.message)
+      // The underlying detail is already written to the logs inside pollAndParse.
+      // Learners only ever see the generic message in the submission history.
+      await SubmissionRepository.markFailed(latest.id, GENERIC_ERROR_MESSAGE)
       return
     }
     if (result.type === 'pending') return

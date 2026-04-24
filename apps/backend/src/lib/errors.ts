@@ -9,3 +9,10 @@ export class AppError extends Error {
     this.extra = extra
   }
 }
+
+/**
+ * Default user-facing copy for any failure we don't want to describe in detail
+ * (third-party outages, unexpected parsing issues, infra errors, etc.).
+ * Details go to the server log; the client gets this string.
+ */
+export const GENERIC_ERROR_MESSAGE = 'Something went wrong, please try again later'

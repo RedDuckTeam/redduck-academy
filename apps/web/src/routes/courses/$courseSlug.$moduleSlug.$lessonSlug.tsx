@@ -1,4 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
@@ -54,8 +56,40 @@ function LessonPage() {
   const isCodingChallenge = lesson.type === 'coding_task'
   const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
 
+  const mainRef = useRef<HTMLElement>(null)
+  const [mainHeight, setMainHeight] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!isCodingChallenge) return
+
+    const measure = () => {
+      if (!mainRef.current || window.innerWidth < 1280) {
+        setMainHeight(null)
+        document.body.style.overflow = ''
+        return
+      }
+      const top = mainRef.current.getBoundingClientRect().top
+      setMainHeight(window.innerHeight - top - 10)
+      document.body.style.overflow = 'hidden'
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+      document.body.style.overflow = ''
+    }
+  }, [isCodingChallenge])
+
   return (
-    <main className="mx-5 mb-[60px] flex min-h-screen min-w-0 flex-col gap-3.5 md:mx-[60px]">
+    <main
+      ref={mainRef}
+      className={cn(
+        'mx-5 flex min-w-0 flex-col gap-3.5 md:mx-[60px]',
+        isCodingChallenge ? '' : 'mb-[60px] min-h-screen',
+      )}
+      style={mainHeight ? { height: mainHeight } : undefined}
+    >
       <PageBreadcrumbs
         variant="lesson"
         courseSlug={courseSlug}
@@ -63,7 +97,7 @@ function LessonPage() {
         moduleSlug={moduleSlug}
         lessonSlug={lessonSlug}
       />
-      <div className="flex min-w-0 gap-10">
+      <div className={cn('flex min-w-0 gap-10', isCodingChallenge && 'xl:flex-1 xl:min-h-0 ')}>
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
           <LessonCodeChallenge

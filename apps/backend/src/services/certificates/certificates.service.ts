@@ -3,8 +3,11 @@ import { db, payloadDb } from '../../db'
 import { user, userCertificates, userLessons } from '../../db/schema'
 import { payloadSchema } from '@redduck/payload-config'
 import { AppError } from '../../lib/errors'
+import { Logger } from '../../lib/logger'
 import { privy } from '../../lib/privy'
 import type { WalletWithMetadata } from '@privy-io/server-auth'
+
+const logger = new Logger('CertificatesService')
 
 const { courses } = payloadSchema
 
@@ -100,7 +103,8 @@ export class CertificatesService {
     let privyUser
     try {
       privyUser = await privy.getUser(privyUserId)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to fetch Privy user', err, { privyUserId })
       throw new AppError(401, 'Unauthorized')
     }
 

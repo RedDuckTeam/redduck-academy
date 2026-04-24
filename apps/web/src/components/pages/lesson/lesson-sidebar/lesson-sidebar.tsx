@@ -20,8 +20,8 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
 
   return (
     <div
-      className="flex max-md:hidden flex-col overflow-hidden bg-sidebar transition-all duration-200 ease-in-out"
-      style={{ width: isOpen ? 380 : 60, minWidth: isOpen ? 380 : 60, height: isOpen ? '100%' : 60 }}
+      className="flex max-md:hidden flex-col overflow-hidden bg-sidebar transition-all duration-200 ease-in-out self-start"
+      style={{ width: isOpen ? 380 : 60, minWidth: isOpen ? 380 : 60, height: isOpen ? 'auto' : 60 }}
     >
       <div
         ref={parent as Ref<HTMLDivElement>}

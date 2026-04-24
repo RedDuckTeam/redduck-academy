@@ -11,20 +11,22 @@ import reviewApp from './services/review/review.routes'
 import communityApp from './services/community/community.routes'
 import certificatesApp from './services/certificates/certificates.routes'
 import adminApp from './services/admin/admin.routes'
-import { AppError } from './lib/errors'
+import { AppError, GENERIC_ERROR_MESSAGE } from './lib/errors'
+import { Logger } from './lib/logger'
 
 const port = Number(process.env.PORT) || 3001
 const backendOrigin = `http://localhost:${port}`
 
 const app = new Hono({ strict: false })
+const rootLogger = new Logger('HonoApp')
 
 app.onError((err, c) => {
   if (err instanceof AppError) {
     return c.json({ error: err.message, ...(err.extra ?? {}) }, err.statusCode as Parameters<typeof c.json>[1])
   }
 
-  console.error('Unhandled error:', err)
-  return c.json({ error: 'Internal Server Error' }, 500)
+  rootLogger.error('Unhandled error', err, { method: c.req.method, path: c.req.path })
+  return c.json({ error: GENERIC_ERROR_MESSAGE }, 500)
 })
 
 // CORS configuration for auth route

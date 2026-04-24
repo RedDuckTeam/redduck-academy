@@ -1,5 +1,5 @@
 import { Editor, type OnMount } from '@monaco-editor/react'
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { editor } from 'monaco-editor'
 import { useTheme } from '@/components/providers/theme-context'
 import { registerLanguages } from '@/lib/monaco-languages'
@@ -22,6 +22,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const monacoTheme = theme === 'dark' ? 'vs-dark' : 'vs-light'
+  const [editorHeight, setEditorHeight] = useState<number>(560)
 
   useImperativeHandle(ref, () => ({
     format: () => editorRef.current?.getAction('editor.action.formatDocument')?.run(),
@@ -56,11 +57,21 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
     }
   }, [])
 
+  useEffect(() => {
+    if (!containerRef.current) return
+    const observer = new ResizeObserver(([entry]) => {
+      const h = entry.contentRect.height
+      if (h > 100) setEditorHeight(h)
+    })
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div ref={containerRef} className="monaco-transparent py-5">
+    <div ref={containerRef} className="monaco-transparent h-full pb-5">
       <Editor
         key={monacoTheme}
-        height="560px"
+        height={editorHeight}
         width="100%"
         defaultLanguage={language}
         language={language}

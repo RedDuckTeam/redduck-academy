@@ -4,10 +4,13 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { userLessons, userCertificates } from '../../db/schema'
 import { uploadToR2, getJsonFromR2 } from '../../lib/r2'
-import { AppError } from '../../lib/errors'
+import { AppError, GENERIC_ERROR_MESSAGE } from '../../lib/errors'
+import { Logger } from '../../lib/logger'
 import { getBrowser } from '../../lib/browser'
 import { buildCertificateHtml } from './template'
 import { payloadSchema } from '@redduck/payload-config'
+
+const logger = new Logger('CertificateGenerationService')
 
 const { courses } = payloadSchema
 
@@ -32,7 +35,14 @@ async function renderCertificateImage(
   courseTitle: string,
   issuedAt: Date,
 ): Promise<Buffer> {
-  const browser = await getBrowser()
+  let browser
+  try {
+    browser = await getBrowser()
+  } catch (err) {
+    logger.error('Failed to launch Puppeteer browser', err)
+    throw new AppError(502, GENERIC_ERROR_MESSAGE)
+  }
+
   const page = await browser.newPage()
   try {
     await page.setViewport({ width: 960, height: 960 })
@@ -40,6 +50,9 @@ async function renderCertificateImage(
       waitUntil: 'networkidle0',
     })
     return Buffer.from(await page.screenshot({ type: 'jpeg', quality: 85, fullPage: false }))
+  } catch (err) {
+    logger.error('Failed to render certificate image', err, { userName, courseTitle })
+    throw new AppError(502, GENERIC_ERROR_MESSAGE)
   } finally {
     await page.close()
   }

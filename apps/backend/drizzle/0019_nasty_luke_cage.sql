@@ -1,0 +1,2 @@
+ALTER TABLE "user_lessons" DROP CONSTRAINT "user_lessons_user_answers_size_check";--> statement-breakpoint
+ALTER TABLE "user_lessons" ADD CONSTRAINT "user_lessons_user_answers_size_check" CHECK ("user_lessons"."user_answers" IS NULL OR pg_column_size("user_lessons"."user_answers") < 32768);

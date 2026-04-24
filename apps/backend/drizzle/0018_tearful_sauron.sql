@@ -1,0 +1,4 @@
+CREATE INDEX "user_certificates_status_issued_at_idx" ON "user_certificates" USING btree ("status","issued_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE UNIQUE INDEX "user_certificates_tx_hash_unique" ON "user_certificates" USING btree ("tx_hash") WHERE "user_certificates"."tx_hash" IS NOT NULL;--> statement-breakpoint
+CREATE INDEX "user_lessons_user_completed_idx" ON "user_lessons" USING btree ("user_id") WHERE "user_lessons"."is_completed" = true;--> statement-breakpoint
+ALTER TABLE "user_lessons" ADD CONSTRAINT "user_lessons_user_answers_size_check" CHECK ("user_lessons"."user_answers" IS NULL OR pg_column_size("user_lessons"."user_answers") < 65536);

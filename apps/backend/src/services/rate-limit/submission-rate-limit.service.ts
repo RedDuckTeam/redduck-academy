@@ -1,9 +1,11 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, lt, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { submissionRateLimits } from '../../db/schema'
 
 const WINDOW_SIZE = 5
 const MAX_WINDOW_HOURS = 168 // 1 week cap
+const CLEANUP_PROBABILITY = 0.01
+const CLEANUP_RETENTION_DAYS = 7
 
 export interface RateLimitResult {
   allowed: true
@@ -26,8 +28,20 @@ function isWindowExpired(windowStart: Date, windowDurationHours: number): boolea
   return Date.now() >= windowEndMs
 }
 
+async function maybeCleanupExpired(): Promise<void> {
+  if (Math.random() >= CLEANUP_PROBABILITY) return
+  try {
+    await db
+      .delete(submissionRateLimits)
+      .where(lt(submissionRateLimits.updatedAt, sql`now() - interval '${sql.raw(String(CLEANUP_RETENTION_DAYS))} days'`))
+  } catch {
+    // best-effort; never block the caller
+  }
+}
+
 export const SubmissionRateLimitService = {
   async checkAndConsume(userId: string, ipAddress: string, lessonId: number): Promise<RateLimitCheckResult> {
+    void maybeCleanupExpired()
     return db.transaction(async (tx) => {
       // Fetch IP-scoped row (canonical window tracker)
       const [ipRow] = await tx
