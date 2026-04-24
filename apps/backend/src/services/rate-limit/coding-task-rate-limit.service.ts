@@ -37,23 +37,25 @@ async function getCountersForUserAndIp(
   lessonId: number,
   now: Date,
 ): Promise<{ user: Counters; ip: Counters }> {
-  const dayCutoff = new Date(now.getTime() - DAY_MS)
-  const monthCutoff = new Date(now.getTime() - MONTH_MS)
+  // The `postgres` driver doesn't serialize Date objects inside sql template params,
+  // so we bind ISO strings and cast them to timestamp in the query.
+  const dayCutoffIso = new Date(now.getTime() - DAY_MS).toISOString()
+  const monthCutoffIso = new Date(now.getTime() - MONTH_MS).toISOString()
 
   // One round-trip. Conditional aggregates give us cooldown + daily + monthly in one shot,
   // computed independently for the user scope and the IP scope.
   const [row] = await db
     .select({
       userLast: sql<Date | null>`MAX(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${userLessons.userId} = ${userId})`,
-      userDayCount: sql<number>`COUNT(*) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoff})`.mapWith(Number),
-      userDayOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoff})`,
-      userMonthCount: sql<number>`COUNT(*) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoff})`.mapWith(Number),
-      userMonthOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoff})`,
+      userDayCount: sql<number>`COUNT(*) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoffIso})`.mapWith(Number),
+      userDayOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoffIso})`,
+      userMonthCount: sql<number>`COUNT(*) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoffIso})`.mapWith(Number),
+      userMonthOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${userLessons.userId} = ${userId} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoffIso})`,
       ipLast: sql<Date | null>`MAX(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress})`,
-      ipDayCount: sql<number>`COUNT(*) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoff})`.mapWith(Number),
-      ipDayOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoff})`,
-      ipMonthCount: sql<number>`COUNT(*) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoff})`.mapWith(Number),
-      ipMonthOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoff})`,
+      ipDayCount: sql<number>`COUNT(*) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoffIso})`.mapWith(Number),
+      ipDayOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${dayCutoffIso})`,
+      ipMonthCount: sql<number>`COUNT(*) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoffIso})`.mapWith(Number),
+      ipMonthOldest: sql<Date | null>`MIN(${codingTaskSubmissions.submittedAt}) FILTER (WHERE ${codingTaskSubmissions.ipAddress} = ${ipAddress} AND ${userLessons.lessonId} = ${lessonId} AND ${codingTaskSubmissions.submittedAt} > ${monthCutoffIso})`,
     })
     .from(codingTaskSubmissions)
     .innerJoin(userLessons, eq(codingTaskSubmissions.userLessonId, userLessons.id))
