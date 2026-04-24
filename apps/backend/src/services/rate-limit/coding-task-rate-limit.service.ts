@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, gt, or, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { codingTaskSubmissions, userLessons } from '../../db/schema'
 
@@ -59,6 +59,18 @@ async function getCountersForUserAndIp(
     })
     .from(codingTaskSubmissions)
     .innerJoin(userLessons, eq(codingTaskSubmissions.userLessonId, userLessons.id))
+    // Prune scanned rows to the widest window (monthly) AND to either this user or this IP.
+    // Lets the planner use (user_lesson_id, submitted_at) or (ip_address, submitted_at) indexes
+    // via BitmapOr, instead of scanning the whole table to evaluate the FILTER aggregates.
+    .where(
+      and(
+        gt(codingTaskSubmissions.submittedAt, sql`${monthCutoffIso}::timestamp`),
+        or(
+          eq(userLessons.userId, userId),
+          eq(codingTaskSubmissions.ipAddress, ipAddress),
+        ),
+      ),
+    )
 
   return {
     user: {
