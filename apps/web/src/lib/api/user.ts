@@ -47,11 +47,13 @@ export const updateUserBio = async (bio: string | null): Promise<{ bio: string |
   const response = await api({ credentials: 'include' }).patch<{ data: { bio: string | null } }>('/api/user/bio', {
     bio,
   })
+  if (response.error) throw new Error(response.error)
   return response.data!.data
 }
 
 export const updateUserName = async (name: string): Promise<{ name: string }> => {
   const response = await api({ credentials: 'include' }).patch<{ data: { name: string } }>('/api/user/name', { name })
+  if (response.error) throw new Error(response.error)
   return response.data!.data
 }
 

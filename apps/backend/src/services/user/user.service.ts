@@ -12,6 +12,7 @@ import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { sanitizeReviewFeedbackForLearner } from '../review/sanitize-review-feedback-for-learner'
 import { AppError } from '../../lib/errors'
+import { containsProfanity } from '../../lib/profanity'
 import { CoursePrerequisitesService } from '../courses/course-prerequisites.service'
 
 const { lessons, courses } = payloadSchema
@@ -235,6 +236,7 @@ export class UserService {
   }
 
   static async updateUserName(userId: string, name: string) {
+    if (containsProfanity(name)) throw new AppError(400, 'Name contains inappropriate language')
     const [updated] = await db.update(user).set({ name }).where(eq(user.id, userId)).returning({ name: user.name })
     return { name: updated.name }
   }
@@ -307,6 +309,7 @@ export class UserService {
   }
 
   static async updateUserUsername(userId: string, username: string) {
+    if (containsProfanity(username)) throw new AppError(400, 'Username contains inappropriate language')
     const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.username, username)).limit(1)
     if (existing && existing.id !== userId) throw new AppError(400, 'Username already taken')
     const [updated] = await db.update(user).set({ username }).where(eq(user.id, userId)).returning({ username: user.username })
@@ -315,6 +318,7 @@ export class UserService {
   }
 
   static async updateUserBio(userId: string, bio: string | null) {
+    if (bio && containsProfanity(bio)) throw new AppError(400, 'Bio contains inappropriate language')
     const [updated] = await db.update(user).set({ bio }).where(eq(user.id, userId)).returning({ bio: user.bio })
     if (!updated) throw new AppError(404, 'User not found')
     return { bio: updated.bio }

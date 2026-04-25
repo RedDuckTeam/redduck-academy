@@ -65,9 +65,9 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
         )
         setLocalOverride(undefined)
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         setLocalOverride(undefined)
-        toast.error('Failed to update bio')
+        toast.error(err instanceof Error ? err.message : 'Failed to update bio')
       })
   }, [isEditing, draft, bio, queryClient])
 
