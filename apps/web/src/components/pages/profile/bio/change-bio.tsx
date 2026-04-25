@@ -2,10 +2,10 @@ import { Text, textVariants } from '@/components/ui/text'
 import { updateUserBio } from '@/lib/api/user'
 import { queryKeys } from '@/lib/query-keys'
 import { cn } from '@/lib/utils'
+import { calcProgress } from '@/lib/calc-progress'
+import { useInlineEdit } from '@/hooks/ui/useInlineEdit'
 import { useQueryClient } from '@tanstack/react-query'
 import { PencilIcon, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import type { UserSettings } from '@/types/lesson'
 
 const BIO_MAX = 300
@@ -23,75 +23,29 @@ interface ChangeBioProps {
 
 export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: ChangeBioProps) => {
   const queryClient = useQueryClient()
-  const [localOverride, setLocalOverride] = useState<string | null | undefined>(undefined)
-  const bio = localOverride !== undefined ? localOverride : initialBio
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [draft, setDraft] = useState(bio ?? '')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const actionButtonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (isEditing) {
-      textareaRef.current?.focus()
-    }
-  }, [isEditing])
-
-  const commit = useCallback(async () => {
-    if (!isEditing) return
-
-    const trimmed = draft.trim()
-
-    if (trimmed.length > BIO_MAX) {
-      toast.error(`Bio must be at most ${BIO_MAX} characters`)
-      setIsEditing(false)
-      return
-    }
-
-    const newBio = trimmed || null
-
-    if (newBio === bio) {
-      setIsEditing(false)
-      return
-    }
-
-    setIsEditing(false)
-    setLocalOverride(newBio)
-
-    try {
-      const data = await updateUserBio(newBio)
+  const {
+    isEditing,
+    draft,
+    displayValue: bio,
+    startEdit,
+    discardEdit,
+    inputRef,
+    actionButtonRef,
+    inputHandlers,
+  } = useInlineEdit<string | null>({
+    value: initialBio,
+    onSave: async (next) => {
+      const data = await updateUserBio(next)
       queryClient.setQueryData<UserSettings>(queryKeys.user.settings(), (prev) =>
         prev ? { ...prev, bio: data.bio } : prev,
       )
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update bio')
-    } finally {
-      setLocalOverride(undefined)
-    }
-  }, [isEditing, draft, bio, queryClient])
-
-  useEffect(() => {
-    if (!isEditing) return
-
-    const onPointerDown = (e: PointerEvent) => {
-      const el = textareaRef.current
-      if (!el || el.contains(e.target as Node)) return
-      if (actionButtonRef.current?.contains(e.target as Node)) return
-      void commit()
-    }
-
-    document.addEventListener('pointerdown', onPointerDown, true)
-    return () => document.removeEventListener('pointerdown', onPointerDown, true)
-  }, [isEditing, commit])
-
-  const startEdit = () => {
-    setDraft(bio ?? '')
-    setIsEditing(true)
-  }
-
-  const discardEdit = () => {
-    setIsEditing(false)
-  }
+    },
+    parse: (trimmed) => trimmed || null,
+    validate: (trimmed) => (trimmed.length > BIO_MAX ? `Bio must be at most ${BIO_MAX} characters` : null),
+    discardOnEscape: true,
+    saveErrorMessage: 'Failed to update bio',
+  })
 
   if (isPrivate) {
     return (
@@ -126,15 +80,10 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
         {isEditing ? (
           <>
             <textarea
-              ref={textareaRef}
+              ref={inputRef as React.RefObject<HTMLTextAreaElement>}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  e.preventDefault()
-                  discardEdit()
-                }
-              }}
+              onChange={inputHandlers.onChange}
+              onKeyDown={inputHandlers.onKeyDown}
               rows={4}
               maxLength={BIO_MAX}
               className={textareaClass}
@@ -148,7 +97,7 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
               <div className="h-0.5 w-full bg-border overflow-hidden">
                 <div
                   className="h-full bg-[#e0deda] transition-all duration-150"
-                  style={{ width: `${Math.min((draft.length / BIO_MAX) * 100, 100)}%` }}
+                  style={{ width: `${calcProgress(draft.length, BIO_MAX)}%` }}
                 />
               </div>
             </div>

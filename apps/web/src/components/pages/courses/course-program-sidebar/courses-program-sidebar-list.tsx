@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useState, type RefObject } from 'react'
 import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { padIndex } from '@/lib/format-index'
 
 export interface CoursesProgramSidebarListProps {
   courses: Course[]
@@ -68,7 +69,7 @@ export const CoursesProgramSidebarList = ({
           }}
         >
           <Text variant="main-16" className="font-ibm-plex-mono text-primary">
-            {index < 10 ? `0${index + 1}` : index + 1}.
+            {padIndex(index)}.
           </Text>
           <Text variant="main-16" className="font-ibm-plex-mono uppercase text-white">
             {course.title}

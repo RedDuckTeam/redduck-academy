@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useCourse } from '@/hooks/api/courses/useCourse'
 import { Text } from '@/components/ui/text'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { padIndex } from '@/lib/format-index'
 
 export interface LessonSidebarListProps {
   courseSlug: string
@@ -61,7 +62,7 @@ export const LessonSidebarList = ({
         <AccordionItem key={module.id} value={module.slug}>
           <AccordionTrigger className="flex h-[60px] cursor-pointer items-center gap-5 px-5 py-[22px]">
             <Text variant="main-16" className="font-ibm-plex-mono text-primary">
-              {index < 10 ? `0${index + 1}` : index + 1}.
+              {padIndex(index)}.
             </Text>
             <Text variant="main-16" className="font-ibm-plex-mono uppercase text-[#e0deda]">
               {module.title}

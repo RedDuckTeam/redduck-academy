@@ -54,6 +54,10 @@ code {
   /* Scrollbar surfaces (landing app.scss) */
   --gray: #e0deda;
   --dark-gray: #9b9b9b;
+  --accent-purple: #ae83cc;
+  --accent-blue: #6b9afe;
+  --accent-peach: #e0ac9f;
+  --accent-cyan: #7ecdda;
   /* Same easing/duration as Tailwind `transition-colors` (used on `*` in @layer base). */
   --theme-color-transition-duration: 150ms;
   --theme-color-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
@@ -109,6 +113,10 @@ code {
   --color-header-foreground: var(--header-foreground);
   --color-sidebar: var(--sidebar);
   --color-sidebar-border: var(--sidebar-border);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-peach: var(--accent-peach);
+  --color-accent-cyan: var(--accent-cyan);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

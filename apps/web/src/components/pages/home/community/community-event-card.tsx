@@ -2,15 +2,9 @@ import { Link } from '@tanstack/react-router'
 import type { CommunityEventListItem } from '@/types/community'
 import { Text } from '@/components/ui/text'
 import { resolveMediaUrl } from '@/lib/media-url'
-
-function formatEventDate(iso: string | null | undefined): string | null {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-const CARD_COLORS = ['var(--primary)', '#AE83CC', '#6B9AFE', '#E0AC9F', '#7ECDDA']
+import { formatLongDate } from '@/lib/format-date'
+import { pickCardColor } from '@/lib/theme-colors'
+import { cn } from '@/lib/utils'
 
 interface CommunityEventCardProps {
   event: CommunityEventListItem
@@ -20,13 +14,13 @@ interface CommunityEventCardProps {
 export const CommunityEventCard = ({ event, index }: CommunityEventCardProps) => {
   const slug = event.slug
 
-  const dateLabel = formatEventDate(event.eventDate)
+  const dateLabel = formatLongDate(event.eventDate)
   const imageSrc = resolveMediaUrl(event.photo?.url)
 
-  const cardColor = CARD_COLORS[index % CARD_COLORS.length]
+  const cardColorClass = pickCardColor(index)
 
   const inner = (
-    <div className="p-5 flex flex-col gap-5 h-full transition-colors" style={{ backgroundColor: cardColor }}>
+    <div className={cn('p-5 flex flex-col gap-5 h-full transition-colors', cardColorClass)}>
       <Text variant={'caps-24'}>{event.title}</Text>
       <Text variant={'main-16'}>{event.description}</Text>
       {dateLabel ? (

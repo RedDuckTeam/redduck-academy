@@ -6,6 +6,7 @@ import { CheckIcon } from '@/components/ui/icons/check'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { LockedCourseStatusTooltip } from '@/components/pages/home/my-progress/locked-course-status-tooltip'
 import { cn } from '@/lib/utils'
+import { padIndex } from '@/lib/format-index'
 
 const statusLabels: Record<CourseStatus, string> = {
   start: 'Start',
@@ -38,7 +39,7 @@ export const MyProgressCourse = ({
   prerequisiteCourseTitle,
   prerequisiteCourseSlug,
 }: MyProgressCourseProps) => {
-  const indexLabel = index < 10 ? `0${index + 1}` : index + 1
+  const indexLabel = padIndex(index)
   const pointsText = totalLessons > 0 ? `${completedLessons}/${totalLessons}` : '-'
 
   const titleInner = (

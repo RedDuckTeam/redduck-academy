@@ -2,9 +2,11 @@ import { Text, textVariants } from '@/components/ui/text'
 import { useSession } from '@/hooks/useSession'
 import { updateUserName } from '@/lib/api/user'
 import { cn } from '@/lib/utils'
+import { useInlineEdit } from '@/hooks/ui/useInlineEdit'
 import { PencilIcon, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
+
+const NAME_MAX = 35
+const NAME_ALLOWED = /[^\w\s\-.'@!#$%^&*()+=[\]{};:,<>?/\\|~`"]/g
 
 const inputTextClass = cn(
   textVariants({ variant: 'caps-20' }),
@@ -19,78 +21,32 @@ interface ChangeNameProps {
 export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps) => {
   const { session, refetch } = useSession()
   const serverName = nameProp ?? session?.user.name ?? ''
-  const [localOverride, setLocalOverride] = useState<string | null>(null)
-  const displayName = localOverride ?? serverName
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [draftName, setDraftName] = useState(displayName)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const actionButtonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (isEditing) {
-      const el = inputRef.current
-      if (!el) return
-      el.focus()
-      el.setSelectionRange(el.value.length, el.value.length)
-    }
-  }, [isEditing])
-
-  const commit = useCallback(async () => {
-    if (!isEditing) return
-
-    const trimmed = draftName.trim()
-    if (!trimmed) {
-      toast.error('Name is required')
-      setIsEditing(false)
-      return
-    }
-    if (trimmed.length > 35) {
-      toast.error('Name must be at most 35 characters')
-      setIsEditing(false)
-      return
-    }
-
-    if (trimmed === displayName) {
-      setIsEditing(false)
-      return
-    }
-
-    setIsEditing(false)
-    setLocalOverride(trimmed)
-
-    try {
-      await updateUserName(trimmed)
+  const {
+    isEditing,
+    draft,
+    displayValue: displayName,
+    startEdit,
+    discardEdit,
+    inputRef,
+    actionButtonRef,
+    inputHandlers,
+  } = useInlineEdit<string>({
+    value: serverName,
+    onSave: async (next) => {
+      await updateUserName(next)
       await refetch()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update name')
-    } finally {
-      setLocalOverride(null)
-    }
-  }, [isEditing, draftName, displayName, refetch])
-
-  useEffect(() => {
-    if (!isEditing) return
-
-    const onPointerDown = (e: PointerEvent) => {
-      const el = inputRef.current
-      if (!el || el.contains(e.target as Node)) return
-      if (actionButtonRef.current?.contains(e.target as Node)) return
-      void commit()
-    }
-
-    document.addEventListener('pointerdown', onPointerDown, true)
-    return () => document.removeEventListener('pointerdown', onPointerDown, true)
-  }, [isEditing, commit])
-
-  const startEdit = () => {
-    setDraftName(displayName)
-    setIsEditing(true)
-  }
-
-  const discardEdit = () => {
-    setIsEditing(false)
-  }
+    },
+    validate: (trimmed) => {
+      if (!trimmed) return 'Name is required'
+      if (trimmed.length > NAME_MAX) return `Name must be at most ${NAME_MAX} characters`
+      return null
+    },
+    transform: (raw) => raw.replace(NAME_ALLOWED, ''),
+    focusCursorAtEnd: true,
+    commitOnEnter: true,
+    saveErrorMessage: 'Failed to update name',
+  })
 
   if (!editable) {
     return (
@@ -106,18 +62,13 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
         <span className={cn(textVariants({ variant: 'caps-20' }), 'text-white sm:text-[20px] text-[16px]')}>I'm </span>
         {isEditing ? (
           <textarea
-            ref={inputRef}
+            ref={inputRef as React.RefObject<HTMLTextAreaElement>}
             rows={1}
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value.replace(/[^\w\s\-.'@!#$%^&*()+=[\]{};:,<>?/\\|~`"]/g, ''))}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                void commit()
-              }
-            }}
+            value={draft}
+            onChange={inputHandlers.onChange}
+            onKeyDown={inputHandlers.onKeyDown}
             className={cn(inputTextClass, 'resize-none overflow-hidden w-full')}
-            maxLength={35}
+            maxLength={NAME_MAX}
             autoComplete="name"
             aria-label="Display name"
           />

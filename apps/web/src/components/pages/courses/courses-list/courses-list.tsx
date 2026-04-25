@@ -4,6 +4,7 @@ import type { Course } from '@/types/lesson'
 import { LessonTypeEnum } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { lessonTypeToLabel } from '@/lib/lessons/lessons'
+import { padIndex } from '@/lib/format-index'
 import { PlayIcon } from '@/components/ui/icons/play'
 import { cn } from '@/lib/utils'
 import { CheckIcon } from '@/components/ui/icons/check'
@@ -25,7 +26,7 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
         <Fragment key={module.slug}>
           <div className="p-5">
             <Text variant="caps-20" className="text-black">
-              {index < 10 ? `0${index + 1}` : index + 1}. {module.title}
+              {padIndex(index)}. {module.title}
             </Text>
           </div>
           {module.lessons

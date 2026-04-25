@@ -1,52 +1,27 @@
-import { useState, useRef, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useReactTable, getCoreRowModel, type SortingState } from '@tanstack/react-table'
 import { Text } from '@/components/ui/text'
-import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { cn } from '@/lib/utils'
 import { useAdminUsers } from '@/hooks/api/admin/useAdminUsers'
 import { AdminDataTable } from '../shared/data-table'
-import { visiblePages } from '../shared/table-utils'
+import { AdminTablePagination } from '../shared/admin-table-pagination'
+import { useAdminTableState } from '../shared/useAdminTableState'
 import { usersColumns, usersSortableColumns } from './columns'
 
 type UserSort = 'email' | 'name' | 'username' | 'createdAt' | 'lessonsPassed' | 'coursesPassed'
-type SortDir = 'asc' | 'desc'
 
 export function AdminUsersTab() {
-  const [page, setPage] = useState(1)
-  const [userSort, setUserSort] = useState<UserSort>('createdAt')
-  const [userSortDir, setUserSortDir] = useState<SortDir>('desc')
-  const [userSearch, setUserSearch] = useState('')
-  const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const { page, setPage, sortBy, sortDir, search, handleSearchChange, handleSortClick } =
+    useAdminTableState<UserSort>({ initialSort: 'createdAt' })
 
   const { data, isPending, isError, error } = useAdminUsers({
     page,
-    sortBy: userSort,
-    sortDir: userSortDir,
-    search: userSearch || undefined,
+    sortBy,
+    sortDir,
+    search: search || undefined,
   })
 
-  const handleSearchChange = (value: string) => {
-    clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => {
-      setUserSearch(value)
-      setPage(1)
-    }, 300)
-  }
-
-  const handleSortClick = useCallback(
-    (columnId: string) => {
-      const newDir = userSort === columnId && userSortDir === 'asc' ? 'desc' : 'asc'
-      setUserSort(columnId as UserSort)
-      setUserSortDir(newDir)
-      setPage(1)
-    },
-    [userSort, userSortDir],
-  )
-
-  const sorting: SortingState = [{ id: userSort, desc: userSortDir === 'desc' }]
+  const sorting: SortingState = [{ id: sortBy, desc: sortDir === 'desc' }]
   const table = useReactTable({
     data: data?.items ?? [],
     columns: usersColumns,
@@ -84,7 +59,6 @@ export function AdminUsersTab() {
   }
 
   const totalPages = Math.ceil(data.total / data.pageSize)
-  const pages = visiblePages(page, totalPages)
 
   return (
     <div className="flex flex-col gap-6">
@@ -92,7 +66,7 @@ export function AdminUsersTab() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by name or username…"
-          defaultValue={userSearch}
+          defaultValue={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-9"
         />
@@ -109,8 +83,8 @@ export function AdminUsersTab() {
           <AdminDataTable
             table={table}
             sortableColumns={usersSortableColumns}
-            currentSort={userSort}
-            currentDir={userSortDir}
+            currentSort={sortBy}
+            currentDir={sortDir}
             onSortClick={handleSortClick}
           />
 
@@ -157,62 +131,7 @@ export function AdminUsersTab() {
         </>
       )}
 
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'sm' }),
-                  'gap-1 px-2.5',
-                  page <= 1 && 'pointer-events-none opacity-50',
-                )}
-                aria-label="Go to previous page"
-              >
-                <ChevronLeft className="size-4" />
-                <span>Previous</span>
-              </button>
-            </PaginationItem>
-
-            {pages.map((item, idx) =>
-              item === 'ellipsis' ? (
-                <PaginationItem key={`e-${idx}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={item}>
-                  <button
-                    onClick={() => setPage(item)}
-                    className={cn(buttonVariants({ variant: page === item ? 'outline' : 'ghost', size: 'icon' }))}
-                    aria-label={`Go to page ${item}`}
-                    aria-current={page === item ? 'page' : undefined}
-                  >
-                    {item}
-                  </button>
-                </PaginationItem>
-              ),
-            )}
-
-            <PaginationItem>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'sm' }),
-                  'gap-1 px-2.5',
-                  page >= totalPages && 'pointer-events-none opacity-50',
-                )}
-                aria-label="Go to next page"
-              >
-                <span>Next</span>
-                <ChevronRight className="size-4" />
-              </button>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <AdminTablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

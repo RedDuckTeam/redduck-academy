@@ -7,6 +7,7 @@ import { lessonTypeToLabel } from '@/lib/lessons/lessons'
 import { PlayIcon } from '@/components/ui/icons/play'
 import { cn } from '@/lib/utils'
 import { CheckIcon } from '@/components/ui/icons/check'
+import { padIndex } from '@/lib/format-index'
 
 interface AdminCoursesListProps {
   courses: Course[]
@@ -24,7 +25,7 @@ export const AdminCoursesList = ({ courses, courseSlug, completedLessons, userId
         <Fragment key={module.slug}>
           <div className="p-5">
             <Text variant="caps-20" className="text-black">
-              {index < 10 ? `0${index + 1}` : index + 1}. {module.title}
+              {padIndex(index)}. {module.title}
             </Text>
           </div>
           {module.lessons

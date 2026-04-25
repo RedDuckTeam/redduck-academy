@@ -1,66 +1,44 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Search } from 'lucide-react'
 import { useReactTable, getCoreRowModel, type SortingState, type RowSelectionState } from '@tanstack/react-table'
 import { Text } from '@/components/ui/text'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { cn } from '@/lib/utils'
 import { useAdminCertificates } from '@/hooks/api/admin/useAdminCertificates'
 import { useGenerateCertificate } from '@/hooks/api/admin/useGenerateCertificate'
 import { AdminDataTable } from '../shared/data-table'
-import { visiblePages, formatDate } from '../shared/table-utils'
+import { AdminTablePagination } from '../shared/admin-table-pagination'
+import { useAdminTableState } from '../shared/useAdminTableState'
+import { formatDate } from '../shared/table-utils'
 import { getCertificatesColumns, certsSortableColumns } from './columns'
 
 type CertSort = 'issuedAt' | 'userEmail' | 'courseSlug' | 'status' | 'name'
-type SortDir = 'asc' | 'desc'
 type CertStatus = 'all' | 'created' | 'requested' | 'claimed'
 
 const STATUS_OPTIONS: CertStatus[] = ['all', 'created', 'requested', 'claimed']
 
 export function AdminCertificatesTab() {
-  const [page, setPage] = useState(1)
-  const [certSort, setCertSort] = useState<CertSort>('issuedAt')
-  const [certSortDir, setCertSortDir] = useState<SortDir>('desc')
+  const { page, setPage, sortBy, sortDir, search, handleSearchChange, handleSortClick } =
+    useAdminTableState<CertSort>({ initialSort: 'issuedAt' })
   const [certStatus, setCertStatus] = useState<CertStatus>('all')
-  const [certSearch, setCertSearch] = useState('')
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
-  const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
   const { mutate: generate, isPending: isMintPending } = useGenerateCertificate()
 
   const { data, isPending, isError, error } = useAdminCertificates({
     page,
-    sortBy: certSort,
-    sortDir: certSortDir,
+    sortBy,
+    sortDir,
     status: certStatus,
-    search: certSearch || undefined,
+    search: search || undefined,
   })
-
-  const handleSearchChange = (value: string) => {
-    clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => {
-      setCertSearch(value)
-      setPage(1)
-    }, 300)
-  }
 
   const handleStatusChange = (s: CertStatus) => {
     setCertStatus(s)
     setPage(1)
   }
 
-  const handleSortClick = useCallback(
-    (columnId: string) => {
-      const newDir = certSort === columnId && certSortDir === 'asc' ? 'desc' : 'asc'
-      setCertSort(columnId as CertSort)
-      setCertSortDir(newDir)
-      setPage(1)
-    },
-    [certSort, certSortDir],
-  )
-
-  const sorting: SortingState = [{ id: certSort, desc: certSortDir === 'desc' }]
+  const sorting: SortingState = [{ id: sortBy, desc: sortDir === 'desc' }]
   const columns = useMemo(() => getCertificatesColumns(generate, isMintPending), [generate, isMintPending])
   const table = useReactTable({
     data: data?.items ?? [],
@@ -99,7 +77,6 @@ export function AdminCertificatesTab() {
   }
 
   const totalPages = Math.ceil(data.total / data.pageSize)
-  const pages = visiblePages(page, totalPages)
   const selectedCount = table.getSelectedRowModel().rows.length
 
   return (
@@ -109,7 +86,7 @@ export function AdminCertificatesTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by email, name or course…"
-            defaultValue={certSearch}
+            defaultValue={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
@@ -141,8 +118,8 @@ export function AdminCertificatesTab() {
           <AdminDataTable
             table={table}
             sortableColumns={certsSortableColumns}
-            currentSort={certSort}
-            currentDir={certSortDir}
+            currentSort={sortBy}
+            currentDir={sortDir}
             onSortClick={handleSortClick}
           />
 
@@ -199,62 +176,7 @@ export function AdminCertificatesTab() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'sm' }),
-                  'gap-1 px-2.5',
-                  page <= 1 && 'pointer-events-none opacity-50',
-                )}
-                aria-label="Go to previous page"
-              >
-                <ChevronLeft className="size-4" />
-                <span>Previous</span>
-              </button>
-            </PaginationItem>
-
-            {pages.map((item, idx) =>
-              item === 'ellipsis' ? (
-                <PaginationItem key={`e-${idx}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={item}>
-                  <button
-                    onClick={() => setPage(item)}
-                    className={cn(buttonVariants({ variant: page === item ? 'outline' : 'ghost', size: 'icon' }))}
-                    aria-label={`Go to page ${item}`}
-                    aria-current={page === item ? 'page' : undefined}
-                  >
-                    {item}
-                  </button>
-                </PaginationItem>
-              ),
-            )}
-
-            <PaginationItem>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'sm' }),
-                  'gap-1 px-2.5',
-                  page >= totalPages && 'pointer-events-none opacity-50',
-                )}
-                aria-label="Go to next page"
-              >
-                <span>Next</span>
-                <ChevronRight className="size-4" />
-              </button>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <AdminTablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }
