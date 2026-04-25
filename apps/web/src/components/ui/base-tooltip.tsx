@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
@@ -25,10 +24,17 @@ export function BaseTooltip({
   tooltipProps,
   contentProps,
 }: BaseTooltipProps) {
+  const [open, setOpen] = React.useState(false)
+
   return (
-    <Tooltip {...tooltipProps}>
+    <Tooltip open={open} onOpenChange={setOpen} {...tooltipProps}>
       <TooltipTrigger asChild>
-        <button type="button" aria-label={triggerLabel} className={cn(triggerClassName, 'flex items-center')}>
+        <button
+          type="button"
+          aria-label={triggerLabel}
+          className={cn(triggerClassName, 'flex items-center')}
+          onClick={() => setOpen((prev) => !prev)}
+        >
           {icon ?? (
             <span
               className="inline-flex size-5 shrink-0 items-center justify-center rounded-none border border-white text-[14px] font-semibold leading-none text-white"

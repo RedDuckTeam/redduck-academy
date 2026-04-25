@@ -94,7 +94,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
 
   if (!editable) {
     return (
-      <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px] break-words">
+      <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px] break-all">
         I'm <span>{serverName || '—'}</span>
       </Text>
     )
@@ -102,7 +102,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
 
   return (
     <div className="flex items-start gap-2">
-      <div className="break-words min-w-0">
+      <div className="break-all min-w-0">
         <span className={cn(textVariants({ variant: 'caps-20' }), 'text-white sm:text-[20px] text-[16px]')}>I'm </span>
         {isEditing ? (
           <textarea

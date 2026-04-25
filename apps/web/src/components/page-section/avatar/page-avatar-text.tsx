@@ -10,10 +10,10 @@ export interface PageAvatarTextProps {
 
 export const PageAvatarText = ({ message, className }: PageAvatarTextProps) => {
   return (
-    <div className={cn('flex flex-col', className)}>
+    <div className={cn('flex flex-col min-w-0', className)}>
       <div className={cn('px-3 py-3 sm:px-5 sm:py-[15px] bg-[#000] sm:ml-[30px] ml-[20px]')}>
         {typeof message === 'string' ? (
-          <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
+          <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px] break-all">
             {message}
           </Text>
         ) : (

@@ -12,7 +12,7 @@ const BIO_MAX = 300
 
 const textareaClass = cn(
   textVariants({ variant: 'caps-20' }),
-  'bg-transparent border-0 p-0 shadow-none outline-none ring-0 focus:ring-0 resize-none w-full sm:text-[20px] text-[16px] text-[#e0deda]',
+  'bg-transparent border-0 p-0 pr-6 shadow-none outline-none ring-0 focus:ring-0 resize-none w-full sm:text-[20px] text-[16px] text-[#e0deda]',
 )
 
 interface ChangeBioProps {
@@ -142,14 +142,20 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
               placeholder="Tell something about yourself..."
               aria-label="Bio"
             />
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1.5">
               <Text variant="caps-12" className="text-border">
                 {draft.length}/{BIO_MAX}
               </Text>
+              <div className="h-0.5 w-full bg-border overflow-hidden">
+                <div
+                  className="h-full bg-[#e0deda] transition-all duration-150"
+                  style={{ width: `${Math.min((draft.length / BIO_MAX) * 100, 100)}%` }}
+                />
+              </div>
             </div>
           </>
         ) : (
-          <Text variant="caps-20" className="text-[#e0deda] sm:text-[20px] text-[16px] whitespace-pre-wrap break-words min-h-[2em]">
+          <Text variant="caps-20" className="text-[#e0deda] sm:text-[20px] text-[16px] whitespace-pre-wrap break-words min-h-[2em] pr-6">
             {bio || (
               <span className="text-border">No bio yet. Click edit to add one.</span>
             )}

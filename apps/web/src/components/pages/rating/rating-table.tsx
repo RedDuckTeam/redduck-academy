@@ -51,20 +51,18 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
                   {String(entry.rank).padStart(2, '0')}.
                 </Text>
               </div>
-              <div className={cn('p-5', isCurrentUser && 'text-primary')}>
+              <div className={cn('p-5 min-w-0', isCurrentUser && 'text-primary')}>
                 {entry.username ? (
-                  <Link
-                    to="/profile/$username"
-                    params={{ username: entry.username }}
-                    className="group inline-flex items-center gap-1.5"
-                  >
-                    <Text variant="caps-20" className="underline-offset-[0.2em] group-hover:underline">
+                  <Link to="/profile/$username" params={{ username: entry.username }} className="group min-w-0 block">
+                    <Text variant="caps-20" className="underline-offset-[0.2em] group-hover:underline break-all">
                       {entry.userName?.toUpperCase() ?? '—'}
+                      <ArrowUpRight aria-hidden className="inline size-4 shrink-0 align-middle ml-1" strokeWidth={2} />
                     </Text>
-                    <ArrowUpRight aria-hidden className="size-4 shrink-0" strokeWidth={2} />
                   </Link>
                 ) : (
-                  <Text variant="caps-20">{entry.userName?.toUpperCase() ?? '—'}</Text>
+                  <Text variant="caps-20" className="break-all">
+                    {entry.userName?.toUpperCase() ?? '—'}
+                  </Text>
                 )}
               </div>
               <div className="p-5 text-center">
@@ -84,26 +82,29 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
           const isCurrentUser = entry.userId === currentUserId
           return (
             <div key={entry.userId} className="flex flex-col gap-4 border border-border p-5">
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 <Text variant="caps-20" className="text-primary">
                   {String(entry.rank).padStart(2, '0')}.
                 </Text>
                 {entry.username ? (
-                  <Link
-                    to="/profile/$username"
-                    params={{ username: entry.username }}
-                    className="group inline-flex items-center gap-1.5"
-                  >
+                  <Link to="/profile/$username" params={{ username: entry.username }} className="group min-w-0 block">
                     <Text
                       variant="caps-20"
-                      className={cn('underline-offset-[0.2em] group-hover:underline', isCurrentUser && 'text-primary')}
+                      className={cn(
+                        'underline-offset-[0.2em] group-hover:underline break-all',
+                        isCurrentUser && 'text-primary',
+                      )}
                     >
                       {entry.userName?.toUpperCase() ?? '—'}
+                      <ArrowUpRight
+                        aria-hidden
+                        className={cn('inline size-4 shrink-0 align-baseline ml-1', isCurrentUser && 'text-primary')}
+                        strokeWidth={2}
+                      />
                     </Text>
-                    <ArrowUpRight aria-hidden className="size-4 shrink-0" strokeWidth={2} />
                   </Link>
                 ) : (
-                  <Text variant="caps-20" className={cn(isCurrentUser && 'text-primary')}>
+                  <Text variant="caps-20" className={cn('break-all', isCurrentUser && 'text-primary')}>
                     {entry.userName?.toUpperCase() ?? '—'}
                   </Text>
                 )}
