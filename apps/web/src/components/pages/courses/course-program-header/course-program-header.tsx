@@ -64,12 +64,12 @@ export const CourseProgramHeader = ({
       try {
         await updateUserName(trimmed)
         await refetch()
-      } catch {
-        toast.error('Failed to update name')
-        setIsSavingName(false)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to update name')
         return
+      } finally {
+        setIsSavingName(false)
       }
-      setIsSavingName(false)
     }
 
     setShowNameDialog(false)

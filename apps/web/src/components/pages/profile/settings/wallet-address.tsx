@@ -71,7 +71,7 @@ export const WalletAddress = () => {
   if (wallets.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-7">
       {wallets.map((w) => (
         <WalletRow key={w.address} address={w.address} embedded={w.embedded} />
       ))}

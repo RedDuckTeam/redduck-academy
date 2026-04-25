@@ -10,18 +10,23 @@ function formatEventDate(iso: string | null | undefined): string | null {
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+const CARD_COLORS = ['var(--primary)', '#AE83CC', '#6B9AFE', '#E0AC9F', '#7ECDDA']
+
 interface CommunityEventCardProps {
   event: CommunityEventListItem
+  index: number
 }
 
-export const CommunityEventCard = ({ event }: CommunityEventCardProps) => {
+export const CommunityEventCard = ({ event, index }: CommunityEventCardProps) => {
   const slug = event.slug
 
   const dateLabel = formatEventDate(event.eventDate)
   const imageSrc = resolveMediaUrl(event.photo?.url)
 
+  const cardColor = CARD_COLORS[index % CARD_COLORS.length]
+
   const inner = (
-    <div className="p-5 flex flex-col gap-5 bg-primary h-full transition-colors">
+    <div className="p-5 flex flex-col gap-5 h-full transition-colors" style={{ backgroundColor: cardColor }}>
       <Text variant={'caps-24'}>{event.title}</Text>
       <Text variant={'main-16'}>{event.description}</Text>
       {dateLabel ? (

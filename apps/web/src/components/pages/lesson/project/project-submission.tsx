@@ -35,10 +35,9 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
     submitProject({ courseSlug, lessonSlug, repoUrl: link })
   }
 
-  const handlePaste = () => {
-    navigator.clipboard.readText().then((text) => {
-      setLink(text)
-    })
+  const handlePaste = async () => {
+    const text = await navigator.clipboard.readText()
+    setLink(text)
   }
 
   return (

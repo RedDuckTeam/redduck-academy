@@ -37,7 +37,7 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
     }
   }, [isEditing])
 
-  const commit = useCallback(() => {
+  const commit = useCallback(async () => {
     if (!isEditing) return
 
     const trimmed = draft.trim()
@@ -58,17 +58,16 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
     setIsEditing(false)
     setLocalOverride(newBio)
 
-    void updateUserBio(newBio)
-      .then((data) => {
-        queryClient.setQueryData<UserSettings>(queryKeys.user.settings(), (prev) =>
-          prev ? { ...prev, bio: data.bio } : prev,
-        )
-        setLocalOverride(undefined)
-      })
-      .catch((err: unknown) => {
-        setLocalOverride(undefined)
-        toast.error(err instanceof Error ? err.message : 'Failed to update bio')
-      })
+    try {
+      const data = await updateUserBio(newBio)
+      queryClient.setQueryData<UserSettings>(queryKeys.user.settings(), (prev) =>
+        prev ? { ...prev, bio: data.bio } : prev,
+      )
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update bio')
+    } finally {
+      setLocalOverride(undefined)
+    }
   }, [isEditing, draft, bio, queryClient])
 
   useEffect(() => {
@@ -78,7 +77,7 @@ export const ChangeBio = ({ initialBio, editable = true, isPrivate = false }: Ch
       const el = textareaRef.current
       if (!el || el.contains(e.target as Node)) return
       if (actionButtonRef.current?.contains(e.target as Node)) return
-      commit()
+      void commit()
     }
 
     document.addEventListener('pointerdown', onPointerDown, true)

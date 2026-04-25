@@ -8,13 +8,13 @@ import { LinkAccounts } from './link-accounts'
 export const Settings = () => {
   return (
     <div className="flex flex-col gap-14">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+        <div className="flex flex-col gap-7">
           <ChangeUsername />
           <WalletAddress />
           <LinkAccounts />
         </div>
-        <div className="flex flex-col gap-5 ">
+        <div className="flex flex-col gap-7 ">
           <PrivateProfileSwitch />
           <SkipPrerequisitesSwitch />
         </div>

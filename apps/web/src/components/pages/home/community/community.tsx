@@ -17,9 +17,9 @@ export const Community = ({ events }: CommunitySectionProps) => {
       <Text variant={'subtitle-32'}>_COMMUNITY</Text>
       <Carousel opts={{ align: 'start', loop: false }} className="w-full">
         <CarouselContent className="-ml-5">
-          {events.map((event) => (
-            <CarouselItem key={event.id} className="pl-5 basis-full sm:basis-1/2 lg:basis-1/3">
-              <CommunityEventCard event={event} />
+          {events.map((event, index) => (
+            <CarouselItem key={event.id} className="pl-5 basis-[90%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+              <CommunityEventCard event={event} index={index} />
             </CarouselItem>
           ))}
         </CarouselContent>

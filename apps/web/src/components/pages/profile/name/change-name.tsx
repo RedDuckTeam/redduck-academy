@@ -62,10 +62,10 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
     try {
       await updateUserName(trimmed)
       await refetch()
-      setLocalOverride(null)
     } catch (err) {
-      setLocalOverride(null)
       toast.error(err instanceof Error ? err.message : 'Failed to update name')
+    } finally {
+      setLocalOverride(null)
     }
   }, [isEditing, draftName, displayName, refetch])
 

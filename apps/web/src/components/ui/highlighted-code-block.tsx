@@ -34,20 +34,20 @@ export function HighlightedCodeBlock({ code, language }: HighlightedCodeBlockPro
     ? (language as CodingLanguage)
     : 'typescript'
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }, [code])
 
   useEffect(() => {
     let cancelled = false
-    getHighlighter().then((hl) => {
+    const run = async () => {
+      const hl = await getHighlighter()
       if (cancelled) return
-      const result = hl.codeToHtml(code, { lang, theme: 'vitesse-dark' })
-      setHtml(result)
-    })
+      setHtml(hl.codeToHtml(code, { lang, theme: 'vitesse-dark' }))
+    }
+    void run()
     return () => {
       cancelled = true
     }
