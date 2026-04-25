@@ -14799,6 +14799,7 @@ __metadata:
     "@types/picomatch": "npm:^4.0.3"
     drizzle-kit: "npm:^0.31.8"
     esbuild: "npm:^0.28.0"
+    obscenity: "npm:^0.4.6"
     puppeteer: "npm:^24.41.0"
     typescript: "npm:^6.0.2"
   languageName: unknown
@@ -22465,6 +22466,13 @@ __metadata:
     define-properties: "npm:^1.2.1"
     es-object-atoms: "npm:^1.0.0"
   checksum: 10c0/3c47814fdc64842ae3d5a74bc9d06bdd8d21563c04d9939bf6716a9c00596a4ebc342552f8934013d1ec991c74e3671b26710a0c51815f0b603795605ab6b2c9
+  languageName: node
+  linkType: hard
+
+"obscenity@npm:^0.4.6":
+  version: 0.4.6
+  resolution: "obscenity@npm:0.4.6"
+  checksum: 10c0/f5f87023a6e8493ba2e4c8b55736087eda0421b2eef0032965aadc211a289654cd370443d5c70c97cf98c5c4de24e8f11fa8ca49e67954d259ec045bc6a3d211
   languageName: node
   linkType: hard
 

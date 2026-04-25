@@ -86,7 +86,7 @@ function LessonPage() {
       ref={mainRef}
       className={cn(
         'mx-5 flex min-w-0 flex-col gap-3.5 md:mx-[60px]',
-        isCodingChallenge ? '' : 'mb-[60px] min-h-screen',
+        isCodingChallenge ? 'mb-5 md:mb-[60px]' : 'mb-[60px] min-h-screen',
       )}
       style={mainHeight ? { height: mainHeight } : undefined}
     >
