@@ -24,7 +24,7 @@ function SignUp() {
 
   useEffect(() => {
     if (ready && authenticated) {
-      router.navigate({ to: '/' })
+      router.navigate({ to: '/dashboard' })
     }
   }, [ready, authenticated])
 

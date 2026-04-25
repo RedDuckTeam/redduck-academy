@@ -3,6 +3,7 @@ import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
 import { userLessons, userCertificates } from '../../db/schema'
 import { buildSearchFilter, buildWhereClause } from '../../lib/query-builder'
+import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
 import type { CompletedLesson } from '../../descriptions/user'
 import { LessonsService } from '../lessons/lessons.service'
@@ -246,6 +247,14 @@ export class AdminService {
     }))
 
     return { rows, total }
+  }
+
+  static async banUser(userId: string, ban: boolean): Promise<{ blacklisted: boolean }> {
+    const update: { blacklisted: boolean; isPrivate?: boolean } = { blacklisted: ban }
+    if (ban) update.isPrivate = true
+    const [updated] = await db.update(user).set(update).where(eq(user.id, userId)).returning({ blacklisted: user.blacklisted })
+    if (!updated) throw new AppError(404, 'User not found')
+    return { blacklisted: updated.blacklisted }
   }
 
   static async getUserCompletedLessons(userId: string): Promise<CompletedLesson[]> {

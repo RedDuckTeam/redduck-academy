@@ -266,12 +266,12 @@ export class UserService {
 
   static async getUserSettings(userId: string) {
     const [row] = await db
-      .select({ id: user.id, username: user.username, skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio, name: user.name, image: user.image, role: user.role })
+      .select({ id: user.id, username: user.username, skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio, name: user.name, image: user.image, role: user.role, blacklisted: user.blacklisted })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
     if (!row) throw new AppError(404, 'User not found')
-    return { id: row.id, username: row.username, skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio, name: row.name, image: row.image, role: row.role }
+    return { id: row.id, username: row.username, skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio, name: row.name, image: row.image, role: row.role, blacklisted: row.blacklisted }
   }
 
   static async getPublicProfile(username: string) {
@@ -321,6 +321,10 @@ export class UserService {
   }
 
   static async updateUserSettings(userId: string, settings: { skipPrerequisites?: boolean; isPrivate?: boolean }) {
+    if (settings.isPrivate === false) {
+      const [row] = await db.select({ blacklisted: user.blacklisted }).from(user).where(eq(user.id, userId)).limit(1)
+      if (row?.blacklisted) throw new AppError(403, 'Banned users cannot make their profile public')
+    }
     const [updated] = await db
       .update(user)
       .set({

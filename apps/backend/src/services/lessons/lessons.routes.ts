@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import { z } from 'zod'
 import { getLessonDesc, markLessonAsCompletedDesc, submitCodingTaskDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
-import { requireAuth, getClientIp } from '../../lib/middleware'
+import { requireAuth, requireNotBanned, getClientIp } from '../../lib/middleware'
 import { courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
 import { AppError } from '../../lib/errors'
@@ -44,7 +44,7 @@ const submitCodingTaskBodySchema = z.object({
 
 const lessonsApp = new Hono<{ Variables: AuthVariables }>()
 
-lessonsApp.post('/submit-test', requireAuth, submitTestDesc, validator('json', submitTestBodySchema), async (c) => {
+lessonsApp.post('/submit-test', requireAuth, requireNotBanned, submitTestDesc, validator('json', submitTestBodySchema), async (c) => {
   const user = c.get('user')
   const { courseSlug, lessonSlug, answers } = c.req.valid('json')
   const access = await CoursePrerequisitesService.checkCourseAccess(user.id, courseSlug)
@@ -56,6 +56,7 @@ lessonsApp.post('/submit-test', requireAuth, submitTestDesc, validator('json', s
 lessonsApp.post(
   '/submit-project',
   requireAuth,
+  requireNotBanned,
   submitProjectDesc,
   validator('json', submitProjectBodySchema),
   async (c) => {
@@ -72,6 +73,7 @@ lessonsApp.post(
 lessonsApp.post(
   '/submit-coding-task',
   requireAuth,
+  requireNotBanned,
   submitCodingTaskDesc,
   validator('json', submitCodingTaskBodySchema),
   async (c) => {
@@ -94,6 +96,7 @@ lessonsApp.get('/:courseSlug/:lessonSlug', getLessonDesc, validator('param', cou
 lessonsApp.post(
   '/:courseSlug/:lessonSlug/mark-completed',
   requireAuth,
+  requireNotBanned,
   markLessonAsCompletedDesc,
   validator('param', courseLessonParamSchema),
   async (c) => {

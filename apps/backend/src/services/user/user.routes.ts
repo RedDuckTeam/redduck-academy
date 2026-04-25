@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
-import { requireAuth } from '../../lib/middleware'
+import { requireAuth, requireNotBanned } from '../../lib/middleware'
 import { courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
 import {
@@ -69,7 +69,7 @@ userApp.get('/progress-cards', requireAuth, getProgressCardsDesc, async (c) => {
   return c.json({ data })
 })
 
-userApp.patch('/name', requireAuth, updateUserNameDesc, validator('json', updateUserNameBodySchema), async (c) => {
+userApp.patch('/name', requireAuth, requireNotBanned, updateUserNameDesc, validator('json', updateUserNameBodySchema), async (c) => {
   const authUser = c.get('user')
   const { name } = c.req.valid('json')
   const data = await UserService.updateUserName(authUser.id, name)
@@ -91,6 +91,7 @@ userApp.get('/settings', requireAuth, getUserSettingsDesc, async (c) => {
 userApp.patch(
   '/settings',
   requireAuth,
+  requireNotBanned,
   updateUserSettingsDesc,
   validator('json', updateUserSettingsBodySchema),
   async (c) => {
@@ -109,7 +110,7 @@ const EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 }
 
-userApp.post('/avatar', requireAuth, uploadAvatarDesc, async (c) => {
+userApp.post('/avatar', requireAuth, requireNotBanned, uploadAvatarDesc, async (c) => {
   const authUser = c.get('user')
 
   const formData = await c.req.formData()
@@ -143,14 +144,14 @@ userApp.post('/avatar', requireAuth, uploadAvatarDesc, async (c) => {
   return c.json({ data })
 })
 
-userApp.patch('/username', requireAuth, updateUserUsernameDesc, validator('json', updateUserUsernameBodySchema), async (c) => {
+userApp.patch('/username', requireAuth, requireNotBanned, updateUserUsernameDesc, validator('json', updateUserUsernameBodySchema), async (c) => {
   const authUser = c.get('user')
   const { username } = c.req.valid('json')
   const data = await UserService.updateUserUsername(authUser.id, username)
   return c.json({ data })
 })
 
-userApp.patch('/bio', requireAuth, updateUserBioDesc, validator('json', updateUserBioBodySchema), async (c) => {
+userApp.patch('/bio', requireAuth, requireNotBanned, updateUserBioDesc, validator('json', updateUserBioBodySchema), async (c) => {
   const authUser = c.get('user')
   const { bio } = c.req.valid('json')
   const data = await UserService.updateUserBio(authUser.id, bio)

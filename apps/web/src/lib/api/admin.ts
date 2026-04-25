@@ -16,7 +16,10 @@ export type AdminUserRow = {
   name: string
   username: string | null
   image: string | null
+  role: 'user' | 'admin'
   isPrivate: boolean
+  blacklisted: boolean
+  createdAt: string
   lessonsPassed: number
   coursesPassed: number
 }
@@ -146,6 +149,17 @@ export const getAdminUserLessonDetail = async (
   )
   if (!response.data && response.status >= 400) {
     throw new Error(response.error ?? 'Failed to load lesson detail')
+  }
+  return response.data!.data
+}
+
+export const banAdminUser = async (userId: string, ban: boolean): Promise<{ blacklisted: boolean }> => {
+  const response = await api({ credentials: 'include' }).patch<{ data: { blacklisted: boolean } }>(
+    `/api/admin/users/${userId}/ban`,
+    { ban },
+  )
+  if (response.status >= 400) {
+    throw new Error((response as { error?: string }).error ?? 'Failed to update ban status')
   }
   return response.data!.data
 }

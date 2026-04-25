@@ -12,6 +12,7 @@ import {
   adminUserIdParamSchema,
   adminUserLessonParamSchema,
 } from '../../descriptions/admin'
+import { z } from 'zod'
 import { parsePaginationQuery } from '../../lib/pagination'
 import { requireAdmin } from '../../lib/middleware'
 import type { AuthVariables } from '../../lib/types'
@@ -93,6 +94,21 @@ adminApp.get(
   async (c) => {
     const { userId, courseSlug, lessonSlug } = c.req.valid('param')
     const data = await AdminService.getLessonForUser(userId, courseSlug, lessonSlug)
+    return c.json({ data })
+  },
+)
+
+const banUserBodySchema = z.object({ ban: z.boolean() })
+
+adminApp.patch(
+  '/users/:userId/ban',
+  requireAdmin,
+  validator('param', adminUserIdParamSchema),
+  validator('json', banUserBodySchema),
+  async (c) => {
+    const { userId } = c.req.valid('param')
+    const { ban } = c.req.valid('json')
+    const data = await AdminService.banUser(userId, ban)
     return c.json({ data })
   },
 )

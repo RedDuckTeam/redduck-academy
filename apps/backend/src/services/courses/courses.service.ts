@@ -9,9 +9,11 @@ export class CoursesService {
       with: {
         modules: {
           where: (m) => ne(m.isHidden, true),
+          orderBy: (m, { asc }) => [asc(m.order)],
           with: {
             lessons: {
               where: (l) => ne(l.isHidden, true),
+              orderBy: (l, { asc }) => [asc(l.order)],
             },
           },
         },
@@ -31,9 +33,11 @@ export class CoursesService {
         prerequisiteCourse: { columns: { id: true, slug: true, title: true } },
         modules: {
           where: (m) => ne(m.isHidden, true),
+          orderBy: (m, { asc }) => [asc(m.order)],
           with: {
             lessons: {
               where: (l) => ne(l.isHidden, true),
+              orderBy: (l, { asc }) => [asc(l.order)],
               columns: {
                 id: true,
                 title: true,

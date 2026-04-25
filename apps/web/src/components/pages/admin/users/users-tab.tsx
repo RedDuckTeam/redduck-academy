@@ -91,7 +91,7 @@ export function AdminUsersTab() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search by email or name…"
+          placeholder="Search by name or username…"
           defaultValue={userSearch}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-9"
@@ -119,10 +119,10 @@ export function AdminUsersTab() {
               <div key={row.id} className="flex flex-col gap-4 border border-border p-5">
                 <div className="flex flex-col gap-1 min-w-0">
                   <Text variant="caps-14" className="text-border">
-                    EMAIL
+                    USERNAME
                   </Text>
                   <Text variant="caps-14" className="break-all">
-                    {(row.email ?? '').toUpperCase()}
+                    {(row.username ?? '—').toUpperCase()}
                   </Text>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">

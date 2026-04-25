@@ -22,7 +22,7 @@ export const Route = createFileRoute('/admin')({
     }
 
     if (!settings) throw redirect({ to: '/sign-up' })
-    if (settings.role !== 'admin') throw redirect({ to: '/' })
+    if (settings.role !== 'admin') throw redirect({ to: '/dashboard' })
   },
   component: Outlet,
 })

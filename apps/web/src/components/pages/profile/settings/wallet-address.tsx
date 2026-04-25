@@ -21,34 +21,40 @@ const WalletRow = ({ address, embedded }: WalletRowProps) => {
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <p className={textVariants({ variant: 'caps-20' })}>{embedded ? 'Embedded Wallet' : 'Connected Wallet'}</p>
-      {embedded && (
-        <BaseTooltip triggerLabel="About this wallet" triggerClassName="text-white">
-          This is an embedded wallet automatically created for you. It&apos;s secured by your google sign in and managed
-          on your behalf — no seed phrase required.
-        </BaseTooltip>
-      )}
-      <span className={textVariants({ variant: 'caps-20' }) + ' text-primary font-mono'}>{shortAddress(address)}</span>
+    <div className="flex sm:items-center gap-3 max-sm:flex-col">
+      <div className="flex items-center gap-3">
+        <p className={textVariants({ variant: 'caps-20' })}>{embedded ? 'Embedded Wallet' : 'Connected Wallet'}</p>
+        {embedded && (
+          <BaseTooltip triggerLabel="About this wallet" triggerClassName="text-white">
+            This is an embedded wallet automatically created for you. It&apos;s secured by your google sign in and
+            managed on your behalf — no seed phrase required.
+          </BaseTooltip>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        <span className={textVariants({ variant: 'caps-20' }) + ' text-primary font-mono'}>
+          {shortAddress(address)}
+        </span>
 
-      <button
-        type="button"
-        onClick={handleCopy}
-        aria-label="Copy wallet address"
-        className="text-white/50 hover:text-white transition-colors"
-      >
-        {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-      </button>
-      {embedded && (
         <button
           type="button"
-          onClick={() => exportWallet({ address })}
-          aria-label="Export wallet private key"
+          onClick={handleCopy}
+          aria-label="Copy wallet address"
           className="text-white/50 hover:text-white transition-colors"
         >
-          <Download className="size-4" />
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         </button>
-      )}
+        {embedded && (
+          <button
+            type="button"
+            onClick={() => exportWallet({ address })}
+            aria-label="Export wallet private key"
+            className="text-white/50 hover:text-white transition-colors"
+          >
+            <Download className="size-4" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -65,7 +71,7 @@ export const WalletAddress = () => {
   if (wallets.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-5">
       {wallets.map((w) => (
         <WalletRow key={w.address} address={w.address} embedded={w.embedded} />
       ))}

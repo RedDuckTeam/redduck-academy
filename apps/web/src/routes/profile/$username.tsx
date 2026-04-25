@@ -62,6 +62,7 @@ function OwnProfile() {
 
   const placeInRanking = progressCards?.placeInRanking ?? 0
   const completedLessonsCount = progressCards?.completedLessonsCount ?? 0
+  const isBanned = userSettings?.blacklisted ?? false
 
   return (
     <main className="flex flex-col">
@@ -69,9 +70,9 @@ function OwnProfile() {
         <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-2">
           <div className="flex sm:gap-5 gap-3">
             <div className="pt-2.5">
-              <ChangeAvatar imageUrl={session?.user.image?.trim() || undefined} />
+              <ChangeAvatar imageUrl={session?.user.image?.trim() || undefined} editable={!isBanned} />
             </div>
-            <PageAvatarText message={<ChangeName />} />
+            <PageAvatarText message={<ChangeName editable={!isBanned} />} />
           </div>
           <PageStatsCards
             items={[
@@ -90,7 +91,7 @@ function OwnProfile() {
         </div>
       </PageGridBackground>
       <div className="bg-header px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px] text-[#e0deda] flex flex-col gap-10">
-        <ChangeBio initialBio={userSettings?.bio ?? null} />
+        <ChangeBio initialBio={userSettings?.bio ?? null} editable={!isBanned} />
       </div>
       <div className="px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px] flex flex-col gap-10">
         <Text variant="subtitle-32">_CERTIFICATES</Text>

@@ -22,7 +22,7 @@ export function CourseLockedModal({
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <Text variant="caps-24" className="font-normal">
+          <Text variant="caps-24" className="font-normal text-[#000]">
             Lesson not available yet
           </Text>
         </DialogHeader>

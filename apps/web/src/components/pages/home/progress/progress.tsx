@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { ProgressCards } from './progress-cards/progress-cards'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,11 @@ import { useTheme } from '@/components/providers/theme-context'
 import { GhostIcon } from '@/components/ui/icons/ghost'
 import { PacmanIcon } from '@/components/ui/icons/pacman'
 
-export const Progress = () => {
+interface ProgressProps {
+  nextLesson: { courseSlug: string; moduleSlug: string; lessonSlug: string } | null
+}
+
+export const Progress = ({ nextLesson }: ProgressProps) => {
   const { theme } = useTheme()
   return (
     <div className="flex flex-col gap-9 px-5 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]">
@@ -35,16 +40,29 @@ export const Progress = () => {
         <div className="absolute right-[10%] sm:right-[330px] -bottom-12 xl:bottom-0">
           <GhostIcon />
         </div>
-        <Button
-          variant="secondary"
-          size={'free'}
-          className="flex items-center px-10 !h-[108px] gap-5 max-xl:w-full max-lg:w-screen"
-        >
-          <Text variant="caps-20" className="text-header-foreground">
-            START
-          </Text>
-          <LongArrowRight className="max-md:h-6" />
-        </Button>
+        {nextLesson ? (
+          <Link
+            to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+            params={nextLesson}
+            className="flex items-center px-10 !h-[108px] gap-5 max-xl:w-full max-lg:w-screen bg-header"
+          >
+            <Text variant="caps-20" className="text-header-foreground">
+              START
+            </Text>
+            <LongArrowRight className="max-md:h-6" />
+          </Link>
+        ) : (
+          <Button
+            variant="secondary"
+            size={'free'}
+            className="flex items-center px-10 !h-[108px] gap-5 max-xl:w-full max-lg:w-screen"
+          >
+            <Text variant="caps-20" className="text-header-foreground">
+              START
+            </Text>
+            <LongArrowRight className="max-md:h-6" />
+          </Button>
+        )}
       </div>
     </div>
   )

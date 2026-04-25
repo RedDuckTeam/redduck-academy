@@ -114,7 +114,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               const ethBuildUrl = getEthBuildUrl(textNode.fields?.url ?? '')
               if (ethBuildUrl) {
                 return (
-                  <div className="aspect-video w-full overflow-hidden rounded-xl my-4">
+                  <div className="aspect-[9/13] md:aspect-video w-full overflow-hidden rounded-xl my-4">
                     <iframe
                       src={ethBuildUrl}
                       title="eth.build interactive flow"

@@ -17,6 +17,7 @@ export const ChangeUsername = () => {
 
   const currentUsername = settings?.username ?? ''
   const value = draft ?? currentUsername
+  const isBanned = settings?.blacklisted ?? false
 
   const handleSave = async () => {
     const trimmed = value.trim()
@@ -52,18 +53,19 @@ export const ChangeUsername = () => {
       <input
         type="text"
         value={value}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => !isBanned && setDraft(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') handleSave()
+          if (e.key === 'Enter' && !isBanned) handleSave()
         }}
         maxLength={30}
-        className="bg-transparent border-b border-white/30 focus:border-white/70 outline-none text-white px-0 py-0.5 w-40"
+        disabled={isBanned}
+        className="bg-transparent border-b border-white/30 focus:border-white/70 outline-none text-white px-0 py-0.5 w-40 disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ fontSize: 'inherit', fontFamily: 'inherit' }}
       />
       <button
         type="button"
         onClick={handleSave}
-        disabled={isPending || value.trim() === currentUsername}
+        disabled={isBanned || isPending || value.trim() === currentUsername}
         className={
           textVariants({ variant: 'caps-20' }) + ' text-white/70 hover:text-white transition-colors disabled:opacity-30'
         }

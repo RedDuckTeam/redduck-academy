@@ -1,10 +1,9 @@
-import { useMemo } from 'react'
 import { MyProgressCourse } from './my-progress-course'
 import type { CompletedLesson } from '@/lib/api/user'
-import type { Course, CourseStatus } from '@/types/lesson'
-import { CourseStatusEnum } from '@/types/lesson'
+import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import type { UserCourseAccessState } from '@/hooks/api/user/useUserCourseAccess'
+import { useCourseProgress } from '@/hooks/api/user/useCourseProgress'
 
 interface MyProgressProps {
   courses: Course[]
@@ -13,42 +12,7 @@ interface MyProgressProps {
 }
 
 export const MyProgress = ({ courses, completedLessons, courseAccess }: MyProgressProps) => {
-  const completedLessonIds = useMemo(() => new Set(completedLessons.map((c) => c.lessonId)), [completedLessons])
-
-  const courseProgress = useMemo(() => {
-    return courses.map((course) => {
-      const orderedLessons = course.modules
-        .sort((a, b) => a.order - b.order)
-        .flatMap((module) =>
-          module.lessons
-            .sort((a, b) => a.order - b.order)
-            .map((lesson) => ({
-              lessonId: lesson.id,
-              lessonSlug: lesson.slug,
-              moduleSlug: module.slug,
-            })),
-        )
-      const nextLessonData = orderedLessons.find((item) => !completedLessonIds.has(item.lessonId))
-      const nextLesson = nextLessonData
-        ? {
-            moduleSlug: nextLessonData.moduleSlug,
-            lessonSlug: nextLessonData.lessonSlug,
-          }
-        : null
-
-      const firstLesson = orderedLessons[0]
-      let status: CourseStatus
-      if (!nextLessonData) {
-        status = CourseStatusEnum.COMPLETED
-      } else if (nextLessonData.lessonId === firstLesson.lessonId) {
-        status = CourseStatusEnum.START
-      } else {
-        status = CourseStatusEnum.CONTINUE
-      }
-
-      return { nextLesson, status }
-    })
-  }, [courses, completedLessons, completedLessonIds])
+  const courseProgress = useCourseProgress(courses, completedLessons)
 
   return (
     <div className="flex flex-col  gap-5 sm:gap-10 bg-header px-6 py-14 md:px-10 md:py-[60px] xl:px-[60px] text-[#e0deda]">

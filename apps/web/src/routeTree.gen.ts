@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
@@ -42,6 +43,11 @@ const SignUpRoute = SignUpRouteImport.update({
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
   path: '/ranking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -161,6 +167,7 @@ const AdminUsersUserIdCourseSlugLessonSlugRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/dashboard'
     | '/ranking'
     | '/sign-up'
     | '/certificates/$certificateId'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dashboard'
     | '/ranking'
     | '/sign-up'
     | '/certificates/$certificateId'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/dashboard'
     | '/ranking'
     | '/sign-up'
     | '/certificates/$certificateId'
@@ -315,6 +327,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   RankingRoute: typeof RankingRoute
   SignUpRoute: typeof SignUpRoute
   CertificatesCertificateIdRoute: typeof CertificatesCertificateIdRoute
@@ -347,6 +360,13 @@ declare module '@tanstack/react-router' {
       path: '/ranking'
       fullPath: '/ranking'
       preLoaderRoute: typeof RankingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -549,6 +569,7 @@ const CoursesCourseSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   RankingRoute: RankingRoute,
   SignUpRoute: SignUpRoute,
   CertificatesCertificateIdRoute: CertificatesCertificateIdRoute,

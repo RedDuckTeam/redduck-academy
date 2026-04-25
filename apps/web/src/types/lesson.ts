@@ -45,6 +45,7 @@ export interface UserSettings {
   role: 'user' | 'admin'
   skipPrerequisites: boolean
   isPrivate: boolean
+  blacklisted: boolean
   bio: string | null
 }
 

@@ -1,9 +1,9 @@
 import { useRouter } from '@tanstack/react-router'
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useState } from 'react'
 
 export const headerLinks = [
   {
-    to: '/',
+    to: '/dashboard',
     text: 'MY PROGRESS',
   },
   {
@@ -21,20 +21,14 @@ export const useHeaderLinks = () => {
   const refs = useMemo(() => {
     return headerLinks.map(() => ({ current: null }) as unknown as React.RefObject<HTMLAnchorElement>)
   }, [])
-  const [activeLinkRef, setActiveLinkRef] = useState<React.RefObject<HTMLAnchorElement> | null>(null)
   const [triangleLeft, setTriangleLeft] = useState<number>(0)
 
-  useEffect(() => {
+  const activeLinkRef = useMemo(() => {
     const currentPath = router.state.location.pathname
-    const activeIndex = headerLinks.findIndex((link) =>
-      link.to === '/' ? currentPath === '/' : currentPath === link.to || currentPath.startsWith(link.to + '/'),
+    const activeIndex = headerLinks.findIndex(
+      (link) => currentPath === link.to || currentPath.startsWith(link.to + '/'),
     )
-
-    if (activeIndex !== -1 && refs[activeIndex]) {
-      setActiveLinkRef(refs[activeIndex])
-    } else {
-      setActiveLinkRef(null)
-    }
+    return activeIndex !== -1 ? (refs[activeIndex] ?? null) : null
   }, [router.state.location.pathname, refs])
 
   useLayoutEffect(() => {
