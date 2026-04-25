@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useCourse } from '@/hooks/api/courses/useCourse'
 import { Text } from '@/components/ui/text'
@@ -22,13 +22,15 @@ export const LessonSidebarList = ({
   onSelect,
 }: LessonSidebarListProps) => {
   const [accordionOpen, setAccordionOpen] = useState(moduleSlug)
+  const [syncedModuleSlug, setSyncedModuleSlug] = useState(moduleSlug)
   const [triangleTop, setTriangleTop] = useState(0)
   const selectedLessonRef = useRef<HTMLAnchorElement>(null)
   const { data: course } = useCourse(courseSlug)
 
-  useEffect(() => {
+  if (syncedModuleSlug !== moduleSlug) {
+    setSyncedModuleSlug(moduleSlug)
     setAccordionOpen(moduleSlug)
-  }, [moduleSlug])
+  }
 
   useLayoutEffect(() => {
     const updatePosition = () => {
