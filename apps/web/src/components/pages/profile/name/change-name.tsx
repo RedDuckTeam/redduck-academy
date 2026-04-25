@@ -29,7 +29,10 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
 
   useEffect(() => {
     if (isEditing) {
-      inputRef.current?.focus()
+      const el = inputRef.current
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(el.value.length, el.value.length)
     }
   }, [isEditing])
 
@@ -91,44 +94,37 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
 
   if (!editable) {
     return (
-      <div className="flex items-start gap-2">
-        <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
-          I'm
-        </Text>
-        <Text variant="caps-20" className="text-white sm:text-[20px] break-words max-w-[300px] text-[16px]">
-          {serverName || '—'}
-        </Text>
-      </div>
+      <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px] break-words">
+        I'm <span>{serverName || '—'}</span>
+      </Text>
     )
   }
 
   return (
     <div className="flex items-start gap-2">
-      <div className="flex items-start gap-2">
-        <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
-          I'm
-        </Text>
+      <div className="break-words min-w-0">
+        <span className={cn(textVariants({ variant: 'caps-20' }), 'text-white sm:text-[20px] text-[16px]')}>I'm </span>
         {isEditing ? (
           <textarea
             ref={inputRef}
             rows={1}
             value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
+            onChange={(e) => setDraftName(e.target.value.replace(/[^\w\s\-.'@!#$%^&*()+=[\]{};:,<>?/\\|~`"]/g, ''))}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
                 void commit()
               }
             }}
-            className={cn(inputTextClass, 'resize-none overflow-hidden')}
+            className={cn(inputTextClass, 'resize-none overflow-hidden w-full')}
             maxLength={35}
             autoComplete="name"
             aria-label="Display name"
           />
         ) : (
-          <Text variant="caps-20" className="text-white sm:text-[20px] break-words max-w-[300px] text-[16px]">
+          <span className={cn(textVariants({ variant: 'caps-20' }), 'text-white sm:text-[20px] text-[16px]')}>
             {displayName || '—'}
-          </Text>
+          </span>
         )}
       </div>
       <button
@@ -138,7 +134,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
         aria-label={isEditing ? 'Discard name changes' : 'Edit name'}
         className="shrink-0 rounded-sm p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-white/40"
       >
-        {isEditing ? <X className="size-4 text-white" /> : <PencilIcon className="size-4 text-white" />}
+        {isEditing ? <X className="size-5 text-white" /> : <PencilIcon className="size-5 text-white" />}
       </button>
     </div>
   )
