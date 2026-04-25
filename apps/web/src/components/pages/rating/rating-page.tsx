@@ -28,7 +28,7 @@ export const RatingPage = () => {
   return (
     <main className="flex flex-col min-h-screen">
       <PageGridBackground>
-        <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-2 pt-9 xl:gap-10">
+        <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-10">
           <PageAvatar message={headline} />
           <PageStatsCards
             items={[

@@ -16,6 +16,7 @@ export default function Header() {
   const location = useLocation()
   const isSignUpPage = location.pathname === '/sign-up'
   const [isOpen, setIsOpen] = useState(false)
+  const { session, isPending } = useSession()
 
   if (isSignUpPage) {
     return null
@@ -25,9 +26,6 @@ export default function Header() {
     if (isOpen) return
     setIsOpen(true)
   }
-
-  const { session, isPending } = useSession()
-  console.log(session)
 
   return (
     <>

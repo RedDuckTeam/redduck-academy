@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import Marquee from 'react-fast-marquee'
 import { WagmiProvider } from 'wagmi'
 import { ThemeToggle } from '@/components/header/theme-toggle'
@@ -9,6 +9,7 @@ import { DuckIcon } from '@/components/ui/icons/duck'
 import { Text } from '@/components/ui/text'
 import { wagmiConfig } from '@/constants/wallet-config'
 import { usePrivyAuth } from '@/components/providers/privy-auth-context'
+import { queryKeys } from '@/lib/query-keys'
 import { useEffect } from 'react'
 
 const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
@@ -16,15 +17,22 @@ const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeF
 /** Repeated so the strip reads as one long loop; autoFill also clones to cover ultra-wide viewports. */
 const MARQUEE_ITEMS = [...MARQUEE_LABELS, ...MARQUEE_LABELS, ...MARQUEE_LABELS] as const
 
-export const Route = createFileRoute('/sign-up')({ ssr: false, component: SignUp })
+export const Route = createFileRoute('/sign-up')({
+  ssr: false,
+  beforeLoad: ({ context: { queryClient } }) => {
+    const session = queryClient.getQueryData(queryKeys.user.settings())
+    if (session) throw redirect({ to: '/dashboard' })
+  },
+  component: SignUp,
+})
 
 function SignUp() {
   const { ready, authenticated } = usePrivyAuth()
-  const router = useRouter()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (ready && authenticated) {
-      router.navigate({ to: '/dashboard' })
+      navigate({ to: '/dashboard', replace: true })
     }
   }, [ready, authenticated])
 

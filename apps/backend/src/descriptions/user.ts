@@ -100,7 +100,7 @@ export const syncProjectReviewDesc = describeRoute({
 })
 
 export const updateUserNameBodySchema = z.object({
-  name: z.string().min(1).max(35).regex(/^[a-zA-Z ]+$/, 'Name can only contain letters'),
+  name: z.string().min(1).max(35).regex(/^[\w\s\-.'@!#$%^&*()+=[\]{};:,<>?/\\|~`"]+$/, 'Invalid name'),
 })
 
 export const updateUserNameDesc = describeRoute({

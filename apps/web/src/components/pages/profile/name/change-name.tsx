@@ -24,7 +24,7 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
 
   const [isEditing, setIsEditing] = useState(false)
   const [draftName, setDraftName] = useState(displayName)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const actionButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -91,11 +91,11 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
 
   if (!editable) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
           I'm
         </Text>
-        <Text variant="caps-20" className="text-white sm:text-[20px] truncate max-w-[300px] text-[16px]">
+        <Text variant="caps-20" className="text-white sm:text-[20px] break-words max-w-[300px] text-[16px]">
           {serverName || '—'}
         </Text>
       </div>
@@ -103,15 +103,15 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-2">
+    <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2">
         <Text variant="caps-20" className="text-white sm:text-[20px] text-[16px]">
           I'm
         </Text>
         {isEditing ? (
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
+            rows={1}
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
             onKeyDown={(e) => {
@@ -120,13 +120,13 @@ export const ChangeName = ({ name: nameProp, editable = true }: ChangeNameProps)
                 void commit()
               }
             }}
-            className={inputTextClass}
+            className={cn(inputTextClass, 'resize-none overflow-hidden')}
             maxLength={35}
             autoComplete="name"
             aria-label="Display name"
           />
         ) : (
-          <Text variant="caps-20" className="text-white sm:text-[20px] truncate max-w-[300px] text-[16px]">
+          <Text variant="caps-20" className="text-white sm:text-[20px] break-words max-w-[300px] text-[16px]">
             {displayName || '—'}
           </Text>
         )}
