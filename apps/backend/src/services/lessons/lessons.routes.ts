@@ -38,7 +38,10 @@ const submitProjectBodySchema = z.object({
 const submitCodingTaskBodySchema = z.object({
   courseSlug: slugField,
   lessonSlug: slugField,
-  code: z.string().min(1).max(100_000),
+  code: z
+    .string()
+    .min(1, { message: 'Code cannot be empty.' })
+    .max(30_000, { message: 'Your submission is too long. Please shorten your code and try again.' }),
   language: z.enum(['solidity', 'rust', 'typescript']),
 })
 

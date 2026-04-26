@@ -1,6 +1,5 @@
 import type { Lesson } from '@redduck/payload-config'
 import { AppError } from '../../../lib/errors'
-import { MAX_REVIEW_FILE_BYTES } from '../github.service'
 import type { FetchExpectedFilesResult } from '../types/github'
 
 export function getLessonTasks(lesson: Lesson) {
@@ -29,8 +28,8 @@ export function getLessonTemplateUrl(lesson: Lesson): string | null {
 
 export function validateFetchResult(fetchResult: FetchExpectedFilesResult): void {
   if (fetchResult.oversizedPaths.length > 0) {
-    const detail = fetchResult.oversizedPaths.map((o) => `${o.path} (${o.sizeBytes} bytes)`).join(', ')
-    throw new AppError(400, `These files exceed the maximum review size (${MAX_REVIEW_FILE_BYTES} bytes each): ${detail}`)
+    const detail = fetchResult.oversizedPaths.map((o) => o.path).join(', ')
+    throw new AppError(413, `Some files are too large to review. Please reduce their size and try again: ${detail}`)
   }
   if (fetchResult.files.length === 0) {
     throw new AppError(400, 'No valid files were fetched')

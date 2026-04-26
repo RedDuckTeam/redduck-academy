@@ -8,8 +8,11 @@ import { expandReviewPatterns } from './utils/review-paths'
 
 const logger = new Logger('GitHubService')
 
-/** Max bytes per file before decoding (decimal 1 MB; GitHub `size` is in bytes). */
-export const MAX_REVIEW_FILE_BYTES = 1_000_000
+/** Max bytes per file before decoding (decimal 70 KB; GitHub `size` is in bytes). */
+export const MAX_REVIEW_FILE_BYTES = 70_000
+
+/** Max aggregated bytes across all fetched files for one submission (decimal 500 KB). */
+export const MAX_REVIEW_TOTAL_BYTES = 500_000
 
 export type { FetchExpectedFilesResult, ParsedGitHubRepoUrl, RepoFile, ResolvedRepoRef } from './types/github'
 export { parseGitHubRepoUrl } from './utils/github'
@@ -226,6 +229,7 @@ export class GitHubService {
     const files: RepoFile[] = []
     const missingPaths: string[] = [...missingPatterns]
     const oversizedPaths: { path: string; sizeBytes: number }[] = []
+    let totalBytes = 0
 
     for (const path of concretePaths) {
       const result = await this.#getFileContentForReview(owner, repo, path, commitSha, MAX_REVIEW_FILE_BYTES)
@@ -234,6 +238,14 @@ export class GitHubService {
       } else if (result.type === 'oversized') {
         oversizedPaths.push({ path, sizeBytes: result.sizeBytes })
       } else {
+        const fileBytes = Buffer.byteLength(result.content, 'utf-8')
+        if (totalBytes + fileBytes > MAX_REVIEW_TOTAL_BYTES) {
+          throw new AppError(
+            413,
+            'Submission is too large to review. Please reduce the total size of the submitted files and try again.',
+          )
+        }
+        totalBytes += fileBytes
         files.push({ path, content: result.content })
       }
     }
