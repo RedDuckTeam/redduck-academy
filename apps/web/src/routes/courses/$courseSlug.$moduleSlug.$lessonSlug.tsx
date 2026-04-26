@@ -60,7 +60,11 @@ function LessonPage() {
   const [mainHeight, setMainHeight] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!isCodingChallenge) return
+    if (!isCodingChallenge) {
+      setMainHeight(null)
+      document.body.style.overflow = ''
+      return
+    }
 
     const measure = () => {
       if (!mainRef.current || window.innerWidth < 1280) {

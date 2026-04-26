@@ -1,7 +1,7 @@
 import { AppError, GENERIC_ERROR_MESSAGE } from '../../lib/errors'
 import { Logger } from '../../lib/logger'
 import { LessonsService } from '../lessons/lessons.service'
-import { githubService } from './github.service'
+import { githubService, parseGitHubRepoUrl } from './github.service'
 import { buildReviewPrompt } from './prompt.builder'
 import { createBatch, pollAndParse } from './batch.service'
 import { SubmissionRepository } from './submission.repository'
@@ -27,16 +27,37 @@ export class ReviewService {
   ): Promise<void> {
     const lesson = await LessonsService.getReviewLessonWithRubric(courseSlug, lessonSlug)
 
-    const rateLimit = await SubmissionRateLimitService.checkAndConsume(userId, ipAddress, lesson.id)
-    if (!rateLimit.allowed) {
-      throw new AppError(429, 'Rate limit exceeded', { retryAfterMs: rateLimit.retryAfterMs })
+    // Cheap, read-only rate-limit peek so we reject obviously throttled callers
+    // before any GitHub or DB work. The atomic consume happens after the dup-check
+    // so re-submissions of the same commit don't burn an attempt.
+    const peek = await SubmissionRateLimitService.check(userId, ipAddress, lesson.id)
+    if (!peek.allowed) {
+      throw new AppError(429, 'Rate limit exceeded', { retryAfterMs: peek.retryAfterMs })
     }
+
     const tasks = getLessonTasks(lesson)
     const expectedPaths = getLessonExpectedPaths(lesson)
     const templateUrl = getLessonTemplateUrl(lesson)
 
     if (templateUrl) {
       await githubService.assertRepoIsForkOfTemplate(repoUrl, templateUrl)
+    }
+
+    // Reject re-submissions of the same commit before doing any expensive work
+    // (file fetch, rate-limit consumption, OpenAI batch).
+    const { owner, repo, refFromUrl } = parseGitHubRepoUrl(repoUrl)
+    const { commitSha: resolvedSha } = await githubService.resolveRepoRef(owner, repo, refFromUrl)
+    const existingUserLesson = await SubmissionRepository.getUserLesson(userId, lesson.id)
+    if (existingUserLesson) {
+      const duplicate = await SubmissionRepository.findCompletedByCommit(existingUserLesson.id, resolvedSha)
+      if (duplicate) {
+        throw new AppError(409, 'This commit was already reviewed. Push a new commit and submit again.')
+      }
+    }
+
+    const rateLimit = await SubmissionRateLimitService.checkAndConsume(userId, ipAddress, lesson.id)
+    if (!rateLimit.allowed) {
+      throw new AppError(429, 'Rate limit exceeded', { retryAfterMs: rateLimit.retryAfterMs })
     }
 
     const fetchResult = await githubService.fetchExpectedFilesFromRepoUrl(repoUrl, expectedPaths)

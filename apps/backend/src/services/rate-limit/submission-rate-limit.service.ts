@@ -40,6 +40,32 @@ async function maybeCleanupExpired(): Promise<void> {
 }
 
 export const SubmissionRateLimitService = {
+  // Read-only peek: returns the same shape as checkAndConsume but does not mutate.
+  // Use this to reject obviously rate-limited callers before doing expensive work,
+  // then call checkAndConsume once you're ready to actually charge an attempt.
+  async check(userId: string, ipAddress: string, lessonId: number): Promise<RateLimitCheckResult> {
+    const [ipRow] = await db
+      .select()
+      .from(submissionRateLimits)
+      .where(and(eq(submissionRateLimits.ipAddress, ipAddress), eq(submissionRateLimits.lessonId, lessonId)))
+      .limit(1)
+
+    if (!ipRow) return { allowed: true, attemptsRemaining: WINDOW_SIZE }
+
+    const windowStart = new Date(ipRow.windowStart)
+    if (isWindowExpired(windowStart, ipRow.windowDurationHours)) {
+      return { allowed: true, attemptsRemaining: WINDOW_SIZE }
+    }
+
+    if (ipRow.attemptsUsed < WINDOW_SIZE) {
+      return { allowed: true, attemptsRemaining: WINDOW_SIZE - ipRow.attemptsUsed }
+    }
+
+    const windowEndMs = windowStart.getTime() + ipRow.windowDurationHours * 60 * 60 * 1000
+    const retryAfterMs = Math.max(windowEndMs - Date.now(), 0)
+    return { allowed: false, retryAfterMs }
+  },
+
   async checkAndConsume(userId: string, ipAddress: string, lessonId: number): Promise<RateLimitCheckResult> {
     void maybeCleanupExpired()
     return db.transaction(async (tx) => {

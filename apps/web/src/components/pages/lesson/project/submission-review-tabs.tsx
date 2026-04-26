@@ -2,6 +2,7 @@ import type { LatestProjectSubmission } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { StatusBar } from '../status-bar'
 
 interface SubmissionReviewTabsProps {
   submissions: LatestProjectSubmission[]
@@ -24,18 +25,29 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
     >
       <TabsList
         variant="line"
-        className="flex w-full !h-auto flex-col items-stretch justify-start gap-4 sm:flex-row sm:flex-wrap sm:items-center"
+        className="grid w-full !h-auto grid-cols-2 items-center gap-4 sm:grid-cols-3 lg:grid-cols-4"
       >
-        {filteredSubmissions.map((submission, index) => (
-          <TabsTrigger key={submission.id} value={`attempt-${index}`}>
-            Attempt {index + 1}
-          </TabsTrigger>
-        ))}
+        {filteredSubmissions.map((submission, index) => {
+          const passed =
+            submission.status === 'completed' &&
+            !!submission.feedback &&
+            submission.feedback.criteria.every((c) => c.passed)
+          return (
+            <TabsTrigger
+              key={submission.id}
+              value={`attempt-${index}`}
+              className={cn(passed && 'after:bg-success')}
+            >
+              Attempt {index + 1}
+            </TabsTrigger>
+          )
+        })}
       </TabsList>
       {filteredSubmissions.map((submission, index) => (
-        <TabsContent key={submission.id} value={`attempt-${index}`} className="mt-0">
+        <TabsContent key={submission.id} value={`attempt-${index}`} className="mt-0 flex flex-col gap-4">
           {submission.status === 'completed' && submission.feedback && (
             <div className="flex flex-col gap-4">
+              <StatusBar passed={submission.feedback.criteria.every((c) => c.passed)} />
               <Text variant="main-18" className="text-justify">
                 {submission.feedback.summary}
               </Text>

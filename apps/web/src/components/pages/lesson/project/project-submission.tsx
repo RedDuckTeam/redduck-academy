@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { InProgressDialog } from './inprogress-dialog'
+import { HowToSubmitDialog } from './how-to-submit-dialog'
 import { SubmissionReviewTabs } from './submission-review-tabs'
 import type { Lesson, LatestProjectSubmission } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
@@ -47,27 +48,24 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
       </Dialog>
       <div className="flex min-w-0 w-fit max-w-full flex-col gap-5">
         {lesson.templateRepoUrl && (
-          <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
-            Starter repository:{' '}
-            <a
-              href={lesson.templateRepoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary wrap-anywhere"
-            >
-              {lesson.templateRepoUrl}
-            </a>
-          </Text>
+          <div className="flex flex-col gap-2">
+            <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
+              Starter repository:{' '}
+              <a
+                href={lesson.templateRepoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary wrap-anywhere"
+              >
+                {lesson.templateRepoUrl}
+              </a>
+            </Text>
+            <HowToSubmitDialog />
+          </div>
         )}
         <Text variant="caps-24" className="font-medium">
           YOUR WORK
         </Text>
-
-        {rateLimitError && (
-          <Text variant="caps-20" className="text-yellow-500">
-            {rateLimitError.message}
-          </Text>
-        )}
 
         <div className="flex items-center gap-2">
           <TerminalIcon className="" />

@@ -6,10 +6,10 @@ import type { CodingTaskSubmission, Lesson, LessonForUser } from '@/types/lesson
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { CheckCircle, Clock, RotateCcw, WrapText, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { RotateCcw, WrapText } from 'lucide-react'
 import type { RateLimitError } from '@/lib/api/rate-limit'
 import { getRateLimitCopy } from '@/lib/lessons/rate-limit-copy'
+import { StatusBar } from '../status-bar'
 
 interface CodePanelProps {
   lesson: Lesson
@@ -110,35 +110,8 @@ export function CodePanel({
         <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={language} />
       </div>
       <div ref={statusParent as Ref<HTMLDivElement>} className="shrink-0">
-        {showLatest && (
-          <div
-            key="latest"
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 border-t transition-colors border-border',
-              latest!.passed ? 'bg-success/10' : 'bg-primary/10',
-            )}
-          >
-            {latest!.passed ? (
-              <CheckCircle className="h-4 w-4 text-success shrink-0" />
-            ) : (
-              <XCircle className="h-4 w-4 text-primary shrink-0" />
-            )}
-            <Text variant="main-14" className={latest!.passed ? 'text-success' : 'text-primary'}>
-              {latest!.passed ? 'Passed' : 'Not passed'}
-            </Text>
-          </div>
-        )}
-        {showRateLimit && (
-          <div
-            key="rate-limit"
-            className="flex items-center gap-2 px-4 py-2 border-t border-border bg-yellow-500/10"
-          >
-            <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
-            <Text variant="main-14" className="text-yellow-500">
-              {rateLimitCopy}
-            </Text>
-          </div>
-        )}
+        {showLatest && <StatusBar key="latest" passed={latest!.passed} />}
+        {showRateLimit && <StatusBar key="rate-limit" rateLimitMessage={rateLimitCopy} />}
       </div>
     </div>
   )

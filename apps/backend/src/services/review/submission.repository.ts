@@ -50,6 +50,21 @@ export const SubmissionRepository = {
     })
   },
 
+  async findCompletedByCommit(userLessonId: number, commitSha: string) {
+    const [row] = await db
+      .select({ id: projectUserSubmissions.id })
+      .from(projectUserSubmissions)
+      .where(
+        and(
+          eq(projectUserSubmissions.userLessonId, userLessonId),
+          eq(projectUserSubmissions.commitSha, commitSha),
+          eq(projectUserSubmissions.status, 'completed'),
+        ),
+      )
+      .limit(1)
+    return row ?? null
+  },
+
   async getUserLesson(userId: string, lessonId: number) {
     const [row] = await db
       .select({ id: userLessons.id })
