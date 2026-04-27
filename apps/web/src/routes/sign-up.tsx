@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import Marquee from 'react-fast-marquee'
 import { WagmiProvider } from 'wagmi'
 import { ThemeToggle } from '@/components/header/theme-toggle'
@@ -28,11 +28,10 @@ export const Route = createFileRoute('/sign-up')({
 
 function SignUp() {
   const { ready, authenticated } = usePrivyAuth()
-  const navigate = useNavigate()
 
   useEffect(() => {
     if (ready && authenticated) {
-      navigate({ to: '/dashboard', replace: true })
+      window.location.replace('/dashboard')
     }
   }, [ready, authenticated])
 

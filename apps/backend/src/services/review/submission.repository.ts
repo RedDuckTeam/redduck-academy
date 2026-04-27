@@ -30,10 +30,7 @@ export const SubmissionRepository = {
         .select({ id: projectUserSubmissions.id })
         .from(projectUserSubmissions)
         .where(
-          and(
-            eq(projectUserSubmissions.userLessonId, userLesson.id),
-            eq(projectUserSubmissions.status, 'pending'),
-          ),
+          and(eq(projectUserSubmissions.userLessonId, userLesson.id), eq(projectUserSubmissions.status, 'pending')),
         )
         .limit(1)
 
@@ -104,12 +101,7 @@ export const SubmissionRepository = {
       .where(eq(projectUserSubmissions.id, submissionId))
   },
 
-  async complete(
-    submissionId: number,
-    userLessonId: number,
-    feedback: ReviewFeedback,
-    passed: boolean,
-  ) {
+  async complete(submissionId: number, userLessonId: number, feedback: ReviewFeedback, passed: boolean) {
     await db.transaction(async (tx) => {
       const [updated] = await tx
         .update(projectUserSubmissions)
@@ -124,10 +116,7 @@ export const SubmissionRepository = {
 
       if (!updated) return
 
-      await tx
-        .update(userLessons)
-        .set({ isCompleted: passed })
-        .where(eq(userLessons.id, userLessonId))
+      await tx.update(userLessons).set({ isCompleted: passed }).where(eq(userLessons.id, userLessonId))
     })
   },
 }
