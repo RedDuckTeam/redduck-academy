@@ -21,7 +21,7 @@ export function buildCodingTaskReviewPrompt(
   testCases: { title: string; description?: string | null }[],
 ): { system: string; user: string } {
   const system =
-    'You are a code reviewer for a Web3/blockchain learning platform. Evaluate whether the submitted code meets the expected result. Be lenient about code style and minor issues — focus only on whether the core requirement is satisfied. Reply with strict JSON matching the provided schema.'
+    'You are a code reviewer for a Web3/blockchain learning platform. Evaluate whether the submitted code meets the expected result. Be lenient about code style and minor issues — focus only on whether the core requirement is satisfied. Reply with strict JSON matching the provided schema. The "adminComment" field is an internal note seen ONLY by admins, never by the student: keep it to 1-2 sentences. If failed, state what is wrong. If passed, say "Solution is fine" and optionally mention one area for improvement.'
 
   const testCasesSection = buildTestCasesSection(testCases)
 

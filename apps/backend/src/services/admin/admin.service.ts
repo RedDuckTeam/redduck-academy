@@ -305,9 +305,9 @@ export class AdminService {
       }
     }
 
-    let codingTaskSubmissions: Awaited<ReturnType<typeof CodingTaskService.getSubmissionsForUserLesson>> = []
+    let codingTaskSubmissions: Awaited<ReturnType<typeof CodingTaskService.getSubmissionsForUserLessonAdmin>> = []
     if (lesson.type === 'coding_task' && userLesson?.id) {
-      codingTaskSubmissions = await CodingTaskService.getSubmissionsForUserLesson(userLesson.id)
+      codingTaskSubmissions = await CodingTaskService.getSubmissionsForUserLessonAdmin(userLesson.id)
     }
 
     // Admin sees raw review feedback — no sanitization of hidden criteria

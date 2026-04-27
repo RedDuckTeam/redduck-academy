@@ -21,8 +21,13 @@ const codingTaskResponseFormat = {
           type: 'boolean',
           description: 'True if the submitted code meets the expected result, false otherwise.',
         },
+        adminComment: {
+          type: 'string',
+          description:
+            'A brief 1-2 sentence note for an admin reviewer (NOT shown to the student). If the submission failed, state plainly what is wrong. If it passed, say it is fine and optionally mention one area for improvement. Keep it under 300 characters.',
+        },
       },
-      required: ['passed'],
+      required: ['passed', 'adminComment'],
     },
   },
 }
@@ -32,7 +37,7 @@ export async function reviewCodingTask(
   language: string,
   aiExpectedResult: string,
   testCases: { title: string; description?: string | null }[],
-): Promise<{ passed: boolean }> {
+): Promise<{ passed: boolean; adminComment: string }> {
   const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY })
   const { system, user } = buildCodingTaskReviewPrompt(submittedCode, language, aiExpectedResult, testCases)
 
@@ -65,10 +70,16 @@ export async function reviewCodingTask(
     throw new AppError(502, GENERIC_ERROR_MESSAGE)
   }
 
-  if (typeof parsed !== 'object' || parsed === null || typeof (parsed as { passed?: unknown }).passed !== 'boolean') {
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    typeof (parsed as { passed?: unknown }).passed !== 'boolean' ||
+    typeof (parsed as { adminComment?: unknown }).adminComment !== 'string'
+  ) {
     logger.error('OpenAI response did not match schema', undefined, { language, parsed })
     throw new AppError(502, GENERIC_ERROR_MESSAGE)
   }
 
-  return { passed: (parsed as { passed: boolean }).passed }
+  const { passed, adminComment } = parsed as { passed: boolean; adminComment: string }
+  return { passed, adminComment }
 }

@@ -81,6 +81,8 @@ export const codingTaskSubmissions = pgTable(
     submittedCode: text('submitted_code').notNull(),
     language: text('language').notNull(),
     passed: boolean('passed').notNull(),
+    // Admin-only: short AI-generated note about the submission. Never returned to the learner.
+    aiComment: text('ai_comment'),
     // Internal-only: used for cross-account rate-limit enforcement. Never exposed to the client.
     ipAddress: text('ip_address'),
     submittedAt: timestamp('submitted_at').defaultNow().notNull(),
@@ -141,6 +143,7 @@ export const codingTaskReviewCache = pgTable(
     lessonId: integer('lesson_id').notNull(),
     codeHash: text('code_hash').notNull(),
     passed: boolean('passed').notNull(),
+    aiComment: text('ai_comment'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (t) => ({

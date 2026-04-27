@@ -28,6 +28,7 @@ export const CodingTaskRepository = {
     submittedCode: string,
     language: string,
     passed: boolean,
+    aiComment: string | null,
     ipAddress: string,
   ): Promise<{ submissionId: number }> {
     return db.transaction(async (tx) => {
@@ -46,7 +47,14 @@ export const CodingTaskRepository = {
 
       const [submission] = await tx
         .insert(codingTaskSubmissions)
-        .values({ userLessonId: userLesson.id, submittedCode, language, passed, ipAddress: ipAddress || null })
+        .values({
+          userLessonId: userLesson.id,
+          submittedCode,
+          language,
+          passed,
+          aiComment,
+          ipAddress: ipAddress || null,
+        })
         .returning({ id: codingTaskSubmissions.id })
 
       if (passed) {
@@ -73,6 +81,20 @@ export const CodingTaskRepository = {
       .orderBy(asc(codingTaskSubmissions.submittedAt))
   },
 
+  async listForUserLessonAdmin(userLessonId: number) {
+    return db
+      .select({
+        id: codingTaskSubmissions.id,
+        passed: codingTaskSubmissions.passed,
+        submittedAt: codingTaskSubmissions.submittedAt,
+        submittedCode: codingTaskSubmissions.submittedCode,
+        aiComment: codingTaskSubmissions.aiComment,
+      })
+      .from(codingTaskSubmissions)
+      .where(eq(codingTaskSubmissions.userLessonId, userLessonId))
+      .orderBy(asc(codingTaskSubmissions.submittedAt))
+  },
+
   async getUserLesson(userId: string, lessonId: number) {
     const [row] = await db
       .select({ id: userLessons.id })
@@ -82,20 +104,28 @@ export const CodingTaskRepository = {
     return row ?? null
   },
 
-  async getCachedReview(lessonId: number, codeHash: string): Promise<boolean | null> {
+  async getCachedReview(
+    lessonId: number,
+    codeHash: string,
+  ): Promise<{ passed: boolean; aiComment: string | null } | null> {
     const [row] = await db
-      .select({ passed: codingTaskReviewCache.passed })
+      .select({ passed: codingTaskReviewCache.passed, aiComment: codingTaskReviewCache.aiComment })
       .from(codingTaskReviewCache)
       .where(and(eq(codingTaskReviewCache.lessonId, lessonId), eq(codingTaskReviewCache.codeHash, codeHash)))
       .limit(1)
-    return row?.passed ?? null
+    return row ?? null
   },
 
-  async setCachedReview(lessonId: number, codeHash: string, passed: boolean): Promise<void> {
+  async setCachedReview(
+    lessonId: number,
+    codeHash: string,
+    passed: boolean,
+    aiComment: string | null,
+  ): Promise<void> {
     void maybeCleanupReviewCache()
     await db
       .insert(codingTaskReviewCache)
-      .values({ lessonId, codeHash, passed })
+      .values({ lessonId, codeHash, passed, aiComment })
       .onConflictDoNothing()
   },
 }

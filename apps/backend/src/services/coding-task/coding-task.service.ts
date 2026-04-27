@@ -29,8 +29,10 @@ export class CodingTaskService {
     const cached = await CodingTaskRepository.getCachedReview(lesson.id, codeHash)
 
     let passed: boolean
+    let aiComment: string | null
     if (cached !== null) {
-      passed = cached
+      passed = cached.passed
+      aiComment = cached.aiComment
     } else {
       const aiExpectedResult = lesson.aiExpectedResult ?? ''
       const testCases = (lesson.codingTestCases ?? []).map((tc) => ({
@@ -40,15 +42,20 @@ export class CodingTaskService {
 
       const result = await reviewCodingTask(submittedCode, language, aiExpectedResult, testCases)
       passed = result.passed
-      await CodingTaskRepository.setCachedReview(lesson.id, codeHash, passed)
+      aiComment = result.adminComment
+      await CodingTaskRepository.setCachedReview(lesson.id, codeHash, passed, aiComment)
     }
 
-    await CodingTaskRepository.createSubmission(userId, lesson.id, submittedCode, language, passed, ipAddress)
+    await CodingTaskRepository.createSubmission(userId, lesson.id, submittedCode, language, passed, aiComment, ipAddress)
 
     return { passed }
   }
 
   static async getSubmissionsForUserLesson(userLessonId: number) {
     return CodingTaskRepository.listForUserLesson(userLessonId)
+  }
+
+  static async getSubmissionsForUserLessonAdmin(userLessonId: number) {
+    return CodingTaskRepository.listForUserLessonAdmin(userLessonId)
   }
 }
