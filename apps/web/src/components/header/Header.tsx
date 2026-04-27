@@ -72,7 +72,7 @@ export default function Header() {
               />
             </Link>
           ) : (
-            <Button variant="default" size="sm" className="shrink-0 uppercase" asChild>
+            <Button variant="default" size="sm" className="shrink-0 h-10 uppercase" asChild>
               <Link to="/sign-up">Sign in</Link>
             </Button>
           )}
