@@ -25,7 +25,7 @@ function ToasterInner({ ...props }: ToasterProps) {
       className="toaster group"
       icons={{
         success: <CheckCircle className="h-4 w-4 shrink-0 text-white" aria-hidden />,
-        info: <InfoIcon className="h-4 w-4 shrink-0 text-secondary" aria-hidden />,
+        info: <InfoIcon className="h-4 w-4 shrink-0 text-yellow-700 dark:text-yellow-400" aria-hidden />,
         warning: <TriangleAlert className="h-4 w-4 shrink-0 text-[#565653] dark:text-[#E0CDC6]" aria-hidden />,
         error: <XCircle className="h-4 w-4 shrink-0 text-white" aria-hidden />,
         loading: <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" aria-hidden />,
@@ -52,8 +52,9 @@ function ToasterInner({ ...props }: ToasterProps) {
           ].join(' '),
           info: [
             toastShell,
-            '!border-border !bg-card',
-            '[&_[data-title]]:!text-foreground [&_[data-description]]:!text-muted-foreground',
+            '!border-yellow-500 !bg-yellow-50 dark:!bg-yellow-500/10',
+            '[&_[data-title]]:!text-yellow-700 [&_[data-description]]:!text-yellow-700/80',
+            'dark:[&_[data-title]]:!text-yellow-400 dark:[&_[data-description]]:!text-yellow-400/80',
           ].join(' '),
           loading: [
             toastShell,
