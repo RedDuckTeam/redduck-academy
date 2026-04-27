@@ -6,14 +6,12 @@ import { PrivyAuthContext } from './privy-auth-context'
 import { usePrivy } from '@privy-io/react-auth'
 import { env } from '@/env'
 
-const queryClient = new QueryClient()
-
 function PrivyAuthBridge({ children }: { children: React.ReactNode }) {
   const { ready, authenticated, logout } = usePrivy()
   return <PrivyAuthContext.Provider value={{ ready, authenticated, logout }}>{children}</PrivyAuthContext.Provider>
 }
 
-export const Providers = ({ children }: { children: React.ReactNode }) => {
+export const Providers = ({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) => {
   return (
     <PrivyProvider
       appId={env.VITE_PRIVY_APP_ID}

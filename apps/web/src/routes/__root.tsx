@@ -47,6 +47,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const { queryClient } = Route.useRouteContext()
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -54,7 +55,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <Providers>
+        <Providers queryClient={queryClient}>
           <ScrollToTop />
           <Header />
           {children}
