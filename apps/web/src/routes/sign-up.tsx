@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import Marquee from 'react-fast-marquee'
 import { WagmiProvider } from 'wagmi'
 import { ThemeToggle } from '@/components/header/theme-toggle'
@@ -28,12 +28,15 @@ export const Route = createFileRoute('/sign-up')({
 
 function SignUp() {
   const { ready, authenticated } = usePrivyAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    if (ready && authenticated) {
-      window.location.replace('/dashboard')
-    }
-  }, [ready, authenticated])
+    if (!ready || !authenticated) return
+    void (async () => {
+      await router.invalidate()
+      await router.navigate({ to: '/dashboard', replace: true })
+    })()
+  }, [ready, authenticated, router])
 
   return (
     <WagmiProvider config={wagmiConfig}>

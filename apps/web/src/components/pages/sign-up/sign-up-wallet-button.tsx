@@ -2,9 +2,20 @@ import { cn } from '@/lib/utils'
 import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useLogin } from '@privy-io/react-auth'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
+import { queryKeys } from '@/lib/query-keys'
 
 export const SignUpWalletButton = () => {
-  const { login } = useLogin()
+  const queryClient = useQueryClient()
+  const router = useRouter()
+  const { login } = useLogin({
+    onComplete: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.user.settings() })
+      await router.invalidate()
+      await router.navigate({ to: '/dashboard', replace: true })
+    },
+  })
 
   return (
     <button

@@ -2,6 +2,9 @@ import { cn } from '@/lib/utils'
 import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCreateWallet, useLoginWithOAuth } from '@privy-io/react-auth'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
+import { queryKeys } from '@/lib/query-keys'
 
 // Privy's `onComplete` can fire more than once per login (StrictMode double-invoke in dev, and
 // re-fires on remount after the OAuth redirect). Without this guard, `createWallet()` runs twice
@@ -10,20 +13,26 @@ const walletCreationAttempted = new Set<string>()
 
 export const SignUpGoogleButton = () => {
   const { createWallet } = useCreateWallet()
+  const queryClient = useQueryClient()
+  const router = useRouter()
   const { initOAuth } = useLoginWithOAuth({
     onComplete: async ({ isNewUser, user }) => {
-      if (!isNewUser || !user?.id) return
-      if (walletCreationAttempted.has(user.id)) return
-      walletCreationAttempted.add(user.id)
-      const hasEmbedded = user.linkedAccounts.some(
-        (a) => a.type === 'wallet' && 'walletClientType' in a && a.walletClientType === 'privy',
-      )
-      if (hasEmbedded) return
-      try {
-        await createWallet()
-      } catch {
-        walletCreationAttempted.delete(user.id)
+      if (isNewUser && user?.id && !walletCreationAttempted.has(user.id)) {
+        walletCreationAttempted.add(user.id)
+        const hasEmbedded = user.linkedAccounts.some(
+          (a) => a.type === 'wallet' && 'walletClientType' in a && a.walletClientType === 'privy',
+        )
+        if (!hasEmbedded) {
+          try {
+            await createWallet()
+          } catch {
+            walletCreationAttempted.delete(user.id)
+          }
+        }
       }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.user.settings() })
+      await router.invalidate()
+      await router.navigate({ to: '/dashboard', replace: true })
     },
   })
 

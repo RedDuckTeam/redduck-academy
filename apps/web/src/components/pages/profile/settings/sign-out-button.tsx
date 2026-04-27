@@ -1,13 +1,19 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 
 export const SignOutButton = () => {
   const { logout } = usePrivyAuth()
+  const queryClient = useQueryClient()
+  const router = useRouter()
 
   const handleSignOut = async () => {
     await logout()
-    window.location.assign('/sign-up')
+    queryClient.clear()
+    await router.invalidate()
+    await router.navigate({ to: '/sign-up' })
   }
 
   return (
