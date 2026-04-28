@@ -1,4 +1,5 @@
 import { api } from './fetcher'
+import { ApiError } from './errors'
 import type { Course, Lesson, LessonForUser } from '@/types/lesson'
 
 export interface GetCoursesResponse {
@@ -27,18 +28,15 @@ export interface GetCoursesInfoResponse {
 }
 
 export const getCoursesInfo = async () => {
-  const response = await api().get<GetCoursesInfoResponse>('/api/courses/info')
-  return response.data
+  return api().get<GetCoursesInfoResponse>('/api/courses/info')
 }
 
 export const getCourses = async () => {
-  const response = await api().get<GetCoursesResponse>('/api/courses')
-  return response.data
+  return api().get<GetCoursesResponse>('/api/courses')
 }
 
 export const getCourse = async (slug: string) => {
-  const response = await api().get<{ data: Course }>(`/api/courses/${slug}`)
-  return response.data
+  return api().get<{ data: Course }>(`/api/courses/${slug}`)
 }
 
 export interface GetLessonResponse {
@@ -46,8 +44,7 @@ export interface GetLessonResponse {
 }
 
 export const getLesson = async (courseSlug: string, lessonSlug: string) => {
-  const response = await api().get<GetLessonResponse>(`/api/lessons/${courseSlug}/${lessonSlug}`)
-  return response.data
+  return api().get<GetLessonResponse>(`/api/lessons/${courseSlug}/${lessonSlug}`)
 }
 
 export interface GetLessonForUserResponse {
@@ -58,15 +55,18 @@ export const getLessonForUser = async (
   courseSlug: string,
   lessonSlug: string,
 ): Promise<GetLessonForUserResponse | null> => {
-  const response = await api({ credentials: 'include' }).get<GetLessonForUserResponse>(
-    `/api/user/lessons/${courseSlug}/${lessonSlug}`,
-  )
-  if (response.status === 403) {
-    const slug = response.errorData?.prerequisiteCourseSlug as string | undefined
-    const title = response.errorData?.prerequisiteCourseTitle as string | undefined
-    if (slug && title) throw new CourseLockedError(slug, title)
+  try {
+    return await api({ credentials: 'include' }).get<GetLessonForUserResponse>(
+      `/api/user/lessons/${courseSlug}/${lessonSlug}`,
+    )
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) {
+      const slug = err.extra?.prerequisiteCourseSlug as string | undefined
+      const title = err.extra?.prerequisiteCourseTitle as string | undefined
+      if (slug && title) throw new CourseLockedError(slug, title)
+    }
+    throw err
   }
-  return response.data
 }
 
 export const syncProjectReview = async (courseSlug: string, lessonSlug: string) => {

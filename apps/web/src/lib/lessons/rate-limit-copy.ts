@@ -18,6 +18,6 @@ export function getRateLimitCopy(reason: RateLimitReason | null, resetAt: string
       return formatMonthlyMessage(resetAt)
     case 'cooldown':
     default:
-      return 'Please wait before next submission'
+      return "Please wait before next submission. You're submitting too fast."
   }
 }

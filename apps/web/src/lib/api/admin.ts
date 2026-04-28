@@ -33,10 +33,7 @@ export type AdminUsersPage = {
 
 export const getAdminStats = async (): Promise<AdminStats> => {
   const response = await api({ credentials: 'include' }).get<{ data: AdminStats }>('/api/admin/stats')
-  if (!response.data && response.status >= 400) {
-    throw new Error(response.error ?? 'Failed to load admin stats')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export const getAdminUsers = async (input: {
@@ -54,10 +51,7 @@ export const getAdminUsers = async (input: {
   const response = await api({ credentials: 'include' }).get<{ data: AdminUsersPage }>(
     `/api/admin/users?${qs.toString()}`,
   )
-  if (!response.data && response.status >= 400) {
-    throw new Error(response.error ?? 'Failed to load users')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export type AdminCertificateRow = {
@@ -100,10 +94,7 @@ export const getAdminCertificates = async (input: {
   const response = await api({ credentials: 'include' }).get<{ data: AdminCertificatesPage }>(
     `/api/admin/certificates?${qs.toString()}`,
   )
-  if (!response.data && response.status >= 400) {
-    throw new Error(response.error ?? 'Failed to load certificates')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export type AdminMintParams = {
@@ -123,20 +114,14 @@ export const generateAdminCertificate = async (input: {
     '/api/certificates/admin/generate',
     input,
   )
-  if (!response.data && response.status >= 400) {
-    throw new Error(response.error ?? 'Failed to generate certificate')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export const getAdminUserCompletedLessons = async (userId: string): Promise<CompletedLesson[]> => {
   const response = await api({ credentials: 'include' }).get<{ data: CompletedLesson[] }>(
     `/api/admin/users/${userId}/completed-lessons`,
   )
-  if (!response.data && response.status >= 400) {
-    throw new Error(response.error ?? 'Failed to load completed lessons')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export const getAdminUserLessonDetail = async (
@@ -147,10 +132,7 @@ export const getAdminUserLessonDetail = async (
   const response = await api({ credentials: 'include' }).get<{ data: LessonForUser }>(
     `/api/admin/users/${userId}/lessons/${courseSlug}/${lessonSlug}`,
   )
-  if (!response.data && response.status >= 400) {
-    throw new Error(response.error ?? 'Failed to load lesson detail')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export const banAdminUser = async (userId: string, ban: boolean): Promise<{ blacklisted: boolean }> => {
@@ -158,21 +140,12 @@ export const banAdminUser = async (userId: string, ban: boolean): Promise<{ blac
     `/api/admin/users/${userId}/ban`,
     { ban },
   )
-  if (response.status >= 400) {
-    throw new Error((response as { error?: string }).error ?? 'Failed to update ban status')
-  }
-  return response.data!.data
+  return response.data
 }
 
 export const markAdminClaimed = async (
   certificateId: string,
   data: { metadataUri: string; imageUrl: string; tokenId: string; txHash: string },
 ): Promise<void> => {
-  const response = await api({ credentials: 'include' }).post(
-    `/api/certificates/admin/${certificateId}/claim`,
-    data,
-  )
-  if (response.status >= 400) {
-    throw new Error((response as { error?: string }).error ?? 'Failed to mark certificate as claimed')
-  }
+  await api({ credentials: 'include' }).post(`/api/certificates/admin/${certificateId}/claim`, data)
 }

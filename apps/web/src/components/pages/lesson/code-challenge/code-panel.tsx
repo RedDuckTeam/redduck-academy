@@ -46,9 +46,7 @@ export function CodePanel({
   // Hide status lines while a submit is in-flight so the user sees something react to their click.
   const showRateLimit = !!rateLimitError && !isPending
   const showLatest = !rateLimitError && !!latest && !isPending
-  const rateLimitCopy = rateLimitError
-    ? getRateLimitCopy(rateLimitError.reason, rateLimitError.resetAt)
-    : ''
+  const rateLimitCopy = rateLimitError ? getRateLimitCopy(rateLimitError.reason, rateLimitError.resetAt) : ''
 
   return (
     <div className="flex flex-col xl:h-full">

@@ -1,4 +1,5 @@
 import { api } from './fetcher'
+import { ApiError } from './errors'
 import { RateLimitError } from './rate-limit'
 
 export interface SubmitProjectPayload {
@@ -12,18 +13,13 @@ export interface SubmitProjectResponse {
 }
 
 export const submitProject = async (payload: SubmitProjectPayload): Promise<SubmitProjectResponse> => {
-  const response = await api({ credentials: 'include' }).post('/api/lessons/submit-project', payload)
-  if (response.status === 429) {
-    const retryAfterMs = (response.errorData?.retryAfterMs as number | undefined) ?? 60_000
-    throw new RateLimitError({ reason: null, retryAfterMs })
-  }
-  if (!response.data && response.status >= 400) {
-    if (response.error && typeof response.error === 'string') {
-      throw new Error(response.error)
-    } else if (response.error && response.error?.length > 0) {
-      throw new Error(response.error[0].message)
+  try {
+    return await api({ credentials: 'include' }).post<SubmitProjectResponse>('/api/lessons/submit-project', payload)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 429) {
+      const retryAfterMs = (err.extra?.retryAfterMs as number | undefined) ?? 60_000
+      throw new RateLimitError({ reason: null, retryAfterMs })
     }
-    throw new Error('Failed to submit project')
+    throw err
   }
-  return response.data as SubmitProjectResponse
 }

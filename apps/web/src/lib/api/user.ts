@@ -1,4 +1,5 @@
 import { api } from './fetcher'
+import { ApiError } from './errors'
 import type { UserSettings, UserPublicProfile } from '@/types/lesson'
 
 export interface ProgressCards {
@@ -9,13 +10,9 @@ export interface ProgressCards {
   placeInRanking: number
 }
 
-interface GetProgressCardsResponse {
-  data: ProgressCards
-}
-
 export const getProgressCards = async (): Promise<ProgressCards> => {
-  const response = await api({ credentials: 'include' }).get<GetProgressCardsResponse>('/api/user/progress-cards')
-  return response.data!.data
+  const response = await api({ credentials: 'include' }).get<{ data: ProgressCards }>('/api/user/progress-cards')
+  return response.data
 }
 
 export interface CompletedLesson {
@@ -24,48 +21,38 @@ export interface CompletedLesson {
   lessonSlug: string
 }
 
-export interface GetCompletedLessonsResponse {
-  data: CompletedLesson[]
-}
-
 export const getCompletedLessons = async (): Promise<CompletedLesson[]> => {
-  const response = await api({ credentials: 'include' }).get<GetCompletedLessonsResponse>('/api/user/completed-lessons')
-  return response.data?.data ?? []
+  const response = await api({ credentials: 'include' }).get<{ data: CompletedLesson[] }>('/api/user/completed-lessons')
+  return response.data ?? []
 }
 
 export const getUserSettings = async (): Promise<UserSettings> => {
   const response = await api({ credentials: 'include' }).get<{ data: UserSettings }>('/api/user/settings')
-  return response.data!.data
+  return response.data
 }
 
 export const updateUserSettings = async (settings: Partial<UserSettings>): Promise<UserSettings> => {
   const response = await api({ credentials: 'include' }).patch<{ data: UserSettings }>('/api/user/settings', settings)
-  return response.data!.data
+  return response.data
 }
 
 export const updateUserBio = async (bio: string | null): Promise<{ bio: string | null }> => {
   const response = await api({ credentials: 'include' }).patch<{ data: { bio: string | null } }>('/api/user/bio', {
     bio,
   })
-  if (response.error) throw new Error(response.error)
-  return response.data!.data
+  return response.data
 }
 
 export const updateUserName = async (name: string): Promise<{ name: string }> => {
   const response = await api({ credentials: 'include' }).patch<{ data: { name: string } }>('/api/user/name', { name })
-  if (response.error) throw new Error(response.error)
-  return response.data!.data
+  return response.data
 }
 
 export const updateUserUsername = async (username: string): Promise<{ username: string }> => {
   const response = await api({ credentials: 'include' }).patch<{ data: { username: string } }>('/api/user/username', {
     username,
   })
-  if (response.error) {
-    throw new Error(response.error)
-  }
-
-  return response.data!.data
+  return response.data
 }
 
 export const uploadUserAvatar = async (file: File): Promise<{ imageUrl: string }> => {
@@ -79,13 +66,17 @@ export const uploadUserAvatar = async (file: File): Promise<{ imageUrl: string }
     body: formData,
   })
 
+  const text = await response.text().catch(() => '')
   if (!response.ok) {
-    const data = await response.json().catch(() => ({}))
-    throw new Error((data as { error?: string }).error ?? 'Failed to upload avatar')
+    const { parseApiError } = await import('./errors')
+    throw parseApiError(response.status, response.statusText, text)
   }
-
-  const data = (await response.json()) as { data: { imageUrl: string } }
-  return data.data
+  try {
+    const data = JSON.parse(text) as { data: { imageUrl: string } }
+    return data.data
+  } catch {
+    throw new ApiError('Invalid avatar upload response', response.status)
+  }
 }
 
 export interface RatingEntry {
@@ -99,10 +90,10 @@ export interface RatingEntry {
 
 export const getPublicProfile = async (username: string): Promise<UserPublicProfile> => {
   const response = await api().get<{ data: UserPublicProfile }>(`/api/user/profile/${username}`)
-  return response.data!.data
+  return response.data
 }
 
 export const getRating = async (): Promise<RatingEntry[]> => {
   const response = await api({ credentials: 'include' }).get<{ data: RatingEntry[] }>('/api/user/rating')
-  return response.data?.data ?? []
+  return response.data ?? []
 }

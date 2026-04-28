@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { handleApiError } from '@/lib/api/handle-error'
 
 export function getContext() {
   const queryClient = new QueryClient({
@@ -10,6 +11,12 @@ export function getContext() {
         retry: 1,
       },
     },
+    mutationCache: new MutationCache({
+      onError: (error, _vars, _ctx, mutation) => {
+        if (mutation.options.onError) return
+        handleApiError(error)
+      },
+    }),
   })
   return { queryClient }
 }

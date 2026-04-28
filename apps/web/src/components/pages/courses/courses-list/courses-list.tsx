@@ -3,13 +3,11 @@ import { Fragment } from 'react/jsx-runtime'
 import type { Course } from '@/types/lesson'
 import { LessonTypeEnum } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
-import { lessonTypeToLabel } from '@/lib/lessons/lessons'
+import { lessonTypeToIcon, lessonTypeToLabel } from '@/lib/lessons/lessons'
 import { padIndex } from '@/lib/format-index'
-import { PlayIcon } from '@/components/ui/icons/play'
 import { cn } from '@/lib/utils'
 import { CheckIcon } from '@/components/ui/icons/check'
 import { Lock } from 'lucide-react'
-import { PixelArrowUpRightIcon } from '@/components/ui/icons/pixel-arrow-up-right'
 
 interface CoursesListProps {
   courses: Course[]
@@ -36,6 +34,7 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
               const isCompleted = completedLessons.has(lesson.id)
               const isLecture = lesson.type === LessonTypeEnum.LECTURE
               const isLocked = (lockedCourses?.has(course.slug) ?? false) && !isLecture
+              const LessonTypeIcon = lessonTypeToIcon[lesson.type]
 
               const inner = (
                 <>
@@ -45,12 +44,10 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
                       isLocked ? 'border-black/30' : isCompleted ? 'border-success' : 'border-black',
                     )}
                   >
-                    {isLocked ? (
-                      <Lock className="h-4 w-4 text-black/30" />
-                    ) : isCompleted ? (
+                    {isCompleted ? (
                       <CheckIcon className="[&_path]:fill-success" />
                     ) : (
-                      <PixelArrowUpRightIcon className="[&_path]:fill-black size-6" />
+                      <LessonTypeIcon className={cn('[&_path]:fill-black size-5', isLocked && 'opacity-30')} />
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">

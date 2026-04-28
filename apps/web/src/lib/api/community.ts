@@ -10,11 +10,9 @@ export interface GetCommunityEventResponse {
 }
 
 export const getCommunityEvents = async () => {
-  const response = await api().get<GetCommunityEventsResponse>('/api/community')
-  return response.data
+  return api().get<GetCommunityEventsResponse>('/api/community')
 }
 
 export const getCommunityEvent = async (slug: string) => {
-  const response = await api().get<GetCommunityEventResponse>(`/api/community/${encodeURIComponent(slug)}`)
-  return response.data
+  return api().get<GetCommunityEventResponse>(`/api/community/${encodeURIComponent(slug)}`)
 }

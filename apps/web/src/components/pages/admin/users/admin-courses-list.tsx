@@ -3,8 +3,7 @@ import { Fragment } from 'react/jsx-runtime'
 import type { Course } from '@/types/lesson'
 import { LessonTypeEnum } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
-import { lessonTypeToLabel } from '@/lib/lessons/lessons'
-import { PlayIcon } from '@/components/ui/icons/play'
+import { lessonTypeToIcon, lessonTypeToLabel } from '@/lib/lessons/lessons'
 import { cn } from '@/lib/utils'
 import { CheckIcon } from '@/components/ui/icons/check'
 import { padIndex } from '@/lib/format-index'
@@ -33,6 +32,7 @@ export const AdminCoursesList = ({ courses, courseSlug, completedLessons, userId
             .map((lesson) => {
               const isCompleted = completedLessons.has(lesson.id)
               const isLecture = lesson.type === LessonTypeEnum.LECTURE
+              const LessonTypeIcon = lessonTypeToIcon[lesson.type]
 
               return (
                 <Link
@@ -51,7 +51,7 @@ export const AdminCoursesList = ({ courses, courseSlug, completedLessons, userId
                     {isCompleted ? (
                       <CheckIcon className="[&_path]:fill-success" />
                     ) : (
-                      <PlayIcon className="translate-x-0.5 [&_path]:fill-black" />
+                      <LessonTypeIcon className="[&_path]:fill-black size-5" />
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">

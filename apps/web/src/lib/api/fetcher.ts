@@ -1,12 +1,5 @@
 import { env } from '@/env'
-
-export interface FetcherResponse<T> {
-  data: T | null
-  status: number
-  statusText: string
-  error?: string
-  errorData?: Record<string, unknown>
-}
+import { ApiError, parseApiError } from './errors'
 
 export class Fetcher {
   private readonly _baseURL: URL
@@ -31,13 +24,13 @@ export class Fetcher {
     }
   }
 
-  public async get<T>(url: string) {
+  public get<T>(url: string): Promise<T> {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), this._fetchOptions()),
     )
   }
 
-  public async post<T>(url: string, body?: unknown) {
+  public post<T>(url: string, body?: unknown): Promise<T> {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
         ...this._fetchOptions(),
@@ -47,7 +40,7 @@ export class Fetcher {
     )
   }
 
-  public async put<T>(url: string, body?: Record<string, unknown>) {
+  public put<T>(url: string, body?: Record<string, unknown>): Promise<T> {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
         ...this._fetchOptions(),
@@ -57,13 +50,13 @@ export class Fetcher {
     )
   }
 
-  public async delete<T>(url: string) {
+  public delete<T>(url: string): Promise<T> {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), this._fetchOptions({ method: 'DELETE' })),
     )
   }
 
-  public async patch<T>(url: string, body?: Record<string, unknown>) {
+  public patch<T>(url: string, body?: Record<string, unknown>): Promise<T> {
     return this._processResponse<T>(
       fetch(new URL(url, this._baseURL), {
         ...this._fetchOptions(),
@@ -73,47 +66,25 @@ export class Fetcher {
     )
   }
 
-  private async _processResponse<T>(
-    responsePromise: Promise<Response>,
-  ): Promise<FetcherResponse<T>> {
-    const response = await responsePromise
-
-    let data: T | null = null
-    let error = ''
-    let responseText = ''
-    let errorData: Record<string, unknown> | undefined
-
+  private async _processResponse<T>(responsePromise: Promise<Response>): Promise<T> {
+    let response: Response
     try {
-      responseText = await response.text()
-      if (response.ok) {
-        try {
-          data = JSON.parse(responseText)
-        } catch {
-          data = null
-        }
-      } else {
-        try {
-          const parsed = JSON.parse(responseText)
-          errorData = parsed
-          error =
-            parsed?.message ||
-            parsed?.description ||
-            parsed?.error ||
-            response.statusText
-        } catch {
-          error = responseText || response.statusText
-        }
-      }
-    } catch {
-      //
+      response = await responsePromise
+    } catch (cause) {
+      throw new ApiError(cause instanceof Error ? cause.message : 'Network request failed', 0)
     }
 
-    return {
-      data,
-      status: response.status,
-      statusText: response.statusText,
-      error,
-      errorData,
+    const text = await response.text().catch(() => '')
+
+    if (!response.ok) {
+      throw parseApiError(response.status, response.statusText, text)
+    }
+
+    if (!text) return null as T
+    try {
+      return JSON.parse(text) as T
+    } catch {
+      return null as T
     }
   }
 }
