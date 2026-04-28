@@ -31,6 +31,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const submissions = (userLesson?.submissions ?? []) as LatestProjectSubmission[]
   const latest = submissions.at(-1)
   const rateLimitError = submitError instanceof RateLimitError ? submitError : null
+  const isGithubLink = /^https?:\/\/github\.com\/[^/]+\/[^/]+/i.test(link.trim())
 
   const handleSubmit = () => {
     submitProject({ courseSlug, lessonSlug, repoUrl: link })
@@ -92,7 +93,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
             <Text variant="caps-20">Sign in</Text>
           </Button>
         ) : (
-          <Button disabled={!link || isPending || !!rateLimitError} onClick={handleSubmit} className="w-full">
+          <Button disabled={!isGithubLink || isPending || !!rateLimitError} onClick={handleSubmit} className="w-full">
             <Text variant="caps-20">SEND TO REVIEW</Text>
           </Button>
         )}
