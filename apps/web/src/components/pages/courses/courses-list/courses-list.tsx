@@ -7,7 +7,6 @@ import { lessonTypeToIcon, lessonTypeToLabel } from '@/lib/lessons/lessons'
 import { padIndex } from '@/lib/format-index'
 import { cn } from '@/lib/utils'
 import { CheckIcon } from '@/components/ui/icons/check'
-import { Lock } from 'lucide-react'
 
 interface CoursesListProps {
   courses: Course[]
@@ -47,7 +46,7 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
                     {isCompleted ? (
                       <CheckIcon className="[&_path]:fill-success" />
                     ) : (
-                      <LessonTypeIcon className={cn('[&_path]:fill-black size-5', isLocked && 'opacity-30')} />
+                      <LessonTypeIcon className={cn('[&_path]:fill-black size-6', isLocked && 'opacity-30')} />
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">

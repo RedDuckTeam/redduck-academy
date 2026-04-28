@@ -32,11 +32,7 @@ function AccordionTrigger({ className, children, ...props }: React.ComponentProp
         {children}
         <ChevronUpIcon
           data-slot="accordion-trigger-icon"
-          className="pointer-events-none shrink-0 w-6! h-6! group-aria-expanded/accordion-trigger:hidden"
-        />
-        <ChevronUpIcon
-          data-slot="accordion-trigger-icon"
-          className="pointer-events-none hidden shrink-0 w-6! h-6! group-aria-expanded/accordion-trigger:inline rotate-180"
+          className="pointer-events-none shrink-0 w-6! h-6! transition-transform duration-300 group-aria-expanded/accordion-trigger:rotate-180"
         />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
