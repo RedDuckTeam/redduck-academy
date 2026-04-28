@@ -24,13 +24,9 @@ function AdminUserDetailPage() {
   const activeCourseSlug = selectedCourseSlug || courses[0]?.slug || ''
 
   return (
-    <main className="mx-5 min-h-screen py-10 md:mx-[60px] flex flex-col gap-8">
+    <main className="mx-5 min-h-screen py-10 lg:mx-[60px] flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <Link
-          to="/admin"
-          search={{ tab: 'users' as const }}
-          className="text-secondary hover:text-black text-sm"
-        >
+        <Link to="/admin" search={{ tab: 'users' as const }} className="text-secondary hover:text-black text-sm">
           ← Back to Admin
         </Link>
         <Text variant="subtitle-32" element="h1">

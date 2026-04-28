@@ -55,14 +55,14 @@ function CourseProgramHubPage() {
   const focusedCourse = courses.find((c) => c.slug === courseSlug) ?? courses[0]
 
   return (
-    <main className="flex min-h-screen gap-10 md:mx-[60px] mx-5 items-start">
+    <main className="flex min-h-screen gap-10  lg:mx-[60px] mx-5 items-start">
       <CourseProgramSidebar
         courses={courses}
         selectedCourseSlug={courseSlug}
         onSelectCourse={selectCourse}
         className="max-md:hidden"
       />
-      <div className="flex flex-col gap-5 w-full">
+      <div className="flex flex-col gap-5 w-full pb-10">
         <CourseProgramHeader
           course={focusedCourse}
           completedLessons={completedLessonIds}

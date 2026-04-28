@@ -49,23 +49,28 @@ export const ChangeUsername = () => {
 
   return (
     <div className="flex items-center gap-3">
-      <p className={textVariants({ variant: 'caps-20' })}>Username</p>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => !isBanned && setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !isBanned) handleSave()
-        }}
-        maxLength={30}
-        disabled={isBanned}
-        className="bg-transparent border-b border-white/30 focus:border-white/70 outline-none text-white px-0 py-0.5 w-40 disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ fontSize: 'inherit', fontFamily: 'inherit' }}
-      />
+      <p className={textVariants({ variant: 'caps-20' })}>Profile handle</p>
+      <div className="flex items-center border-b border-white/30 focus-within:border-white/70 py-0.5">
+        <span className="text-white/50 select-none" style={{ fontSize: 'inherit', fontFamily: 'inherit' }}>
+          /profile/
+        </span>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => !isBanned && setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !isBanned) handleSave()
+          }}
+          maxLength={30}
+          disabled={isBanned}
+          className="bg-transparent outline-none text-white px-0 w-40 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ fontSize: 'inherit', fontFamily: 'inherit' }}
+        />
+      </div>
       <button
         type="button"
         onClick={handleSave}
-        disabled={isBanned || isPending || value.trim() === currentUsername}
+        disabled={isBanned || isPending || !value.trim() || value.trim() === currentUsername}
         className={
           textVariants({ variant: 'caps-20' }) + ' text-white/70 hover:text-white transition-colors disabled:opacity-30'
         }

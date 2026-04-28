@@ -61,7 +61,7 @@ export default function Footer() {
             <a href={`mailto:${LINKS.Email}`} className="hover:border-b hover:border-white/40">
               {LINKS.Email}
             </a>
-            <p>+380500673074</p>
+            <p>+380502147263</p>
             <p>Saperne pole 12, Kyiv, Ukraine</p>
           </div>
 

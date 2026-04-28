@@ -4,6 +4,7 @@ import { useCourse } from '@/hooks/api/courses/useCourse'
 import { Text } from '@/components/ui/text'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { padIndex } from '@/lib/format-index'
+import { cn } from '@/lib/utils'
 
 export interface LessonSidebarListProps {
   courseSlug: string
@@ -68,10 +69,10 @@ export const LessonSidebarList = ({
               {module.title}
             </Text>
           </AccordionTrigger>
-          <AccordionContent className="flex">
+          <AccordionContent className="flex divide-none">
             <div className="h-full w-5 shrink-0" />
-            <div className="relative flex w-full min-w-0 flex-col gap-1 divide-y divide-border border-l border-border">
-              {module.lessons.map((lesson) => (
+            <div className="relative flex w-full min-w-0 flex-col gap-1 border-l border-border">
+              {module.lessons.map((lesson, index) => (
                 <Link
                   key={lesson.id}
                   ref={lesson.slug === lessonSlug ? selectedLessonRef : undefined}
@@ -81,6 +82,7 @@ export const LessonSidebarList = ({
                     moduleSlug: module.slug,
                     lessonSlug: lesson.slug,
                   }}
+                  className={cn(index !== module.lessons.length - 1 && 'border-b border-border')}
                   onClick={() => onSelect?.()}
                 >
                   <Text variant="main-16" className="px-[30px] py-5 text-[#e0deda]">

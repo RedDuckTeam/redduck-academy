@@ -10,7 +10,11 @@ function Accordion({ className, ...props }: React.ComponentProps<typeof Accordio
 
 function AccordionItem({ className, ...props }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
   return (
-    <AccordionPrimitive.Item data-slot="accordion-item" className={cn('not-last:border-b', className)} {...props} />
+    <AccordionPrimitive.Item
+      data-slot="accordion-item"
+      className={cn('data-[state=open]:border-b border-0', className)}
+      {...props}
+    />
   )
 }
 
@@ -20,7 +24,7 @@ function AccordionTrigger({ className, children, ...props }: React.ComponentProp
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          'focus-visible:ring-ring/50 text-left focus-visible:ring-3 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 group/accordion-trigger relative flex flex-1 items-start justify-between border-b border-border transition-all outline-none disabled:pointer-events-none disabled:opacity-50',
+          'focus-visible:ring-ring/50 text-left focus-visible:ring-3 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 group/accordion-trigger relative flex flex-1 items-start justify-between border-b border-transparent transition-all outline-none border-border disabled:pointer-events-none disabled:opacity-50',
           className,
         )}
         {...props}

@@ -173,6 +173,7 @@ code {
 
   html {
     scrollbar-gutter: stable;
+    scroll-behavior: smooth;
   }
 
   @supports not selector(::-webkit-scrollbar) {

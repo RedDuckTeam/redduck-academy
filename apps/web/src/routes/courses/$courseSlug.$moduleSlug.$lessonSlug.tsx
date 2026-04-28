@@ -13,6 +13,7 @@ import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 import { createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
+import { LessonToc } from '@/components/pages/lesson/toc'
 import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
 import { CourseLockedModal } from '@/components/pages/lesson/course-locked-modal'
 
@@ -89,7 +90,7 @@ function LessonPage() {
     <main
       ref={mainRef}
       className={cn(
-        'mx-5 flex min-w-0 flex-col gap-3.5 md:mx-[60px]',
+        'mx-5 flex min-w-0 flex-col gap-3.5 lg:mx-[60px]',
         isCodingChallenge ? 'mb-5 md:mb-[60px]' : 'mb-[60px] min-h-screen',
       )}
       style={mainHeight ? { height: mainHeight } : undefined}
@@ -111,24 +112,27 @@ function LessonPage() {
             moduleSlug={moduleSlug}
           />
         ) : (
-          <LessonContentContainer>
-            <>
-              <LessonTitle title={lesson.title} />
-              {lesson.content && (
-                <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
-              )}
-            </>
+          <>
+            <LessonContentContainer>
+              <>
+                <LessonTitle title={lesson.title} />
+                {lesson.content && (
+                  <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
+                )}
+              </>
 
-            {lesson.type === 'lecture' && (
-              <LessonLecture lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} />
-            )}
-            {lesson.type === 'test' && (
-              <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-            )}
-            {lesson.type === 'review_task' && (
-              <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
-            )}
-          </LessonContentContainer>
+              {lesson.type === 'lecture' && (
+                <LessonLecture lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} />
+              )}
+              {lesson.type === 'test' && (
+                <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+              )}
+              {lesson.type === 'review_task' && (
+                <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
+              )}
+            </LessonContentContainer>
+            <LessonToc lesson={lesson} />
+          </>
         )}
         {courseLockedError && (
           <CourseLockedModal

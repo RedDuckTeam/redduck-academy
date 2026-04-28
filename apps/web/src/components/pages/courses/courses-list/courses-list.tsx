@@ -9,6 +9,7 @@ import { PlayIcon } from '@/components/ui/icons/play'
 import { cn } from '@/lib/utils'
 import { CheckIcon } from '@/components/ui/icons/check'
 import { Lock } from 'lucide-react'
+import { PixelArrowUpRightIcon } from '@/components/ui/icons/pixel-arrow-up-right'
 
 interface CoursesListProps {
   courses: Course[]
@@ -49,7 +50,7 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
                     ) : isCompleted ? (
                       <CheckIcon className="[&_path]:fill-success" />
                     ) : (
-                      <PlayIcon className="translate-x-0.5 [&_path]:fill-black" />
+                      <PixelArrowUpRightIcon className="[&_path]:fill-black size-6" />
                     )}
                   </div>
                   <div className="flex flex-col gap-1.5">

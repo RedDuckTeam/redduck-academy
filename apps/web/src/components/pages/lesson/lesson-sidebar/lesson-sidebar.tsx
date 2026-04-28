@@ -14,13 +14,13 @@ interface LessonSidebarProps {
 }
 
 export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSidebarProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(true)
   const [parent] = useAutoAnimate({ duration: 200, easing: 'ease-in-out' })
   const { data: course } = useCourse(courseSlug)
 
   return (
     <div
-      className="flex max-md:hidden flex-col overflow-hidden bg-sidebar transition-all duration-200 ease-in-out self-start"
+      className="flex max-md:hidden flex-col overflow-hidden bg-sidebar transition-all duration-200 ease-in-out self-start sticky top-5 max-h-[calc(100vh-40px)]"
       style={{ width: isOpen ? 380 : 60, minWidth: isOpen ? 380 : 60, height: isOpen ? 'auto' : 60 }}
     >
       <div

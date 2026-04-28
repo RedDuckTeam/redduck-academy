@@ -24,7 +24,7 @@ export const LessonTestQuestion = ({
   const isMultiple = question.isMultipleChoices
 
   return (
-    <div className="flex min-w-0 w-full max-w-full flex-col gap-5">
+    <div id={`question-${question.order}`} className="flex min-w-0 w-full max-w-full flex-col gap-5 scroll-mt-20">
       <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
         {question.order}. {question.question}
       </Text>

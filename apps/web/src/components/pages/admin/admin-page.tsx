@@ -15,7 +15,7 @@ export function AdminPage() {
 
   return (
     <WagmiProvider config={wagmiConfig}>
-      <main className="mx-5 min-h-screen py-10 md:mx-[60px] flex flex-col gap-8">
+      <main className="mx-5 min-h-screen py-10 lg:mx-[60px] flex flex-col gap-8">
         <Text variant="title-80" element="h1">
           Admin Panel
         </Text>

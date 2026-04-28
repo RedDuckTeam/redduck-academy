@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
+import { extractContentHeadings, slugify } from '@/components/pages/lesson/toc/build-toc-items'
 
 type EnrichedLessonDoc = {
   href?: string
@@ -80,10 +81,13 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               variant: 'main-18' as const,
               element: 'p' as const,
             }
+            const text = slugify((node.children[0] as unknown as { text?: string }).text ?? '')
             return (
-              <Text variant={variant} element={element} className="mb-3! font-medium">
-                {nodesToJSX({ nodes: node.children })}
-              </Text>
+              <div id={text} className="scroll-mt-20">
+                <Text variant={variant} element={element} className="mb-3! font-medium">
+                  {nodesToJSX({ nodes: node.children })}
+                </Text>
+              </div>
             )
           },
           paragraph: ({ node, nodesToJSX }) => {

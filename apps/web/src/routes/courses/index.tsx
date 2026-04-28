@@ -23,7 +23,7 @@ export const Route = createFileRoute('/courses/')({
 
 function CoursesRootPage() {
   return (
-    <main className="mx-5 flex min-h-screen items-start md:mx-[60px]">
+    <main className="mx-5 flex min-h-screen items-start lg:mx-[60px]">
       <p className="text-muted-foreground py-10">No courses available yet.</p>
     </main>
   )

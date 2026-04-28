@@ -46,7 +46,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
       <Dialog open={latest?.status === 'pending'}>
         <InProgressDialog courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} lesson={lesson} />
       </Dialog>
-      <div className="flex min-w-0 w-fit max-w-full flex-col gap-5">
+      <div className="flex min-w-0 w-full max-w-full flex-col gap-5">
         {lesson.templateRepoUrl && (
           <div className="flex flex-col gap-2">
             <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
@@ -63,7 +63,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
             <HowToSubmitDialog />
           </div>
         )}
-        <Text variant="caps-24" className="font-medium">
+        <Text variant="caps-24" element="h2" id="submit" className="font-medium scroll-mt-20">
           YOUR WORK
         </Text>
 

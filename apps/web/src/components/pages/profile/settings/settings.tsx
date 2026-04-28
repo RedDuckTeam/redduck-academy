@@ -19,7 +19,9 @@ export const Settings = () => {
           <SkipPrerequisitesSwitch />
         </div>
       </div>
-      <SignOutButton />
+      <div className="flex justify-end">
+        <SignOutButton />
+      </div>
     </div>
   )
 }

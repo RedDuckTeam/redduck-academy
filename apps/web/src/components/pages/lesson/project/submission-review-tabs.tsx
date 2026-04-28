@@ -21,7 +21,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
       key={submissions.map((s) => s.id).join('-')}
       defaultValue={defaultValue}
       orientation="horizontal"
-      className="flex flex-col gap-3 w-full max-w-[600px]"
+      className="flex flex-col gap-3 w-full "
     >
       <TabsList
         variant="line"
@@ -33,11 +33,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
             !!submission.feedback &&
             submission.feedback.criteria.every((c) => c.passed)
           return (
-            <TabsTrigger
-              key={submission.id}
-              value={`attempt-${index}`}
-              className={cn(passed && 'after:bg-success')}
-            >
+            <TabsTrigger key={submission.id} value={`attempt-${index}`} className={cn(passed && 'after:bg-success')}>
               Attempt {index + 1}
             </TabsTrigger>
           )

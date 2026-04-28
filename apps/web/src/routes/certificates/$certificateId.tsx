@@ -29,7 +29,7 @@ function CertificateRoute() {
   const courseLine = `${certificate.courseTitle} by RedDuck`
 
   return (
-    <main className="mb-[60px] flex min-h-screen flex-col gap-3.5 md:mx-[60px]">
+    <main className="mb-[60px] flex min-h-screen flex-col gap-3.5 lg:mx-[60px]">
       <div className="mx-5">
         <PageBreadcrumbs
           variant="certificate"

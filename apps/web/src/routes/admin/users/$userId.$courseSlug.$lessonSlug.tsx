@@ -19,13 +19,9 @@ function AdminUserLessonPage() {
   const { data: lesson, isPending, isError } = useAdminUserLessonDetail(userId, courseSlug, lessonSlug)
 
   return (
-    <main className="mx-5 min-h-screen py-10 md:mx-[60px] flex flex-col gap-8 max-w-3xl">
+    <main className="mx-5 min-h-screen py-10 lg:mx-[60px] flex flex-col gap-8 max-w-3xl">
       <nav className="flex items-center gap-2 text-sm text-secondary flex-wrap">
-        <Link
-          to="/admin"
-          search={{ tab: 'users' }}
-          className="hover:text-black"
-        >
+        <Link to="/admin" search={{ tab: 'users' }} className="hover:text-black">
           Admin
         </Link>
         <span>/</span>
@@ -41,20 +37,29 @@ function AdminUserLessonPage() {
         <span className="text-black">{lessonSlug}</span>
       </nav>
 
-      {isPending && <Text variant="main-16" className="text-secondary">Loading...</Text>}
-      {isError && <Text variant="main-16" className="text-primary">Failed to load lesson.</Text>}
+      {isPending && (
+        <Text variant="main-16" className="text-secondary">
+          Loading...
+        </Text>
+      )}
+      {isError && (
+        <Text variant="main-16" className="text-primary">
+          Failed to load lesson.
+        </Text>
+      )}
 
       {lesson && (
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-2">
-            <Text variant="subtitle-32" element="h1">{lesson.title}</Text>
+            <Text variant="subtitle-32" element="h1">
+              {lesson.title}
+            </Text>
             <div className="flex items-center gap-3">
-              <Text variant="main-14" className="text-secondary capitalize">{lesson.type.replace('_', ' ')}</Text>
+              <Text variant="main-14" className="text-secondary capitalize">
+                {lesson.type.replace('_', ' ')}
+              </Text>
               <span className="text-secondary">·</span>
-              <Text
-                variant="main-14"
-                className={lesson.isCompleted ? 'text-success' : 'text-secondary'}
-              >
+              <Text variant="main-14" className={lesson.isCompleted ? 'text-success' : 'text-secondary'}>
                 {lesson.isCompleted ? 'Completed' : 'Not completed'}
               </Text>
             </div>
@@ -72,7 +77,11 @@ function AdminUserLessonPage() {
 
 function TestView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUserLessonDetail>['data']> }) {
   if (!lesson.questions?.length) {
-    return <Text variant="main-16" className="text-secondary">No questions found.</Text>
+    return (
+      <Text variant="main-16" className="text-secondary">
+        No questions found.
+      </Text>
+    )
   }
 
   const userAnswers = lesson.userAnswers ?? {}
@@ -81,7 +90,9 @@ function TestView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUs
   return (
     <div className="flex flex-col gap-10">
       {!lesson.isCompleted && (
-        <Text variant="main-16" className="text-secondary">User has not submitted this test yet.</Text>
+        <Text variant="main-16" className="text-secondary">
+          User has not submitted this test yet.
+        </Text>
       )}
       {lesson.questions.map((q) => (
         <LessonTestQuestion
@@ -100,7 +111,11 @@ function TestView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUs
 function ReviewView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUserLessonDetail>['data']> }) {
   const submissions = (lesson.submissions ?? []) as LatestProjectSubmission[]
   if (!submissions.length) {
-    return <Text variant="main-16" className="text-secondary">No submissions yet.</Text>
+    return (
+      <Text variant="main-16" className="text-secondary">
+        No submissions yet.
+      </Text>
+    )
   }
   const pending = submissions.filter((s) => s.status === 'pending')
   return (
@@ -118,7 +133,11 @@ function ReviewView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdmin
 function CodingView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUserLessonDetail>['data']> }) {
   const submissions = (lesson.submissions ?? []) as CodingTaskSubmission[]
   if (!submissions.length) {
-    return <Text variant="main-16" className="text-secondary">No submissions yet.</Text>
+    return (
+      <Text variant="main-16" className="text-secondary">
+        No submissions yet.
+      </Text>
+    )
   }
   return (
     <div className="flex flex-col gap-6">
