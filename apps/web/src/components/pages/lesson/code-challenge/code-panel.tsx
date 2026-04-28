@@ -85,22 +85,13 @@ export function CodePanel({
               <Text variant="caps-14">Sign in</Text>
             </Button>
           ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button size="sm" variant="default" onClick={onSubmit} disabled={!canSubmit}>
-                    <Text variant="caps-14" className="flex items-center gap-1">
-                      {isPending ? 'Pending' : 'Submit'}
-                    </Text>
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              {rateLimitError && (
-                <TooltipContent>
-                  <p>{rateLimitCopy}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
+            <span>
+              <Button size="sm" variant="default" onClick={onSubmit} disabled={!canSubmit}>
+                <Text variant="caps-14" className="flex items-center gap-1">
+                  {isPending ? 'Pending' : 'Submit'}
+                </Text>
+              </Button>
+            </span>
           )}
         </div>
       </div>
