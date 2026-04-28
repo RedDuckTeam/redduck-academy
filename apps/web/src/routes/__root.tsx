@@ -1,5 +1,6 @@
 import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { NotFoundPage } from '@/components/pages/not-found/not-found-page'
+import { ErrorPage } from '@/components/pages/error/error-page'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
@@ -44,6 +45,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
   shellComponent: RootDocument,
   notFoundComponent: NotFoundPage,
+  errorComponent: ErrorPage,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
