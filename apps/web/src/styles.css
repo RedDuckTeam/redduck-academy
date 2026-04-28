@@ -320,6 +320,46 @@ code {
     animation: accordion-up 0.2s ease-out;
   }
 
+  @keyframes pacman-walk {
+    0% {
+      transform: translateX(0) scaleX(-1);
+      animation-timing-function: steps(5, end);
+    }
+    45% {
+      transform: translateX(-60px) scaleX(-1);
+      animation-timing-function: steps(1, end);
+    }
+    50% {
+      transform: translateX(-60px) scaleX(1);
+      animation-timing-function: steps(5, end);
+    }
+    95% {
+      transform: translateX(0) scaleX(1);
+      animation-timing-function: steps(1, end);
+    }
+    100% {
+      transform: translateX(0) scaleX(-1);
+    }
+  }
+
+  .animate-pacman-walk {
+    animation: pacman-walk 1.6s linear infinite;
+  }
+
+  @keyframes ghost-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  .animate-ghost-float {
+    animation: ghost-float 0.8s steps(3, end) infinite;
+  }
+
   /** Keeps certificate “paper” colors on dark page backgrounds (see course certificate screen). */
   .certificate-paper-surface {
     --background: #f2f0ec;

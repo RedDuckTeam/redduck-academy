@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { LongArrowRight } from '@/components/ui/icons/long-arrow-right'
 import { HomepageGrid } from '@/components/ui/icons/homepage-grid'
 import { useTheme } from '@/components/providers/theme-context'
-import { GhostIcon } from '@/components/ui/icons/ghost'
-import { PacmanIcon } from '@/components/ui/icons/pacman'
+import { AnimatedGhost } from './animated-ghost'
+import { AnimatedPacman } from './animated-pacman'
 
 interface ProgressProps {
   nextLesson: { courseSlug: string; moduleSlug: string; lessonSlug: string } | null
@@ -37,10 +37,10 @@ export const Progress = ({ nextLesson, hasProgress }: ProgressProps) => {
           </Text>
         </div>
         <div className="absolute max-sm:left-[10%] sm:right-[430px] xl:right-[480px] -bottom-12 xl:bottom-16">
-          <PacmanIcon />
+          <AnimatedPacman />
         </div>
         <div className="absolute right-[10%] sm:right-[330px] -bottom-12 xl:bottom-0">
-          <GhostIcon />
+          <AnimatedGhost />
         </div>
         {nextLesson ? (
           <Link
