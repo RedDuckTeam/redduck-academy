@@ -17,8 +17,8 @@ import {
   serial,
   numeric,
   boolean,
-  jsonb,
   type AnyPgColumn,
+  jsonb,
 } from 'drizzle-orm/pg-core'
 import { sql, relations } from 'drizzle-orm'
 export const db_schema = pgSchema('payload')
@@ -53,6 +53,7 @@ export const users = db_schema.table(
   'users',
   {
     id: serial('id').primaryKey(),
+    totpSecret: varchar('totp_secret'),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     email: varchar('email').notNull(),

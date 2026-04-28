@@ -12,6 +12,7 @@ import { Modules } from './collections/Modules'
 import { Lessons } from './collections/Lessons'
 import { CommunityEvents } from './collections/CommunityEvents'
 import { s3Storage } from '@payloadcms/storage-s3'
+import { payloadTotp } from 'payload-totp'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -94,6 +95,9 @@ export default buildConfig({
         endpoint: process.env.R2_ENDPOINT ?? '',
         forcePathStyle: true,
       },
+    }),
+    payloadTotp({
+      collection: 'users',
     }),
   ],
 })

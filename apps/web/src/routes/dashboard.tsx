@@ -59,7 +59,7 @@ function Dashboard() {
 
   return (
     <main className="flex flex-col min-h-screen">
-      <Progress nextLesson={nextLesson} />
+      <Progress nextLesson={nextLesson} hasProgress={completedLessons.length > 0} />
       <MyProgress courses={courses} completedLessons={completedLessons} courseAccess={courseAccess} />
       <Community events={communityEvents} />
     </main>
