@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getUserSettings } from '@/lib/api/user'
+import { ApiError } from '@/lib/api/errors'
 import { queryKeys } from '@/lib/query-keys'
 import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 import { env } from '@/env'
@@ -16,7 +17,8 @@ export const useSession = () => {
     queryFn: getUserSettings,
     enabled: hasSessionHint && (cookieAuth || authenticated),
     staleTime: 5 * 60 * 1000,
-    retry: false,
+    retry: (failureCount, error) => failureCount < 3 && error instanceof ApiError && error.status === 401,
+    retryDelay: 300,
   })
 
   const session = settings ? { user: settings } : null
