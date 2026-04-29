@@ -48,7 +48,7 @@ export const ChangeUsername = () => {
   }
 
   return (
-    <div className="flex items-center gap-3 max-sm:flex-col">
+    <div className="flex sm:items-center gap-3 max-sm:flex-col">
       <p className={textVariants({ variant: 'caps-20' })}>Profile handle</p>
       <div className="flex items-center border-b border-white/30 focus-within:border-white/70 py-0.5">
         <span className="text-white/50 select-none" style={{ fontSize: 'inherit', fontFamily: 'inherit' }}>

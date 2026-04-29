@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
-import { extractContentHeadings, slugify } from '@/components/pages/lesson/toc/build-toc-items'
+import { extractText, slugify } from '@/components/pages/lesson/toc/build-toc-items'
 
 type EnrichedLessonDoc = {
   href?: string
@@ -57,6 +57,10 @@ function getYoutubeEmbedUrl(text: string): string | null {
 export function RichText({ data, className, paragraphClassName }: CustomRichTextProps) {
   if (!data) return null
 
+  // Mirrors the TOC's slug-dedup counter so heading ids match the TOC's hrefs even when
+  // Lexical splits a heading across multiple text nodes (e.g. mixed inline formatting).
+  const slugCounts = new Map<string, number>()
+
   return (
     <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className, 'w-full')}>
       <PayloadRichText
@@ -81,9 +85,12 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               variant: 'main-18' as const,
               element: 'p' as const,
             }
-            const text = slugify((node.children[0] as unknown as { text?: string }).text ?? '')
+            const baseSlug = slugify(extractText(node).trim())
+            const count = slugCounts.get(baseSlug) ?? 0
+            slugCounts.set(baseSlug, count + 1)
+            const id = count === 0 ? baseSlug : `${baseSlug}-${count + 1}`
             return (
-              <div id={text} className="scroll-mt-20">
+              <div id={id} className="scroll-mt-20">
                 <Text variant={variant} element={element} className="mb-3! font-medium">
                   {nodesToJSX({ nodes: node.children })}
                 </Text>

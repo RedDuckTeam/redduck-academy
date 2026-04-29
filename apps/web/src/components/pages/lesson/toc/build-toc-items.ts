@@ -23,7 +23,7 @@ export function slugify(text: string): string {
   return slug || 'section'
 }
 
-function extractText(node: unknown): string {
+export function extractText(node: unknown): string {
   if (!node || typeof node !== 'object') return ''
   const n = node as { text?: unknown; children?: unknown[] }
   if (typeof n.text === 'string') return n.text

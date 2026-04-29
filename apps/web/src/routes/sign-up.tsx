@@ -8,8 +8,8 @@ import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-bu
 import { DuckIcon } from '@/components/ui/icons/duck'
 import { Text } from '@/components/ui/text'
 import { wagmiConfig } from '@/constants/wallet-config'
-import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 import { queryKeys } from '@/lib/query-keys'
+import { useSession } from '@/hooks/useSession'
 import { useEffect } from 'react'
 
 const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
@@ -27,16 +27,19 @@ export const Route = createFileRoute('/sign-up')({
 })
 
 function SignUp() {
-  const { ready, authenticated } = usePrivyAuth()
+  const { session } = useSession()
   const router = useRouter()
 
+  // Wait for the actual session (cookie-backed API success), not just Privy's `authenticated`
+  // flag — otherwise this effect races the wallet button's onComplete and lands the user on
+  // /dashboard before the privy-token cookie is recognized by the backend.
   useEffect(() => {
-    if (!ready || !authenticated) return
+    if (!session?.user) return
     void (async () => {
       await router.invalidate()
       await router.navigate({ to: '/dashboard', replace: true })
     })()
-  }, [ready, authenticated, router])
+  }, [session, router])
 
   return (
     <WagmiProvider config={wagmiConfig}>

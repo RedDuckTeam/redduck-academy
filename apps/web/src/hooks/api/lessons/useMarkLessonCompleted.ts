@@ -14,6 +14,7 @@ export const useMarkLessonCompleted = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.progressCards() })
     },
   })
 }
