@@ -12,10 +12,15 @@ export const useSession = () => {
   const cookieAuth = env.VITE_PRIVY_COOKIE_AUTH
   const hasSessionHint = useSessionHint()
 
+  // Trust either signal: localStorage hint (synchronous, survives reload) or Privy's
+  // authenticated state (async, but updates reactively after fresh login on the same tab —
+  // localStorage 'storage' events don't fire for same-tab writes, so the hint can lag).
+  const sessionAvailable = hasSessionHint || authenticated
+
   const { data: settings, isLoading } = useQuery({
     queryKey: queryKeys.user.settings(),
     queryFn: getUserSettings,
-    enabled: hasSessionHint && (cookieAuth || authenticated),
+    enabled: sessionAvailable && (cookieAuth || authenticated),
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => failureCount < 3 && error instanceof ApiError && error.status === 401,
     retryDelay: 300,
@@ -26,8 +31,8 @@ export const useSession = () => {
   const refetch = () => queryClient.invalidateQueries({ queryKey: queryKeys.user.settings() })
 
   const isPending = cookieAuth
-    ? isLoading && !settings && hasSessionHint
-    : hasSessionHint
+    ? isLoading && !settings && sessionAvailable
+    : sessionAvailable
       ? !ready || (authenticated && isLoading)
       : authenticated && isLoading
 
