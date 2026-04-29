@@ -13,8 +13,8 @@ export const useMarkLessonCompleted = () => {
       await markLessonAsCompleted(courseSlug, lessonSlug)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons() })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.progressCards() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons(), refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.progressCards(), refetchType: 'all' })
     },
   })
 }

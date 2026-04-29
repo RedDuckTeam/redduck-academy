@@ -22,9 +22,9 @@ export const useUpdateUserSettings = () => {
       queryClient.setQueryData(queryKeys.user.settings(), (old: UserSettings | undefined) =>
         old ? { ...old, ...data } : old,
       )
-      queryClient.invalidateQueries({ queryKey: queryKeys.courses.all() })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.rating() })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.progressCards() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.all(), refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.rating(), refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.progressCards(), refetchType: 'all' })
     },
   })
 }
