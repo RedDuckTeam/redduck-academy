@@ -1,0 +1,17 @@
+apps/admin
+apps/web
+apps/contracts
+
+.git
+.github
+.cursor
+.claude
+.vercel
+.yarn/cache
+.yarn/install-state.gz
+
+ARCHITECTURE.md
+AI-CODE-REVIEW.md
+DEPLOY.md
+IDEAS.md
+README.md
