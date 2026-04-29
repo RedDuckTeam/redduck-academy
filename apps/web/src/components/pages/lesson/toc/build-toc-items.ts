@@ -74,9 +74,11 @@ export function buildTocItems(lesson: Lesson): TocItem[] {
   }
   if (lesson.type === 'test' && lesson.questions?.length) {
     for (const q of lesson.questions) {
+      const root = (q.question as { root?: unknown } | null)?.root ?? q.question
+      const plain = extractText(root).trim()
       items.push({
         id: `question-${q.order}`,
-        label: `Q${q.order}: ${truncate(q.question)}`,
+        label: `Q${q.order}: ${truncate(plain)}`,
         level: 1,
       })
     }

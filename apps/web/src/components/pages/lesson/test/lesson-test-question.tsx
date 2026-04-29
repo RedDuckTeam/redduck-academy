@@ -2,6 +2,7 @@ import type { TestQuestion } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
+import { RichText } from '@/components/ui/rich-text'
 import { cn } from '@/lib/utils'
 
 interface LessonTestQuestionProps {
@@ -25,9 +26,10 @@ export const LessonTestQuestion = ({
 
   return (
     <div id={`question-${question.order}`} className="flex min-w-0 w-full max-w-full flex-col gap-5 scroll-mt-20">
-      <Text variant="main-18" className="min-w-0 max-w-full wrap-anywhere">
-        {question.order}. {question.question}
-      </Text>
+      <div className="flex min-w-0 max-w-full gap-1.5 wrap-anywhere">
+        <Text variant="main-18">{question.order}.</Text>
+        <RichText data={question.question} className="min-w-0 flex-1 [&>div>*]:mb-0" />
+      </div>
 
       {isMultiple ? (
         <div className="flex min-w-0 flex-col gap-3">

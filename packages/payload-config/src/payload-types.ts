@@ -242,7 +242,21 @@ export interface Lesson {
   } | null;
   questions?:
     | {
-        question: string;
+        question: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
         options?:
           | {
               label: string;

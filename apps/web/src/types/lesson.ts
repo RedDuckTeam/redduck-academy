@@ -153,7 +153,7 @@ export enum CourseStatusEnum {
 export type CourseStatus = (typeof CourseStatusEnum)[keyof typeof CourseStatusEnum]
 
 export interface TestQuestion {
-  question: string
+  question: Record<string, any> | null
   order: number
   parentId: number
   isMultipleChoices: boolean

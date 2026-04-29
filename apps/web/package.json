@@ -13,7 +13,6 @@
     "deploy": "yarn build && wrangler deploy"
   },
   "dependencies": {
-    "@cloudflare/vite-plugin": "^1.13.8",
     "@fontsource/inter": "^5.2.8",
     "@formkit/auto-animate": "^0.9.0",
     "@keystatic/core": "^0.5.48",
@@ -27,7 +26,6 @@
     "@reown/appkit": "^1.8.16",
     "@reown/appkit-adapter-wagmi": "^1.8.16",
     "@t3-oss/env-core": "^0.13.10",
-    "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-query": "^5.66.5",
     "@tanstack/react-query-devtools": "^5.84.2",
@@ -36,7 +34,6 @@
     "@tanstack/react-router-ssr-query": "^1.131.7",
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/router-plugin": "^1.132.0",
     "better-auth": "^1.4.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -53,15 +50,16 @@
     "tailwindcss": "^4.0.6",
     "tw-animate-css": "^1.3.6",
     "viem": "^2.44.4",
-    "vite-plugin-node-polyfills": "^0.26.0",
-    "vite-tsconfig-paths": "^6.0.2",
     "wagmi": "^3.3.4",
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.13.8",
     "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@tailwindcss/vite": "^4.0.6",
     "@tanstack/devtools-vite": "^0.3.11",
     "@tanstack/eslint-config": "^0.3.0",
+    "@tanstack/router-plugin": "^1.132.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.10.2",
@@ -72,6 +70,8 @@
     "prettier": "^3.5.3",
     "typescript": "^5.7.2",
     "vite": "^7.1.7",
+    "vite-plugin-node-polyfills": "^0.26.0",
+    "vite-tsconfig-paths": "^6.0.2",
     "vitest": "^3.0.5",
     "web-vitals": "^5.1.0",
     "wrangler": "^4.40.3"

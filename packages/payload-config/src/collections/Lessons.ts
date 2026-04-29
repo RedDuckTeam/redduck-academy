@@ -1,5 +1,15 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
+import {
+  BoldFeature,
+  InlineCodeFeature,
+  ItalicFeature,
+  LinkFeature,
+  ParagraphFeature,
+  StrikethroughFeature,
+  UnderlineFeature,
+  lexicalEditor,
+} from '@payloadcms/richtext-lexical'
 
 import { formatSlug } from './hooks/formatSlug'
 
@@ -121,7 +131,22 @@ export const Lessons: CollectionConfig = {
         condition: (data) => data?.type === 'test',
       },
       fields: [
-        { name: 'question', type: 'text', required: true },
+        {
+          name: 'question',
+          type: 'richText',
+          required: true,
+          editor: lexicalEditor({
+            features: [
+              ParagraphFeature(),
+              BoldFeature(),
+              ItalicFeature(),
+              UnderlineFeature(),
+              StrikethroughFeature(),
+              InlineCodeFeature(),
+              LinkFeature(),
+            ],
+          }),
+        },
         {
           name: 'options',
           type: 'array',
