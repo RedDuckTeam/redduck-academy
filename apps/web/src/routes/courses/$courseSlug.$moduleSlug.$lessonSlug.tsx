@@ -73,7 +73,7 @@ function LessonPage() {
         document.body.style.overflow = ''
         return
       }
-      const top = mainRef.current.getBoundingClientRect().top
+      const top = mainRef.current.getBoundingClientRect().top + window.scrollY
       setMainHeight(window.innerHeight - top - 10)
       document.body.style.overflow = 'hidden'
     }
@@ -121,11 +121,9 @@ function LessonPage() {
                 )}
               </>
 
-              {lesson.type === 'lecture' && (
-                <LessonLecture lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} />
-              )}
+              {lesson.type === 'lecture' && <LessonLecture lesson={lesson} courseSlug={courseSlug} />}
               {lesson.type === 'test' && (
-                <LessonTest lesson={lesson} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+                <LessonTest lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} />
               )}
               {lesson.type === 'review_task' && (
                 <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />

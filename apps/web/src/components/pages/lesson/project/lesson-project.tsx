@@ -1,4 +1,5 @@
 import { ProjectSubmission } from './project-submission'
+import { LessonNavigation } from '../lesson-navigation/lesson-navigation'
 import type { Lesson } from '@/types/lesson'
 
 interface LessonProjectProps {
@@ -12,6 +13,7 @@ export function LessonProject({ lesson, courseSlug, lessonSlug, moduleSlug }: Le
   return (
     <div className="flex flex-col gap-10 w-full">
       <ProjectSubmission lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
+      <LessonNavigation courseSlug={courseSlug} lesson={lesson} />
     </div>
   )
 }
