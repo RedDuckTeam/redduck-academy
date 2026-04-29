@@ -3,6 +3,7 @@ import { APIError } from 'payload'
 import {
   BoldFeature,
   InlineCodeFeature,
+  InlineToolbarFeature,
   ItalicFeature,
   LinkFeature,
   ParagraphFeature,
@@ -144,6 +145,7 @@ export const Lessons: CollectionConfig = {
               StrikethroughFeature(),
               InlineCodeFeature(),
               LinkFeature(),
+              InlineToolbarFeature(),
             ],
           }),
         },
