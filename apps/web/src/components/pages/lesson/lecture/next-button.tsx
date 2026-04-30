@@ -33,7 +33,7 @@ export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextBu
 
   const handleClick = () => {
     if (isLecture && !isCourseLocked) {
-      markCompleted({ courseSlug, lessonSlug: lesson.slug })
+      markCompleted({ courseSlug, lessonSlug: lesson.slug, lessonTitle: lesson.title })
     }
     router.navigate({ to: link })
   }

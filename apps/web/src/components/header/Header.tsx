@@ -32,6 +32,7 @@ export default function Header() {
       <header
         className={cn(
           'md:my-5 mb-5 lg:mx-[60px] flex max-md:justify-between items-center gap-5 lg:gap-10 bg-header px-5 md:px-[30px] py-2.5 md:py-5 print:hidden',
+          'max-md:sticky max-md:top-0 max-md:z-40',
           isOpen && 'fixed w-full z-50',
         )}
       >

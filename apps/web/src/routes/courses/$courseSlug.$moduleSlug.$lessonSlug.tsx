@@ -16,6 +16,7 @@ import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-s
 import { LessonToc } from '@/components/pages/lesson/toc'
 import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
 import { CourseLockedModal } from '@/components/pages/lesson/course-locked-modal'
+import { useLessonCompletionToast } from '@/hooks/useLessonCompletionToast'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
@@ -54,6 +55,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
 function LessonPage() {
   const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
   const { error: userLessonError } = useLessonForUser(courseSlug, lessonSlug)
+  useLessonCompletionToast({ courseSlug, lessonSlug, lessonTitle: lesson.title })
   const isCodingChallenge = lesson.type === 'coding_task'
   const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
 

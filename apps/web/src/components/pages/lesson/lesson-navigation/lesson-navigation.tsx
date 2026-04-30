@@ -35,7 +35,7 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
 
   const handleNextClick = () => {
     if (session && isLecture && !isCourseLocked) {
-      markCompleted({ courseSlug, lessonSlug: lesson.slug })
+      markCompleted({ courseSlug, lessonSlug: lesson.slug, lessonTitle: lesson.title })
     }
   }
 
