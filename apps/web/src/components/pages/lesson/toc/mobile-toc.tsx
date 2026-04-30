@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Lesson } from '@/types/lesson'
 import { Text, textVariants } from '@/components/ui/text'
 import { TableOfContentsIcon } from '@/components/ui/icons/table-of-contents'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { cn } from '@/lib/utils'
-import { buildTocItems } from './build-toc-items'
-import { useActiveHeading } from './use-active-heading'
+import { useToc } from './use-toc'
+import { scrollToHeading } from './scroll-to-heading'
 
 interface MobileTocProps {
   lesson: Lesson
@@ -14,10 +14,7 @@ interface MobileTocProps {
 const SCROLL_OFFSET = 160
 
 export function MobileToc({ lesson }: MobileTocProps) {
-  const items = useMemo(() => buildTocItems(lesson), [lesson])
-  const ids = useMemo(() => items.map((i) => i.id), [items])
-  const activeId = useActiveHeading(ids)
-  const activeItem = items.find((i) => i.id === activeId)
+  const { items, activeId, activeItem } = useToc(lesson)
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -41,21 +38,10 @@ export function MobileToc({ lesson }: MobileTocProps) {
 
   if (items.length === 0) return null
 
-  const scrollToId = (id: string, attempt = 0) => {
-    const el = document.getElementById(id)
-    if (!el) {
-      if (attempt < 5) requestAnimationFrame(() => scrollToId(id, attempt + 1))
-      return
-    }
-    const top = el.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET
-    window.scrollTo({ top, behavior: 'smooth' })
-    history.replaceState(null, '', `#${id}`)
-  }
-
   const handleItemClick = (e: React.MouseEvent, id: string) => {
     e.preventDefault()
     setIsOpen(false)
-    scrollToId(id)
+    scrollToHeading(id, SCROLL_OFFSET)
   }
 
   return (
@@ -85,16 +71,24 @@ export function MobileToc({ lesson }: MobileTocProps) {
             {items.map((item) => {
               const isActive = item.id === activeId
               return (
-                <li key={item.id} style={{ paddingLeft: 20 + (item.level - 1) * 16 }} className="pr-5">
+                <li key={item.id} style={{ paddingLeft: 20 + (item.level - 1) * 12 }} className="relative pr-5">
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'pointer-events-none absolute left-1 top-1/2 -translate-y-1/2',
+                        'h-0 w-0 border-solid border-b-[8px] border-l-[8px] border-r-0 border-t-[8px]',
+                        'border-b-transparent border-l-primary border-r-transparent border-t-transparent',
+                      )}
+                    />
+                  )}
                   <a
                     href={`#${item.id}`}
                     onClick={(e) => handleItemClick(e, item.id)}
                     className={cn(
                       textVariants({ variant: 'caps-14' }),
-                      'block border-l-2 py-2 pl-3 transition-colors duration-200',
-                      isActive
-                        ? 'border-primary text-[#e0deda]'
-                        : 'border-transparent text-[#e0deda]/60 hover:text-[#e0deda]',
+                      'block py-2 transition-colors duration-200',
+                      isActive ? 'text-[#e0deda]' : 'text-[#e0deda]/60 hover:text-[#e0deda]',
                     )}
                   >
                     {item.label}

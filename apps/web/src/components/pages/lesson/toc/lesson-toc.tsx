@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Lesson } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { TableOfContentsIcon } from '@/components/ui/icons/table-of-contents'
 import { cn } from '@/lib/utils'
-import { buildTocItems } from './build-toc-items'
-import { useActiveHeading } from './use-active-heading'
+import { useToc } from './use-toc'
+import { scrollToHeading } from './scroll-to-heading'
 
 interface LessonTocProps {
   lesson: Lesson
@@ -13,9 +13,7 @@ interface LessonTocProps {
 const SCROLL_OFFSET = 80
 
 export function LessonToc({ lesson }: LessonTocProps) {
-  const items = useMemo(() => buildTocItems(lesson), [lesson])
-  const ids = useMemo(() => items.map((i) => i.id), [items])
-  const activeId = useActiveHeading(ids)
+  const { items, activeId } = useToc(lesson)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef(new Map<string, HTMLAnchorElement>())
@@ -47,20 +45,9 @@ export function LessonToc({ lesson }: LessonTocProps) {
 
   if (items.length === 0) return null
 
-  const scrollToId = (id: string, attempt = 0) => {
-    const el = document.getElementById(id)
-    if (!el) {
-      if (attempt < 5) requestAnimationFrame(() => scrollToId(id, attempt + 1))
-      return
-    }
-    const top = el.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET
-    window.scrollTo({ top, behavior: 'smooth' })
-    history.replaceState(null, '', `#${id}`)
-  }
-
   const handleClick = (e: React.MouseEvent, id: string) => {
     e.preventDefault()
-    scrollToId(id)
+    scrollToHeading(id, SCROLL_OFFSET)
   }
 
   return (
