@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RedDuckIcon } from '../ui/icons/redduck'
 import { HeaderLinks } from './header-links'
 import { ThemeToggle } from './theme-toggle'
@@ -17,6 +17,15 @@ export default function Header() {
   const isSignUpPage = location.pathname === '/sign-up'
   const [isOpen, setIsOpen] = useState(false)
   const { session, isPending } = useSession()
+
+  useEffect(() => {
+    if (!isOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [isOpen])
 
   if (isSignUpPage) {
     return null

@@ -13,7 +13,7 @@ import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 import { createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
-import { LessonToc } from '@/components/pages/lesson/toc'
+import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
 import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
 import { CourseLockedModal } from '@/components/pages/lesson/course-locked-modal'
 import { useLessonCompletionToast } from '@/hooks/useLessonCompletionToast'
@@ -97,6 +97,7 @@ function LessonPage() {
       )}
       style={mainHeight ? { height: mainHeight } : undefined}
     >
+      {!isCodingChallenge && <MobileToc lesson={lesson} />}
       <PageBreadcrumbs
         variant="lesson"
         courseSlug={courseSlug}

@@ -89,11 +89,7 @@ export function LessonToc({ lesson }: LessonTocProps) {
           {items.map((item) => {
             const isActive = item.id === activeId
             return (
-              <li
-                key={item.id}
-                style={{ paddingLeft: 20 + (item.level - 1) * 16 }}
-                className="pr-5"
-              >
+              <li key={item.id} style={{ paddingLeft: 20 + (item.level - 1) * 16 }} className="pr-5">
                 <a
                   ref={(el) => {
                     if (el) itemRefs.current.set(item.id, el)
