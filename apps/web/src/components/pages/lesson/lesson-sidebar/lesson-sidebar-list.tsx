@@ -1,10 +1,47 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { forwardRef, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { useCourse } from '@/hooks/api/courses/useCourse'
+import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { Text } from '@/components/ui/text'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { CheckIcon } from '@/components/ui/icons/check'
 import { padIndex } from '@/lib/format-index'
 import { cn } from '@/lib/utils'
+import type { Lesson } from '@/types/lesson'
+
+interface LessonSidebarItemProps {
+  courseSlug: string
+  moduleSlug: string
+  lesson: Lesson
+  isCompleted: boolean
+  isLast: boolean
+  onSelect?: () => void
+}
+
+const LessonSidebarItem = forwardRef<HTMLAnchorElement, LessonSidebarItemProps>(
+  ({ courseSlug, moduleSlug, lesson, isCompleted, isLast, onSelect }, ref) => {
+    const [parent] = useAutoAnimate({ duration: 200, easing: 'ease-in-out' })
+
+    return (
+      <Link
+        ref={ref}
+        to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+        params={{ courseSlug, moduleSlug, lessonSlug: lesson.slug }}
+        className={cn(!isLast && 'border-b border-border')}
+        onClick={() => onSelect?.()}
+      >
+        <div ref={parent} className="flex items-center gap-3 px-[20px] py-5">
+          <Text variant="main-16" className="min-w-0 flex-1 text-[#e0deda]">
+            {lesson.title}
+          </Text>
+          {isCompleted && <CheckIcon className="size-5 shrink-0" />}
+        </div>
+      </Link>
+    )
+  },
+)
+LessonSidebarItem.displayName = 'LessonSidebarItem'
 
 export interface LessonSidebarListProps {
   courseSlug: string
@@ -28,6 +65,11 @@ export const LessonSidebarList = ({
   const [triangleTop, setTriangleTop] = useState(0)
   const selectedLessonRef = useRef<HTMLAnchorElement>(null)
   const { data: course } = useCourse(courseSlug)
+  const { data: completedLessons } = useCompletedLessons()
+
+  const completedLessonSlugs = useMemo(() => {
+    return new Set(completedLessons?.filter((l) => l.courseSlug === courseSlug).map((l) => l.lessonSlug) ?? [])
+  }, [completedLessons, courseSlug])
 
   if (syncedModuleSlug !== moduleSlug) {
     setSyncedModuleSlug(moduleSlug)
@@ -73,22 +115,16 @@ export const LessonSidebarList = ({
             <div className="h-full w-5 shrink-0" />
             <div className="relative flex w-full min-w-0 flex-col gap-1 border-l border-border">
               {module.lessons.map((lesson, index) => (
-                <Link
+                <LessonSidebarItem
                   key={lesson.id}
                   ref={lesson.slug === lessonSlug ? selectedLessonRef : undefined}
-                  to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
-                  params={{
-                    courseSlug: courseSlug,
-                    moduleSlug: module.slug,
-                    lessonSlug: lesson.slug,
-                  }}
-                  className={cn(index !== module.lessons.length - 1 && 'border-b border-border')}
-                  onClick={() => onSelect?.()}
-                >
-                  <Text variant="main-16" className="px-[30px] py-5 text-[#e0deda]">
-                    {lesson.title}
-                  </Text>
-                </Link>
+                  courseSlug={courseSlug}
+                  moduleSlug={module.slug}
+                  lesson={lesson}
+                  isCompleted={completedLessonSlugs.has(lesson.slug)}
+                  isLast={index === module.lessons.length - 1}
+                  onSelect={onSelect}
+                />
               ))}
               {module.lessons.some((l) => l.slug === lessonSlug) && (
                 <div
