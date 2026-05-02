@@ -109,29 +109,18 @@ export class UserService {
   }
 
   static async getProgressCards(userId: string) {
-    const [completedLessonRows, [userRow]] = await Promise.all([
+    const [completedLessonRows, [userRow], [certCountRow]] = await Promise.all([
       db
         .select({ lessonId: userLessons.lessonId, updatedAt: userLessons.updatedAt })
         .from(userLessons)
         .where(and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true))),
       db.select({ isPrivate: user.isPrivate }).from(user).where(eq(user.id, userId)).limit(1),
+      db.select({ c: count() }).from(userCertificates).where(eq(userCertificates.userId, userId)),
     ])
     if (!userRow) throw new AppError(404, 'User not found')
 
     const completedLessonsCount = completedLessonRows.length
-
-    let completedCoursesCount = 0
-    if (completedLessonRows.length > 0) {
-      const lessonIds = completedLessonRows.map((l) => l.lessonId)
-      const payloadLessons = await payloadDb.query.lessons.findMany({
-        where: inArray(lessons.id, lessonIds),
-        with: { module: { with: { course: true } } },
-      })
-      const uniqueCourseIds = new Set(
-        payloadLessons.filter((l) => l.module?.course?.id).map((l) => l.module!.course!.id),
-      )
-      completedCoursesCount = uniqueCourseIds.size
-    }
+    const completedCoursesCount = Number(certCountRow?.c ?? 0)
 
     const totalCoursesCount = await payloadDb.query.courses
       .findMany({ where: (c) => ne(c.isHidden, true), columns: { id: true } })
