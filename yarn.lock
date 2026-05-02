@@ -14334,7 +14334,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"admin@workspace:^, admin@workspace:apps/admin":
+"admin@workspace:apps/admin":
   version: 0.0.0-use.local
   resolution: "admin@workspace:apps/admin"
   dependencies:
@@ -24667,7 +24667,6 @@ __metadata:
     "@standard-community/standard-openapi": "npm:^0.2.9"
     "@types/node": "npm:^22.10.0"
     "@types/pg": "npm:^8.16.0"
-    admin: "workspace:^"
     better-auth: "npm:^1.4.11"
     dotenv: "npm:^16.4.7"
     drizzle-kit: "npm:^0.31.8"
