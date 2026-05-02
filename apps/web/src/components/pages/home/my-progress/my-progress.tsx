@@ -5,6 +5,7 @@ import type { Course } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import type { UserCourseAccessState } from '@/hooks/api/user/useUserCourseAccess'
 import { useCourseProgress } from '@/hooks/api/user/useCourseProgress'
+import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificates'
 
 interface MyProgressProps {
   courses: Course[]
@@ -14,6 +15,11 @@ interface MyProgressProps {
 
 export const MyProgress = ({ courses, completedLessons, courseAccess }: MyProgressProps) => {
   const courseProgress = useCourseProgress(courses, completedLessons)
+  const { data: certificates } = useUserCertificates()
+  const certifiedSlugs = useMemo(
+    () => new Set((certificates ?? []).map((c) => c.courseSlug)),
+    [certificates],
+  )
 
   const completedCountBySlug = useMemo(() => {
     const counts = new Map<string, number>()
@@ -46,6 +52,7 @@ export const MyProgress = ({ courses, completedLessons, courseAccess }: MyProgre
       prerequisiteCourseSlug={courseAccess.prerequisiteSlugByCourseSlug.get(course.slug)}
       nextLesson={courseProgress[index].nextLesson}
       status={courseProgress[index].status}
+      hasCertificate={certifiedSlugs.has(course.slug)}
     />
   )
 

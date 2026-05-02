@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowUpRight } from 'lucide-react'
 import type { Course, CourseStatus } from '@/types/lesson'
@@ -25,7 +26,14 @@ interface MyProgressCourseProps {
   isLocked: boolean
   prerequisiteCourseTitle?: string
   prerequisiteCourseSlug?: string
+  hasCertificate: boolean
 }
+
+type Action =
+  | { kind: 'locked' }
+  | { kind: 'next'; lesson: { moduleSlug: string; lessonSlug: string }; label: string }
+  | { kind: 'claim' }
+  | { kind: 'done'; label: string }
 
 export const MyProgressCourse = ({
   course,
@@ -38,9 +46,72 @@ export const MyProgressCourse = ({
   isLocked,
   prerequisiteCourseTitle,
   prerequisiteCourseSlug,
+  hasCertificate,
 }: MyProgressCourseProps) => {
   const indexLabel = padIndex(index)
   const pointsText = totalLessons > 0 ? `${completedLessons}/${totalLessons}` : '-'
+
+  const action = useMemo<Action>(() => {
+    if (isLocked) return { kind: 'locked' }
+    if (nextLesson) return { kind: 'next', lesson: nextLesson, label: statusLabels[status] }
+    if (!hasCertificate) return { kind: 'claim' }
+    return { kind: 'done', label: statusLabels[status] }
+  }, [isLocked, nextLesson, hasCertificate, status])
+
+  const containerClass =
+    layout === 'table'
+      ? cn(
+          'p-5 col-span-2 flex items-center justify-center border-t border-border',
+          action.kind === 'locked' ? 'gap-3 min-h-[60px]' : 'gap-4',
+        )
+      : 'inline-flex flex-wrap items-center gap-2'
+
+  let actionElement: React.ReactNode
+  switch (action.kind) {
+    case 'locked':
+      actionElement = (
+        <div className={containerClass}>
+          <Text variant={'caps-20'}>Not available</Text>
+          <LockedCourseStatusTooltip
+            prerequisiteCourseTitle={prerequisiteCourseTitle}
+            prerequisiteCourseSlug={prerequisiteCourseSlug}
+          />
+        </div>
+      )
+      break
+    case 'next':
+      actionElement = (
+        <Link
+          to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+          params={{
+            courseSlug: course.slug,
+            moduleSlug: action.lesson.moduleSlug,
+            lessonSlug: action.lesson.lessonSlug,
+          }}
+          className={containerClass}
+        >
+          <Text variant={'caps-20'}>{action.label}</Text>
+          <ArrowRight />
+        </Link>
+      )
+      break
+    case 'claim':
+      actionElement = (
+        <Link to="/courses/$courseSlug" params={{ courseSlug: course.slug }} className={containerClass}>
+          <Text variant={'caps-20'}>Claim Certificate</Text>
+          <ArrowRight />
+        </Link>
+      )
+      break
+    case 'done':
+      actionElement = (
+        <div className={containerClass}>
+          <CheckIcon />
+          <Text variant={'caps-20'}>{action.label}</Text>
+        </div>
+      )
+      break
+  }
 
   const titleInner = (
     <>
@@ -60,69 +131,6 @@ export const MyProgressCourse = ({
     </>
   )
 
-  const statusBlock = isLocked ? (
-    <div
-      className={cn(
-        'gap-3 flex items-center justify-center',
-        layout === 'table' && 'p-5 col-span-2 border-t border-border min-h-[60px]',
-      )}
-    >
-      <Text variant={'caps-20'}>Not available</Text>
-      <LockedCourseStatusTooltip prerequisiteCourseTitle={prerequisiteCourseTitle} prerequisiteCourseSlug={prerequisiteCourseSlug} />
-    </div>
-  ) : nextLesson ? (
-    <Link
-      to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
-      params={{
-        courseSlug: course.slug,
-        moduleSlug: nextLesson.moduleSlug,
-        lessonSlug: nextLesson.lessonSlug,
-      }}
-      className={cn(
-        'gap-4 flex items-center',
-        layout === 'table' && 'p-5 col-span-2 justify-center border-t border-border',
-      )}
-    >
-      <Text variant={'caps-20'}>{statusLabels[status]}</Text>
-      <ArrowRight />
-    </Link>
-  ) : (
-    <div
-      className={cn(
-        'gap-4 flex items-center',
-        layout === 'table' && 'p-5 col-span-2 justify-center border-t border-border',
-      )}
-    >
-      <CheckIcon />
-      <Text variant={'caps-20'}>{statusLabels[status]}</Text>
-    </div>
-  )
-
-  const cardStatusValue = isLocked ? (
-    <div className="inline-flex flex-wrap items-center gap-2">
-      <Text variant={'caps-20'}>Not available</Text>
-      <LockedCourseStatusTooltip prerequisiteCourseTitle={prerequisiteCourseTitle} prerequisiteCourseSlug={prerequisiteCourseSlug} />
-    </div>
-  ) : nextLesson ? (
-    <Link
-      to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
-      params={{
-        courseSlug: course.slug,
-        moduleSlug: nextLesson.moduleSlug,
-        lessonSlug: nextLesson.lessonSlug,
-      }}
-      className="inline-flex flex-wrap items-center gap-2"
-    >
-      <Text variant={'caps-20'}>{statusLabels[status]}</Text>
-      <ArrowRight />
-    </Link>
-  ) : (
-    <div className="inline-flex flex-wrap items-center gap-2">
-      <CheckIcon />
-      <Text variant={'caps-20'}>{statusLabels[status]}</Text>
-    </div>
-  )
-
   if (layout === 'card') {
     return (
       <div className="flex flex-col gap-4 border border-border p-5">
@@ -138,7 +146,7 @@ export const MyProgressCourse = ({
             <Text variant="caps-12" className="text-border">
               Status
             </Text>
-            {cardStatusValue}
+            {actionElement}
           </div>
         </div>
       </div>
@@ -151,7 +159,7 @@ export const MyProgressCourse = ({
       <div className="p-5 col-span-2 flex items-center justify-center border-r border-border border-t ">
         <Text variant={'caps-20'}>{pointsText}</Text>
       </div>
-      {statusBlock}
+      {actionElement}
     </>
   )
 }

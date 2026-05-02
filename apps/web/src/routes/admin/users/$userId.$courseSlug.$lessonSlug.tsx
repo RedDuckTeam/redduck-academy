@@ -151,6 +151,16 @@ function CodingView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdmin
               Attempt {i + 1} · {new Date(s.submittedAt).toLocaleString()}
             </Text>
           </div>
+          {s.aiComment && (
+            <div className="flex flex-col gap-1 border-l-2 border-secondary pl-3">
+              <Text variant="caps-14" className="text-secondary">
+                AI Review
+              </Text>
+              <Text variant="main-14" className="text-black whitespace-pre-wrap">
+                {s.aiComment}
+              </Text>
+            </div>
+          )}
           <pre className="overflow-auto bg-muted p-4 text-sm rounded-sm font-mono whitespace-pre-wrap break-all">
             {s.submittedCode}
           </pre>
