@@ -1,7 +1,3 @@
-apps/admin
-apps/web
-apps/contracts
-
 .git
 .github
 .cursor

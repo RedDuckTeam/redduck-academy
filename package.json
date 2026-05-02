@@ -74,6 +74,6 @@
     "web:dev": "yarn workspace web dev",
     "contracts:clean": "yarn workspace contracts clean",
     "contracts:compile": "yarn workspace contracts compile",
-    "heroku-postbuild": "yarn workspace backend build"
+    "heroku-postbuild": "yarn workspaces focus backend && yarn workspace backend build"
   }
 }
