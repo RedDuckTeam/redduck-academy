@@ -15,6 +15,9 @@ const buttonVariants = cva(
         outline: cn('border border-foreground bg-transparent text-foreground'),
         'outline-white': cn('border border-white bg-transparent text-white disabled:border-white/50'),
         ghost: 'bg-transparent hover:bg-accent hover:text-accent-foreground',
+        'case-tab': 'bg-foreground text-white hover:!scale-100 hover:bg-foreground/90 dark:bg-[#000]',
+        'case-tab-muted':
+          'bg-muted text-foreground hover:!scale-100 hover:bg-muted/70 dark:bg-[#2d2d2d] dark:text-white/80',
       },
       size: {
         default: 'py-[15px] px-6 max-h-[50px] md:max-h-[56px] lg:max-h-[60px]',
@@ -22,6 +25,7 @@ const buttonVariants = cva(
         md: 'py-2 px-4',
         link: 'h-[56px] w-[56px]',
         icon: 'h-9 w-9',
+        tab: 'py-1.5 px-3 !text-sm md:!text-sm 2xl:!text-sm leading-none',
         free: '',
       },
     },

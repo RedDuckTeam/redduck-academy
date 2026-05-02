@@ -109,6 +109,7 @@ function LessonPage() {
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
           <LessonCodeChallenge
+            key={lessonSlug}
             lesson={lesson}
             courseSlug={courseSlug}
             lessonSlug={lessonSlug}

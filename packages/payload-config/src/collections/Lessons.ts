@@ -34,6 +34,82 @@ export const Lessons: CollectionConfig = {
           if (expectedResult === undefined || expectedResult === null || String(expectedResult).trim() === '') {
             throw new APIError('AI expected result is required for coding tasks.', 400)
           }
+
+          const execCases = data.executableTestCases
+          if (Array.isArray(execCases) && execCases.length > 0) {
+            if (!data.functionSignature || String(data.functionSignature).trim() === '') {
+              throw new APIError(
+                'Function signature is required when executable test cases are defined.',
+                400,
+              )
+            }
+            for (let i = 0; i < execCases.length; i++) {
+              const row = execCases[i] as {
+                inputJson?: unknown
+                expectedJson?: unknown
+                valueWei?: unknown
+                postCheckJson?: unknown
+              }
+              const inputRaw = typeof row.inputJson === 'string' ? row.inputJson : ''
+              const expectedRaw = typeof row.expectedJson === 'string' ? row.expectedJson : ''
+              try {
+                JSON.parse(inputRaw)
+              } catch {
+                throw new APIError(`Executable test case ${i + 1}: input is not valid JSON.`, 400)
+              }
+              try {
+                JSON.parse(expectedRaw)
+              } catch {
+                throw new APIError(`Executable test case ${i + 1}: expected is not valid JSON.`, 400)
+              }
+              if (typeof row.valueWei === 'string' && row.valueWei.trim() !== '') {
+                try {
+                  const v = BigInt(row.valueWei.trim())
+                  if (v < 0n) throw new Error('negative')
+                } catch {
+                  throw new APIError(
+                    `Executable test case ${i + 1}: valueWei must be a non-negative integer (decimal string).`,
+                    400,
+                  )
+                }
+              }
+              if (typeof row.postCheckJson === 'string' && row.postCheckJson.trim() !== '') {
+                let parsed: unknown
+                try {
+                  parsed = JSON.parse(row.postCheckJson)
+                } catch {
+                  throw new APIError(`Executable test case ${i + 1}: postCheckJson is not valid JSON.`, 400)
+                }
+                if (
+                  !parsed ||
+                  typeof parsed !== 'object' ||
+                  typeof (parsed as { signature?: unknown }).signature !== 'string' ||
+                  !Array.isArray((parsed as { args?: unknown }).args)
+                ) {
+                  throw new APIError(
+                    `Executable test case ${i + 1}: postCheckJson must be {"signature": string, "args": array}.`,
+                    400,
+                  )
+                }
+              }
+            }
+          }
+
+          if (data.codingLanguage === 'solidity' && data.solidityConstructorArgs) {
+            const raw = String(data.solidityConstructorArgs).trim()
+            if (raw !== '') {
+              let parsed: unknown
+              try {
+                parsed = JSON.parse(raw)
+              } catch {
+                throw new APIError('Solidity constructor args must be valid JSON.', 400)
+              }
+              if (!Array.isArray(parsed)) {
+                throw new APIError('Solidity constructor args must be a JSON array.', 400)
+              }
+            }
+          }
+
           return data
         }
 
@@ -211,6 +287,80 @@ export const Lessons: CollectionConfig = {
           name: 'description',
           type: 'textarea',
           admin: { description: 'Describe what this test case checks.' },
+        },
+      ],
+    },
+    {
+      name: 'functionSignature',
+      type: 'text',
+      admin: {
+        condition: (data) => data?.type === 'coding_task',
+        description:
+          'Required when executable test cases are defined. ' +
+          'TS form: `solve(nums: number[], target: number): number[]`. ' +
+          'Solidity form: `function add(uint256 a, uint256 b) external view returns (uint256)`.',
+      },
+    },
+    {
+      name: 'solidityContractName',
+      type: 'text',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage === 'solidity',
+        description: 'Optional. Name of the contract to deploy. Defaults to the first contract in the source.',
+      },
+    },
+    {
+      name: 'solidityConstructorArgs',
+      type: 'textarea',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage === 'solidity',
+        description: 'Optional JSON array of constructor arguments, e.g. `["0x1234...", "1000"]`.',
+      },
+    },
+    {
+      name: 'executableTestCases',
+      type: 'array',
+      admin: {
+        condition: (data) => data?.type === 'coding_task',
+        description:
+          'Each row runs in the browser against the student\'s code. ' +
+          '`inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. ' +
+          'For Solidity uint256/int256/bytes/address, use string-encoded values. ' +
+          'Leave this entire array empty to keep AI-only grading (legacy mode).',
+      },
+      fields: [
+        {
+          name: 'inputJson',
+          type: 'textarea',
+          required: true,
+          admin: { description: 'JSON array of args. Example: `[[2,7,11,15], 9]`.' },
+        },
+        {
+          name: 'expectedJson',
+          type: 'textarea',
+          required: true,
+          admin: {
+            description:
+              'Expected return value as JSON. Example: `[0, 1]` or `"42"`. ' +
+              'When `postCheckJson` is set, this is compared to the post-check view return instead of the main call return.',
+          },
+        },
+        {
+          name: 'valueWei',
+          type: 'text',
+          admin: {
+            description:
+              'Optional. Solidity only. ETH (in wei) sent with the main call as msg.value. Decimal string. Example: `"5"` or `"1000000000000000000"`.',
+          },
+        },
+        {
+          name: 'postCheckJson',
+          type: 'textarea',
+          admin: {
+            description:
+              'Optional. Solidity only. JSON `{"signature": "function tokensSold() external view returns (uint256)", "args": []}`. ' +
+              'When set, the runner calls this view AFTER the main call and compares its return to `expectedJson`.',
+          },
         },
       ],
     },

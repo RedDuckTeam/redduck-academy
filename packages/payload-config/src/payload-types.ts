@@ -293,6 +293,42 @@ export interface Lesson {
       }[]
     | null;
   /**
+   * Required when executable test cases are defined. TS form: `solve(nums: number[], target: number): number[]`. Solidity form: `function add(uint256 a, uint256 b) external view returns (uint256)`.
+   */
+  functionSignature?: string | null;
+  /**
+   * Optional. Name of the contract to deploy. Defaults to the first contract in the source.
+   */
+  solidityContractName?: string | null;
+  /**
+   * Optional JSON array of constructor arguments, e.g. `["0x1234...", "1000"]`.
+   */
+  solidityConstructorArgs?: string | null;
+  /**
+   * Each row runs in the browser against the student's code. `inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. For Solidity uint256/int256/bytes/address, use string-encoded values. Leave this entire array empty to keep AI-only grading (legacy mode).
+   */
+  executableTestCases?:
+    | {
+        /**
+         * JSON array of args. Example: `[[2,7,11,15], 9]`.
+         */
+        inputJson: string;
+        /**
+         * Expected return value as JSON. Example: `[0, 1]` or `"42"`. When `postCheckJson` is set, this is compared to the post-check view return instead of the main call return.
+         */
+        expectedJson: string;
+        /**
+         * Optional. Solidity only. ETH (in wei) sent with the main call as msg.value. Decimal string. Example: `"5"` or `"1000000000000000000"`.
+         */
+        valueWei?: string | null;
+        /**
+         * Optional. Solidity only. JSON `{"signature": "function tokensSold() external view returns (uint256)", "args": []}`. When set, the runner calls this view AFTER the main call and compares its return to `expectedJson`.
+         */
+        postCheckJson?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Short context for the AI reviewer (not shown to students via the public API).
    */
   aiTaskSummary?: string | null;
@@ -563,6 +599,18 @@ export interface LessonsSelect<T extends boolean = true> {
     | {
         title?: T;
         description?: T;
+        id?: T;
+      };
+  functionSignature?: T;
+  solidityContractName?: T;
+  solidityConstructorArgs?: T;
+  executableTestCases?:
+    | T
+    | {
+        inputJson?: T;
+        expectedJson?: T;
+        valueWei?: T;
+        postCheckJson?: T;
         id?: T;
       };
   aiTaskSummary?: T;

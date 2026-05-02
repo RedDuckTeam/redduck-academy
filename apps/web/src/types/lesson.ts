@@ -66,6 +66,17 @@ export interface CodingTestCase {
   description?: string
 }
 
+/** Wire shape from Payload — `inputJson`/`expectedJson`/`postCheckJson` are JSON-encoded strings. */
+export interface ExecutableTestCase {
+  id: string
+  inputJson: string
+  expectedJson: string
+  /** Solidity only. Decimal string (`msg.value`). Empty/missing = 0. */
+  valueWei?: string | null
+  /** Solidity only. JSON `{signature, args}`; when set, the assertion compares the post-call view's return. */
+  postCheckJson?: string | null
+}
+
 export interface CodingTaskSubmission {
   id: number
   passed: boolean
@@ -103,6 +114,10 @@ export interface Lesson {
   codingLanguage?: CodingLanguage
   starterCode?: string | null
   codingTestCases?: CodingTestCase[]
+  functionSignature?: string | null
+  solidityContractName?: string | null
+  solidityConstructorArgs?: string | null
+  executableTestCases?: ExecutableTestCase[]
 }
 
 export interface ReviewCriterionFeedback {

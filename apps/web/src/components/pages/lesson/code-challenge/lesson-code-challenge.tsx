@@ -10,6 +10,7 @@ import { CodeIcon } from '@/components/ui/icons/code'
 import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { useSession } from '@/hooks/useSession'
+import { useCodeRunner } from '@/hooks/lessons/useCodeRunner'
 import { RateLimitError } from '@/lib/api/rate-limit'
 
 interface LessonCodeChallengeProps {
@@ -32,24 +33,35 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
     if (restoredRef.current || !userLesson) return
     const submissions = (userLesson.submissions as CodingTaskSubmission[]) ?? []
     const lastCode = submissions.at(-1)?.submittedCode
-    if (lastCode) {
-      setCode(lastCode)
-    }
+    if (lastCode) setCode(lastCode)
     restoredRef.current = true
   }, [userLesson])
 
-  const language = lesson.codingLanguage
+  const { report, isRunning, liveStatus, run, applyServerVerdict } = useCodeRunner(lesson)
   const { mutate: submit, isPending, error: submitError } = useSubmitCodingTask(courseSlug, lessonSlug)
 
-  if (!language) {
-    return <div>No language found</div>
-  }
+  const language = lesson.codingLanguage
+  const hasExecutableTests = (lesson.executableTestCases?.length ?? 0) > 0
+
+  if (!language) return <div>No language found</div>
 
   const rateLimitError = submitError instanceof RateLimitError ? submitError : null
-  // Cooldown is short-lived and the FE can't auto-tick, so we let the user submit and rely on the
-  // backend to respond with a fresh 429 if they're still under cooldown.
   const isHardBlocked = rateLimitError?.reason === 'daily' || rateLimitError?.reason === 'monthly'
-  const canSubmit = code.trim().length > 0 && !isPending && !isHardBlocked
+  const canSubmit = code.trim().length > 0 && !isPending && !isRunning && !isHardBlocked
+
+  const handleSubmit = () => {
+    submit(
+      { courseSlug, lessonSlug, code, language, lesson },
+      { onSuccess: (result) => applyServerVerdict({ passed: result.passed, report: result.report }) },
+    )
+  }
+
+  const handleRun = hasExecutableTests
+    ? () => {
+        if (isRunning || isPending) return
+        void run(code)
+      }
+    : undefined
 
   return (
     <div className="flex min-w-0 w-full flex-1 flex-col gap-6 xl:flex-row xl:items-stretch xl:h-full xl:min-h-0">
@@ -75,12 +87,16 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
               code={code}
               onCodeChange={setCode}
               onReset={() => setCode(starterCode)}
-              onSubmit={() => submit({ courseSlug, lessonSlug, code, language })}
+              onSubmit={handleSubmit}
+              onRun={handleRun}
               onSignIn={() => router.navigate({ to: '/sign-up' })}
               isAuthenticated={!!session}
               isPending={isPending}
+              isRunning={isRunning}
               canSubmit={canSubmit}
               rateLimitError={rateLimitError}
+              report={report}
+              liveStatus={liveStatus}
             />
           </div>
         </div>

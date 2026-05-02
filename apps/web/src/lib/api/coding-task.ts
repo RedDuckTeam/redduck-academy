@@ -8,6 +8,8 @@ export interface SubmitCodingTaskPayload {
   lessonSlug: string
   code: string
   language: 'solidity' | 'rust' | 'typescript'
+  /** Result of running the executable tests in the browser; null when the lesson has no tests. */
+  clientPassed: boolean | null
 }
 
 export interface SubmitCodingTaskResponse {

@@ -29,6 +29,9 @@ export class LessonsService {
           orderBy: (tasks, { asc }) => [asc(tasks._order)],
         },
         codingTestCases: true,
+        executableTestCases: {
+          orderBy: (cases, { asc }) => [asc(cases._order)],
+        },
       },
     })
 
@@ -88,6 +91,9 @@ export class LessonsService {
       ),
       with: {
         codingTestCases: true,
+        executableTestCases: {
+          orderBy: (cases, { asc }) => [asc(cases._order)],
+        },
       },
     })
 

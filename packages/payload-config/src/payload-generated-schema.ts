@@ -176,7 +176,7 @@ export const lessons_questions = db_schema.table(
     _order: integer('_order').notNull(),
     _parentID: integer('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
-    question: varchar('question'),
+    question: jsonb('question'),
   },
   (columns) => [
     index('lessons_questions_order_idx').on(columns._order),
@@ -205,6 +205,28 @@ export const lessons_coding_test_cases = db_schema.table(
       columns: [columns['_parentID']],
       foreignColumns: [lessons.id],
       name: 'lessons_coding_test_cases_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_executable_test_cases = db_schema.table(
+  'lessons_executable_test_cases',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    inputJson: varchar('input_json'),
+    expectedJson: varchar('expected_json'),
+    valueWei: varchar('value_wei'),
+    postCheckJson: varchar('post_check_json'),
+  },
+  (columns) => [
+    index('lessons_executable_test_cases_order_idx').on(columns._order),
+    index('lessons_executable_test_cases_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_executable_test_cases_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -267,6 +289,9 @@ export const lessons = db_schema.table(
     codingLanguage: enum_lessons_coding_language('coding_language'),
     starterCode: varchar('starter_code'),
     aiExpectedResult: varchar('ai_expected_result'),
+    functionSignature: varchar('function_signature'),
+    solidityContractName: varchar('solidity_contract_name'),
+    solidityConstructorArgs: varchar('solidity_constructor_args'),
     aiTaskSummary: varchar('ai_task_summary'),
     aiPossibleSolutions: varchar('ai_possible_solutions'),
     templateRepoUrl: varchar('template_repo_url'),
@@ -507,6 +532,13 @@ export const relations_lessons_coding_test_cases = relations(lessons_coding_test
     relationName: 'codingTestCases',
   }),
 }))
+export const relations_lessons_executable_test_cases = relations(lessons_executable_test_cases, ({ one }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_executable_test_cases._parentID],
+    references: [lessons.id],
+    relationName: 'executableTestCases',
+  }),
+}))
 export const relations_lessons_review_grading_tasks = relations(lessons_review_grading_tasks, ({ one }) => ({
   _parentID: one(lessons, {
     fields: [lessons_review_grading_tasks._parentID],
@@ -532,6 +564,9 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   }),
   codingTestCases: many(lessons_coding_test_cases, {
     relationName: 'codingTestCases',
+  }),
+  executableTestCases: many(lessons_executable_test_cases, {
+    relationName: 'executableTestCases',
   }),
   reviewGradingTasks: many(lessons_review_grading_tasks, {
     relationName: 'reviewGradingTasks',
@@ -621,6 +656,7 @@ type DatabaseSchema = {
   lessons_questions_options: typeof lessons_questions_options
   lessons_questions: typeof lessons_questions
   lessons_coding_test_cases: typeof lessons_coding_test_cases
+  lessons_executable_test_cases: typeof lessons_executable_test_cases
   lessons_review_grading_tasks: typeof lessons_review_grading_tasks
   lessons_review_paths: typeof lessons_review_paths
   lessons: typeof lessons
@@ -639,6 +675,7 @@ type DatabaseSchema = {
   relations_lessons_questions_options: typeof relations_lessons_questions_options
   relations_lessons_questions: typeof relations_lessons_questions
   relations_lessons_coding_test_cases: typeof relations_lessons_coding_test_cases
+  relations_lessons_executable_test_cases: typeof relations_lessons_executable_test_cases
   relations_lessons_review_grading_tasks: typeof relations_lessons_review_grading_tasks
   relations_lessons_review_paths: typeof relations_lessons_review_paths
   relations_lessons: typeof relations_lessons
