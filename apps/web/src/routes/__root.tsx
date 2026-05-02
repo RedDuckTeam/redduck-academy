@@ -29,11 +29,10 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem('redduck-the
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async ({ context: { queryClient } }) => {
     if (!env.VITE_PRIVY_COOKIE_AUTH) return
-    await queryClient.ensureQueryData({
-      queryKey: queryKeys.user.settings(),
-      queryFn: () => fetchSessionFromCookie(),
-      staleTime: 5 * 60 * 1000,
-    })
+    const settings = await fetchSessionFromCookie()
+    if (settings) {
+      queryClient.setQueryData(queryKeys.user.settings(), settings)
+    }
   },
   head: () => {
     const defaultMeta = createDefaultMeta()

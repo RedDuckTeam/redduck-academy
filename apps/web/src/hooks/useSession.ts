@@ -17,10 +17,14 @@ export const useSession = () => {
   // localStorage 'storage' events don't fire for same-tab writes, so the hint can lag).
   const sessionAvailable = hasSessionHint || authenticated
 
+  // With cookie auth the backend session can outlive Privy's localStorage tokens,
+  // so probe /api/user/settings unconditionally and let the cookie be the source of truth.
+  const enabled = cookieAuth ? true : sessionAvailable && authenticated
+
   const { data: settings, isLoading } = useQuery({
     queryKey: queryKeys.user.settings(),
     queryFn: getUserSettings,
-    enabled: sessionAvailable && (cookieAuth || authenticated),
+    enabled,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => failureCount < 3 && error instanceof ApiError && error.status === 401,
     retryDelay: 300,
@@ -31,7 +35,7 @@ export const useSession = () => {
   const refetch = () => queryClient.invalidateQueries({ queryKey: queryKeys.user.settings() })
 
   const isPending = cookieAuth
-    ? isLoading && !settings && sessionAvailable
+    ? isLoading && !settings
     : sessionAvailable
       ? !ready || (authenticated && isLoading)
       : authenticated && isLoading
