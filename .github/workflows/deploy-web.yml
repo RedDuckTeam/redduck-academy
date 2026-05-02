@@ -9,6 +9,7 @@ on:
       - 'packages/**'
       - 'package.json'
       - '.github/workflows/deploy-web.yml'
+      - 'yarn.lock'
 
 env:
   VITE_API_URL: ${{ vars.VITE_API_URL }}

@@ -9,6 +9,7 @@ on:
       - 'packages/**'
       - 'package.json'
       - '.github/workflows/deploy-backend.yml'
+      - 'yarn.lock'
 
 jobs:
   deploy:

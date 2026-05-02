@@ -12,6 +12,7 @@ on:
       - 'packages/payload-config/**'
       - 'vercel.json'
       - '.github/workflows/deploy-admin.yml'
+      - 'yarn.lock'
 
 jobs:
   deploy:
