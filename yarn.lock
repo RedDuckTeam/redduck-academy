@@ -9246,6 +9246,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@redduck/solc-utils@workspace:^, @redduck/solc-utils@workspace:packages/solc-utils":
+  version: 0.0.0-use.local
+  resolution: "@redduck/solc-utils@workspace:packages/solc-utils"
+  dependencies:
+    typescript: "npm:^5.7.2"
+  peerDependencies:
+    viem: ^2.44.4
+  languageName: unknown
+  linkType: soft
+
 "@reown/appkit-adapter-wagmi@npm:^1.8.16":
   version: 1.8.19
   resolution: "@reown/appkit-adapter-wagmi@npm:1.8.19"
@@ -28306,6 +28316,7 @@ __metadata:
     "@radix-ui/react-dialog": "npm:^1.1.15"
     "@radix-ui/react-slot": "npm:^1.2.4"
     "@react-pdf/renderer": "npm:^4.5.1"
+    "@redduck/solc-utils": "workspace:^"
     "@reown/appkit": "npm:^1.8.16"
     "@reown/appkit-adapter-wagmi": "npm:^1.8.16"
     "@t3-oss/env-core": "npm:^0.13.10"

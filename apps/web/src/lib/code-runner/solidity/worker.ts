@@ -1,6 +1,6 @@
 import { parseAbiItem, type AbiFunction } from 'viem'
+import { compile, type CompiledContract } from '@redduck/solc-utils'
 import type { PostCheck } from '../types'
-import { compile, type CompiledContract } from './compile'
 import { runTestCase } from './run-test-case'
 
 export interface SolWorkerCase {

@@ -9,8 +9,8 @@ export interface SolcModule {
 let solcModulePromise: Promise<SolcModule> | null = null
 
 /**
- * Fetches and instantiates the Emscripten-compiled Solidity compiler in the worker.
- * Result is memoized for the lifetime of the worker.
+ * Fetches and instantiates the Emscripten-compiled Solidity compiler. Result is memoized
+ * for the lifetime of the worker / process. Works in browser workers and Node 20+.
  */
 export function loadSolc(): Promise<SolcModule> {
   if (solcModulePromise) return solcModulePromise
