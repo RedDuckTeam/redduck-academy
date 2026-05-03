@@ -1,4 +1,6 @@
 import { TOTPField as TOTPField_4eaf6cb33cfb75be01716613e3c9a512 } from 'payload-totp/rsc'
+import { CoursesTreeView as CoursesTreeView_9b2f0e5e989fb35d429ade0730db27dd } from '@/admin-components/lessons-tree'
+import { ModulesTreeView as ModulesTreeView_9b2f0e5e989fb35d429ade0730db27dd } from '@/admin-components/lessons-tree'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -24,6 +26,10 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { TypedValueField as TypedValueField_e16535f6b68c18057fb07b1a49db8691 } from '@/admin-components/abi-driven-test-case/typed-value-field'
+import { FunctionSelect as FunctionSelect_92ffc788f6950e86b357de2a4aff75dc } from '@/admin-components/abi-driven-test-case/function-select'
+import { PostCheckFunctionSelect as PostCheckFunctionSelect_05d577f0ee1b8a8532384bdcb8af1f42 } from '@/admin-components/abi-driven-test-case/post-check-function-select'
+import { LessonsTreeView as LessonsTreeView_9b2f0e5e989fb35d429ade0730db27dd } from '@/admin-components/lessons-tree'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { TOTPProvider as TOTPProvider_4eaf6cb33cfb75be01716613e3c9a512 } from 'payload-totp/rsc'
 import { TOTPSetup as TOTPSetup_4eaf6cb33cfb75be01716613e3c9a512 } from 'payload-totp/rsc'
@@ -32,6 +38,8 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 export const importMap = {
   "payload-totp/rsc#TOTPField": TOTPField_4eaf6cb33cfb75be01716613e3c9a512,
+  "@/admin-components/lessons-tree#CoursesTreeView": CoursesTreeView_9b2f0e5e989fb35d429ade0730db27dd,
+  "@/admin-components/lessons-tree#ModulesTreeView": ModulesTreeView_9b2f0e5e989fb35d429ade0730db27dd,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -57,6 +65,10 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField": TypedValueField_e16535f6b68c18057fb07b1a49db8691,
+  "@/admin-components/abi-driven-test-case/function-select#FunctionSelect": FunctionSelect_92ffc788f6950e86b357de2a4aff75dc,
+  "@/admin-components/abi-driven-test-case/post-check-function-select#PostCheckFunctionSelect": PostCheckFunctionSelect_05d577f0ee1b8a8532384bdcb8af1f42,
+  "@/admin-components/lessons-tree#LessonsTreeView": LessonsTreeView_9b2f0e5e989fb35d429ade0730db27dd,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "payload-totp/rsc#TOTPProvider": TOTPProvider_4eaf6cb33cfb75be01716613e3c9a512,
   "payload-totp/rsc#TOTPSetup": TOTPSetup_4eaf6cb33cfb75be01716613e3c9a512,

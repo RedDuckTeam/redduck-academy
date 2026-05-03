@@ -43,6 +43,8 @@ const submitCodingTaskBodySchema = z.object({
     .min(1, { message: 'Code cannot be empty.' })
     .max(30_000, { message: 'Your submission is too long. Please shorten your code and try again.' }),
   language: z.enum(['solidity', 'rust', 'typescript']),
+  /** Browser test runner verdict; null when the lesson has no executable tests. */
+  clientPassed: z.boolean().nullable(),
 })
 
 const lessonsApp = new Hono<{ Variables: AuthVariables }>()
@@ -81,11 +83,11 @@ lessonsApp.post(
   validator('json', submitCodingTaskBodySchema),
   async (c) => {
     const user = c.get('user')
-    const { courseSlug, lessonSlug, code, language } = c.req.valid('json')
+    const { courseSlug, lessonSlug, code, language, clientPassed } = c.req.valid('json')
     const access = await CoursePrerequisitesService.checkCourseAccess(user.id, courseSlug)
     if (!access.allowed) throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`)
     const ipAddress = getClientIp(c)
-    const result = await CodingTaskService.submitCode(user.id, courseSlug, lessonSlug, code, language, ipAddress)
+    const result = await CodingTaskService.submitCode(user.id, courseSlug, lessonSlug, code, language, clientPassed, ipAddress)
     return c.json(result)
   },
 )

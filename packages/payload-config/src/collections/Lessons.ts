@@ -19,6 +19,13 @@ export const Lessons: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'type', 'module', 'order', 'updatedAt'],
+    components: {
+      views: {
+        list: {
+          Component: '@/admin-components/lessons-tree#LessonsTreeView',
+        },
+      },
+    },
   },
   access: {
     read: () => true,
@@ -34,6 +41,69 @@ export const Lessons: CollectionConfig = {
           if (expectedResult === undefined || expectedResult === null || String(expectedResult).trim() === '') {
             throw new APIError('AI expected result is required for coding tasks.', 400)
           }
+
+          // TS path: existing executableTestCases (inputJson/expectedJson)
+          const execCases = data.executableTestCases
+          if (Array.isArray(execCases) && execCases.length > 0) {
+            if (!data.functionSignature || String(data.functionSignature).trim() === '') {
+              throw new APIError(
+                'Function signature is required when executable test cases are defined.',
+                400,
+              )
+            }
+            for (let i = 0; i < execCases.length; i++) {
+              const row = execCases[i] as { inputJson?: unknown; expectedJson?: unknown }
+              const inputRaw = typeof row.inputJson === 'string' ? row.inputJson : ''
+              const expectedRaw = typeof row.expectedJson === 'string' ? row.expectedJson : ''
+              try {
+                JSON.parse(inputRaw)
+              } catch {
+                throw new APIError(`Executable test case ${i + 1}: input is not valid JSON.`, 400)
+              }
+              try {
+                JSON.parse(expectedRaw)
+              } catch {
+                throw new APIError(`Executable test case ${i + 1}: expected is not valid JSON.`, 400)
+              }
+            }
+          }
+
+          // Solidity path: new blocks-based solidityTestCases
+          const solCases = data.solidityTestCases
+          if (Array.isArray(solCases) && solCases.length > 0) {
+            for (let i = 0; i < solCases.length; i++) {
+              const row = solCases[i] as {
+                blockType?: unknown
+                functionName?: unknown
+                valueWei?: unknown
+                postCheckFunctionName?: unknown
+              }
+              if (typeof row.functionName !== 'string' || row.functionName.trim() === '') {
+                throw new APIError(`Solidity test case ${i + 1}: functionName is required.`, 400)
+              }
+              if (typeof row.valueWei === 'string' && row.valueWei.trim() !== '') {
+                try {
+                  const v = BigInt(row.valueWei.trim())
+                  if (v < 0n) throw new Error('negative')
+                } catch {
+                  throw new APIError(
+                    `Solidity test case ${i + 1}: valueWei must be a non-negative integer (decimal string).`,
+                    400,
+                  )
+                }
+              }
+              if (
+                row.blockType === 'postCheckAssertion' &&
+                (typeof row.postCheckFunctionName !== 'string' || row.postCheckFunctionName.trim() === '')
+              ) {
+                throw new APIError(
+                  `Solidity test case ${i + 1}: postCheckFunctionName is required for post-check assertions.`,
+                  400,
+                )
+              }
+            }
+          }
+
           return data
         }
 
@@ -199,18 +269,193 @@ export const Lessons: CollectionConfig = {
       },
     },
     {
-      name: 'codingTestCases',
+      name: 'functionSignature',
+      type: 'text',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage !== 'solidity',
+        description:
+          'Required when executable test cases are defined. ' +
+          'TS form: `solve(nums: number[], target: number): number[]`.',
+      },
+    },
+    {
+      name: 'solidityContractName',
+      type: 'text',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage === 'solidity',
+        description: 'Optional. Name of the contract to deploy. Defaults to the first contract in the source.',
+      },
+    },
+    {
+      name: 'solidityConstructorArgs',
       type: 'array',
       admin: {
-        condition: (data) => data?.type === 'coding_task',
-        description: 'Visible test case descriptions shown to the student (like LeetCode examples). Also included in the AI review prompt as additional context.',
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage === 'solidity',
+        description:
+          'Constructor arguments. One row per parameter, in declaration order. ' +
+          'Each value is a canonical string per type (e.g. `5`, `0x000…c0de`, `true`).',
       },
       fields: [
-        { name: 'title', type: 'text', required: true },
         {
-          name: 'description',
+          name: 'value',
+          type: 'text',
+          required: true,
+          admin: {
+            components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+          },
+        },
+      ],
+    },
+    {
+      name: 'executableTestCases',
+      type: 'array',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage !== 'solidity',
+        description:
+          'TypeScript test cases. Each row runs in the browser against the student\'s code. ' +
+          '`inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. ' +
+          'Leave empty to keep AI-only grading (legacy mode).',
+      },
+      fields: [
+        {
+          name: 'inputJson',
           type: 'textarea',
-          admin: { description: 'Describe what this test case checks.' },
+          required: true,
+          admin: { description: 'JSON array of args. Example: `[[2,7,11,15], 9]`.' },
+        },
+        {
+          name: 'expectedJson',
+          type: 'textarea',
+          required: true,
+          admin: { description: 'Expected return value as JSON. Example: `[0, 1]` or `"42"`.' },
+        },
+      ],
+    },
+    {
+      name: 'solidityTestCases',
+      type: 'blocks',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage === 'solidity',
+        description:
+          'Solidity test cases. Each block runs in the browser against the student\'s code. ' +
+          'Function names and argument types are driven by the compiled ABI of the starter code.',
+      },
+      blocks: [
+        {
+          slug: 'returnAssertion',
+          labels: { singular: 'Return assertion', plural: 'Return assertions' },
+          fields: [
+            {
+              name: 'functionName',
+              type: 'text',
+              required: true,
+              admin: {
+                components: { Field: '@/admin-components/abi-driven-test-case/function-select#FunctionSelect' },
+                description: 'Function to call. Choose from the contract\'s ABI.',
+              },
+            },
+            {
+              name: 'args',
+              type: 'array',
+              admin: { description: 'One row per function argument, in declaration order.' },
+              fields: [
+                {
+                  name: 'value',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                  },
+                },
+              ],
+            },
+            {
+              name: 'valueWei',
+              type: 'text',
+              admin: {
+                description: 'Optional ETH (in wei) sent as msg.value. Decimal string. Example: `5` or `1000000000000000000`.',
+              },
+            },
+            {
+              name: 'expected',
+              type: 'text',
+              required: true,
+              admin: {
+                components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                description: 'Expected return value, typed per the function\'s return type.',
+              },
+            },
+          ],
+        },
+        {
+          slug: 'postCheckAssertion',
+          labels: { singular: 'Post-check assertion', plural: 'Post-check assertions' },
+          fields: [
+            {
+              name: 'functionName',
+              type: 'text',
+              required: true,
+              admin: {
+                components: { Field: '@/admin-components/abi-driven-test-case/function-select#FunctionSelect' },
+                description: 'Main function to call (typically state-changing).',
+              },
+            },
+            {
+              name: 'args',
+              type: 'array',
+              admin: { description: 'One row per function argument.' },
+              fields: [
+                {
+                  name: 'value',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                  },
+                },
+              ],
+            },
+            {
+              name: 'valueWei',
+              type: 'text',
+              admin: {
+                description: 'Optional ETH (in wei) sent as msg.value with the main call.',
+              },
+            },
+            {
+              name: 'postCheckFunctionName',
+              type: 'text',
+              required: true,
+              admin: {
+                components: { Field: '@/admin-components/abi-driven-test-case/post-check-function-select#PostCheckFunctionSelect' },
+                description: 'View/pure function called AFTER the main call to verify state.',
+              },
+            },
+            {
+              name: 'postCheckArgs',
+              type: 'array',
+              admin: { description: 'One row per post-check function argument.' },
+              fields: [
+                {
+                  name: 'value',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                  },
+                },
+              ],
+            },
+            {
+              name: 'expected',
+              type: 'text',
+              required: true,
+              admin: {
+                components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                description: 'Expected return of the post-check view function.',
+              },
+            },
+          ],
         },
       ],
     },

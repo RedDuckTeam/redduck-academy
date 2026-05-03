@@ -280,17 +280,109 @@ export interface Lesson {
    */
   aiExpectedResult?: string | null;
   /**
-   * Visible test case descriptions shown to the student (like LeetCode examples). Also included in the AI review prompt as additional context.
+   * Required when executable test cases are defined. TS form: `solve(nums: number[], target: number): number[]`.
    */
-  codingTestCases?:
+  functionSignature?: string | null;
+  /**
+   * Optional. Name of the contract to deploy. Defaults to the first contract in the source.
+   */
+  solidityContractName?: string | null;
+  /**
+   * Constructor arguments. One row per parameter, in declaration order. Each value is a canonical string per type (e.g. `5`, `0x000…c0de`, `true`).
+   */
+  solidityConstructorArgs?:
     | {
-        title: string;
-        /**
-         * Describe what this test case checks.
-         */
-        description?: string | null;
+        value: string;
         id?: string | null;
       }[]
+    | null;
+  /**
+   * TypeScript test cases. Each row runs in the browser against the student's code. `inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. Leave empty to keep AI-only grading (legacy mode).
+   */
+  executableTestCases?:
+    | {
+        /**
+         * JSON array of args. Example: `[[2,7,11,15], 9]`.
+         */
+        inputJson: string;
+        /**
+         * Expected return value as JSON. Example: `[0, 1]` or `"42"`.
+         */
+        expectedJson: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Solidity test cases. Each block runs in the browser against the student's code. Function names and argument types are driven by the compiled ABI of the starter code.
+   */
+  solidityTestCases?:
+    | (
+        | {
+            /**
+             * Function to call. Choose from the contract's ABI.
+             */
+            functionName: string;
+            /**
+             * One row per function argument, in declaration order.
+             */
+            args?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Optional ETH (in wei) sent as msg.value. Decimal string. Example: `5` or `1000000000000000000`.
+             */
+            valueWei?: string | null;
+            /**
+             * Expected return value, typed per the function's return type.
+             */
+            expected: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'returnAssertion';
+          }
+        | {
+            /**
+             * Main function to call (typically state-changing).
+             */
+            functionName: string;
+            /**
+             * One row per function argument.
+             */
+            args?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Optional ETH (in wei) sent as msg.value with the main call.
+             */
+            valueWei?: string | null;
+            /**
+             * View/pure function called AFTER the main call to verify state.
+             */
+            postCheckFunctionName: string;
+            /**
+             * One row per post-check function argument.
+             */
+            postCheckArgs?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Expected return of the post-check view function.
+             */
+            expected: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'postCheckAssertion';
+          }
+      )[]
     | null;
   /**
    * Short context for the AI reviewer (not shown to students via the public API).
@@ -558,12 +650,61 @@ export interface LessonsSelect<T extends boolean = true> {
   codingLanguage?: T;
   starterCode?: T;
   aiExpectedResult?: T;
-  codingTestCases?:
+  functionSignature?: T;
+  solidityContractName?: T;
+  solidityConstructorArgs?:
     | T
     | {
-        title?: T;
-        description?: T;
+        value?: T;
         id?: T;
+      };
+  executableTestCases?:
+    | T
+    | {
+        inputJson?: T;
+        expectedJson?: T;
+        id?: T;
+      };
+  solidityTestCases?:
+    | T
+    | {
+        returnAssertion?:
+          | T
+          | {
+              functionName?: T;
+              args?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              valueWei?: T;
+              expected?: T;
+              id?: T;
+              blockName?: T;
+            };
+        postCheckAssertion?:
+          | T
+          | {
+              functionName?: T;
+              args?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              valueWei?: T;
+              postCheckFunctionName?: T;
+              postCheckArgs?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              expected?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   aiTaskSummary?: T;
   aiPossibleSolutions?: T;

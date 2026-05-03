@@ -1,0 +1,13 @@
+{
+  "name": "@redduck/solc-utils",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "viem": "^2.44.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

@@ -60,11 +60,42 @@ export interface Module {
   lessons: Lesson[]
 }
 
-export interface CodingTestCase {
+/**
+ * TS coding-task wire shape (Payload `executableTestCases` array).
+ * `inputJson` / `expectedJson` are JSON-encoded strings.
+ */
+export interface ExecutableTestCase {
   id: string
-  title: string
-  description?: string
+  inputJson: string
+  expectedJson: string
 }
+
+/** Per-row argument value in a Solidity test case. Stored as a canonical string. */
+export interface SolidityArgValue {
+  id?: string | null
+  value: string
+}
+
+/** Solidity test-case wire shape (Payload `solidityTestCases` blocks). Discriminated by `blockType`. */
+export type SolidityTestCase =
+  | {
+      id: string
+      blockType: 'returnAssertion'
+      functionName: string
+      args?: SolidityArgValue[] | null
+      valueWei?: string | null
+      expected: string
+    }
+  | {
+      id: string
+      blockType: 'postCheckAssertion'
+      functionName: string
+      args?: SolidityArgValue[] | null
+      valueWei?: string | null
+      postCheckFunctionName: string
+      postCheckArgs?: SolidityArgValue[] | null
+      expected: string
+    }
 
 export interface CodingTaskSubmission {
   id: number
@@ -102,7 +133,11 @@ export interface Lesson {
   /** Coding-task fields */
   codingLanguage?: CodingLanguage
   starterCode?: string | null
-  codingTestCases?: CodingTestCase[]
+  functionSignature?: string | null
+  solidityContractName?: string | null
+  solidityConstructorArgs?: SolidityArgValue[] | null
+  executableTestCases?: ExecutableTestCase[]
+  solidityTestCases?: SolidityTestCase[]
 }
 
 export interface ReviewCriterionFeedback {

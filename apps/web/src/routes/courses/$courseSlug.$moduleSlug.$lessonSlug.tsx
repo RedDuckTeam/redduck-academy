@@ -1,5 +1,4 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
@@ -9,6 +8,7 @@ import { queryKeys } from '@/lib/query-keys'
 import { LessonTest } from '@/components/pages/lesson/test/lesson-test'
 import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
+import { LessonNavigation } from '@/components/pages/lesson/lesson-navigation/lesson-navigation'
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
 import { createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
@@ -59,43 +59,9 @@ function LessonPage() {
   const isCodingChallenge = lesson.type === 'coding_task'
   const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
 
-  const mainRef = useRef<HTMLElement>(null)
-  const [mainHeight, setMainHeight] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!isCodingChallenge) {
-      setMainHeight(null)
-      document.body.style.overflow = ''
-      return
-    }
-
-    const measure = () => {
-      if (!mainRef.current || window.innerWidth < 1280) {
-        setMainHeight(null)
-        document.body.style.overflow = ''
-        return
-      }
-      const top = mainRef.current.getBoundingClientRect().top + window.scrollY
-      setMainHeight(window.innerHeight - top - 10)
-      document.body.style.overflow = 'hidden'
-    }
-
-    measure()
-    window.addEventListener('resize', measure)
-    return () => {
-      window.removeEventListener('resize', measure)
-      document.body.style.overflow = ''
-    }
-  }, [isCodingChallenge])
-
   return (
     <main
-      ref={mainRef}
-      className={cn(
-        'mx-5 flex min-w-0 flex-col gap-3.5 lg:mx-[60px]',
-        isCodingChallenge ? 'mb-5 md:mb-[60px]' : 'mb-[60px] min-h-screen',
-      )}
-      style={mainHeight ? { height: mainHeight } : undefined}
+      className={cn('mx-5 flex min-w-0 flex-col gap-3.5 lg:mx-[60px] mb-[60px]', !isCodingChallenge && 'min-h-screen')}
     >
       {!isCodingChallenge && <MobileToc lesson={lesson} />}
       <PageBreadcrumbs
@@ -105,10 +71,18 @@ function LessonPage() {
         moduleSlug={moduleSlug}
         lessonSlug={lessonSlug}
       />
-      <div className={cn('flex min-w-0 gap-10', isCodingChallenge && 'xl:flex-1 xl:min-h-0 ')}>
+      <div
+        className={cn(
+          'flex min-w-0 gap-10',
+          // Coding challenge: lock the row to (almost) full viewport so editor + description
+          // get real estate even on laptops. Page scrolls to bring this into focus.
+          isCodingChallenge && 'xl:h-[calc(100vh-2.5rem)]',
+        )}
+      >
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
           <LessonCodeChallenge
+            key={lessonSlug}
             lesson={lesson}
             courseSlug={courseSlug}
             lessonSlug={lessonSlug}
@@ -125,11 +99,14 @@ function LessonPage() {
               </>
 
               {lesson.type === 'lecture' && <LessonLecture lesson={lesson} courseSlug={courseSlug} />}
-              {lesson.type === 'test' && (
-                <LessonTest lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} />
-              )}
+              {lesson.type === 'test' && <LessonTest lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} />}
               {lesson.type === 'review_task' && (
-                <LessonProject lesson={lesson} courseSlug={courseSlug} lessonSlug={lessonSlug} moduleSlug={moduleSlug} />
+                <LessonProject
+                  lesson={lesson}
+                  courseSlug={courseSlug}
+                  lessonSlug={lessonSlug}
+                  moduleSlug={moduleSlug}
+                />
               )}
             </LessonContentContainer>
             <LessonToc lesson={lesson} />
@@ -143,6 +120,11 @@ function LessonPage() {
           />
         )}
       </div>
+      {isCodingChallenge && (
+        <div className="mx-auto w-full max-w-[1100px] mt-10">
+          <LessonNavigation courseSlug={courseSlug} lesson={lesson} />
+        </div>
+      )}
     </main>
   )
 }
