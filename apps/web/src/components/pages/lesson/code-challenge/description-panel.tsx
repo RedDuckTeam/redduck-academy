@@ -9,7 +9,7 @@ interface DescriptionPanelProps {
 
 export function DescriptionPanel({ lesson }: DescriptionPanelProps) {
   return (
-    <div className="flex flex-col gap-5  overflow-y-auto max-h-[70vh]">
+    <div className="flex flex-col gap-5 min-h-0 flex-1">
       <Text variant="subtitle-32" className="!min-h-auto">
         {lesson.title}
       </Text>

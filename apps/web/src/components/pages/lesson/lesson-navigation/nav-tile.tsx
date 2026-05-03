@@ -19,7 +19,7 @@ export const NavTile = ({ direction, target, courseSlug, onClick }: NavTileProps
   const title = target?.title ?? COURSE_PROGRAM_LABEL
 
   const className = cn(
-    'flex w-full flex-col gap-2 border border-foreground bg-transparent p-5 transition-colors hover:bg-muted',
+    'flex w-full flex-col gap-2 border border-border bg-transparent p-5 transition-colors hover:bg-muted',
     isPrev ? 'items-start text-left' : 'items-end text-right',
   )
 
