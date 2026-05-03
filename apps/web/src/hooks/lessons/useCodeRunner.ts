@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import type { Lesson } from '@/types/lesson'
 import type { RunnerReport } from '@/lib/code-runner'
-import { parseExecutableCases } from '@/lib/lessons/parse-executable-cases'
+import { parseLessonTestCases } from '@/lib/lessons/parse-executable-cases'
 import { buildRunnerSpec } from '@/lib/lessons/build-runner-spec'
 
 export type LiveStatus = 'pass' | 'fail' | null
@@ -32,7 +32,7 @@ export function useCodeRunner(lesson: Lesson): UseCodeRunnerResult {
 
   const run = useCallback(
     async (code: string): Promise<RunnerReport | null> => {
-      const cases = parseExecutableCases(lesson.executableTestCases)
+      const cases = parseLessonTestCases(lesson)
       if (cases.length === 0) return null
 
       const spec = buildRunnerSpec(lesson)

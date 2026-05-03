@@ -32,6 +32,21 @@ export class LessonsService {
         executableTestCases: {
           orderBy: (cases, { asc }) => [asc(cases._order)],
         },
+        solidityConstructorArgs: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: {},
+        },
+        _blocks_returnAssertion: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: { args: { orderBy: (a, { asc }) => [asc(a._order)] } },
+        },
+        _blocks_postCheckAssertion: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: {
+            args: { orderBy: (a, { asc }) => [asc(a._order)] },
+            postCheckArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
+          },
+        },
       },
     })
 
@@ -42,7 +57,7 @@ export class LessonsService {
     const next = await LessonsService.#getNextLessonSlug(courseSlug, lesson.id)
 
     const content = lesson.content != null ? await enrichLessonContentInternalLinks(lesson.content) : lesson.content
-    const lessonWithNext = { ...lesson, next, content }
+    const lessonWithNext = LessonsService.#mergeSolidityBlocks({ ...lesson, next, content })
 
     if (lessonWithNext.type === 'review_task') {
       return LessonsService.#toPublicReviewLesson(lessonWithNext)
@@ -94,6 +109,20 @@ export class LessonsService {
         executableTestCases: {
           orderBy: (cases, { asc }) => [asc(cases._order)],
         },
+        solidityConstructorArgs: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+        },
+        _blocks_returnAssertion: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: { args: { orderBy: (a, { asc }) => [asc(a._order)] } },
+        },
+        _blocks_postCheckAssertion: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: {
+            args: { orderBy: (a, { asc }) => [asc(a._order)] },
+            postCheckArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
+          },
+        },
       },
     })
 
@@ -104,7 +133,32 @@ export class LessonsService {
       throw new AppError(400, 'Lesson is not a coding task')
     }
 
-    return lesson as unknown as Lesson
+    return LessonsService.#mergeSolidityBlocks(lesson) as unknown as Lesson
+  }
+
+  /**
+   * Drizzle returns each Payload block type as its own relation array. The wire shape
+   * expected by FE/AI prompt is a single discriminated `solidityTestCases` array
+   * ordered by `_order` across both block types. Walk both arrays, slap a `blockType`
+   * onto each row, and sort.
+   */
+  static #mergeSolidityBlocks<L extends Record<string, unknown>>(lesson: L): L & { solidityTestCases: unknown[] } {
+    const ret = (lesson as { _blocks_returnAssertion?: unknown[] })._blocks_returnAssertion ?? []
+    const post = (lesson as { _blocks_postCheckAssertion?: unknown[] })._blocks_postCheckAssertion ?? []
+    const tagged: Array<{ _order: number } & Record<string, unknown>> = []
+    for (const row of ret) {
+      const r = row as Record<string, unknown>
+      tagged.push({ ...(r as { _order: number } & Record<string, unknown>), blockType: 'returnAssertion' })
+    }
+    for (const row of post) {
+      const r = row as Record<string, unknown>
+      tagged.push({ ...(r as { _order: number } & Record<string, unknown>), blockType: 'postCheckAssertion' })
+    }
+    tagged.sort((a, b) => Number(a._order ?? 0) - Number(b._order ?? 0))
+    const merged = { ...lesson, solidityTestCases: tagged } as L & { solidityTestCases: unknown[] }
+    delete (merged as Record<string, unknown>)._blocks_returnAssertion
+    delete (merged as Record<string, unknown>)._blocks_postCheckAssertion
+    return merged
   }
 
   /**

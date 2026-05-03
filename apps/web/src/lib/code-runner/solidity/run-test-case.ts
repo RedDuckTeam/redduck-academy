@@ -1,14 +1,12 @@
 import { createEVM } from '@ethereumjs/evm'
 import { type Address, hexToBytes, bytesToHex, createAddressFromString } from '@ethereumjs/util'
 import {
-  parseAbiItem,
   encodeFunctionData,
   decodeFunctionResult,
   encodeDeployData,
   type Abi,
   type AbiFunction,
 } from 'viem'
-import type { PostCheck } from '../types'
 import { coerceArgs, normalizeReturnValue } from './abi-coerce'
 
 export const CALLER = createAddressFromString('0x000000000000000000000000000000000000c0de')
@@ -16,26 +14,40 @@ const GAS_LIMIT = 0xffffffn
 
 type Evm = Awaited<ReturnType<typeof createEVM>>
 
-export interface RunTestCaseInput {
+export interface RunReturnInput {
+  kind: 'returnAssertion'
   bytecode: `0x${string}`
   abi: Abi
   fnAbi: AbiFunction
   constructorArgs?: unknown[]
   args: unknown[]
   valueWei?: string
-  postCheck?: PostCheck
 }
 
+export interface RunPostCheckInput {
+  kind: 'postCheckAssertion'
+  bytecode: `0x${string}`
+  abi: Abi
+  fnAbi: AbiFunction
+  postCheckFnAbi: AbiFunction
+  constructorArgs?: unknown[]
+  args: unknown[]
+  postCheckArgs: unknown[]
+  valueWei?: string
+}
+
+export type RunTestCaseInput = RunReturnInput | RunPostCheckInput
+
 /**
- * One Solidity test case: deploy fresh, call the main function (optionally with msg.value),
- * optionally call a follow-up view, return whichever value should be compared to `expected`.
+ * Runs one Solidity test case and returns the value that should be compared to `expected`.
+ * Each call gets a fresh EVM so state doesn't leak between cases.
  */
 export async function runTestCase(input: RunTestCaseInput): Promise<unknown> {
   const evm = await createEVM()
   const address = await deploy(evm, input.bytecode, input.abi, input.constructorArgs)
   const mainReturn = await callMain(evm, address, input.fnAbi, input.args, input.valueWei)
-  if (input.postCheck) {
-    return await callPostCheck(evm, address, input.postCheck)
+  if (input.kind === 'postCheckAssertion') {
+    return await callPostCheck(evm, address, input.postCheckFnAbi, input.postCheckArgs)
   }
   return mainReturn
 }
@@ -109,18 +121,14 @@ async function callMain(
   return normalizeReturnValue(decoded)
 }
 
-async function callPostCheck(evm: Evm, to: Address, postCheck: PostCheck): Promise<unknown> {
-  let postFn: AbiFunction
-  try {
-    const parsed = parseAbiItem(postCheck.signature)
-    if (parsed.type !== 'function') throw new Error('postCheck.signature must declare a function')
-    postFn = parsed
-  } catch (err) {
-    throw new Error(`Bad postCheck signature: ${err instanceof Error ? err.message : String(err)}`)
-  }
-
+async function callPostCheck(
+  evm: Evm,
+  to: Address,
+  postFn: AbiFunction,
+  args: unknown[],
+): Promise<unknown> {
   const inputs = (postFn.inputs ?? []) as readonly { type: string }[]
-  const coercedArgs = coerceArgs(postCheck.args, inputs)
+  const coercedArgs = coerceArgs(args, inputs)
   const callData = encodeFunctionData({
     abi: [postFn],
     functionName: postFn.name,

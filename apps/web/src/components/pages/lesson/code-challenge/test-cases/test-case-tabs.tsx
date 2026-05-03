@@ -22,7 +22,11 @@ export function TestCaseTabs({ executableCases, functionSignature, report, isRun
   const [selected, setSelected] = useState(0)
 
   const argCount = useMemo(
-    () => executableCases.reduce((acc, tc) => Math.max(acc, Array.isArray(tc.input) ? tc.input.length : 1), 0),
+    () =>
+      executableCases.reduce((acc, tc) => {
+        if ('kind' in tc) return Math.max(acc, tc.rawArgs.length)
+        return Math.max(acc, Array.isArray(tc.input) ? tc.input.length : 1)
+      }, 0),
     [executableCases],
   )
   const argNames = useMemo(() => extractArgNames(functionSignature, argCount), [functionSignature, argCount])

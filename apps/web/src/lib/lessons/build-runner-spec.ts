@@ -8,21 +8,12 @@ export function extractTsFunctionName(signature: string): string | null {
   return match?.[1] ?? null
 }
 
-function parseSolidityConstructorArgs(raw: string | null | undefined): unknown[] | undefined {
-  if (!raw) return undefined
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : undefined
-  } catch {
-    return undefined
-  }
-}
-
 /** Builds a runner spec from a lesson. Returns `null` when the lesson can't be executed. */
 export function buildRunnerSpec(lesson: Lesson): RunnerSpec | null {
-  if (!lesson.codingLanguage || !lesson.functionSignature) return null
+  if (!lesson.codingLanguage) return null
 
   if (lesson.codingLanguage === 'typescript') {
+    if (!lesson.functionSignature) return null
     const fnName = extractTsFunctionName(lesson.functionSignature)
     return fnName ? { language: 'typescript', functionName: fnName } : null
   }
@@ -31,8 +22,7 @@ export function buildRunnerSpec(lesson: Lesson): RunnerSpec | null {
     return {
       language: 'solidity',
       contractName: lesson.solidityContractName ?? undefined,
-      functionSignature: lesson.functionSignature,
-      constructorArgs: parseSolidityConstructorArgs(lesson.solidityConstructorArgs),
+      rawConstructorArgs: (lesson.solidityConstructorArgs ?? []).map((a) => a.value ?? ''),
     }
   }
 

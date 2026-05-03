@@ -14459,6 +14459,7 @@ __metadata:
     "@payloadcms/storage-s3": "npm:3.80.0"
     "@payloadcms/ui": "npm:3.80.0"
     "@redduck/payload-config": "workspace:^"
+    "@redduck/solc-utils": "workspace:^"
     "@types/node": "npm:22.19.9"
     "@types/react": "npm:19.2.9"
     "@types/react-dom": "npm:19.2.3"
@@ -14476,6 +14477,7 @@ __metadata:
     react-dom: "npm:19.2.1"
     sharp: "npm:0.34.2"
     typescript: "npm:5.7.3"
+    viem: "npm:^2.44.4"
   languageName: unknown
   linkType: soft
 

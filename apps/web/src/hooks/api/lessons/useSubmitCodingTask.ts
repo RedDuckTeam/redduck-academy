@@ -5,7 +5,7 @@ import { queryKeys } from '@/lib/query-keys'
 import { RateLimitError } from '@/lib/api/rate-limit'
 import type { Lesson, UserSettings } from '@/types/lesson'
 import type { RunnerReport } from '@/lib/code-runner'
-import { parseExecutableCases } from '@/lib/lessons/parse-executable-cases'
+import { parseLessonTestCases } from '@/lib/lessons/parse-executable-cases'
 import { buildRunnerSpec } from '@/lib/lessons/build-runner-spec'
 
 const BAN_ERROR = "Couldn't submit lesson, please contact support"
@@ -26,7 +26,7 @@ export const useSubmitCodingTask = (courseSlug: string, lessonSlug: string) => {
       const settings = queryClient.getQueryData<UserSettings>(queryKeys.user.settings())
       if (settings?.blacklisted) throw new Error(BAN_ERROR)
 
-      const cases = parseExecutableCases(lesson.executableTestCases)
+      const cases = parseLessonTestCases(lesson)
       let report: RunnerReport | null = null
       let clientPassed: boolean | null = null
 

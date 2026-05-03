@@ -6,8 +6,10 @@ import { CodingTaskRateLimitService } from '../rate-limit/coding-task-rate-limit
 import { AppError } from '../../lib/errors'
 import {
   deserializeExecutableCases,
+  deserializeSolidityCases,
   executableCasesHash,
-  type ExecutableCaseRow,
+  type TsExecutableCaseRow,
+  type SolidityCaseRow,
 } from './utils/executable-cases'
 import { packVerdictComment } from './utils/verdict-comment'
 
@@ -37,10 +39,16 @@ export class CodingTaskService {
       })
     }
 
-    const executableCases =
-      (lesson as unknown as { executableTestCases?: ExecutableCaseRow[] }).executableTestCases ?? []
+    const tsCases = (lesson as unknown as { executableTestCases?: TsExecutableCaseRow[] }).executableTestCases ?? []
+    const solCases = (lesson as unknown as { solidityTestCases?: SolidityCaseRow[] }).solidityTestCases ?? []
+    const constructorArgs = (
+      (lesson as unknown as { solidityConstructorArgs?: { value?: string | null }[] }).solidityConstructorArgs ?? []
+    ).map((c) => c?.value ?? '')
+
+    // Each language exposes one of these arrays at most; pick whichever is populated.
+    const hasExecutable = tsCases.length > 0 || solCases.length > 0
     const codeHash = computeCodeHash(submittedCode, language)
-    const cacheKey = `${codeHash}:${executableCasesHash(executableCases, lesson.functionSignature)}`
+    const cacheKey = `${codeHash}:${executableCasesHash(tsCases, solCases, lesson.functionSignature, constructorArgs)}`
 
     const verdict = await CodingTaskService.#resolveVerdict({
       cacheKey,
@@ -48,7 +56,9 @@ export class CodingTaskService {
       submittedCode,
       language,
       clientPassed,
-      executableCases,
+      hasExecutable,
+      tsCases,
+      solCases,
       lesson,
     })
 
@@ -71,10 +81,13 @@ export class CodingTaskService {
     submittedCode: string
     language: string
     clientPassed: boolean | null
-    executableCases: ExecutableCaseRow[]
+    hasExecutable: boolean
+    tsCases: TsExecutableCaseRow[]
+    solCases: SolidityCaseRow[]
     lesson: Awaited<ReturnType<typeof LessonsService.getCodingTaskLesson>>
   }): Promise<VerdictResolution> {
-    const { cacheKey, lessonId, executableCases, clientPassed, submittedCode, language, lesson } = args
+    const { cacheKey, lessonId, hasExecutable, tsCases, solCases, clientPassed, submittedCode, language, lesson } =
+      args
 
     const cached = await CodingTaskRepository.getCachedReview(lessonId, cacheKey)
     if (cached !== null) {
@@ -82,12 +95,12 @@ export class CodingTaskService {
     }
 
     let verdict: VerdictResolution
-    if (executableCases.length === 0) {
+    if (!hasExecutable) {
       verdict = await CodingTaskService.#legacyAiVerdict(submittedCode, language, lesson)
     } else if (clientPassed !== true) {
       verdict = CodingTaskService.#shortCircuitFail(clientPassed)
     } else {
-      verdict = await CodingTaskService.#secondLayerVerdict(submittedCode, language, lesson, executableCases)
+      verdict = await CodingTaskService.#secondLayerVerdict(submittedCode, language, lesson, tsCases, solCases)
     }
 
     await CodingTaskRepository.setCachedReview(lessonId, cacheKey, verdict.passed, verdict.aiComment)
@@ -125,9 +138,13 @@ export class CodingTaskService {
     submittedCode: string,
     language: string,
     lesson: Awaited<ReturnType<typeof LessonsService.getCodingTaskLesson>>,
-    executableCases: ExecutableCaseRow[],
+    tsCases: TsExecutableCaseRow[],
+    solCases: SolidityCaseRow[],
   ): Promise<VerdictResolution> {
-    const cases = deserializeExecutableCases(executableCases)
+    const cases =
+      solCases.length > 0
+        ? deserializeSolidityCases(solCases)
+        : deserializeExecutableCases(tsCases)
     const signature = lesson.functionSignature ?? ''
     const result = await secondLayerReview(submittedCode, language, signature, cases)
     return {

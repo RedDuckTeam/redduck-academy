@@ -293,7 +293,7 @@ export interface Lesson {
       }[]
     | null;
   /**
-   * Required when executable test cases are defined. TS form: `solve(nums: number[], target: number): number[]`. Solidity form: `function add(uint256 a, uint256 b) external view returns (uint256)`.
+   * Required when executable test cases are defined. TS form: `solve(nums: number[], target: number): number[]`.
    */
   functionSignature?: string | null;
   /**
@@ -301,11 +301,16 @@ export interface Lesson {
    */
   solidityContractName?: string | null;
   /**
-   * Optional JSON array of constructor arguments, e.g. `["0x1234...", "1000"]`.
+   * Constructor arguments. One row per parameter, in declaration order. Each value is a canonical string per type (e.g. `5`, `0x000…c0de`, `true`).
    */
-  solidityConstructorArgs?: string | null;
+  solidityConstructorArgs?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
   /**
-   * Each row runs in the browser against the student's code. `inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. For Solidity uint256/int256/bytes/address, use string-encoded values. Leave this entire array empty to keep AI-only grading (legacy mode).
+   * TypeScript test cases. Each row runs in the browser against the student's code. `inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. Leave empty to keep AI-only grading (legacy mode).
    */
   executableTestCases?:
     | {
@@ -314,19 +319,83 @@ export interface Lesson {
          */
         inputJson: string;
         /**
-         * Expected return value as JSON. Example: `[0, 1]` or `"42"`. When `postCheckJson` is set, this is compared to the post-check view return instead of the main call return.
+         * Expected return value as JSON. Example: `[0, 1]` or `"42"`.
          */
         expectedJson: string;
-        /**
-         * Optional. Solidity only. ETH (in wei) sent with the main call as msg.value. Decimal string. Example: `"5"` or `"1000000000000000000"`.
-         */
-        valueWei?: string | null;
-        /**
-         * Optional. Solidity only. JSON `{"signature": "function tokensSold() external view returns (uint256)", "args": []}`. When set, the runner calls this view AFTER the main call and compares its return to `expectedJson`.
-         */
-        postCheckJson?: string | null;
         id?: string | null;
       }[]
+    | null;
+  /**
+   * Solidity test cases. Each block runs in the browser against the student's code. Function names and argument types are driven by the compiled ABI of the starter code.
+   */
+  solidityTestCases?:
+    | (
+        | {
+            /**
+             * Function to call. Choose from the contract's ABI.
+             */
+            functionName: string;
+            /**
+             * One row per function argument, in declaration order.
+             */
+            args?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Optional ETH (in wei) sent as msg.value. Decimal string. Example: `5` or `1000000000000000000`.
+             */
+            valueWei?: string | null;
+            /**
+             * Expected return value, typed per the function's return type.
+             */
+            expected: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'returnAssertion';
+          }
+        | {
+            /**
+             * Main function to call (typically state-changing).
+             */
+            functionName: string;
+            /**
+             * One row per function argument.
+             */
+            args?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Optional ETH (in wei) sent as msg.value with the main call.
+             */
+            valueWei?: string | null;
+            /**
+             * View/pure function called AFTER the main call to verify state.
+             */
+            postCheckFunctionName: string;
+            /**
+             * One row per post-check function argument.
+             */
+            postCheckArgs?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Expected return of the post-check view function.
+             */
+            expected: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'postCheckAssertion';
+          }
+      )[]
     | null;
   /**
    * Short context for the AI reviewer (not shown to students via the public API).
@@ -603,15 +672,59 @@ export interface LessonsSelect<T extends boolean = true> {
       };
   functionSignature?: T;
   solidityContractName?: T;
-  solidityConstructorArgs?: T;
+  solidityConstructorArgs?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
   executableTestCases?:
     | T
     | {
         inputJson?: T;
         expectedJson?: T;
-        valueWei?: T;
-        postCheckJson?: T;
         id?: T;
+      };
+  solidityTestCases?:
+    | T
+    | {
+        returnAssertion?:
+          | T
+          | {
+              functionName?: T;
+              args?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              valueWei?: T;
+              expected?: T;
+              id?: T;
+              blockName?: T;
+            };
+        postCheckAssertion?:
+          | T
+          | {
+              functionName?: T;
+              args?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              valueWei?: T;
+              postCheckFunctionName?: T;
+              postCheckArgs?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              expected?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   aiTaskSummary?: T;
   aiPossibleSolutions?: T;

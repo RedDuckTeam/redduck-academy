@@ -1,5 +1,5 @@
 import TsWorker from './worker?worker'
-import type { RunnerOptions, RunnerReport, RunnerResult, RunnerTestCase, TsRunnerSpec } from '../types'
+import type { RunnerOptions, RunnerReport, RunnerResult, TsTestCase, TsRunnerSpec } from '../types'
 import { deepEqual } from '../compare'
 import type { TsRunRequest, TsRunResponse } from './worker'
 
@@ -12,7 +12,7 @@ interface PendingTest {
 export async function runTypeScript(
   code: string,
   spec: TsRunnerSpec,
-  testCases: RunnerTestCase[],
+  testCases: TsTestCase[],
   opts: Required<Pick<RunnerOptions, 'perTestTimeoutMs' | 'totalTimeoutMs'>>,
 ): Promise<RunnerReport> {
   const worker = new TsWorker()
@@ -31,7 +31,7 @@ export async function runTypeScript(
   const results: RunnerResult[] = []
   let fatalError: string | undefined
 
-  const runOne = (tc: RunnerTestCase): Promise<TsRunResponse> =>
+  const runOne = (tc: TsTestCase): Promise<TsRunResponse> =>
     new Promise<TsRunResponse>((resolve) => {
       const req: TsRunRequest = {
         type: 'run',

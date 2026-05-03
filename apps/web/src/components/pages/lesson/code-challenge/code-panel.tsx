@@ -8,7 +8,7 @@ import type { CodingTaskSubmission, Lesson, LessonForUser } from '@/types/lesson
 import type { RateLimitError } from '@/lib/api/rate-limit'
 import type { RunnerReport } from '@/lib/code-runner'
 import type { LiveStatus } from '@/hooks/lessons/useCodeRunner'
-import { parseExecutableCases } from '@/lib/lessons/parse-executable-cases'
+import { parseLessonTestCases } from '@/lib/lessons/parse-executable-cases'
 
 interface CodePanelProps {
   lesson: Lesson
@@ -49,7 +49,7 @@ export function CodePanel({
 
   const submissions = (userLesson?.submissions as CodingTaskSubmission[]) ?? []
   const latest = submissions.at(-1)
-  const parsedCases = useMemo(() => parseExecutableCases(lesson.executableTestCases), [lesson.executableTestCases])
+  const parsedCases = useMemo(() => parseLessonTestCases(lesson), [lesson])
   const hasExecutableTests = parsedCases.length > 0
 
   const statusBarState = useStatusBarState({

@@ -6,6 +6,7 @@ import * as migration_20260429_203502_question_richtext from './20260429_203502_
 import * as migration_20260502_213213 from './20260502_213213';
 import * as migration_20260502_222538 from './20260502_222538';
 import * as migration_20260502_231236 from './20260502_231236';
+import * as migration_20260503_212009 from './20260503_212009';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20260502_231236.up,
     down: migration_20260502_231236.down,
-    name: '20260502_231236'
+    name: '20260502_231236',
+  },
+  {
+    up: migration_20260503_212009.up,
+    down: migration_20260503_212009.down,
+    name: '20260503_212009'
   },
 ];

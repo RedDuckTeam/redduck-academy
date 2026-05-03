@@ -1,12 +1,17 @@
 import SolWorker from './worker?worker'
-import type { RunnerOptions, RunnerReport, RunnerResult, RunnerTestCase, SoliditySpec } from '../types'
-import { deepEqual } from '../compare'
-import type { SolRunRequest, SolRunResponse } from './worker'
+import type {
+  RunnerOptions,
+  RunnerReport,
+  RunnerResult,
+  SolidityTestCase,
+  SoliditySpec,
+} from '../types'
+import type { SolRunRequest, SolRunResponse, SolWorkerCase } from './worker'
 
 export async function runSolidity(
   source: string,
   spec: SoliditySpec,
-  testCases: RunnerTestCase[],
+  testCases: SolidityTestCase[],
   opts: Required<Pick<RunnerOptions, 'perTestTimeoutMs' | 'totalTimeoutMs'>>,
 ): Promise<RunnerReport> {
   const worker = new SolWorker()
@@ -35,14 +40,8 @@ export async function runSolidity(
     type: 'compile-and-run',
     source,
     contractName: spec.contractName,
-    functionSignature: spec.functionSignature,
-    constructorArgs: spec.constructorArgs,
-    cases: testCases.map((tc) => ({
-      id: tc.id,
-      input: tc.input,
-      valueWei: tc.valueWei,
-      postCheck: tc.postCheck,
-    })),
+    rawConstructorArgs: spec.rawConstructorArgs,
+    cases: testCases.map(toWorkerCase),
   }
 
   worker.postMessage(req)
@@ -56,8 +55,8 @@ export async function runSolidity(
       results: testCases.map((tc) => ({
         id: tc.id,
         passed: false,
-        input: tc.input,
-        expected: tc.expected,
+        input: tc.rawArgs,
+        expected: tc.rawExpected,
         error: response.fatalError,
         durationMs: 0,
       })),
@@ -72,20 +71,19 @@ export async function runSolidity(
       return {
         id: tc.id,
         passed: false,
-        input: tc.input,
-        expected: tc.expected,
+        input: tc.rawArgs,
+        expected: tc.rawExpected,
         error: 'no result returned',
         durationMs: 0,
       }
     }
-    const passed = r.ok && deepEqual(r.got, tc.expected)
     return {
       id: tc.id,
-      passed,
-      input: tc.input,
-      expected: tc.expected,
-      got: r.ok ? r.got : undefined,
-      error: r.ok ? undefined : r.error,
+      passed: r.passed,
+      input: tc.rawArgs,
+      expected: r.expected ?? tc.rawExpected,
+      got: r.got,
+      error: r.error,
       durationMs: 0,
     }
   })
@@ -93,5 +91,28 @@ export async function runSolidity(
   return {
     allPassed: results.every((r) => r.passed),
     results,
+  }
+}
+
+function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
+  if (tc.kind === 'returnAssertion') {
+    return {
+      id: tc.id,
+      kind: 'returnAssertion',
+      functionName: tc.functionName,
+      rawArgs: tc.rawArgs,
+      valueWei: tc.valueWei,
+      rawExpected: tc.rawExpected,
+    }
+  }
+  return {
+    id: tc.id,
+    kind: 'postCheckAssertion',
+    functionName: tc.functionName,
+    rawArgs: tc.rawArgs,
+    valueWei: tc.valueWei,
+    postCheckFunctionName: tc.postCheckFunctionName,
+    rawPostCheckArgs: tc.rawPostCheckArgs,
+    rawExpected: tc.rawExpected,
   }
 }

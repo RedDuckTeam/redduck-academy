@@ -1,25 +1,42 @@
 export type RunnerLanguage = 'typescript' | 'solidity'
 
-export interface PostCheck {
-  signature: string
-  args: unknown[]
-}
-
-export interface RunnerTestCase {
+/** TS test case — args + expected are already JSON-parsed (TS has no ABI to coerce). */
+export interface TsTestCase {
   id: string
   input: unknown
   expected: unknown
-  /** Solidity only. Decimal string sent as `msg.value`. */
-  valueWei?: string
-  /** Solidity only. When set, the runner calls this view after the main call and compares its return. */
-  postCheck?: PostCheck
 }
+
+/** Solidity test case (returns a value). Raw strings; the worker coerces via ABI. */
+export interface SolReturnCase {
+  id: string
+  kind: 'returnAssertion'
+  functionName: string
+  rawArgs: string[]
+  valueWei?: string
+  rawExpected: string
+}
+
+/** Solidity test case (state-changing main call + view post-check). Raw strings. */
+export interface SolPostCheckCase {
+  id: string
+  kind: 'postCheckAssertion'
+  functionName: string
+  rawArgs: string[]
+  valueWei?: string
+  postCheckFunctionName: string
+  rawPostCheckArgs: string[]
+  rawExpected: string
+}
+
+export type SolidityTestCase = SolReturnCase | SolPostCheckCase
+export type RunnerTestCase = TsTestCase | SolidityTestCase
 
 export interface RunnerResult {
   id: string
   passed: boolean
-  input: unknown
-  expected: unknown
+  input?: unknown
+  expected?: unknown
   got?: unknown
   error?: string
   durationMs: number
@@ -42,10 +59,8 @@ export interface SoliditySpec {
   language: 'solidity'
   /** Optional contract name; defaults to first contract in source. */
   contractName?: string
-  /** Full Solidity function signature, e.g. `function add(uint256 a, uint256 b) external view returns (uint256)`. */
-  functionSignature: string
-  /** Optional JSON-decoded array of constructor arguments. */
-  constructorArgs?: unknown[]
+  /** Constructor arg raw strings (one per parameter). Worker coerces via ABI. */
+  rawConstructorArgs?: string[]
 }
 
 export type RunnerSpec = TsRunnerSpec | SoliditySpec

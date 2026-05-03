@@ -2,55 +2,85 @@ import { createHash } from 'crypto'
 import type { SecondLayerCase } from '../prompt.builder'
 import { safeParseJson } from './safe-parse-json'
 
-export interface ExecutableCaseRow {
+export interface TsExecutableCaseRow {
   inputJson?: string | null
   expectedJson?: string | null
+}
+
+interface SolArgRow {
+  value?: string | null
+}
+
+export interface SolidityCaseRow {
+  blockType: 'returnAssertion' | 'postCheckAssertion'
+  functionName?: string | null
+  args?: SolArgRow[] | null
   valueWei?: string | null
-  postCheckJson?: string | null
+  expected?: string | null
+  // postCheckAssertion-only
+  postCheckFunctionName?: string | null
+  postCheckArgs?: SolArgRow[] | null
 }
 
-function parsePostCheck(raw: string | null | undefined): SecondLayerCase['postCheck'] {
-  if (!raw || !raw.trim()) return null
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-  if (
-    !parsed ||
-    typeof parsed !== 'object' ||
-    typeof (parsed as { signature?: unknown }).signature !== 'string' ||
-    !Array.isArray((parsed as { args?: unknown }).args)
-  ) {
-    return null
-  }
-  return parsed as SecondLayerCase['postCheck']
-}
-
-/** Convert Payload's wire shape into the rich case shape consumed by the AI prompt. */
-export function deserializeExecutableCases(rows: ExecutableCaseRow[] | undefined | null): SecondLayerCase[] {
+/** TS path: convert Payload's `executableTestCases` rows into prompt-ready cases. */
+export function deserializeExecutableCases(rows: TsExecutableCaseRow[] | undefined | null): SecondLayerCase[] {
   if (!rows || rows.length === 0) return []
   return rows.map((c) => ({
     input: safeParseJson(c.inputJson ?? null),
     expected: safeParseJson(c.expectedJson ?? null),
-    valueWei: c.valueWei && c.valueWei.trim() ? c.valueWei.trim() : null,
-    postCheck: parsePostCheck(c.postCheckJson),
   }))
 }
 
+/** Solidity path: convert Payload's `solidityTestCases` blocks into prompt-ready cases. */
+export function deserializeSolidityCases(rows: SolidityCaseRow[] | undefined | null): SecondLayerCase[] {
+  if (!rows || rows.length === 0) return []
+  return rows.map((c) => {
+    const rawArgs = (c.args ?? []).map((a) => a?.value ?? '')
+    if (c.blockType === 'returnAssertion') {
+      return {
+        kind: 'returnAssertion' as const,
+        functionName: c.functionName ?? '',
+        rawArgs,
+        valueWei: c.valueWei ?? null,
+        rawExpected: c.expected ?? '',
+      }
+    }
+    return {
+      kind: 'postCheckAssertion' as const,
+      functionName: c.functionName ?? '',
+      rawArgs,
+      valueWei: c.valueWei ?? null,
+      postCheckFunctionName: c.postCheckFunctionName ?? '',
+      rawPostCheckArgs: (c.postCheckArgs ?? []).map((a) => a?.value ?? ''),
+      rawExpected: c.expected ?? '',
+    }
+  })
+}
+
 /**
- * Stable hash of the test set + signature, used as part of the verdict cache key.
- * Bumps when admins edit a case so stale verdicts don't get reused.
+ * Stable hash of the test set, used as part of the verdict cache key. Bumps when
+ * admins edit a case so stale verdicts don't get reused. Handles both shapes.
  */
 export function executableCasesHash(
-  rows: ExecutableCaseRow[] | undefined | null,
+  tsRows: TsExecutableCaseRow[] | undefined | null,
+  solRows: SolidityCaseRow[] | undefined | null,
   signature: string | null | undefined,
+  constructorArgs: string[] | null | undefined,
 ): string {
-  if (!rows || rows.length === 0) return 'none'
+  if ((!tsRows || tsRows.length === 0) && (!solRows || solRows.length === 0)) return 'none'
   const payload = JSON.stringify({
     sig: signature ?? '',
-    cases: rows.map((c) => [c.inputJson ?? '', c.expectedJson ?? '', c.valueWei ?? '', c.postCheckJson ?? '']),
+    ctor: constructorArgs ?? [],
+    ts: (tsRows ?? []).map((c) => [c.inputJson ?? '', c.expectedJson ?? '']),
+    sol: (solRows ?? []).map((c) => [
+      c.blockType,
+      c.functionName ?? '',
+      (c.args ?? []).map((a) => a?.value ?? ''),
+      c.valueWei ?? '',
+      c.expected ?? '',
+      c.postCheckFunctionName ?? '',
+      (c.postCheckArgs ?? []).map((a) => a?.value ?? ''),
+    ]),
   })
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)
 }
