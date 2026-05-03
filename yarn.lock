@@ -14924,6 +14924,7 @@ __metadata:
   dependencies:
     "@aws-sdk/client-s3": "npm:^3.1030.0"
     "@privy-io/server-auth": "npm:^1.32.5"
+    "@redduck/payload-config": "workspace:^"
     "@types/node": "npm:^25.6.0"
     "@types/picomatch": "npm:^4.0.3"
     drizzle-kit: "npm:^0.31.8"

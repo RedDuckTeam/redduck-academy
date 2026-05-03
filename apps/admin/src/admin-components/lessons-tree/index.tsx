@@ -33,24 +33,24 @@ async function fetchTreeData(payload: Payload, user: TypedUser | undefined) {
   ])
 
   const courses: CourseNode[] = coursesRes.docs.map((c) => ({
-    id: c.id,
+    id: c.id as number,
     title: c.title,
     isHidden: Boolean(c.isHidden),
     order: c.order ?? 0,
   }))
 
   const modules: ModuleNode[] = modulesRes.docs.map((m) => ({
-    id: m.id,
+    id: m.id as number,
     title: m.title,
-    courseId: typeof m.course === 'object' && m.course ? m.course.id : (m.course as number),
+    courseId: typeof m.course === 'object' && m.course ? (m.course.id as number) : (m.course as number),
     isHidden: Boolean(m.isHidden),
     order: m.order ?? 0,
   }))
 
   const lessons: LessonNode[] = lessonsRes.docs.map((l) => ({
-    id: l.id,
+    id: l.id as number,
     title: l.title,
-    moduleId: typeof l.module === 'object' && l.module ? l.module.id : (l.module as number),
+    moduleId: typeof l.module === 'object' && l.module ? (l.module.id as number) : (l.module as number),
     type: l.type,
     isHidden: Boolean(l.isHidden),
     order: l.order ?? 0,
