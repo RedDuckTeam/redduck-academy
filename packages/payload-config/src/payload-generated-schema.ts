@@ -190,26 +190,6 @@ export const lessons_questions = db_schema.table(
   ],
 )
 
-export const lessons_coding_test_cases = db_schema.table(
-  'lessons_coding_test_cases',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: integer('_parent_id').notNull(),
-    id: varchar('id').primaryKey(),
-    title: varchar('title'),
-    description: varchar('description'),
-  },
-  (columns) => [
-    index('lessons_coding_test_cases_order_idx').on(columns._order),
-    index('lessons_coding_test_cases_parent_id_idx').on(columns._parentID),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons.id],
-      name: 'lessons_coding_test_cases_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
 export const lessons_solidity_constructor_args = db_schema.table(
   'lessons_solidity_constructor_args',
   {
@@ -648,13 +628,6 @@ export const relations_lessons_questions = relations(lessons_questions, ({ one, 
     relationName: 'options',
   }),
 }))
-export const relations_lessons_coding_test_cases = relations(lessons_coding_test_cases, ({ one }) => ({
-  _parentID: one(lessons, {
-    fields: [lessons_coding_test_cases._parentID],
-    references: [lessons.id],
-    relationName: 'codingTestCases',
-  }),
-}))
 export const relations_lessons_solidity_constructor_args = relations(lessons_solidity_constructor_args, ({ one }) => ({
   _parentID: one(lessons, {
     fields: [lessons_solidity_constructor_args._parentID],
@@ -750,9 +723,6 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   }),
   questions: many(lessons_questions, {
     relationName: 'questions',
-  }),
-  codingTestCases: many(lessons_coding_test_cases, {
-    relationName: 'codingTestCases',
   }),
   solidityConstructorArgs: many(lessons_solidity_constructor_args, {
     relationName: 'solidityConstructorArgs',
@@ -853,7 +823,6 @@ type DatabaseSchema = {
   modules: typeof modules
   lessons_questions_options: typeof lessons_questions_options
   lessons_questions: typeof lessons_questions
-  lessons_coding_test_cases: typeof lessons_coding_test_cases
   lessons_solidity_constructor_args: typeof lessons_solidity_constructor_args
   lessons_executable_test_cases: typeof lessons_executable_test_cases
   lessons_blocks_return_assertion_args: typeof lessons_blocks_return_assertion_args
@@ -878,7 +847,6 @@ type DatabaseSchema = {
   relations_modules: typeof relations_modules
   relations_lessons_questions_options: typeof relations_lessons_questions_options
   relations_lessons_questions: typeof relations_lessons_questions
-  relations_lessons_coding_test_cases: typeof relations_lessons_coding_test_cases
   relations_lessons_solidity_constructor_args: typeof relations_lessons_solidity_constructor_args
   relations_lessons_executable_test_cases: typeof relations_lessons_executable_test_cases
   relations_lessons_blocks_return_assertion_args: typeof relations_lessons_blocks_return_assertion_args

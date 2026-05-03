@@ -6,6 +6,13 @@ export const Courses: CollectionConfig = {
   slug: 'courses',
   admin: {
     useAsTitle: 'title',
+    components: {
+      views: {
+        list: {
+          Component: '@/admin-components/lessons-tree#CoursesTreeView',
+        },
+      },
+    },
   },
   access: {
     read: () => true,

@@ -1,0 +1,325 @@
+.lessons-tree-view {
+  padding-block: var(--base);
+}
+
+.lessons-tree {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) * 0.75);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.5);
+    margin-bottom: var(--base);
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--base);
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  &__create-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    background: var(--theme-elevation-800);
+    color: var(--theme-elevation-0);
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+
+    &:hover {
+      background: var(--theme-elevation-1000);
+    }
+  }
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--base);
+    flex-wrap: wrap;
+  }
+
+  &__search {
+    flex: 1 1 280px;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--theme-elevation-150);
+    background: var(--theme-input-bg);
+    color: var(--theme-elevation-1000);
+    border-radius: 4px;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--theme-elevation-400);
+    }
+  }
+
+  &__toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.5);
+  }
+
+  &__link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--theme-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--theme-elevation-1000);
+    }
+  }
+
+  &__sep {
+    color: var(--theme-elevation-400);
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--theme-elevation-500);
+    font-size: 0.85rem;
+  }
+
+  &__empty {
+    margin: 0;
+    padding: calc(var(--base) * 0.75);
+    color: var(--theme-elevation-500);
+    background: var(--theme-elevation-50);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9rem;
+
+    &--nested {
+      padding: calc(var(--base) * 0.5);
+      background: transparent;
+    }
+  }
+
+  &__course {
+    border: 1px solid var(--theme-elevation-100);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--theme-elevation-0);
+
+    &.is-hidden {
+      opacity: 0.65;
+    }
+  }
+
+  &__course-header {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.5);
+    padding: calc(var(--base) * 0.6) calc(var(--base) * 0.75);
+    background: var(--theme-elevation-50);
+    border-bottom: 1px solid var(--theme-elevation-100);
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background: var(--theme-elevation-100);
+    }
+  }
+
+  &__course-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--theme-elevation-1000);
+    text-decoration: none;
+    flex: 0 0 auto;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__modules {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__module {
+    border-top: 1px solid var(--theme-elevation-100);
+
+    &:first-child {
+      border-top: none;
+    }
+
+    &.is-hidden {
+      opacity: 0.65;
+    }
+  }
+
+  &__module-header {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.5);
+    padding: calc(var(--base) * 0.5) calc(var(--base) * 0.75) calc(var(--base) * 0.5)
+      calc(var(--base) * 1.5);
+    background: var(--theme-elevation-25, transparent);
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background: var(--theme-elevation-50);
+    }
+  }
+
+  &__module-title {
+    font-weight: 500;
+    color: var(--theme-elevation-1000);
+    text-decoration: none;
+    flex: 0 0 auto;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__lessons {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__lesson {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.5);
+    padding: calc(var(--base) * 0.4) calc(var(--base) * 0.75) calc(var(--base) * 0.4)
+      calc(var(--base) * 2.5);
+    border-top: 1px solid var(--theme-elevation-50);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--theme-elevation-50);
+    }
+
+    &.is-hidden {
+      opacity: 0.65;
+    }
+  }
+
+  &__order {
+    display: inline-block;
+    min-width: 2.5rem;
+    color: var(--theme-elevation-400);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+  }
+
+  &__lesson-title {
+    flex: 1;
+    color: var(--theme-elevation-1000);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__lesson-actions {
+    display: flex;
+    gap: calc(var(--base) * 0.4);
+    margin-left: auto;
+  }
+
+  &__action {
+    background: none;
+    border: 1px solid var(--theme-elevation-150);
+    padding: 4px 10px;
+    border-radius: 3px;
+    color: var(--theme-elevation-800);
+    cursor: pointer;
+    font-size: 0.8rem;
+    text-decoration: none;
+    line-height: 1.4;
+
+    &:hover {
+      background: var(--theme-elevation-100);
+      color: var(--theme-elevation-1000);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--danger {
+      color: var(--theme-error-500, #c14545);
+      border-color: var(--theme-error-200, var(--theme-elevation-150));
+
+      &:hover:not(:disabled) {
+        background: var(--theme-error-50, var(--theme-elevation-100));
+        color: var(--theme-error-600, #a03030);
+      }
+    }
+  }
+
+  &__chevron {
+    color: var(--theme-elevation-500);
+    font-size: 0.85rem;
+    width: 1.25rem;
+    line-height: 1;
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  &__count {
+    color: var(--theme-elevation-400);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--theme-elevation-100);
+    color: var(--theme-elevation-700);
+
+    &.is-muted {
+      background: var(--theme-elevation-100);
+      color: var(--theme-elevation-500);
+    }
+
+    &--lecture {
+      background: rgba(80, 130, 220, 0.15);
+      color: rgb(60, 100, 180);
+    }
+
+    &--test {
+      background: rgba(180, 130, 60, 0.18);
+      color: rgb(150, 100, 30);
+    }
+
+    &--coding_task {
+      background: rgba(80, 160, 100, 0.18);
+      color: rgb(50, 120, 70);
+    }
+
+    &--review_task {
+      background: rgba(160, 100, 200, 0.18);
+      color: rgb(120, 70, 160);
+    }
+  }
+}

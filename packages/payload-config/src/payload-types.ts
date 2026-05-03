@@ -280,19 +280,6 @@ export interface Lesson {
    */
   aiExpectedResult?: string | null;
   /**
-   * Visible test case descriptions shown to the student (like LeetCode examples). Also included in the AI review prompt as additional context.
-   */
-  codingTestCases?:
-    | {
-        title: string;
-        /**
-         * Describe what this test case checks.
-         */
-        description?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
    * Required when executable test cases are defined. TS form: `solve(nums: number[], target: number): number[]`.
    */
   functionSignature?: string | null;
@@ -663,13 +650,6 @@ export interface LessonsSelect<T extends boolean = true> {
   codingLanguage?: T;
   starterCode?: T;
   aiExpectedResult?: T;
-  codingTestCases?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        id?: T;
-      };
   functionSignature?: T;
   solidityContractName?: T;
   solidityConstructorArgs?:

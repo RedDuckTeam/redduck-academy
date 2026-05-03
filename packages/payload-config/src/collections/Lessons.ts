@@ -19,6 +19,13 @@ export const Lessons: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'type', 'module', 'order', 'updatedAt'],
+    components: {
+      views: {
+        list: {
+          Component: '@/admin-components/lessons-tree#LessonsTreeView',
+        },
+      },
+    },
   },
   access: {
     read: () => true,
@@ -260,22 +267,6 @@ export const Lessons: CollectionConfig = {
         description:
           'What the student\'s code should achieve — fed to the AI reviewer. NOT shown to students. Example: "The contract must protect against reentrancy using checks-effects-interactions or ReentrancyGuard."',
       },
-    },
-    {
-      name: 'codingTestCases',
-      type: 'array',
-      admin: {
-        condition: (data) => data?.type === 'coding_task',
-        description: 'Visible test case descriptions shown to the student (like LeetCode examples). Also included in the AI review prompt as additional context.',
-      },
-      fields: [
-        { name: 'title', type: 'text', required: true },
-        {
-          name: 'description',
-          type: 'textarea',
-          admin: { description: 'Describe what this test case checks.' },
-        },
-      ],
     },
     {
       name: 'functionSignature',

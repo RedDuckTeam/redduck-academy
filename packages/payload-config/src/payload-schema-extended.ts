@@ -61,8 +61,6 @@ export {
   relations_payload_preferences_rels,
   relations_payload_preferences,
   relations_payload_migrations,
-  lessons_coding_test_cases,
-  relations_lessons_coding_test_cases,
   lessons_executable_test_cases,
   relations_lessons_executable_test_cases,
   lessons_solidity_constructor_args,

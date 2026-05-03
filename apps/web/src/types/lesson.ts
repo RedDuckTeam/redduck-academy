@@ -60,12 +60,6 @@ export interface Module {
   lessons: Lesson[]
 }
 
-export interface CodingTestCase {
-  id: string
-  title: string
-  description?: string
-}
-
 /**
  * TS coding-task wire shape (Payload `executableTestCases` array).
  * `inputJson` / `expectedJson` are JSON-encoded strings.
@@ -139,7 +133,6 @@ export interface Lesson {
   /** Coding-task fields */
   codingLanguage?: CodingLanguage
   starterCode?: string | null
-  codingTestCases?: CodingTestCase[]
   functionSignature?: string | null
   solidityContractName?: string | null
   solidityConstructorArgs?: SolidityArgValue[] | null

@@ -28,7 +28,6 @@ export class LessonsService {
         reviewGradingTasks: {
           orderBy: (tasks, { asc }) => [asc(tasks._order)],
         },
-        codingTestCases: true,
         executableTestCases: {
           orderBy: (cases, { asc }) => [asc(cases._order)],
         },
@@ -105,7 +104,6 @@ export class LessonsService {
         )`,
       ),
       with: {
-        codingTestCases: true,
         executableTestCases: {
           orderBy: (cases, { asc }) => [asc(cases._order)],
         },
@@ -259,7 +257,7 @@ export class LessonsService {
   }
 
   /**
-   * Strips AI-only fields from a coding_task lesson. Returns starterCode, codingLanguage, codingTestCases as-is.
+   * Strips AI-only fields from a coding_task lesson. Returns starterCode and codingLanguage as-is.
    */
   static #toPublicCodingLesson<L extends Record<string, unknown>>(lesson: L) {
     const { aiExpectedResult: _a, ...rest } = lesson

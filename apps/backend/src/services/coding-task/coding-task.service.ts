@@ -113,11 +113,7 @@ export class CodingTaskService {
     lesson: Awaited<ReturnType<typeof LessonsService.getCodingTaskLesson>>,
   ): Promise<VerdictResolution> {
     const aiExpectedResult = lesson.aiExpectedResult ?? ''
-    const visibleCases = (lesson.codingTestCases ?? []).map((tc) => ({
-      title: tc.title ?? '',
-      description: tc.description ?? null,
-    }))
-    const result = await reviewCodingTask(submittedCode, language, aiExpectedResult, visibleCases)
+    const result = await reviewCodingTask(submittedCode, language, aiExpectedResult, [])
     return {
       passed: result.passed,
       aiComment: packVerdictComment({ clientPassed: null, legacy: true, note: result.adminComment }),
