@@ -3,7 +3,6 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { RedDuckIcon } from '../ui/icons/redduck'
 import { HeaderLinks } from './header-links'
-import { ThemeToggle } from './theme-toggle'
 import { Drawer, DrawerContent } from '../ui/drawer-menu'
 import { HeaderMenuIcon } from '../ui/icons/header-menu'
 import { HeaderDrawerContent } from './header-drawer-content'
@@ -63,9 +62,6 @@ export default function Header() {
           <HeaderLinks />
         </div>
         <div className="flex xl:w-[15%] items-center justify-end gap-4 shrink-0">
-          <div className="max-md:hidden">
-            <ThemeToggle />
-          </div>
           {isPending ? (
             <div className="size-10 shrink-0 rounded-full bg-muted animate-pulse" aria-hidden />
           ) : session?.user ? (

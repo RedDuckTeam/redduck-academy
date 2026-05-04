@@ -257,12 +257,12 @@ export class UserService {
 
   static async getUserSettings(userId: string) {
     const [row] = await db
-      .select({ id: user.id, username: user.username, skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio, name: user.name, image: user.image, role: user.role, blacklisted: user.blacklisted })
+      .select({ id: user.id, username: user.username, skipPrerequisites: user.skipPrerequisites, isPrivate: user.isPrivate, bio: user.bio, name: user.name, image: user.image, role: user.role, blacklisted: user.blacklisted, createdAt: user.createdAt })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
     if (!row) throw new AppError(404, 'User not found')
-    return { id: row.id, username: row.username, skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio, name: row.name, image: row.image, role: row.role, blacklisted: row.blacklisted }
+    return { id: row.id, username: row.username, skipPrerequisites: row.skipPrerequisites, isPrivate: row.isPrivate, bio: row.bio, name: row.name, image: row.image, role: row.role, blacklisted: row.blacklisted, createdAt: row.createdAt }
   }
 
   static async getPublicProfile(username: string) {

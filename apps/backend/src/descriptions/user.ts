@@ -269,6 +269,7 @@ export const userSettingsSchema = z.object({
   skipPrerequisites: z.boolean(),
   isPrivate: z.boolean(),
   bio: z.string().nullable(),
+  createdAt: z.string(),
 })
 
 export const updateUserSettingsBodySchema = z.object({

@@ -7,8 +7,6 @@ import { LessonSidebarList } from '@/components/pages/lesson/lesson-sidebar/less
 import { DrawerClose } from '@/components/ui/drawer-menu'
 import { HeaderMenuCoursesList } from '@/components/header/header-menu/header-menu-courses-list'
 import { parseCoursesPathname } from '@/lib/routes/courses-pathname'
-import { ThemeToggle } from '@/components/header/theme-toggle'
-import { useTheme } from '@/components/providers/theme-context'
 
 interface HeaderDrawerContentProps {
   open: boolean
@@ -18,7 +16,6 @@ interface HeaderDrawerContentProps {
 export function HeaderDrawerContent({ open, onSelect }: HeaderDrawerContentProps) {
   const { pathname } = useLocation()
   const parsed = useMemo(() => parseCoursesPathname(pathname), [pathname])
-  const { theme } = useTheme()
 
   return (
     <div className="flex max-h-[min(712px,calc(100vh-60px))] w-full flex-col bg-[#000] overflow-y-auto">
@@ -51,13 +48,6 @@ export function HeaderDrawerContent({ open, onSelect }: HeaderDrawerContentProps
       {parsed.courseSlug && !parsed.lessonSlug && (
         <HeaderMenuCoursesList open={open} courseSlug={parsed.courseSlug} onSelect={onSelect} />
       )}
-
-      <div className="flex items-center gap-3 border-t-2 border-white px-5 py-4 shrink-0">
-        <ThemeToggle />
-        <Text variant="main-16" className="font-ibm-plex-mono uppercase tracking-normal text-[#e0deda]">
-          {theme === 'dark' ? 'Dark mode' : 'Light mode'}
-        </Text>
-      </div>
     </div>
   )
 }

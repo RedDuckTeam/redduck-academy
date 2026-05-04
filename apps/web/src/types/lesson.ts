@@ -47,6 +47,7 @@ export interface UserSettings {
   isPrivate: boolean
   blacklisted: boolean
   bio: string | null
+  createdAt: string
 }
 
 export interface Module {
