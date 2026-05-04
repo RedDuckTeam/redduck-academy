@@ -30,15 +30,12 @@ function SignUp() {
   const { session } = useSession()
   const router = useRouter()
 
-  // Wait for the actual session (cookie-backed API success), not just Privy's `authenticated`
-  // flag — otherwise this effect races the wallet button's onComplete and lands the user on
-  // /dashboard before the privy-token cookie is recognized by the backend.
+  // If a session is already in the cache when this page mounts (e.g. user revisits /sign-up
+  // while logged in), bounce them to the dashboard. The login buttons handle their own
+  // post-login navigation.
   useEffect(() => {
     if (!session?.user) return
-    void (async () => {
-      await router.invalidate()
-      await router.navigate({ to: '/dashboard', replace: true })
-    })()
+    void router.navigate({ to: '/dashboard', replace: true })
   }, [session, router])
 
   return (

@@ -14,7 +14,7 @@ export interface SubmitProjectResponse {
 
 export const submitProject = async (payload: SubmitProjectPayload): Promise<SubmitProjectResponse> => {
   try {
-    return await api({ credentials: 'include' }).post<SubmitProjectResponse>('/api/lessons/submit-project', payload)
+    return await api().post<SubmitProjectResponse>('/api/lessons/submit-project', payload)
   } catch (err) {
     if (err instanceof ApiError && err.status === 429) {
       const retryAfterMs = (err.extra?.retryAfterMs as number | undefined) ?? 60_000

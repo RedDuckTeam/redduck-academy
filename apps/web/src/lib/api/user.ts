@@ -11,7 +11,7 @@ export interface ProgressCards {
 }
 
 export const getProgressCards = async (): Promise<ProgressCards> => {
-  const response = await api({ credentials: 'include' }).get<{ data: ProgressCards }>('/api/user/progress-cards')
+  const response = await api().get<{ data: ProgressCards }>('/api/user/progress-cards')
   return response.data
 }
 
@@ -22,34 +22,34 @@ export interface CompletedLesson {
 }
 
 export const getCompletedLessons = async (): Promise<CompletedLesson[]> => {
-  const response = await api({ credentials: 'include' }).get<{ data: CompletedLesson[] }>('/api/user/completed-lessons')
+  const response = await api().get<{ data: CompletedLesson[] }>('/api/user/completed-lessons')
   return response.data ?? []
 }
 
 export const getUserSettings = async (): Promise<UserSettings> => {
-  const response = await api({ credentials: 'include' }).get<{ data: UserSettings }>('/api/user/settings')
+  const response = await api().get<{ data: UserSettings }>('/api/user/settings')
   return response.data
 }
 
 export const updateUserSettings = async (settings: Partial<UserSettings>): Promise<UserSettings> => {
-  const response = await api({ credentials: 'include' }).patch<{ data: UserSettings }>('/api/user/settings', settings)
+  const response = await api().patch<{ data: UserSettings }>('/api/user/settings', settings)
   return response.data
 }
 
 export const updateUserBio = async (bio: string | null): Promise<{ bio: string | null }> => {
-  const response = await api({ credentials: 'include' }).patch<{ data: { bio: string | null } }>('/api/user/bio', {
+  const response = await api().patch<{ data: { bio: string | null } }>('/api/user/bio', {
     bio,
   })
   return response.data
 }
 
 export const updateUserName = async (name: string): Promise<{ name: string }> => {
-  const response = await api({ credentials: 'include' }).patch<{ data: { name: string } }>('/api/user/name', { name })
+  const response = await api().patch<{ data: { name: string } }>('/api/user/name', { name })
   return response.data
 }
 
 export const updateUserUsername = async (username: string): Promise<{ username: string }> => {
-  const response = await api({ credentials: 'include' }).patch<{ data: { username: string } }>('/api/user/username', {
+  const response = await api().patch<{ data: { username: string } }>('/api/user/username', {
     username,
   })
   return response.data
@@ -57,12 +57,17 @@ export const updateUserUsername = async (username: string): Promise<{ username: 
 
 export const uploadUserAvatar = async (file: File): Promise<{ imageUrl: string }> => {
   const { env } = await import('@/env')
+  const { getAuthToken } = await import('./auth-token')
   const formData = new FormData()
   formData.append('file', file)
 
+  const token = await getAuthToken()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
   const response = await fetch(`${env.VITE_API_URL}/api/user/avatar`, {
     method: 'POST',
-    credentials: 'include',
+    headers,
     body: formData,
   })
 
@@ -94,6 +99,6 @@ export const getPublicProfile = async (username: string): Promise<UserPublicProf
 }
 
 export const getRating = async (): Promise<RatingEntry[]> => {
-  const response = await api({ credentials: 'include' }).get<{ data: RatingEntry[] }>('/api/user/rating')
+  const response = await api().get<{ data: RatingEntry[] }>('/api/user/rating')
   return response.data ?? []
 }

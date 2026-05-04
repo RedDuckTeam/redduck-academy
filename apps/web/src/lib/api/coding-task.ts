@@ -18,7 +18,7 @@ export interface SubmitCodingTaskResponse {
 
 export const submitCodingTask = async (payload: SubmitCodingTaskPayload): Promise<SubmitCodingTaskResponse> => {
   try {
-    return await api({ credentials: 'include' }).post<SubmitCodingTaskResponse>('/api/lessons/submit-coding-task', payload)
+    return await api().post<SubmitCodingTaskResponse>('/api/lessons/submit-coding-task', payload)
   } catch (err) {
     if (err instanceof ApiError && err.status === 429) {
       const reason = parseRateLimitReason(err.extra?.reason)

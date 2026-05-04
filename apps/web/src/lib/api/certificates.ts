@@ -24,12 +24,12 @@ export const getCertificateById = async (id: string): Promise<PublicCertificate>
 }
 
 export const getUserCertificates = async (): Promise<Certificate[]> => {
-  const response = await api({ credentials: 'include' }).get<{ data: Certificate[] }>('/api/certificates')
+  const response = await api().get<{ data: Certificate[] }>('/api/certificates')
   return response.data ?? []
 }
 
 export const claimCertificate = async (courseSlug: string): Promise<Certificate> => {
-  const response = await api({ credentials: 'include' }).post<{ data: Certificate }>(
+  const response = await api().post<{ data: Certificate }>(
     `/api/certificates/${courseSlug}/claim`,
     {},
   )
@@ -37,7 +37,7 @@ export const claimCertificate = async (courseSlug: string): Promise<Certificate>
 }
 
 export const requestNft = async (certificateId: string, walletAddress: string): Promise<Certificate> => {
-  const response = await api({ credentials: 'include' }).post<{ data: Certificate }>(
+  const response = await api().post<{ data: Certificate }>(
     `/api/certificates/${certificateId}/request-nft`,
     { walletAddress },
   )

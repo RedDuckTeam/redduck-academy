@@ -16,6 +16,9 @@ export const getRouter = () => {
     },
 
     defaultPreload: 'intent',
+    // Without this, hover-preloads re-run loaders/beforeLoad every 30s — every link hover on a
+    // stale route refires the request. We let TanStack Query own caching; preload runs once.
+    defaultPreloadStaleTime: Number.POSITIVE_INFINITY,
   })
 
   setupRouterSsrQueryIntegration({

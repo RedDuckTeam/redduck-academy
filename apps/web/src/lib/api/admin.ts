@@ -32,7 +32,7 @@ export type AdminUsersPage = {
 }
 
 export const getAdminStats = async (): Promise<AdminStats> => {
-  const response = await api({ credentials: 'include' }).get<{ data: AdminStats }>('/api/admin/stats')
+  const response = await api().get<{ data: AdminStats }>('/api/admin/stats')
   return response.data
 }
 
@@ -48,7 +48,7 @@ export const getAdminUsers = async (input: {
   if (input.sortBy) qs.set('sortBy', input.sortBy)
   if (input.sortDir) qs.set('sortDir', input.sortDir)
   if (input.search) qs.set('search', input.search)
-  const response = await api({ credentials: 'include' }).get<{ data: AdminUsersPage }>(
+  const response = await api().get<{ data: AdminUsersPage }>(
     `/api/admin/users?${qs.toString()}`,
   )
   return response.data
@@ -91,7 +91,7 @@ export const getAdminCertificates = async (input: {
   if (input.sortDir) qs.set('sortDir', input.sortDir)
   if (input.status && input.status !== 'all') qs.set('status', input.status)
   if (input.search) qs.set('search', input.search)
-  const response = await api({ credentials: 'include' }).get<{ data: AdminCertificatesPage }>(
+  const response = await api().get<{ data: AdminCertificatesPage }>(
     `/api/admin/certificates?${qs.toString()}`,
   )
   return response.data
@@ -110,7 +110,7 @@ export const generateAdminCertificate = async (input: {
   userId: string
   courseSlug: string
 }): Promise<AdminMintParams> => {
-  const response = await api({ credentials: 'include' }).post<{ data: AdminMintParams }>(
+  const response = await api().post<{ data: AdminMintParams }>(
     '/api/certificates/admin/generate',
     input,
   )
@@ -118,7 +118,7 @@ export const generateAdminCertificate = async (input: {
 }
 
 export const getAdminUserCompletedLessons = async (userId: string): Promise<CompletedLesson[]> => {
-  const response = await api({ credentials: 'include' }).get<{ data: CompletedLesson[] }>(
+  const response = await api().get<{ data: CompletedLesson[] }>(
     `/api/admin/users/${userId}/completed-lessons`,
   )
   return response.data
@@ -129,14 +129,14 @@ export const getAdminUserLessonDetail = async (
   courseSlug: string,
   lessonSlug: string,
 ): Promise<LessonForUser> => {
-  const response = await api({ credentials: 'include' }).get<{ data: LessonForUser }>(
+  const response = await api().get<{ data: LessonForUser }>(
     `/api/admin/users/${userId}/lessons/${courseSlug}/${lessonSlug}`,
   )
   return response.data
 }
 
 export const banAdminUser = async (userId: string, ban: boolean): Promise<{ blacklisted: boolean }> => {
-  const response = await api({ credentials: 'include' }).patch<{ data: { blacklisted: boolean } }>(
+  const response = await api().patch<{ data: { blacklisted: boolean } }>(
     `/api/admin/users/${userId}/ban`,
     { ban },
   )
@@ -147,5 +147,5 @@ export const markAdminClaimed = async (
   certificateId: string,
   data: { metadataUri: string; imageUrl: string; tokenId: string; txHash: string },
 ): Promise<void> => {
-  await api({ credentials: 'include' }).post(`/api/certificates/admin/${certificateId}/claim`, data)
+  await api().post(`/api/certificates/admin/${certificateId}/claim`, data)
 }

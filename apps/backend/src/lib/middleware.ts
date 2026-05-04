@@ -1,5 +1,4 @@
 import { createMiddleware } from 'hono/factory'
-import { getCookie } from 'hono/cookie'
 import type { Context } from 'hono'
 import { eq } from 'drizzle-orm'
 import { verifyPrivyToken } from './privy'
@@ -11,8 +10,16 @@ import { user } from '../db/auth-schema'
 
 const logger = new Logger('AuthMiddleware')
 
+function extractBearerToken(c: Context): string | null {
+  const header = c.req.header('Authorization') ?? c.req.header('authorization')
+  if (!header) return null
+  const [scheme, token] = header.split(' ', 2)
+  if (scheme?.toLowerCase() !== 'bearer' || !token) return null
+  return token
+}
+
 async function resolveUser(c: Context): Promise<{ id: string; idToken: string; privyUserId: string }> {
-  const token = getCookie(c, 'privy-token')
+  const token = extractBearerToken(c)
 
   if (!token) {
     throw new AppError(401, 'Unauthorized')

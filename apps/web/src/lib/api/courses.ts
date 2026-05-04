@@ -56,7 +56,7 @@ export const getLessonForUser = async (
   lessonSlug: string,
 ): Promise<GetLessonForUserResponse | null> => {
   try {
-    return await api({ credentials: 'include' }).get<GetLessonForUserResponse>(
+    return await api().get<GetLessonForUserResponse>(
       `/api/user/lessons/${courseSlug}/${lessonSlug}`,
     )
   } catch (err) {
@@ -70,5 +70,5 @@ export const getLessonForUser = async (
 }
 
 export const syncProjectReview = async (courseSlug: string, lessonSlug: string) => {
-  await api({ credentials: 'include' }).post(`/api/user/lessons/${courseSlug}/${lessonSlug}/sync-project-review`)
+  await api().post(`/api/user/lessons/${courseSlug}/${lessonSlug}/sync-project-review`)
 }

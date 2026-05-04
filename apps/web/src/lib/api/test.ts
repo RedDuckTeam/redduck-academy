@@ -7,5 +7,5 @@ export interface SubmitTestPayload {
 }
 
 export const submitTest = async (payload: SubmitTestPayload): Promise<void> => {
-  await api({ credentials: 'include' }).post('/api/lessons/submit-test', payload)
+  await api().post('/api/lessons/submit-test', payload)
 }
