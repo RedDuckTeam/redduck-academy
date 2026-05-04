@@ -77,7 +77,12 @@ export function CodePanel({
         onRun={onRun}
       />
       <div className="min-h-[400px] xl:flex-1 xl:min-h-0 xl:overflow-hidden">
-        <CodeEditor ref={editorRef} value={code} onChange={onCodeChange} language={lesson.codingLanguage ?? 'solidity'} />
+        <CodeEditor
+          ref={editorRef}
+          value={code}
+          onChange={onCodeChange}
+          language={lesson.codingLanguage ?? 'solidity'}
+        />
       </div>
       {hasExecutableTests && (
         <TestCaseTabs

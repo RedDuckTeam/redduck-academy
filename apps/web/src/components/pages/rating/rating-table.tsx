@@ -24,15 +24,12 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
     <>
       {/* Desktop table layout */}
       <div className="hidden lg:block border border-border">
-        <div className="grid grid-cols-[120px_1fr_130px_130px] border-b border-border">
+        <div className="grid grid-cols-[120px_1fr_130px] border-b border-border">
           <div className="p-5">
             <Text variant="caps-20">RANK</Text>
           </div>
           <div className="p-5">
             <Text variant="caps-20">STUDENT</Text>
-          </div>
-          <div className="p-5 text-center">
-            <Text variant="caps-20">COURSES</Text>
           </div>
           <div className="p-5 text-center">
             <Text variant="caps-20">LESSONS</Text>
@@ -42,10 +39,7 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
         {rating.map((entry) => {
           const isCurrentUser = entry.userId === currentUserId
           return (
-            <div
-              key={entry.userId}
-              className="grid grid-cols-[120px_1fr_130px_130px] border-b border-border divide-x divide-border last:border-b-0"
-            >
+            <div key={entry.userId} className="grid grid-cols-[120px_1fr_130px] border-b border-border last:border-b-0">
               <div className="p-5">
                 <Text variant="caps-20" className="text-primary">
                   {String(entry.rank).padStart(2, '0')}.
@@ -64,9 +58,6 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
                     {entry.userName?.toUpperCase() ?? '—'}
                   </Text>
                 )}
-              </div>
-              <div className="p-5 text-center">
-                <Text variant="caps-20">{entry.completedCoursesCount}</Text>
               </div>
               <div className="p-5 text-center">
                 <Text variant="caps-20">{entry.completedLessonsCount}</Text>
@@ -109,19 +100,11 @@ export const RatingTable = ({ rating, currentUserId }: RatingTableProps) => {
                   </Text>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div className="flex flex-col gap-1">
-                  <Text variant="caps-14" className="text-border">
-                    COURSES
-                  </Text>
-                  <Text variant="caps-20">{entry.completedCoursesCount}</Text>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Text variant="caps-14" className="text-border">
-                    LESSONS
-                  </Text>
-                  <Text variant="caps-20">{entry.completedLessonsCount}</Text>
-                </div>
+              <div className="flex flex-col gap-1">
+                <Text variant="caps-14" className="text-border">
+                  LESSONS
+                </Text>
+                <Text variant="caps-20">{entry.completedLessonsCount}</Text>
               </div>
             </div>
           )

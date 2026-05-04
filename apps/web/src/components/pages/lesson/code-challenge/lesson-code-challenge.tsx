@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
@@ -12,6 +12,7 @@ import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { useSession } from '@/hooks/useSession'
 import { useCodeRunner } from '@/hooks/lessons/useCodeRunner'
 import { RateLimitError } from '@/lib/api/rate-limit'
+import { parseLessonTestCases } from '@/lib/lessons/parse-executable-cases'
 
 interface LessonCodeChallengeProps {
   lesson: Lesson
@@ -41,7 +42,8 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
   const { mutate: submit, isPending, error: submitError } = useSubmitCodingTask(courseSlug, lessonSlug)
 
   const language = lesson.codingLanguage
-  const hasExecutableTests = (lesson.executableTestCases?.length ?? 0) > 0
+  const parsedCases = useMemo(() => parseLessonTestCases(lesson), [lesson])
+  const hasExecutableTests = parsedCases.length > 0
 
   if (!language) return <div>No language found</div>
 
