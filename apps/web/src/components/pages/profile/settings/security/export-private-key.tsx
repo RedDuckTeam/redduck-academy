@@ -67,9 +67,9 @@ export const ExportPrivateKey = () => {
         size="sm"
         onClick={handleExport}
         disabled={!embeddedWallet}
-        className="mt-5 w-fit gap-2"
+        className="mt-5 w-full sm:w-fit gap-2"
       >
-        <Text variant="caps-20">I understand — continue</Text>
+        <Text variant="caps-20">I understand, continue</Text>
         <ArrowRight className="size-4" strokeWidth={2} />
       </Button>
     </SettingsCard>

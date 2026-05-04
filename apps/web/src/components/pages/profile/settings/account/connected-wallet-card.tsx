@@ -58,7 +58,7 @@ export const ConnectedWalletCard = ({ address, provider, isPrimary }: ConnectedW
   }
 
   return (
-    <SettingsCard title="CONNECTED WALLET" description="External wallet you've connected.">
+    <SettingsCard title="CONNECTED WALLET">
       <SettingsCardRow label="Address">
         <div className="flex items-center gap-3">
           <span className={textVariants({ variant: 'caps-20' }) + ' text-primary font-mono'}>

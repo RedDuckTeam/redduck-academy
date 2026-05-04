@@ -24,7 +24,7 @@ export const AccountTab = () => {
   const connectedIsPrimary = !!connected && primary?.type === 'wallet' && primary.address === connected.address
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-10 sm:gap-5">
       {embedded && <EmbeddedWalletCard address={embedded.address} />}
       <ConnectedWalletCard
         address={connected?.address ?? null}
