@@ -37,6 +37,7 @@ export function CodePanelToolbar(props: CodePanelToolbarProps) {
     onRun,
   } = props
 
+  console.log('onRun', onRun, hasExecutableTests)
   return (
     <div className="flex items-center border-b border-border py-2 px-4 justify-between shrink-0">
       <Text variant="main-16" className="capitalize">
