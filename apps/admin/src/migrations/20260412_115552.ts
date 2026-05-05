@@ -1,6 +1,7 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+  await db.execute(sql`CREATE SCHEMA IF NOT EXISTS "payload";`)
   await db.execute(sql`
    CREATE TYPE "payload"."enum_lessons_type" AS ENUM('lecture', 'test', 'coding_task', 'review_task');
   CREATE TYPE "payload"."enum_lessons_coding_language" AS ENUM('solidity', 'rust', 'typescript');
