@@ -24,6 +24,23 @@ export class GitHubService {
     this.octokit = new Octokit({ auth: authToken })
   }
 
+  /**
+   * Heuristic: reject blobs that don't look like UTF-8 source code. Detects
+   * NUL bytes (always binary) and Buffer→utf-8 decoding that introduced
+   * U+FFFD replacement chars beyond the noise floor — a sign the blob isn't
+   * valid UTF-8. Keeps binary blobs out of the grader prompt.
+   */
+  private isLikelyText(buf: Buffer, decoded: string): boolean {
+    for (let i = 0; i < buf.byteLength; i++) {
+      if (buf[i] === 0) return false
+    }
+    let replacementCount = 0
+    for (let i = 0; i < decoded.length; i++) {
+      if (decoded.charCodeAt(i) === 0xfffd) replacementCount++
+    }
+    return replacementCount === 0
+  }
+
   private async resolveRefToSha(owner: string, repo: string, ref: string): Promise<string> {
     try {
       const { data } = await this.octokit.repos.getBranch({ owner, repo, branch: ref })
@@ -176,16 +193,25 @@ export class GitHubService {
         if (buf.byteLength > maxBytes) {
           return { type: 'oversized', sizeBytes: buf.byteLength }
         }
-        return { type: 'ok', content: buf.toString('utf-8') }
+        const decoded = buf.toString('utf-8')
+        if (!this.isLikelyText(buf, decoded)) {
+          return { type: 'missing' }
+        }
+        return { type: 'ok', content: decoded }
       }
 
       // Large files: JSON may omit `content` but include `size` and `download_url`.
       if (reportedSize !== null && reportedSize <= maxBytes && data.download_url) {
-        const buf = await this.#fetchAuthenticatedDownload(data.download_url)
+        const arr = await this.#fetchAuthenticatedDownload(data.download_url)
+        const buf = Buffer.from(arr)
         if (buf.byteLength > maxBytes) {
           return { type: 'oversized', sizeBytes: buf.byteLength }
         }
-        return { type: 'ok', content: Buffer.from(buf).toString('utf-8') }
+        const decoded = buf.toString('utf-8')
+        if (!this.isLikelyText(buf, decoded)) {
+          return { type: 'missing' }
+        }
+        return { type: 'ok', content: decoded }
       }
 
       return { type: 'missing' }

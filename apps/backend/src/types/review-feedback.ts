@@ -15,6 +15,10 @@ export interface ReviewFeedback {
   /** Whether the learner passes the lesson; set by the grader model (authoritative for completion). */
   lessonPassed: boolean
   summary: string
+  /** True when the grader flagged manipulation attempts in the submitted code. */
+  promptInjectionDetected: boolean
+  /** Free-text description of detected manipulation attempts; empty string when none. */
+  promptInjectionNotes: string
   criteria: ReviewCriterionFeedback[]
   fileReviews?: Array<{
     filePath: string

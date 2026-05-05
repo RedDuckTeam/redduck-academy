@@ -7,6 +7,7 @@ import { env } from '../../env'
 import { DEFAULT_MODEL } from '../ai/openai-client'
 import type { ReviewFeedback } from '../../types/review-feedback'
 import { buildReviewFeedbackResponseFormat } from './review-feedback-json-schema'
+import type { ReviewPrompt } from './prompt.builder'
 import { Logger } from '../../lib/logger'
 
 const logger = new Logger('ReviewBatchService')
@@ -34,7 +35,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
  * @see https://platform.openai.com/docs/guides/batch
  */
 export async function createBatch(
-  prompt: string,
+  prompt: ReviewPrompt,
   submissionId: number,
   criteriaCount: number,
 ): Promise<string> {
@@ -48,12 +49,8 @@ export async function createBatch(
         model: DEFAULT_MODEL,
         response_format: buildReviewFeedbackResponseFormat(criteriaCount),
         messages: [
-          {
-            role: 'system',
-            content:
-              'You are a course grader. Fill the response fields to match the lesson context in the user message. Output must follow the configured JSON schema exactly.',
-          },
-          { role: 'user', content: prompt },
+          { role: 'system', content: prompt.system },
+          { role: 'user', content: prompt.user },
         ],
       },
     }) + '\n'
@@ -116,7 +113,11 @@ function extractChatCompletionContent(jsonlText: string, submissionId: number): 
   throw new Error('No batch output line for this submission')
 }
 
-function parseReviewFeedback(content: string, submissionId: number): ReviewFeedback {
+function parseReviewFeedback(
+  content: string,
+  submissionId: number,
+  tasks: NonNullable<Lesson['reviewGradingTasks']>,
+): ReviewFeedback {
   let parsed: unknown
   try {
     parsed = JSON.parse(content)
@@ -131,10 +132,37 @@ function parseReviewFeedback(content: string, submissionId: number): ReviewFeedb
   if (!isRecord(parsed)) throw new Error('Invalid feedback shape')
   if (typeof parsed.lessonPassed !== 'boolean') throw new Error('Invalid feedback: lessonPassed')
   if (typeof parsed.summary !== 'string') throw new Error('Invalid feedback: summary')
+  if (typeof parsed.promptInjectionDetected !== 'boolean') {
+    throw new Error('Invalid feedback: promptInjectionDetected')
+  }
+  if (typeof parsed.promptInjectionNotes !== 'string') {
+    throw new Error('Invalid feedback: promptInjectionNotes')
+  }
   if (!Array.isArray(parsed.criteria)) throw new Error('Invalid feedback: criteria')
   for (const c of parsed.criteria) {
     if (!isRecord(c) || typeof c.passed !== 'boolean') throw new Error('Invalid feedback: criterion passed')
+    if (typeof c.taskId !== 'string') throw new Error('Invalid feedback: criterion taskId')
   }
+
+  // Verify the model returned exactly one criterion per rubric task — no
+  // duplicates, no omissions, no fabricated taskIds. Without this, the
+  // strict-schema length lock (minItems = maxItems = N) would still allow
+  // a duplicated taskId to displace a missing one.
+  const expectedIds = new Set(tasks.map((t) => String(t.id)))
+  const seenIds = new Set<string>()
+  for (const c of parsed.criteria as Array<{ taskId: string }>) {
+    if (!expectedIds.has(c.taskId)) {
+      throw new Error(`Invalid feedback: unknown taskId ${c.taskId}`)
+    }
+    if (seenIds.has(c.taskId)) {
+      throw new Error(`Invalid feedback: duplicate taskId ${c.taskId}`)
+    }
+    seenIds.add(c.taskId)
+  }
+  if (seenIds.size !== expectedIds.size) {
+    throw new Error('Invalid feedback: criteria do not cover every rubric task')
+  }
+
   return parsed as unknown as ReviewFeedback
 }
 
@@ -206,7 +234,7 @@ export async function pollAndParse(
 
   try {
     const content = extractChatCompletionContent(jsonlText, submissionId)
-    const feedback = applyAdminTitles(parseReviewFeedback(content, submissionId), tasks)
+    const feedback = applyAdminTitles(parseReviewFeedback(content, submissionId, tasks), tasks)
     return { type: 'completed', feedback }
   } catch (err) {
     logger.error('Failed to parse batch output', err, { batchRequestId, submissionId })
