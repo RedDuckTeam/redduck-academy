@@ -8,6 +8,7 @@ import { convertLexicalToMarkdown, editorConfigFactory } from '@payloadcms/richt
 import config from '@payload-config'
 
 export async function lexicalToMarkdownAction(data: SerializedEditorState | null): Promise<string> {
+  // @ts-expect-error - getPayload is not typed
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers: await nextHeaders() })
   if (!user) {
