@@ -20,6 +20,9 @@ export const Lessons: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'type', 'module', 'order', 'updatedAt'],
     components: {
+      edit: {
+        beforeDocumentControls: ['@/admin-components/copy-markdown-button#CopyMarkdownButton'],
+      },
       views: {
         list: {
           Component: '@/admin-components/lessons-tree#LessonsTreeView',
@@ -185,15 +188,6 @@ export const Lessons: CollectionConfig = {
         { label: 'Review Task', value: 'review_task' },
       ],
       defaultValue: 'lecture',
-    },
-    {
-      name: 'copyContentMarkdown',
-      type: 'ui',
-      admin: {
-        components: {
-          Field: '@/admin-components/copy-markdown-button#CopyMarkdownButton',
-        },
-      },
     },
     {
       name: 'content',
