@@ -4,9 +4,31 @@ import type { SerializedEditorState } from 'lexical'
 import { useState, useTransition } from 'react'
 import { useField } from '@payloadcms/ui'
 
-import { lexicalToMarkdownAction, markdownToLexicalAction } from './action'
-
 type Status = 'idle' | 'copied' | 'pasted' | 'error'
+
+async function fromLexical(data: SerializedEditorState | null): Promise<string> {
+  if (!data) return ''
+  const res = await fetch('/api/lessons/markdown/from-lexical', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const { markdown } = (await res.json()) as { markdown: string }
+  return markdown
+}
+
+async function toLexical(markdown: string): Promise<SerializedEditorState> {
+  const res = await fetch('/api/lessons/markdown/to-lexical', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ markdown }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return (await res.json()) as SerializedEditorState
+}
 
 export function CopyMarkdownButton() {
   const { value, setValue } = useField<SerializedEditorState | null>({ path: 'content' })
@@ -18,7 +40,7 @@ export function CopyMarkdownButton() {
     setStatus('idle')
     startCopy(async () => {
       try {
-        const markdown = await lexicalToMarkdownAction(value ?? null)
+        const markdown = await fromLexical(value ?? null)
         await navigator.clipboard.writeText(markdown)
         setStatus('copied')
         setTimeout(() => setStatus('idle'), 1500)
@@ -39,14 +61,17 @@ export function CopyMarkdownButton() {
           setTimeout(() => setStatus('idle'), 2500)
           return
         }
-        if (
-          value &&
-          !window.confirm('Replace current lesson content with markdown from clipboard?')
-        ) {
-          return
-        }
-        const next = await markdownToLexicalAction(markdown)
-        setValue(next)
+        const parsed = await toLexical(markdown)
+        const incomingChildren = (parsed?.root?.children ?? []) as unknown[]
+        const currentChildren = (value?.root?.children ?? []) as unknown[]
+        const merged: SerializedEditorState = {
+          ...(value ?? parsed),
+          root: {
+            ...(value?.root ?? parsed.root),
+            children: [...currentChildren, ...incomingChildren],
+          },
+        } as SerializedEditorState
+        setValue(merged)
         setStatus('pasted')
         setTimeout(() => setStatus('idle'), 1500)
       } catch {

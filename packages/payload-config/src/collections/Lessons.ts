@@ -9,10 +9,14 @@ import {
   ParagraphFeature,
   StrikethroughFeature,
   UnderlineFeature,
+  convertLexicalToMarkdown,
+  convertMarkdownToLexical,
+  editorConfigFactory,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
 import { formatSlug } from './hooks/formatSlug'
+import { rootEditorFeatures } from '../editor-features'
 
 export const Lessons: CollectionConfig = {
   slug: 'lessons',
@@ -146,6 +150,41 @@ export const Lessons: CollectionConfig = {
       },
     ],
   },
+  endpoints: [
+    {
+      path: '/markdown/to-lexical',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+        const body = (await req.json?.()) as { markdown?: string } | undefined
+        const markdown = body?.markdown ?? ''
+        const editorConfig = await editorConfigFactory.fromFeatures({
+          config: req.payload.config,
+          features: rootEditorFeatures,
+        })
+        return Response.json(convertMarkdownToLexical({ editorConfig, markdown }))
+      },
+    },
+    {
+      path: '/markdown/from-lexical',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+        const body = (await req.json?.()) as { data?: unknown } | undefined
+        const data = body?.data
+        if (!data) return Response.json({ markdown: '' })
+        const editorConfig = await editorConfigFactory.fromFeatures({
+          config: req.payload.config,
+          features: rootEditorFeatures,
+        })
+        return Response.json({ markdown: convertLexicalToMarkdown({ data: data as never, editorConfig }) })
+      },
+    },
+  ],
   fields: [
     {
       name: 'title',

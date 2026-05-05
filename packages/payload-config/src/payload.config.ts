@@ -1,11 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import {
-  BlocksFeature,
-  CodeBlock,
-  HeadingFeature,
-  lexicalEditor,
-  EXPERIMENTAL_TableFeature,
-} from '@payloadcms/richtext-lexical'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -20,6 +14,8 @@ import { CommunityEvents } from './collections/CommunityEvents'
 import { s3Storage } from '@payloadcms/storage-s3'
 import { payloadTotp } from 'payload-totp'
 
+import { rootEditorFeatures } from './editor-features'
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -33,26 +29,7 @@ export default buildConfig({
   },
   collections: [Users, Media, Courses, Modules, Lessons, CommunityEvents],
   editor: lexicalEditor({
-    features: ({ defaultFeatures }) => [
-      ...defaultFeatures,
-      EXPERIMENTAL_TableFeature(),
-      HeadingFeature({
-        enabledHeadingSizes: ['h1', 'h2', 'h3'],
-      }),
-      BlocksFeature({
-        blocks: [
-          CodeBlock({
-            slug: 'code',
-            defaultLanguage: 'typescript',
-            languages: {
-              typescript: 'TypeScript',
-              rust: 'Rust',
-              solidity: 'Solidity',
-            },
-          }),
-        ],
-      }),
-    ],
+    features: rootEditorFeatures,
   }),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
