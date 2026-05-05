@@ -10,7 +10,7 @@ import { importMap as rawImportMap } from './admin/importMap.js'
 import './custom.scss'
 
 // Cast widens the generated importMap to Payload's ImportMap, sidestepping a
-// "excessive stack depth" tsc diagnostic that surfaces as more entries are added.
+// "excessive stack depth" tsc diagnostic that surfaces as more entries are added
 const importMap = rawImportMap as unknown as ImportMap
 
 type Args = {
