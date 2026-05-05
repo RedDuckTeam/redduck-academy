@@ -102,7 +102,7 @@ To run migrations manually:
 
 ```bash
 # Backend (Drizzle — Better Auth + user progress tables)
-yarn workspace backend db:migrate
+yarn backend:db:migrate
 
 # Admin (Payload collections)
 yarn admin:db:migrate
@@ -112,10 +112,10 @@ When you change Payload collections or backend tables, generate a new migration:
 
 ```bash
 # Payload
-cd apps/admin && yarn payload migrate:create
+yarn admin:db:generate
 
 # Drizzle (backend)
-cd apps/backend && yarn db:generate
+yarn backend:db:generate
 ```
 
 After editing `packages/payload-config/src/collections/`, regenerate types:
@@ -224,13 +224,13 @@ yarn install
 yarn payload-config:generate
 
 # Run migrations locally
-yarn workspace backend db:migrate
+yarn backend:db:migrate
 yarn admin:db:migrate
 
 # Start everything (separate terminals)
-yarn workspace backend dev   # :8787
-yarn workspace admin dev     # :3001
-yarn workspace web dev       # :3000
+yarn backend:dev   # :8787
+yarn admin:dev     # :3001
+yarn web:dev       # :3000
 ```
 
 Each app has a `.env` (gitignored). Copy values from your dev Postgres + R2.
