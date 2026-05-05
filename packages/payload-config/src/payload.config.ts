@@ -1,5 +1,11 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { BlocksFeature, HeadingFeature, lexicalEditor, EXPERIMENTAL_TableFeature } from '@payloadcms/richtext-lexical'
+import {
+  BlocksFeature,
+  CodeBlock,
+  HeadingFeature,
+  lexicalEditor,
+  EXPERIMENTAL_TableFeature,
+} from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -35,26 +41,15 @@ export default buildConfig({
       }),
       BlocksFeature({
         blocks: [
-          {
+          CodeBlock({
             slug: 'code',
-            fields: [
-              {
-                name: 'language',
-                type: 'select',
-                defaultValue: 'typescript',
-                options: [
-                  { label: 'TypeScript', value: 'typescript' },
-                  { label: 'Rust', value: 'rust' },
-                  { label: 'Solidity', value: 'solidity' },
-                ],
-              },
-              {
-                name: 'code',
-                type: 'code',
-                required: true,
-              },
-            ],
-          },
+            defaultLanguage: 'typescript',
+            languages: {
+              typescript: 'TypeScript',
+              rust: 'Rust',
+              solidity: 'Solidity',
+            },
+          }),
         ],
       }),
     ],

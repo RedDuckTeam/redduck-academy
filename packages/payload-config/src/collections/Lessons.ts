@@ -187,6 +187,15 @@ export const Lessons: CollectionConfig = {
       defaultValue: 'lecture',
     },
     {
+      name: 'copyContentMarkdown',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/admin-components/copy-markdown-button#CopyMarkdownButton',
+        },
+      },
+    },
+    {
       name: 'content',
       type: 'richText',
       admin: {
