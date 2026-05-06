@@ -15,7 +15,7 @@ export default function Header() {
   const location = useLocation()
   const isSignUpPage = location.pathname === '/sign-up'
   const [isOpen, setIsOpen] = useState(false)
-  const { session, isPending } = useSession()
+  const { session } = useSession()
 
   useEffect(() => {
     if (!isOpen) return
@@ -62,9 +62,7 @@ export default function Header() {
           <HeaderLinks />
         </div>
         <div className="flex xl:w-[15%] items-center justify-end gap-4 shrink-0">
-          {isPending ? (
-            <div className="size-10 shrink-0 rounded-full bg-muted animate-pulse" aria-hidden />
-          ) : session?.user ? (
+          {session?.user ? (
             <Link
               to="/profile/$username"
               params={{ username: (session.user as { username?: string }).username ?? '' }}

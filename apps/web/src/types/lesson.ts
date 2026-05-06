@@ -199,7 +199,7 @@ export interface TestQuestion {
 }
 
 export interface TestQuestionOption {
-  label: string
+  label: Record<string, any> | null
   order: number
   parentId: string
   id: string

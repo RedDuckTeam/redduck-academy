@@ -59,7 +59,7 @@ export const LessonTestQuestion = ({
                   onCheckedChange={() => onSelect(option.id)}
                   disabled={isCompleted}
                 />
-                <Text className="min-w-0 flex-1 wrap-anywhere">{option.label}</Text>
+                <RichText data={option.label} className="min-w-0 flex-1 wrap-anywhere [&>div>*]:mb-0" />
               </label>
             )
           })}
@@ -98,7 +98,7 @@ export const LessonTestQuestion = ({
                         '[&_[data-slot=radio-group-indicator]_span]:bg-primary border-primary',
                     )}
                   />
-                  <Text className="min-w-0 flex-1 wrap-anywhere">{option.label}</Text>
+                  <RichText data={option.label} className="min-w-0 flex-1 wrap-anywhere [&>div>*]:mb-0" />
                 </label>
               )
             })}

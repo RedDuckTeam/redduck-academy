@@ -8,6 +8,7 @@ import * as migration_20260502_222538 from './20260502_222538';
 import * as migration_20260502_231236 from './20260502_231236';
 import * as migration_20260503_212009 from './20260503_212009';
 import * as migration_20260503_220523 from './20260503_220523';
+import * as migration_20260506_195532_question_option_label_richtext from './20260506_195532_question_option_label_richtext';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260503_220523.up,
     down: migration_20260503_220523.down,
-    name: '20260503_220523'
+    name: '20260503_220523',
+  },
+  {
+    up: migration_20260506_195532_question_option_label_richtext.up,
+    down: migration_20260506_195532_question_option_label_richtext.down,
+    name: '20260506_195532_question_option_label_richtext'
   },
 ];

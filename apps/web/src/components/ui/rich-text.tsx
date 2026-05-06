@@ -21,7 +21,7 @@ const blockquoteStyles =
 const anchorStyles = '[&_a]:text-primary [&_a]:underline'
 
 const codeStyles =
-  '[&_p_code]:bg-border/40 [&_p_code]:text-primary [&_p_code]:border [&_p_code]:border-border [&_p_code]:rounded-[2px] [&_p_code]:px-[3px] [&_p_code]:py-[2px]'
+  '[&_p_code]:bg-border/40 [&_p_code]:text-primary [&_p_code]:border [&_p_code]:border-border [&_p_code]:rounded-[2px] [&_p_code]:px-[3px] [&_p_code]:py-[0px]'
 
 const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
 
@@ -138,7 +138,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               }
             }
             return (
-              <Text variant="main-18" className={paragraphClassName}>
+              <Text variant="main-18" className={cn('leading-[23px]', paragraphClassName)}>
                 {nodesToJSX({ nodes: node.children })}
               </Text>
             )

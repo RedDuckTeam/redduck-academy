@@ -71,7 +71,7 @@ export const CoursesProgramSidebarList = ({
           <Text variant="main-16" className="font-ibm-plex-mono text-primary">
             {padIndex(index)}.
           </Text>
-          <Text variant="main-16" className="font-ibm-plex-mono uppercase text-white">
+          <Text variant="main-16" className="font-ibm-plex-mono text-left uppercase text-white">
             {course.title}
           </Text>
         </button>

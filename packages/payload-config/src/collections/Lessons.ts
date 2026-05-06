@@ -265,7 +265,23 @@ export const Lessons: CollectionConfig = {
           name: 'options',
           type: 'array',
           fields: [
-            { name: 'label', type: 'text', required: true },
+            {
+              name: 'label',
+              type: 'richText',
+              required: true,
+              editor: lexicalEditor({
+                features: [
+                  ParagraphFeature(),
+                  BoldFeature(),
+                  ItalicFeature(),
+                  UnderlineFeature(),
+                  StrikethroughFeature(),
+                  InlineCodeFeature(),
+                  LinkFeature(),
+                  InlineToolbarFeature(),
+                ],
+              }),
+            },
             {
               name: 'isCorrect',
               type: 'checkbox',
