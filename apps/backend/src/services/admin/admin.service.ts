@@ -311,9 +311,9 @@ export class AdminService {
     }
 
     // Admin sees raw review feedback — no sanitization of hidden criteria
-    let submissions: Awaited<ReturnType<typeof ReviewService.getSubmissionsForUserLesson>> = []
+    let submissions: Awaited<ReturnType<typeof ReviewService.getSubmissionsForUserLessonAdmin>> = []
     if (lesson.type === 'review_task' && userLesson?.id) {
-      submissions = await ReviewService.getSubmissionsForUserLesson(userLesson.id)
+      submissions = await ReviewService.getSubmissionsForUserLessonAdmin(userLesson.id)
     }
 
     return {

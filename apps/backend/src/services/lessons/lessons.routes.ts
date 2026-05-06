@@ -1,9 +1,13 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
-import { z } from 'zod'
+import {
+  courseLessonParamSchema,
+  submitCodingTaskBodySchema,
+  submitProjectBodySchema,
+  submitTestBodySchema,
+} from '@redduck/api-contracts'
 import { getLessonDesc, markLessonAsCompletedDesc, submitCodingTaskDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
 import { requireAuth, requireNotBanned, getClientIp } from '../../lib/middleware'
-import { courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
 import { AppError } from '../../lib/errors'
 import { CoursesTestService } from '../courses/courses-test.service'
@@ -11,41 +15,6 @@ import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { LessonsService } from './lessons.service'
 import { CoursePrerequisitesService } from '../courses/course-prerequisites.service'
-
-const slugField = z
-  .string()
-  .min(1)
-  .max(100)
-  .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers, or hyphens')
-
-const submitTestBodySchema = z.object({
-  courseSlug: slugField,
-  lessonSlug: slugField,
-  answers: z
-    .record(
-      z.string().min(1).max(64),
-      z.array(z.string().max(64)).max(10),
-    )
-    .refine((r) => Object.keys(r).length <= 50, 'Too many answer keys'),
-})
-
-const submitProjectBodySchema = z.object({
-  courseSlug: slugField,
-  lessonSlug: slugField,
-  repoUrl: z.string().url(),
-})
-
-const submitCodingTaskBodySchema = z.object({
-  courseSlug: slugField,
-  lessonSlug: slugField,
-  code: z
-    .string()
-    .min(1, { message: 'Code cannot be empty.' })
-    .max(30_000, { message: 'Your submission is too long. Please shorten your code and try again.' }),
-  language: z.enum(['solidity', 'rust', 'typescript']),
-  /** Browser test runner verdict; null when the lesson has no executable tests. */
-  clientPassed: z.boolean().nullable(),
-})
 
 const lessonsApp = new Hono<{ Variables: AuthVariables }>()
 
@@ -71,7 +40,7 @@ lessonsApp.post(
     if (!access.allowed) throw new AppError(403, `Course locked: complete "${access.prerequisiteCourseTitle}" first`)
     const ipAddress = getClientIp(c)
     await ReviewService.submitProject(user.id, courseSlug, lessonSlug, repoUrl, ipAddress)
-    return c.json({ success: true })
+    return c.json({ success: true as const })
   },
 )
 

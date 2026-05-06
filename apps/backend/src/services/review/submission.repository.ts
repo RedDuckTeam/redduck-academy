@@ -71,8 +71,26 @@ export const SubmissionRepository = {
     return row ?? null
   },
 
-  /** Oldest first — tab label Attempt 1..N; latest is `.at(-1)`. */
+  /**
+   * Oldest first — tab label Attempt 1..N; latest is `.at(-1)`.
+   * Learner-facing: omits `batchRequestId` (internal OpenAI batch id, no UI consumer).
+   */
   async listForUserLesson(userLessonId: number) {
+    return db
+      .select({
+        id: projectUserSubmissions.id,
+        status: projectUserSubmissions.status,
+        submittedAt: projectUserSubmissions.submittedAt,
+        feedback: projectUserSubmissions.feedback,
+        errorMessage: projectUserSubmissions.errorMessage,
+      })
+      .from(projectUserSubmissions)
+      .where(eq(projectUserSubmissions.userLessonId, userLessonId))
+      .orderBy(asc(projectUserSubmissions.submittedAt))
+  },
+
+  /** Admin variant — includes `batchRequestId` for diagnostics. */
+  async listForUserLessonAdmin(userLessonId: number) {
     return db
       .select({
         id: projectUserSubmissions.id,

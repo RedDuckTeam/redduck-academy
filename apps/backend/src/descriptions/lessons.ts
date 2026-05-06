@@ -1,29 +1,30 @@
 import { describeRoute, resolver } from 'hono-openapi'
 import { z } from 'zod'
+import {
+  markCompletedResponseSchema,
+  submitCodingTaskResponseSchema,
+  submitProjectResponseSchema,
+  submitTestResponseSchema,
+} from '@redduck/api-contracts'
 import { errorSchema } from './schemas'
 
 export const getLessonDesc = describeRoute({
   summary: 'Get lesson by slug',
   description:
-    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden.',
+    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden. AI-only fields (aiTaskSummary, aiPossibleSolutions, aiExpectedResult) are stripped.',
   tags: ['Lessons'],
   responses: {
     200: {
       description: 'Lesson data with questions and options',
       content: {
         'application/json': {
-          schema: resolver(z.object({ data: z.any() })),
+          // Lesson body shape is Payload-derived; the public route strips AI fields via LessonsService mappers.
+          schema: resolver(z.object({ data: z.unknown() })),
         },
       },
     },
-    404: {
-      description: 'Course or lesson not found',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
+    404: { description: 'Course or lesson not found', content: { 'application/json': { schema: errorSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
@@ -35,24 +36,11 @@ export const submitTestDesc = describeRoute({
   responses: {
     200: {
       description: 'Submission accepted',
-      content: {
-        'application/json': {
-          schema: resolver(z.object({ success: z.boolean() })),
-        },
-      },
+      content: { 'application/json': { schema: resolver(submitTestResponseSchema) } },
     },
-    401: {
-      description: 'Unauthorized',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    404: {
-      description: 'Course, lesson not found, or lesson is not a test',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'Course, lesson not found, or lesson is not a test', content: { 'application/json': { schema: errorSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
@@ -64,81 +52,37 @@ export const submitProjectDesc = describeRoute({
   responses: {
     200: {
       description: 'Submission queued for AI batch, or already queued (idempotent)',
-      content: {
-        'application/json': {
-          schema: resolver(z.object({ success: z.literal(true) })),
-        },
-      },
+      content: { 'application/json': { schema: resolver(submitProjectResponseSchema) } },
     },
-    400: {
-      description: 'Lesson is not a review task',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    404: {
-      description: 'Course or lesson not found',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    409: {
-      description: 'Another repository URL is already being reviewed for this lesson',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    502: {
-      description: 'OpenAI batch creation failed',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    503: {
-      description: 'AI not configured',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
+    400: { description: 'Lesson is not a review task', content: { 'application/json': { schema: errorSchema } } },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'Course or lesson not found', content: { 'application/json': { schema: errorSchema } } },
+    409: { description: 'Another repository URL is already being reviewed for this lesson', content: { 'application/json': { schema: errorSchema } } },
+    502: { description: 'OpenAI batch creation failed', content: { 'application/json': { schema: errorSchema } } },
+    503: { description: 'AI not configured', content: { 'application/json': { schema: errorSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
 export const submitCodingTaskDesc = describeRoute({
   summary: 'Submit coding task code for AI review',
   description:
-    'Submits student code for a coding_task lesson. The AI reviews the code synchronously and returns a pass/fail result immediately. Subject to rate limiting.',
+    'Submits student code for a coding_task lesson. The AI reviews the code synchronously and returns a pass/fail result. Subject to rate limiting.',
   tags: ['Lessons'],
   responses: {
     200: {
-      description: 'Review result with pass/fail and remaining attempts in current window',
-      content: {
-        'application/json': {
-          schema: resolver(z.object({ passed: z.boolean(), attemptsRemaining: z.number() })),
-        },
-      },
+      description: 'Review result with pass/fail',
+      content: { 'application/json': { schema: resolver(submitCodingTaskResponseSchema) } },
     },
     429: {
       description: 'Rate limit exceeded',
       content: { 'application/json': { schema: resolver(z.object({ error: z.string(), retryAfterMs: z.number() })) } },
     },
-    400: {
-      description: 'Lesson is not a coding task',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    404: {
-      description: 'Course or lesson not found',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    502: {
-      description: 'AI review failed',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
+    400: { description: 'Lesson is not a coding task', content: { 'application/json': { schema: errorSchema } } },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'Course or lesson not found', content: { 'application/json': { schema: errorSchema } } },
+    502: { description: 'AI review failed', content: { 'application/json': { schema: errorSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 
@@ -150,27 +94,11 @@ export const markLessonAsCompletedDesc = describeRoute({
   responses: {
     200: {
       description: 'Lesson marked as completed',
-      content: {
-        'application/json': {
-          schema: resolver(z.object({ success: z.boolean() })),
-        },
-      },
+      content: { 'application/json': { schema: resolver(markCompletedResponseSchema) } },
     },
-    400: {
-      description: 'Lesson is not a lecture',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    404: {
-      description: 'Course or lesson not found',
-      content: { 'application/json': { schema: errorSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: errorSchema } },
-    },
+    400: { description: 'Lesson is not a lecture', content: { 'application/json': { schema: errorSchema } } },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'Course or lesson not found', content: { 'application/json': { schema: errorSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: errorSchema } } },
   },
 })

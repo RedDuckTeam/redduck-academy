@@ -9227,6 +9227,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@redduck/api-contracts@workspace:^, @redduck/api-contracts@workspace:packages/api-contracts":
+  version: 0.0.0-use.local
+  resolution: "@redduck/api-contracts@workspace:packages/api-contracts"
+  dependencies:
+    typescript: "npm:^5.7.2"
+  peerDependencies:
+    zod: ^4.3.5
+  languageName: unknown
+  linkType: soft
+
 "@redduck/payload-config@workspace:^, @redduck/payload-config@workspace:packages/payload-config":
   version: 0.0.0-use.local
   resolution: "@redduck/payload-config@workspace:packages/payload-config"
@@ -14924,6 +14934,7 @@ __metadata:
   dependencies:
     "@aws-sdk/client-s3": "npm:^3.1030.0"
     "@privy-io/server-auth": "npm:^1.32.5"
+    "@redduck/api-contracts": "workspace:^"
     "@redduck/payload-config": "workspace:^"
     "@types/node": "npm:^25.6.0"
     "@types/picomatch": "npm:^4.0.3"
@@ -14932,6 +14943,7 @@ __metadata:
     obscenity: "npm:^0.4.6"
     puppeteer: "npm:^24.41.0"
     typescript: "npm:^6.0.2"
+    zod: "npm:^4.3.5"
   languageName: unknown
   linkType: soft
 
@@ -28319,6 +28331,7 @@ __metadata:
     "@radix-ui/react-dialog": "npm:^1.1.15"
     "@radix-ui/react-slot": "npm:^1.2.4"
     "@react-pdf/renderer": "npm:^4.5.1"
+    "@redduck/api-contracts": "workspace:^"
     "@redduck/solc-utils": "workspace:^"
     "@reown/appkit": "npm:^1.8.16"
     "@reown/appkit-adapter-wagmi": "npm:^1.8.16"

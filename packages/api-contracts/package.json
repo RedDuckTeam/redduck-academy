@@ -1,0 +1,14 @@
+{
+  "name": "@redduck/api-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "peerDependencies": {
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

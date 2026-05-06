@@ -1,3 +1,10 @@
+import type {
+  LearnerCodingTaskSubmission,
+  LearnerProjectSubmission,
+  LearnerReviewFeedback,
+  ReviewCriterionFeedback as ContractsReviewCriterionFeedback,
+  UserSettings as ContractsUserSettings,
+} from '@redduck/api-contracts'
 import type { Certificate } from '@/lib/api/certificates'
 
 export type CodingLanguage = 'solidity' | 'rust' | 'typescript'
@@ -37,18 +44,7 @@ export interface Course {
   prerequisiteCourse?: CoursePrerequisite | null
 }
 
-export interface UserSettings {
-  id: string
-  name: string
-  image: string | null
-  username: string | null
-  role: 'user' | 'admin'
-  skipPrerequisites: boolean
-  isPrivate: boolean
-  blacklisted: boolean
-  bio: string | null
-  createdAt: string
-}
+export type UserSettings = ContractsUserSettings
 
 export interface Module {
   id: number
@@ -98,13 +94,7 @@ export type SolidityTestCase =
       expected: string
     }
 
-export interface CodingTaskSubmission {
-  id: number
-  passed: boolean
-  submittedAt: string
-  submittedCode: string
-  aiComment?: string | null
-}
+export type CodingTaskSubmission = LearnerCodingTaskSubmission
 
 /** Public shape for review_task grading rows (from GET lesson); criteria omitted when criteriaHidden is true. */
 export interface PublicReviewGradingTask {
@@ -141,26 +131,9 @@ export interface Lesson {
   solidityTestCases?: SolidityTestCase[]
 }
 
-export interface ReviewCriterionFeedback {
-  taskId: string
-  name: string
-  passed: boolean
-  comment: string
-}
-
-export interface ReviewFeedback {
-  summary: string
-  criteria: ReviewCriterionFeedback[]
-}
-
-export interface LatestProjectSubmission {
-  id: number
-  status: string
-  submittedAt: string
-  batchRequestId: string | null
-  feedback: ReviewFeedback | null
-  errorMessage: string | null
-}
+export type ReviewCriterionFeedback = ContractsReviewCriterionFeedback
+export type ReviewFeedback = LearnerReviewFeedback
+export type LatestProjectSubmission = LearnerProjectSubmission
 
 export interface LessonForUser extends Lesson {
   userAnswers: Record<string, string[]> | null

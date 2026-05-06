@@ -1,7 +1,14 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
+import {
+  courseLessonParamSchema,
+  updateUserBioBodySchema,
+  updateUserNameBodySchema,
+  updateUserSettingsBodySchema,
+  updateUserUsernameBodySchema,
+  usernameParamSchema,
+} from '@redduck/api-contracts'
 import { requireAuth, requireNotBanned } from '../../lib/middleware'
-import { courseLessonParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
 import {
   getUserStatsDesc,
@@ -10,18 +17,13 @@ import {
   syncProjectReviewDesc,
   getProgressCardsDesc,
   updateUserNameDesc,
-  updateUserNameBodySchema,
   getUserSettingsDesc,
   updateUserSettingsDesc,
-  updateUserSettingsBodySchema,
   getRatingDesc,
   uploadAvatarDesc,
   updateUserBioDesc,
-  updateUserBioBodySchema,
   updateUserUsernameDesc,
-  updateUserUsernameBodySchema,
   getPublicProfileDesc,
-  usernameParamSchema,
 } from '../../descriptions/user'
 import { ReviewService } from '../review/review.service'
 import { UserService } from './user.service'

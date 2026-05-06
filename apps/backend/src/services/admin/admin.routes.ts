@@ -1,18 +1,20 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import {
-  adminCertificatesDesc,
   adminCertificatesQuerySchema,
+  adminUserIdParamSchema,
+  adminUserLessonParamSchema,
+  adminUsersQuerySchema,
+  banUserBodySchema,
+} from '@redduck/api-contracts'
+import {
+  adminCertificatesDesc,
   adminHealthDesc,
   adminStatsDesc,
   adminUsersDesc,
-  adminUsersQuerySchema,
   adminUserCompletedLessonsDesc,
   adminUserLessonDetailDesc,
-  adminUserIdParamSchema,
-  adminUserLessonParamSchema,
 } from '../../descriptions/admin'
-import { z } from 'zod'
 import { parsePaginationQuery } from '../../lib/pagination'
 import { requireAdmin } from '../../lib/middleware'
 import type { AuthVariables } from '../../lib/types'
@@ -97,8 +99,6 @@ adminApp.get(
     return c.json({ data })
   },
 )
-
-const banUserBodySchema = z.object({ ban: z.boolean() })
 
 adminApp.patch(
   '/users/:userId/ban',

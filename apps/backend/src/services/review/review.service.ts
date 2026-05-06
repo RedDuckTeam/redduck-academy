@@ -86,7 +86,7 @@ export class ReviewService {
       throw new AppError(404, 'Lesson not started')
     }
 
-    const submissions = await SubmissionRepository.listForUserLesson(userLesson.id)
+    const submissions = await SubmissionRepository.listForUserLessonAdmin(userLesson.id)
     const latest = submissions.at(-1)
     if (!latest || latest.status !== 'pending' || !latest.batchRequestId) return
 
@@ -106,5 +106,9 @@ export class ReviewService {
 
   static async getSubmissionsForUserLesson(userLessonId: number) {
     return SubmissionRepository.listForUserLesson(userLessonId)
+  }
+
+  static async getSubmissionsForUserLessonAdmin(userLessonId: number) {
+    return SubmissionRepository.listForUserLessonAdmin(userLessonId)
   }
 }

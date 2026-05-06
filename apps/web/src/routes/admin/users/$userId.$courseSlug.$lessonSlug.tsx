@@ -3,7 +3,10 @@ import { useAdminUserLessonDetail } from '@/hooks/api/admin/useAdminUserLessonDe
 import { LessonTestQuestion } from '@/components/pages/lesson/test/lesson-test-question'
 import { SubmissionReviewTabs } from '@/components/pages/lesson/project/submission-review-tabs'
 import { Text } from '@/components/ui/text'
-import type { CodingTaskSubmission, LatestProjectSubmission } from '@/types/lesson'
+import type {
+  AdminCodingTaskSubmission as CodingTaskSubmission,
+  AdminProjectSubmission as LatestProjectSubmission,
+} from '@redduck/api-contracts'
 
 export const Route = createFileRoute('/admin/users/$userId/$courseSlug/$lessonSlug')({
   ssr: false,
