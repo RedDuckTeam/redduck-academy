@@ -102,13 +102,13 @@ export const CourseProgramHeader = ({
               />
             ) : showCertificate ? (
               certificate ? (
-                <Button className="text-[#000]" asChild>
+                <Button size="sm" className="text-[#000]" asChild>
                   <Link to="/certificates/$certificateId" params={{ certificateId: certificate.id }}>
                     View Certificate
                   </Link>
                 </Button>
               ) : (
-                <Button className="text-[#000]" onClick={openNameDialog} disabled={isClaiming}>
+                <Button size="sm" className="text-[#000]" onClick={openNameDialog} disabled={isClaiming}>
                   {isClaiming ? 'Claiming…' : 'Claim Certificate'}
                 </Button>
               )

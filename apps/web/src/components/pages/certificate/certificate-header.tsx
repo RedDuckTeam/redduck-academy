@@ -11,12 +11,8 @@ export function CertificateHeader({ courseTitle }: CertificateHeaderProps) {
         <Text variant="subtitle-32" className="font-medium">
           Congratulations!
         </Text>
-        <Text variant="caps-20">You finished {courseTitle.toLowerCase()} by RedDuck</Text>
+        <Text variant="caps-20">You finished {courseTitle.toLowerCase()} course by RedDuck</Text>
       </div>
-      <Text variant="main-18" className="max-w-[880px]">
-        This page shows your certificate for completing {courseTitle}. Download a PDF copy, share the link, or request
-        an NFT to put it on-chain.
-      </Text>
     </div>
   )
 }

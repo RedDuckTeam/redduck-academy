@@ -1,5 +1,6 @@
-import { createFileRoute, redirect, Outlet } from '@tanstack/react-router'
-import { getUserSettings } from '@/lib/api/user'
+import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { useUserSettings } from '@/hooks/api/user/useUserSettings'
 
 type AdminTab = 'general' | 'users' | 'certificates'
 
@@ -13,16 +14,24 @@ export const Route = createFileRoute('/admin')({
   validateSearch: (search: Record<string, unknown>) => ({
     tab: parseTab(search.tab),
   }),
-  beforeLoad: async () => {
-    let settings
-    try {
-      settings = await getUserSettings()
-    } catch {
-      throw redirect({ to: '/sign-up' })
-    }
-
-    if (!settings) throw redirect({ to: '/sign-up' })
-    if (settings.role !== 'admin') throw redirect({ to: '/dashboard' })
-  },
-  component: Outlet,
+  component: AdminLayout,
 })
+
+function AdminLayout() {
+  const { data: settings, isError, isPending } = useUserSettings()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isPending) return
+    if (isError || !settings) {
+      void router.navigate({ to: '/sign-up', replace: true })
+      return
+    }
+    if (settings.role !== 'admin') {
+      void router.navigate({ to: '/dashboard', replace: true })
+    }
+  }, [settings, isError, isPending, router])
+
+  if (!settings || settings.role !== 'admin') return null
+  return <Outlet />
+}
