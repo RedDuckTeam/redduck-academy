@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import {
+  BlocksFeature,
   BoldFeature,
+  CodeBlock,
   InlineCodeFeature,
   InlineToolbarFeature,
   ItalicFeature,
@@ -17,6 +19,30 @@ import {
 
 import { formatSlug } from './hooks/formatSlug'
 import { rootEditorFeatures } from '../editor-features'
+
+const testQuestionLexicalFeatures = [
+  ParagraphFeature(),
+  BoldFeature(),
+  ItalicFeature(),
+  UnderlineFeature(),
+  StrikethroughFeature(),
+  InlineCodeFeature(),
+  LinkFeature(),
+  InlineToolbarFeature(),
+  BlocksFeature({
+    blocks: [
+      CodeBlock({
+        slug: 'code',
+        defaultLanguage: 'typescript',
+        languages: {
+          typescript: 'TypeScript',
+          rust: 'Rust',
+          solidity: 'Solidity',
+        },
+      }),
+    ],
+  }),
+]
 
 export const Lessons: CollectionConfig = {
   slug: 'lessons',
@@ -248,18 +274,7 @@ export const Lessons: CollectionConfig = {
           name: 'question',
           type: 'richText',
           required: true,
-          editor: lexicalEditor({
-            features: [
-              ParagraphFeature(),
-              BoldFeature(),
-              ItalicFeature(),
-              UnderlineFeature(),
-              StrikethroughFeature(),
-              InlineCodeFeature(),
-              LinkFeature(),
-              InlineToolbarFeature(),
-            ],
-          }),
+          editor: lexicalEditor({ features: testQuestionLexicalFeatures }),
         },
         {
           name: 'options',
@@ -269,18 +284,7 @@ export const Lessons: CollectionConfig = {
               name: 'label',
               type: 'richText',
               required: true,
-              editor: lexicalEditor({
-                features: [
-                  ParagraphFeature(),
-                  BoldFeature(),
-                  ItalicFeature(),
-                  UnderlineFeature(),
-                  StrikethroughFeature(),
-                  InlineCodeFeature(),
-                  LinkFeature(),
-                  InlineToolbarFeature(),
-                ],
-              }),
+              editor: lexicalEditor({ features: testQuestionLexicalFeatures }),
             },
             {
               name: 'isCorrect',
