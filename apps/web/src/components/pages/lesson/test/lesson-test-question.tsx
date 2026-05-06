@@ -26,15 +26,15 @@ export const LessonTestQuestion = ({
 
   return (
     <div id={`question-${question.order}`} className="flex min-w-0 w-full max-w-full flex-col gap-5 scroll-mt-20">
-      <div className="flex min-w-0 max-w-full gap-1.5 wrap-anywhere">
-        <Text variant="caps-20" className="text-primary">
+      <div className="min-w-0 max-w-full wrap-anywhere">
+        <Text variant="caps-20" className="text-primary float-left mr-1.5">
           {question.order < 10 ? `0${question.order}` : question.order}.
         </Text>
-        <RichText data={question.question} className="min-w-0 flex-1 [&>div>*]:mb-0" />
+        <RichText data={question.question} className="min-w-0 [&>div>*]:mb-0" />
       </div>
 
       {isMultiple ? (
-        <div className="flex min-w-0 flex-col gap-3 pl-4">
+        <div className="flex min-w-0 flex-col gap-3">
           {question.options.map((option) => {
             const isCorrect = rightAnswerIds.includes(option.id)
             const isSelected = selectedIds.includes(option.id)
@@ -68,7 +68,7 @@ export const LessonTestQuestion = ({
         </div>
       ) : (
         <RadioGroup
-          className="min-w-0 pl-10"
+          className="min-w-0"
           value={selectedIds[0] ?? ''}
           onValueChange={(value) => value && onSelect(value)}
           disabled={isCompleted}
