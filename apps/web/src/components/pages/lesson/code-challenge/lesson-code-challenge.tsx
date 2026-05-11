@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
@@ -9,6 +9,7 @@ import { FileIcon } from '@/components/ui/icons/file'
 import { CodeIcon } from '@/components/ui/icons/code'
 import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
+import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { useSession } from '@/hooks/useSession'
 import { useCodeRunner } from '@/hooks/lessons/useCodeRunner'
 import { RateLimitError } from '@/lib/api/rate-limit'
@@ -27,16 +28,28 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
 
   const starterCode = lesson.starterCode ?? ''
-  const [code, setCode] = useState(starterCode)
+  const storageKey = `redduck:coding-task:${courseSlug}:${lessonSlug}`
+  const { value: code, setValue: setCode } = useLocalStorageState<string>(storageKey, starterCode)
   const restoredRef = useRef(false)
 
   useEffect(() => {
     if (restoredRef.current || !userLesson) return
-    const submissions = (userLesson.submissions as CodingTaskSubmission[]) ?? []
-    const lastCode = submissions.at(-1)?.submittedCode
-    if (lastCode) setCode(lastCode)
+    // localStorage takes precedence over the last submitted code so that in-progress
+    // edits survive across reloads and sign-in redirects.
+    const hasSavedDraft = (() => {
+      try {
+        return window.localStorage.getItem(storageKey) !== null
+      } catch {
+        return false
+      }
+    })()
+    if (!hasSavedDraft) {
+      const submissions = (userLesson.submissions as CodingTaskSubmission[]) ?? []
+      const lastCode = submissions.at(-1)?.submittedCode
+      if (lastCode) setCode(lastCode)
+    }
     restoredRef.current = true
-  }, [userLesson])
+  }, [userLesson, storageKey, setCode])
 
   const { report, isRunning, liveStatus, run, applyServerVerdict } = useCodeRunner(lesson)
   const { mutate: submit, isPending, error: submitError } = useSubmitCodingTask(courseSlug, lessonSlug)

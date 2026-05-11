@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { LessonTestQuestion } from './lesson-test-question'
 import type { Lesson } from '@/types/lesson'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { useSubmitTest } from '@/hooks/api/lessons/useSubmitTest'
 import { useSession } from '@/hooks/useSession'
+import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { LessonNavigation } from '../lesson-navigation/lesson-navigation'
 
 interface LessonTestProps {
@@ -18,24 +19,32 @@ interface LessonTestProps {
 export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) => {
   const router = useRouter()
   const { session } = useSession()
-  const [answers, setAnswers] = useState<Record<string, string[]>>({})
+  const { value: answers, setValue: setAnswers, clear: clearSavedAnswers } = useLocalStorageState<
+    Record<string, string[]>
+  >(`redduck:test-answers:${courseSlug}:${lessonSlug}`, {})
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const { mutate: submitTest, isPending } = useSubmitTest(courseSlug, lessonSlug)
 
-  const handleSelect = useCallback((questionId: string, optionId: string, isMultiple: boolean) => {
-    setAnswers((prev) => {
-      const current = prev[questionId] ?? []
-      if (isMultiple) {
-        const isSelected = current.includes(optionId)
-        const next = isSelected ? current.filter((id) => id !== optionId) : [...current, optionId]
-        return { ...prev, [questionId]: next }
-      }
-      return { ...prev, [questionId]: [optionId] }
-    })
-  }, [])
+  const handleSelect = useCallback(
+    (questionId: string, optionId: string, isMultiple: boolean) => {
+      setAnswers((prev) => {
+        const current = prev[questionId] ?? []
+        if (isMultiple) {
+          const isSelected = current.includes(optionId)
+          const next = isSelected ? current.filter((id) => id !== optionId) : [...current, optionId]
+          return { ...prev, [questionId]: next }
+        }
+        return { ...prev, [questionId]: [optionId] }
+      })
+    },
+    [setAnswers],
+  )
 
   const handleSubmit = () => {
-    submitTest({ courseSlug, lessonSlug, answers })
+    submitTest(
+      { courseSlug, lessonSlug, answers },
+      { onSuccess: () => clearSavedAnswers() },
+    )
   }
 
   const isAllAnswersSelected =

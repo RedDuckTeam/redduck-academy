@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
+import { useScrollMagnet } from '@/hooks/useScrollMagnet'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
@@ -60,15 +60,7 @@ function LessonPage() {
   const isCodingChallenge = lesson.type === 'coding_task'
   const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
 
-  useEffect(() => {
-    if (!isCodingChallenge) return
-    const html = document.documentElement
-    const previous = html.style.scrollSnapType
-    html.style.scrollSnapType = 'y proximity'
-    return () => {
-      html.style.scrollSnapType = previous
-    }
-  }, [isCodingChallenge])
+  useScrollMagnet({ enabled: isCodingChallenge, targetId: 'coding-task-row', offset: 20, range: 40 })
 
   return (
     <main
@@ -83,11 +75,12 @@ function LessonPage() {
         lessonSlug={lessonSlug}
       />
       <div
+        id={isCodingChallenge ? 'coding-task-row' : undefined}
         className={cn(
           'flex min-w-0 gap-10',
           // Coding challenge: lock the row to (almost) full viewport so editor + description
           // get real estate even on laptops. Page scrolls to bring this into focus.
-          isCodingChallenge && 'xl:h-[calc(100vh-2.5rem)] snap-start scroll-mt-5',
+          isCodingChallenge && 'xl:h-[calc(100vh-2.5rem)]',
         )}
       >
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
