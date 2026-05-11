@@ -44,6 +44,30 @@ const testQuestionLexicalFeatures = [
   }),
 ]
 
+/**
+ * Caller aliases recognised by the in-browser Solidity runner. Keep this list in
+ * sync with `CALLER_ALIASES` in `apps/web/src/lib/code-runner/solidity/run-test-case.ts`.
+ */
+const SOLIDITY_CALLER_ALIASES = ['default', 'alice', 'bob', 'carol', 'dave']
+const SOLIDITY_CALLER_HELP =
+  'Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.'
+const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
+
+function assertValidCaller(value: unknown, casePrefix: string, fieldName: string): void {
+  if (value === undefined || value === null) return
+  if (typeof value !== 'string') {
+    throw new APIError(`${casePrefix}: ${fieldName} must be a string.`, 400)
+  }
+  const trimmed = value.trim()
+  if (trimmed === '') return
+  if (SOLIDITY_CALLER_ALIASES.includes(trimmed.toLowerCase())) return
+  if (RAW_ADDRESS_RE.test(trimmed)) return
+  throw new APIError(
+    `${casePrefix}: ${fieldName} "${value}" is not a known alias (${SOLIDITY_CALLER_ALIASES.join(', ')}) or 0x-prefixed 40-hex address.`,
+    400,
+  )
+}
+
 export const Lessons: CollectionConfig = {
   slug: 'lessons',
   admin: {
@@ -109,7 +133,9 @@ export const Lessons: CollectionConfig = {
                 blockType?: unknown
                 functionName?: unknown
                 valueWei?: unknown
+                caller?: unknown
                 postCheckFunctionName?: unknown
+                postCheckCaller?: unknown
               }
               if (typeof row.functionName !== 'string' || row.functionName.trim() === '') {
                 throw new APIError(`Solidity test case ${i + 1}: functionName is required.`, 400)
@@ -125,14 +151,15 @@ export const Lessons: CollectionConfig = {
                   )
                 }
               }
-              if (
-                row.blockType === 'postCheckAssertion' &&
-                (typeof row.postCheckFunctionName !== 'string' || row.postCheckFunctionName.trim() === '')
-              ) {
-                throw new APIError(
-                  `Solidity test case ${i + 1}: postCheckFunctionName is required for post-check assertions.`,
-                  400,
-                )
+              assertValidCaller(row.caller, `Solidity test case ${i + 1}`, 'caller')
+              if (row.blockType === 'postCheckAssertion') {
+                if (typeof row.postCheckFunctionName !== 'string' || row.postCheckFunctionName.trim() === '') {
+                  throw new APIError(
+                    `Solidity test case ${i + 1}: postCheckFunctionName is required for post-check assertions.`,
+                    400,
+                  )
+                }
+                assertValidCaller(row.postCheckCaller, `Solidity test case ${i + 1}`, 'postCheckCaller')
               }
             }
           }
@@ -439,6 +466,11 @@ export const Lessons: CollectionConfig = {
               },
             },
             {
+              name: 'caller',
+              type: 'text',
+              admin: { description: SOLIDITY_CALLER_HELP },
+            },
+            {
               name: 'expected',
               type: 'text',
               required: true,
@@ -485,6 +517,11 @@ export const Lessons: CollectionConfig = {
               },
             },
             {
+              name: 'caller',
+              type: 'text',
+              admin: { description: SOLIDITY_CALLER_HELP },
+            },
+            {
               name: 'postCheckFunctionName',
               type: 'text',
               required: true,
@@ -507,6 +544,13 @@ export const Lessons: CollectionConfig = {
                   },
                 },
               ],
+            },
+            {
+              name: 'postCheckCaller',
+              type: 'text',
+              admin: {
+                description: `${SOLIDITY_CALLER_HELP} Defaults to the main call's caller.`,
+              },
             },
             {
               name: 'expected',

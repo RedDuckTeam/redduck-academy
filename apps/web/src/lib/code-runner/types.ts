@@ -14,6 +14,8 @@ export interface SolReturnCase {
   functionName: string
   rawArgs: string[]
   valueWei?: string
+  /** Optional msg.sender for the main call. Alias (e.g. "alice") or 0x-prefixed address. Defaults to the runner's default caller. */
+  caller?: string
   rawExpected: string
 }
 
@@ -24,8 +26,12 @@ export interface SolPostCheckCase {
   functionName: string
   rawArgs: string[]
   valueWei?: string
+  /** Optional msg.sender for the main call. */
+  caller?: string
   postCheckFunctionName: string
   rawPostCheckArgs: string[]
+  /** Optional msg.sender for the post-check call. Defaults to the main caller. */
+  postCheckCaller?: string
   rawExpected: string
 }
 

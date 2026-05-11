@@ -45,7 +45,8 @@ export const useSubmitCodingTask = (courseSlug: string, lessonSlug: string) => {
       const apiResult = await submitCodingTask({ ...rest, clientPassed })
       return { ...apiResult, report }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (!data.passed) return
       queryClient.invalidateQueries({ queryKey: queryKeys.user.lesson(courseSlug, lessonSlug) })
       queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons() })
     },

@@ -350,6 +350,10 @@ export interface Lesson {
              */
             valueWei?: string | null;
             /**
+             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
+             */
+            caller?: string | null;
+            /**
              * Expected return value, typed per the function's return type.
              */
             expected: string;
@@ -376,6 +380,10 @@ export interface Lesson {
              */
             valueWei?: string | null;
             /**
+             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
+             */
+            caller?: string | null;
+            /**
              * View/pure function called AFTER the main call to verify state.
              */
             postCheckFunctionName: string;
@@ -388,6 +396,10 @@ export interface Lesson {
                   id?: string | null;
                 }[]
               | null;
+            /**
+             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller. Defaults to the main call's caller.
+             */
+            postCheckCaller?: string | null;
             /**
              * Expected return of the post-check view function.
              */
@@ -693,6 +705,7 @@ export interface LessonsSelect<T extends boolean = true> {
                     id?: T;
                   };
               valueWei?: T;
+              caller?: T;
               expected?: T;
               id?: T;
               blockName?: T;
@@ -708,6 +721,7 @@ export interface LessonsSelect<T extends boolean = true> {
                     id?: T;
                   };
               valueWei?: T;
+              caller?: T;
               postCheckFunctionName?: T;
               postCheckArgs?:
                 | T
@@ -715,6 +729,7 @@ export interface LessonsSelect<T extends boolean = true> {
                     value?: T;
                     id?: T;
                   };
+              postCheckCaller?: T;
               expected?: T;
               id?: T;
               blockName?: T;

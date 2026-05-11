@@ -9,7 +9,42 @@ import {
 } from 'viem'
 import { coerceArgs, normalizeReturnValue } from './abi-coerce'
 
-export const CALLER = createAddressFromString('0x000000000000000000000000000000000000c0de')
+/**
+ * Named caller addresses for test cases. Each alias maps to a fixed 20-byte
+ * address whose last hex chars spell the name. Test authors can use any alias
+ * (case-insensitive) as the case-level `caller` value; an empty/unset caller
+ * falls back to `default`. Raw 0x-prefixed 40-hex addresses are also accepted.
+ */
+export const CALLER_ALIASES: Record<string, Address> = {
+  default: createAddressFromString('0x000000000000000000000000000000000000c0de'),
+  alice: createAddressFromString('0x00000000000000000000000000000000000a11ce'),
+  bob: createAddressFromString('0x0000000000000000000000000000000000000b0b'),
+  carol: createAddressFromString('0x00000000000000000000000000000000000ca201'),
+  dave: createAddressFromString('0x000000000000000000000000000000000000dabe'),
+}
+
+export const DEFAULT_CALLER: Address = CALLER_ALIASES.default
+
+const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
+
+/**
+ * Resolve an alias or raw hex address to an EVM `Address`. Empty/undefined yields
+ * the default caller. Unknown names throw with the list of valid aliases so the
+ * worker can surface the error per-case.
+ */
+export function resolveCaller(value: string | undefined | null): Address {
+  if (value === undefined || value === null) return DEFAULT_CALLER
+  const trimmed = value.trim()
+  if (trimmed === '') return DEFAULT_CALLER
+  const alias = CALLER_ALIASES[trimmed.toLowerCase()]
+  if (alias) return alias
+  if (RAW_ADDRESS_RE.test(trimmed)) return createAddressFromString(trimmed)
+  const aliasList = Object.keys(CALLER_ALIASES).join(', ')
+  throw new Error(
+    `unknown caller "${value}"; expected one of [${aliasList}] or a 0x-prefixed 40-hex address`,
+  )
+}
+
 const GAS_LIMIT = 0xffffffn
 
 type Evm = Awaited<ReturnType<typeof createEVM>>
@@ -22,6 +57,7 @@ export interface RunReturnInput {
   constructorArgs?: unknown[]
   args: unknown[]
   valueWei?: string
+  caller?: Address
 }
 
 export interface RunPostCheckInput {
@@ -34,6 +70,8 @@ export interface RunPostCheckInput {
   args: unknown[]
   postCheckArgs: unknown[]
   valueWei?: string
+  caller?: Address
+  postCheckCaller?: Address
 }
 
 export type RunTestCaseInput = RunReturnInput | RunPostCheckInput
@@ -45,9 +83,16 @@ export type RunTestCaseInput = RunReturnInput | RunPostCheckInput
 export async function runTestCase(input: RunTestCaseInput): Promise<unknown> {
   const evm = await createEVM()
   const address = await deploy(evm, input.bytecode, input.abi, input.constructorArgs)
-  const mainReturn = await callMain(evm, address, input.fnAbi, input.args, input.valueWei)
+  const mainCaller = input.caller ?? DEFAULT_CALLER
+  const mainReturn = await callMain(evm, address, input.fnAbi, input.args, input.valueWei, mainCaller)
   if (input.kind === 'postCheckAssertion') {
-    return await callPostCheck(evm, address, input.postCheckFnAbi, input.postCheckArgs)
+    return await callPostCheck(
+      evm,
+      address,
+      input.postCheckFnAbi,
+      input.postCheckArgs,
+      input.postCheckCaller ?? mainCaller,
+    )
   }
   return mainReturn
 }
@@ -71,7 +116,7 @@ async function deploy(
   })
 
   const result = await evm.runCall({
-    caller: CALLER,
+    caller: DEFAULT_CALLER,
     data: hexToBytes(deployData),
     gasLimit: GAS_LIMIT,
     skipBalance: true,
@@ -90,6 +135,7 @@ async function callMain(
   fnAbi: AbiFunction,
   args: unknown[],
   valueWei: string | undefined,
+  caller: Address,
 ): Promise<unknown> {
   const inputs = (fnAbi.inputs ?? []) as readonly { type: string }[]
   const coercedArgs = coerceArgs(args, inputs)
@@ -100,7 +146,7 @@ async function callMain(
   })
 
   const result = await evm.runCall({
-    caller: CALLER,
+    caller,
     to,
     data: hexToBytes(callData),
     gasLimit: GAS_LIMIT,
@@ -126,6 +172,7 @@ async function callPostCheck(
   to: Address,
   postFn: AbiFunction,
   args: unknown[],
+  caller: Address,
 ): Promise<unknown> {
   const inputs = (postFn.inputs ?? []) as readonly { type: string }[]
   const coercedArgs = coerceArgs(args, inputs)
@@ -136,7 +183,7 @@ async function callPostCheck(
   })
 
   const result = await evm.runCall({
-    caller: CALLER,
+    caller,
     to,
     data: hexToBytes(callData),
     gasLimit: GAS_LIMIT,

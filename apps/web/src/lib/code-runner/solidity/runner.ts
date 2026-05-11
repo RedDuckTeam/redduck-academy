@@ -102,6 +102,7 @@ function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
       functionName: tc.functionName,
       rawArgs: tc.rawArgs,
       valueWei: tc.valueWei,
+      caller: tc.caller,
       rawExpected: tc.rawExpected,
     }
   }
@@ -111,8 +112,10 @@ function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
     functionName: tc.functionName,
     rawArgs: tc.rawArgs,
     valueWei: tc.valueWei,
+    caller: tc.caller,
     postCheckFunctionName: tc.postCheckFunctionName,
     rawPostCheckArgs: tc.rawPostCheckArgs,
+    postCheckCaller: tc.postCheckCaller,
     rawExpected: tc.rawExpected,
   }
 }

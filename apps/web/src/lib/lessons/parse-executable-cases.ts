@@ -29,6 +29,7 @@ export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | n
   return cases.map((c) => {
     const rawArgs = (c.args ?? []).map((a) => a.value ?? '')
     const valueWei = c.valueWei && c.valueWei.trim() !== '' ? c.valueWei.trim() : undefined
+    const caller = c.caller && c.caller.trim() !== '' ? c.caller.trim() : undefined
     if (c.blockType === 'returnAssertion') {
       return {
         id: c.id,
@@ -36,17 +37,22 @@ export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | n
         functionName: c.functionName,
         rawArgs,
         valueWei,
+        caller,
         rawExpected: c.expected ?? '',
       }
     }
+    const postCheckCaller =
+      c.postCheckCaller && c.postCheckCaller.trim() !== '' ? c.postCheckCaller.trim() : undefined
     return {
       id: c.id,
       kind: 'postCheckAssertion',
       functionName: c.functionName,
       rawArgs,
       valueWei,
+      caller,
       postCheckFunctionName: c.postCheckFunctionName,
       rawPostCheckArgs: (c.postCheckArgs ?? []).map((a) => a.value ?? ''),
+      postCheckCaller,
       rawExpected: c.expected ?? '',
     }
   })

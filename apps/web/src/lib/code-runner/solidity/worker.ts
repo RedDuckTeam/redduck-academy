@@ -1,6 +1,6 @@
 import type { Abi, AbiFunction } from 'viem'
 import { compile, type CompiledContract, parseTypedValue } from '@redduck/solc-utils'
-import { runTestCase } from './run-test-case'
+import { resolveCaller, runTestCase } from './run-test-case'
 import { normalizeReturnValue } from './abi-coerce'
 import { deepEqual } from '../compare'
 
@@ -11,6 +11,7 @@ export type SolWorkerCase =
       functionName: string
       rawArgs: string[]
       valueWei?: string
+      caller?: string
       rawExpected: string
     }
   | {
@@ -19,8 +20,10 @@ export type SolWorkerCase =
       functionName: string
       rawArgs: string[]
       valueWei?: string
+      caller?: string
       postCheckFunctionName: string
       rawPostCheckArgs: string[]
+      postCheckCaller?: string
       rawExpected: string
     }
 
@@ -73,6 +76,7 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
       const fnAbi = requireFunction(compiled.abi, tc.functionName)
       const args = parseArgs(tc.rawArgs, fnAbi)
       const expected = parseExpected(tc.rawExpected, fnAbi.outputs)
+      const caller = resolveCaller(tc.caller)
 
       let got: unknown
       if (tc.kind === 'returnAssertion') {
@@ -84,11 +88,13 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
           constructorArgs,
           args,
           valueWei: tc.valueWei,
+          caller,
         })
       } else {
         const postFn = requireFunction(compiled.abi, tc.postCheckFunctionName)
         const postArgs = parseArgs(tc.rawPostCheckArgs, postFn)
         const postExpected = parseExpected(tc.rawExpected, postFn.outputs)
+        const postCheckCaller = tc.postCheckCaller ? resolveCaller(tc.postCheckCaller) : undefined
         got = await runTestCase({
           kind: 'postCheckAssertion',
           bytecode: compiled.bytecode,
@@ -99,6 +105,8 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
           args,
           postCheckArgs: postArgs,
           valueWei: tc.valueWei,
+          caller,
+          postCheckCaller,
         })
         // For postCheck the comparison target is the post-check fn's return type.
         const passed = deepEqual(got, postExpected)

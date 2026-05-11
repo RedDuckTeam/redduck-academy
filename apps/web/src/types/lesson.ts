@@ -81,6 +81,7 @@ export type SolidityTestCase =
       functionName: string
       args?: SolidityArgValue[] | null
       valueWei?: string | null
+      caller?: string | null
       expected: string
     }
   | {
@@ -89,8 +90,10 @@ export type SolidityTestCase =
       functionName: string
       args?: SolidityArgValue[] | null
       valueWei?: string | null
+      caller?: string | null
       postCheckFunctionName: string
       postCheckArgs?: SolidityArgValue[] | null
+      postCheckCaller?: string | null
       expected: string
     }
 

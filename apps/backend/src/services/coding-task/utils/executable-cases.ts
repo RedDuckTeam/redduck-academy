@@ -16,10 +16,12 @@ export interface SolidityCaseRow {
   functionName?: string | null
   args?: SolArgRow[] | null
   valueWei?: string | null
+  caller?: string | null
   expected?: string | null
   // postCheckAssertion-only
   postCheckFunctionName?: string | null
   postCheckArgs?: SolArgRow[] | null
+  postCheckCaller?: string | null
 }
 
 /** TS path: convert Payload's `executableTestCases` rows into prompt-ready cases. */
@@ -42,6 +44,7 @@ export function deserializeSolidityCases(rows: SolidityCaseRow[] | undefined | n
         functionName: c.functionName ?? '',
         rawArgs,
         valueWei: c.valueWei ?? null,
+        caller: c.caller ?? null,
         rawExpected: c.expected ?? '',
       }
     }
@@ -50,8 +53,10 @@ export function deserializeSolidityCases(rows: SolidityCaseRow[] | undefined | n
       functionName: c.functionName ?? '',
       rawArgs,
       valueWei: c.valueWei ?? null,
+      caller: c.caller ?? null,
       postCheckFunctionName: c.postCheckFunctionName ?? '',
       rawPostCheckArgs: (c.postCheckArgs ?? []).map((a) => a?.value ?? ''),
+      postCheckCaller: c.postCheckCaller ?? null,
       rawExpected: c.expected ?? '',
     }
   })
@@ -77,9 +82,11 @@ export function executableCasesHash(
       c.functionName ?? '',
       (c.args ?? []).map((a) => a?.value ?? ''),
       c.valueWei ?? '',
+      c.caller ?? '',
       c.expected ?? '',
       c.postCheckFunctionName ?? '',
       (c.postCheckArgs ?? []).map((a) => a?.value ?? ''),
+      c.postCheckCaller ?? '',
     ]),
   })
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)

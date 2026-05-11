@@ -9,6 +9,7 @@ import * as migration_20260502_231236 from './20260502_231236';
 import * as migration_20260503_212009 from './20260503_212009';
 import * as migration_20260503_220523 from './20260503_220523';
 import * as migration_20260506_195532_question_option_label_richtext from './20260506_195532_question_option_label_richtext';
+import * as migration_20260511_141335 from './20260511_141335';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20260506_195532_question_option_label_richtext.up,
     down: migration_20260506_195532_question_option_label_richtext.down,
-    name: '20260506_195532_question_option_label_richtext'
+    name: '20260506_195532_question_option_label_richtext',
+  },
+  {
+    up: migration_20260511_141335.up,
+    down: migration_20260511_141335.down,
+    name: '20260511_141335'
   },
 ];
