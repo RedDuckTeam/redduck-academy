@@ -31,7 +31,6 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { TypedValueField as TypedValueField_e16535f6b68c18057fb07b1a49db8691 } from '@/admin-components/abi-driven-test-case/typed-value-field'
 import { FunctionSelect as FunctionSelect_92ffc788f6950e86b357de2a4aff75dc } from '@/admin-components/abi-driven-test-case/function-select'
-import { PostCheckFunctionSelect as PostCheckFunctionSelect_05d577f0ee1b8a8532384bdcb8af1f42 } from '@/admin-components/abi-driven-test-case/post-check-function-select'
 import { CopyMarkdownButton as CopyMarkdownButton_51beefa2197011ab28ebd6123c64ace8 } from '@/admin-components/copy-markdown-button'
 import { LessonsTreeView as LessonsTreeView_9b2f0e5e989fb35d429ade0730db27dd } from '@/admin-components/lessons-tree'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
@@ -74,7 +73,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField": TypedValueField_e16535f6b68c18057fb07b1a49db8691,
   "@/admin-components/abi-driven-test-case/function-select#FunctionSelect": FunctionSelect_92ffc788f6950e86b357de2a4aff75dc,
-  "@/admin-components/abi-driven-test-case/post-check-function-select#PostCheckFunctionSelect": PostCheckFunctionSelect_05d577f0ee1b8a8532384bdcb8af1f42,
   "@/admin-components/copy-markdown-button#CopyMarkdownButton": CopyMarkdownButton_51beefa2197011ab28ebd6123c64ace8,
   "@/admin-components/lessons-tree#LessonsTreeView": LessonsTreeView_9b2f0e5e989fb35d429ade0730db27dd,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,

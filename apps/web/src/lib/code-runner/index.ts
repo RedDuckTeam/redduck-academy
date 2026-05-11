@@ -18,10 +18,8 @@ export type {
   TsRunnerSpec,
   TsTestCase,
   SolidityTestCase,
-  SolReturnCase,
-  SolPostCheckCase,
-  SolSequenceCase,
-  SolSequenceStep,
+  SolCase,
+  SolCaseStep,
 } from './types'
 
 const DEFAULT_TS_PER_TEST_MS = 2000

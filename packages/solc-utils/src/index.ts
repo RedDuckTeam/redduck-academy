@@ -1,5 +1,7 @@
 export { loadSolc } from './solc-loader'
 export type { SolcModule } from './solc-loader'
 export { compile } from './compile'
-export type { CompiledContract } from './compile'
+export type { CompiledContract, CompileOptions } from './compile'
 export { parseTypedValue } from './parse-typed-value'
+export { STDLIB } from './stdlib.generated'
+export { STDLIB_PATHS } from './stdlib-paths.generated'

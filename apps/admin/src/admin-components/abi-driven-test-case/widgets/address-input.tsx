@@ -9,12 +9,23 @@ interface AddressInputProps {
 }
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/
+// Keep in sync with CALLER_ALIASES in apps/web/.../run-test-case.ts and the
+// validator in packages/payload-config/.../Lessons.ts. The runner expands these
+// to their EOA addresses at EVM-call time.
+const ALIAS_NAMES = ['default', 'alice', 'bob', 'carol', 'dave']
+const ALIAS_RE = new RegExp(`^@?(?:${ALIAS_NAMES.join('|')})$`, 'i')
 
-/** `address` — 0x-prefixed 20-byte hex. */
+/** `address` — 0x-prefixed 20-byte hex, or a named caller alias (alice, bob, ...). */
 export function AddressInput({ label, value, onChange }: AddressInputProps) {
-  const error = value.trim() === '' || ADDRESS_RE.test(value.trim()) ? null : 'Expected 0x + 40 hex chars.'
+  const trimmed = value.trim()
+  const isValid = trimmed === '' || ALIAS_RE.test(trimmed) || ADDRESS_RE.test(trimmed)
+  const error = isValid ? null : `Expected 0x + 40 hex chars, or an alias (${ALIAS_NAMES.join(', ')}).`
   return (
-    <WidgetShell label={label} description="20-byte hex address." error={error}>
+    <WidgetShell
+      label={label}
+      description={`20-byte hex address, or an alias: ${ALIAS_NAMES.join(', ')}.`}
+      error={error}
+    >
       <input
         type="text"
         value={value}

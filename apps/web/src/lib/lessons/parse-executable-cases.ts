@@ -20,61 +20,28 @@ export function parseTsTestCases(cases: ExecutableTestCase[] | undefined | null)
 }
 
 /**
- * Solidity path: convert Payload's discriminated blocks into runner-ready cases.
- * Raw string values flow through unchanged — the worker coerces them via the
+ * Solidity path: convert Payload's `solidityTestCases` array rows into runner-ready
+ * cases. Raw string values flow through unchanged — the worker coerces them via the
  * compiled ABI to keep both authoring and execution honest about type mismatch.
  */
 export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | null): SolidityTestCase[] {
   if (!cases || cases.length === 0) return []
-  return cases.map((c) => {
-    if (c.blockType === 'sequence') {
-      const postCheckCaller =
-        c.postCheckCaller && c.postCheckCaller.trim() !== '' ? c.postCheckCaller.trim() : undefined
+  return cases.map((c) => ({
+    id: c.id,
+    kind: 'case' as const,
+    steps: (c.steps ?? []).map((s) => {
+      const valueWei = s.valueWei && s.valueWei.trim() !== '' ? s.valueWei.trim() : undefined
+      const caller = s.caller && s.caller.trim() !== '' ? s.caller.trim() : undefined
+      const rawExpected = s.expected != null && s.expected.trim() !== '' ? s.expected : undefined
       return {
-        id: c.id,
-        kind: 'sequence',
-        steps: (c.steps ?? []).map((s) => ({
-          functionName: s.functionName,
-          rawArgs: (s.args ?? []).map((a) => a.value ?? ''),
-          valueWei: s.valueWei && s.valueWei.trim() !== '' ? s.valueWei.trim() : undefined,
-          caller: s.caller && s.caller.trim() !== '' ? s.caller.trim() : undefined,
-        })),
-        assertion: c.assertion,
-        postCheckFunctionName: c.postCheckFunctionName ?? undefined,
-        rawPostCheckArgs: c.postCheckArgs ? c.postCheckArgs.map((a) => a.value ?? '') : undefined,
-        postCheckCaller,
-        rawExpected: c.expected ?? '',
-      }
-    }
-    const rawArgs = (c.args ?? []).map((a) => a.value ?? '')
-    const valueWei = c.valueWei && c.valueWei.trim() !== '' ? c.valueWei.trim() : undefined
-    const caller = c.caller && c.caller.trim() !== '' ? c.caller.trim() : undefined
-    if (c.blockType === 'returnAssertion') {
-      return {
-        id: c.id,
-        kind: 'returnAssertion',
-        functionName: c.functionName,
-        rawArgs,
+        functionName: s.functionName,
+        rawArgs: (s.args ?? []).map((a) => a.value ?? ''),
         valueWei,
         caller,
-        rawExpected: c.expected ?? '',
+        rawExpected,
       }
-    }
-    const postCheckCaller =
-      c.postCheckCaller && c.postCheckCaller.trim() !== '' ? c.postCheckCaller.trim() : undefined
-    return {
-      id: c.id,
-      kind: 'postCheckAssertion',
-      functionName: c.functionName,
-      rawArgs,
-      valueWei,
-      caller,
-      postCheckFunctionName: c.postCheckFunctionName,
-      rawPostCheckArgs: (c.postCheckArgs ?? []).map((a) => a.value ?? ''),
-      postCheckCaller,
-      rawExpected: c.expected ?? '',
-    }
-  })
+    }),
+  }))
 }
 
 /**

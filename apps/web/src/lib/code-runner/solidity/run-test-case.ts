@@ -8,6 +8,7 @@ import {
   type AbiFunction,
 } from 'viem'
 import { coerceArgs, normalizeReturnValue } from './abi-coerce'
+import { deepEqual } from '../compare'
 
 /**
  * Named caller addresses for test cases. Each alias maps to a fixed 20-byte
@@ -45,116 +46,128 @@ export function resolveCaller(value: string | undefined | null): Address {
   )
 }
 
+/**
+ * Lowercased alias → canonical 0x hex string. Used by the worker to expand alias
+ * names typed in `address`-typed function args (e.g. `alice` becomes the EOA hex
+ * before `parseTypedValue` sees it).
+ */
+const ALIAS_HEX: Record<string, `0x${string}`> = Object.fromEntries(
+  Object.entries(CALLER_ALIASES).map(([k, v]) => [k, v.toString() as `0x${string}`]),
+)
+
+/**
+ * If `value` is a known alias name (case-insensitive, optional leading `@`),
+ * returns the corresponding 0x-prefixed hex address. Otherwise returns the input
+ * unchanged so downstream parsers can validate it (or fail with a hex error).
+ *
+ * The leading-`@` form is accepted now so it stays consistent once fixture
+ * aliases (`@mockToken`) land. Today, both `alice` and `@alice` resolve.
+ */
+export function expandAddressAlias(value: string): string {
+  const trimmed = value.trim()
+  if (trimmed === '') return value
+  const key = (trimmed.startsWith('@') ? trimmed.slice(1) : trimmed).toLowerCase()
+  return ALIAS_HEX[key] ?? value
+}
+
 const GAS_LIMIT = 0xffffffn
 
 type Evm = Awaited<ReturnType<typeof createEVM>>
 
-export interface RunReturnInput {
-  kind: 'returnAssertion'
-  bytecode: `0x${string}`
-  abi: Abi
+/** One step inside a test case. Steps share EVM state; each may carry its own assertion. */
+export interface RunCaseStep {
   fnAbi: AbiFunction
-  constructorArgs?: unknown[]
   args: unknown[]
   valueWei?: string
   caller?: Address
+  /**
+   * Decoded expected return value (already coerced via ABI by the worker). When set,
+   * the runner decodes this step's return and compares via `deepEqual`. When unset,
+   * the step is just executed; success means "did not revert".
+   */
+  expectedDecoded?: unknown
+  /** True when this step's `expectedDecoded` was intentionally set (distinguishes undefined-as-value from "no assertion"). */
+  hasExpected: boolean
 }
 
-export interface RunPostCheckInput {
-  kind: 'postCheckAssertion'
+export interface RunCaseInput {
+  kind: 'case'
   bytecode: `0x${string}`
   abi: Abi
-  fnAbi: AbiFunction
-  postCheckFnAbi: AbiFunction
   constructorArgs?: unknown[]
-  args: unknown[]
-  postCheckArgs: unknown[]
-  valueWei?: string
-  caller?: Address
-  postCheckCaller?: Address
+  steps: RunCaseStep[]
+}
+
+export type RunTestCaseInput = RunCaseInput
+
+/**
+ * Outcome shape parallel to a single RunnerResult row. `expected` / `got` are
+ * populated by the LAST step that had an assertion when everything passed, or by
+ * the FIRST failing step when something failed. `error` is set when a step reverted
+ * or an assertion mismatched. `failedStepIndex` is set whenever the failure can be
+ * attributed to a specific step, so the UI can render the diff inline with that step.
+ */
+export interface RunCaseResult {
+  passed: boolean
+  failedStepIndex?: number
+  expected?: unknown
+  got?: unknown
+  error?: string
 }
 
 /**
- * One call inside a `sequence` test case. All steps share EVM state for the case; the
- * last step's return value (or a post-check view, depending on assertion kind) is the
- * comparison target.
+ * Runs one Solidity test case (a sequence of EVM calls sharing state). Each step
+ * may optionally compare its decoded return against `expectedDecoded`. The case
+ * stops at the first failing step.
  */
-export interface RunSequenceStep {
-  fnAbi: AbiFunction
-  args: unknown[]
-  valueWei?: string
-  caller?: Address
-}
-
-export type RunSequenceAssertion =
-  | { kind: 'lastReturn' }
-  | { kind: 'postCheck'; fnAbi: AbiFunction; args: unknown[]; caller?: Address }
-
-export interface RunSequenceInput {
-  kind: 'sequence'
-  bytecode: `0x${string}`
-  abi: Abi
-  constructorArgs?: unknown[]
-  steps: RunSequenceStep[]
-  assertion: RunSequenceAssertion
-}
-
-export type RunTestCaseInput = RunReturnInput | RunPostCheckInput | RunSequenceInput
-
-/**
- * Runs one Solidity test case and returns the value that should be compared to `expected`.
- * Each call gets a fresh EVM so state doesn't leak between cases.
- */
-export async function runTestCase(input: RunTestCaseInput): Promise<unknown> {
-  const evm = await createEVM()
-  const address = await deploy(evm, input.bytecode, input.abi, input.constructorArgs)
-
-  if (input.kind === 'sequence') {
-    return runSequence(evm, address, input)
-  }
-
-  const mainCaller = input.caller ?? DEFAULT_CALLER
-  const mainReturn = await callMain(evm, address, input.fnAbi, input.args, input.valueWei, mainCaller)
-  if (input.kind === 'postCheckAssertion') {
-    return await callPostCheck(
-      evm,
-      address,
-      input.postCheckFnAbi,
-      input.postCheckArgs,
-      input.postCheckCaller ?? mainCaller,
-    )
-  }
-  return mainReturn
-}
-
-async function runSequence(evm: Evm, to: Address, input: RunSequenceInput): Promise<unknown> {
+export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
   if (input.steps.length === 0) {
-    throw new Error('sequence has no steps')
+    return { passed: false, error: 'test case has no steps' }
   }
-  let lastReturn: unknown = null
-  let lastCaller: Address = DEFAULT_CALLER
+
+  const evm = await createEVM()
+  const to = await deploy(evm, input.bytecode, input.abi, input.constructorArgs)
+
+  let lastAssertion: { expected: unknown; got: unknown } | undefined
   for (let i = 0; i < input.steps.length; i++) {
     const step = input.steps[i]
-    lastCaller = step.caller ?? DEFAULT_CALLER
+    const caller = step.caller ?? DEFAULT_CALLER
+    let got: unknown
     try {
-      lastReturn = await callMain(evm, to, step.fnAbi, step.args, step.valueWei, lastCaller)
+      got = await callMain(evm, to, step.fnAbi, step.args, step.valueWei, caller)
     } catch (err) {
       const original = err instanceof Error ? err.message : String(err)
-      // Rewrite "call reverted: ..." into "step N reverted: ..." so the case-level error
-      // tells the author exactly which call in the chain failed.
       const stripped = original.replace(/^call reverted:\s*/, '')
-      throw new Error(`step ${i + 1} (${step.fnAbi.name}) reverted: ${stripped}`)
+      return {
+        passed: false,
+        failedStepIndex: i,
+        error: `step ${i + 1} (${step.fnAbi.name}) reverted: ${stripped}`,
+      }
     }
+
+    if (!step.hasExpected) continue
+
+    const passed = deepEqual(got, step.expectedDecoded)
+    if (!passed) {
+      return {
+        passed: false,
+        failedStepIndex: i,
+        expected: step.expectedDecoded,
+        got,
+        error: `step ${i + 1} (${step.fnAbi.name}): expected mismatch`,
+      }
+    }
+    lastAssertion = { expected: step.expectedDecoded, got }
   }
-  if (input.assertion.kind === 'lastReturn') return lastReturn
-  return callPostCheck(
-    evm,
-    to,
-    input.assertion.fnAbi,
-    input.assertion.args,
-    input.assertion.caller ?? lastCaller,
-  )
+
+  if (lastAssertion) {
+    return { passed: true, expected: lastAssertion.expected, got: lastAssertion.got }
+  }
+  // No step had an assertion — every step ran without reverting. Surface that as a pass
+  // without expected/got, so the UI just shows the calls without a phantom output.
+  return { passed: true }
 }
+
 
 async function deploy(
   evm: Evm,
@@ -226,39 +239,3 @@ async function callMain(
   return normalizeReturnValue(decoded)
 }
 
-async function callPostCheck(
-  evm: Evm,
-  to: Address,
-  postFn: AbiFunction,
-  args: unknown[],
-  caller: Address,
-): Promise<unknown> {
-  const inputs = (postFn.inputs ?? []) as readonly { type: string }[]
-  const coercedArgs = coerceArgs(args, inputs)
-  const callData = encodeFunctionData({
-    abi: [postFn],
-    functionName: postFn.name,
-    args: coercedArgs as never,
-  })
-
-  const result = await evm.runCall({
-    caller,
-    to,
-    data: hexToBytes(callData),
-    gasLimit: GAS_LIMIT,
-    skipBalance: true,
-    isStatic: true,
-  })
-
-  if (result.execResult.exceptionError) {
-    throw new Error(`post-check reverted: ${result.execResult.exceptionError.error}`)
-  }
-
-  if (!postFn.outputs || postFn.outputs.length === 0) return null
-  const decoded = decodeFunctionResult({
-    abi: [postFn],
-    functionName: postFn.name,
-    data: bytesToHex(result.execResult.returnValue) as `0x${string}`,
-  })
-  return normalizeReturnValue(decoded)
-}

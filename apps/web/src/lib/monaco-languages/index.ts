@@ -1,5 +1,6 @@
 import { solidityLanguage } from './solidity'
 import { anchorLanguage } from './anchor'
+import { registerSolidityImportCompletions } from './solidity-import-completions'
 import type { Monaco } from '@monaco-editor/react'
 
 function formatSolidity(code: string): string {
@@ -56,6 +57,7 @@ export function registerLanguages(monaco: Monaco) {
       return [{ range: model.getFullModelRange(), text: formatSolidity(model.getValue()) }]
     },
   })
+  registerSolidityImportCompletions(monaco)
 
   monaco.languages.register({ id: 'rust' })
   monaco.languages.setMonarchTokensProvider('rust', anchorLanguage)

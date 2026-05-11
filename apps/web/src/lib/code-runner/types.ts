@@ -7,56 +7,25 @@ export interface TsTestCase {
   expected: unknown
 }
 
-/** Solidity test case (returns a value). Raw strings; the worker coerces via ABI. */
-export interface SolReturnCase {
-  id: string
-  kind: 'returnAssertion'
+/** One step inside a Solidity test case. Steps within a case share EVM state. */
+export interface SolCaseStep {
   functionName: string
   rawArgs: string[]
   valueWei?: string
-  /** Optional msg.sender for the main call. Alias (e.g. "alice") or 0x-prefixed address. Defaults to the runner's default caller. */
+  /** Optional msg.sender. Alias (e.g. "alice") or 0x-prefixed address. Defaults to the runner's default caller. */
   caller?: string
-  rawExpected: string
+  /** Optional raw expected return; when present the runner decodes this step's return and compares. */
+  rawExpected?: string
 }
 
-/** Solidity test case (state-changing main call + view post-check). Raw strings. */
-export interface SolPostCheckCase {
+/** Solidity test case — an ordered list of steps, each of which may carry its own assertion. */
+export interface SolCase {
   id: string
-  kind: 'postCheckAssertion'
-  functionName: string
-  rawArgs: string[]
-  valueWei?: string
-  /** Optional msg.sender for the main call. */
-  caller?: string
-  postCheckFunctionName: string
-  rawPostCheckArgs: string[]
-  /** Optional msg.sender for the post-check call. Defaults to the main caller. */
-  postCheckCaller?: string
-  rawExpected: string
+  kind: 'case'
+  steps: SolCaseStep[]
 }
 
-/** One call inside a `sequence` test case. Steps within a case share EVM state. */
-export interface SolSequenceStep {
-  functionName: string
-  rawArgs: string[]
-  valueWei?: string
-  caller?: string
-}
-
-/** Solidity test case (chained calls, all sharing case-level EVM state). */
-export interface SolSequenceCase {
-  id: string
-  kind: 'sequence'
-  steps: SolSequenceStep[]
-  /** 'lastReturn' compares the last step's return value; 'postCheck' calls a view after the loop. */
-  assertion: 'lastReturn' | 'postCheck'
-  postCheckFunctionName?: string
-  rawPostCheckArgs?: string[]
-  postCheckCaller?: string
-  rawExpected: string
-}
-
-export type SolidityTestCase = SolReturnCase | SolPostCheckCase | SolSequenceCase
+export type SolidityTestCase = SolCase
 export type RunnerTestCase = TsTestCase | SolidityTestCase
 
 export interface RunnerResult {
@@ -66,6 +35,8 @@ export interface RunnerResult {
   expected?: unknown
   got?: unknown
   error?: string
+  /** Solidity only: 0-based index of the step that failed, when failure is step-attributable. */
+  failedStepIndex?: number
   durationMs: number
 }
 

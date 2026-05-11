@@ -327,145 +327,43 @@ export interface Lesson {
       }[]
     | null;
   /**
-   * Solidity test cases. Each block runs in the browser against the student's code. Function names and argument types are driven by the compiled ABI of the starter code.
+   * Solidity test cases. Each row is a chain of calls (steps). Steps within a case share EVM state. Set a step's "expected" to assert that call's return value.
    */
   solidityTestCases?:
-    | (
-        | {
-            /**
-             * Function to call. Choose from the contract's ABI.
-             */
-            functionName: string;
-            /**
-             * One row per function argument, in declaration order.
-             */
-            args?:
-              | {
-                  value: string;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Optional ETH (in wei) sent as msg.value. Decimal string. Example: `5` or `1000000000000000000`.
-             */
-            valueWei?: string | null;
-            /**
-             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
-             */
-            caller?: string | null;
-            /**
-             * Expected return value, typed per the function's return type.
-             */
-            expected: string;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'returnAssertion';
-          }
-        | {
-            /**
-             * Main function to call (typically state-changing).
-             */
-            functionName: string;
-            /**
-             * One row per function argument.
-             */
-            args?:
-              | {
-                  value: string;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Optional ETH (in wei) sent as msg.value with the main call.
-             */
-            valueWei?: string | null;
-            /**
-             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
-             */
-            caller?: string | null;
-            /**
-             * View/pure function called AFTER the main call to verify state.
-             */
-            postCheckFunctionName: string;
-            /**
-             * One row per post-check function argument.
-             */
-            postCheckArgs?:
-              | {
-                  value: string;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller. Defaults to the main call's caller.
-             */
-            postCheckCaller?: string | null;
-            /**
-             * Expected return of the post-check view function.
-             */
-            expected: string;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'postCheckAssertion';
-          }
-        | {
-            /**
-             * Chained calls within one case (max 16). Steps share EVM state; each gets a fresh case-level deploy.
-             */
-            steps: {
-              /**
-               * Function to call at this step. Picked from the compiled ABI.
-               */
-              functionName: string;
-              /**
-               * One row per function argument, in declaration order.
-               */
-              args?:
-                | {
-                    value: string;
-                    id?: string | null;
-                  }[]
-                | null;
-              /**
-               * Optional ETH (in wei) sent as msg.value with this step. Decimal string.
-               */
-              valueWei?: string | null;
-              /**
-               * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
-               */
-              caller?: string | null;
-              id?: string | null;
-            }[];
-            /**
-             * How the test is judged after all steps run.
-             */
-            assertion: 'lastReturn' | 'postCheck';
-            /**
-             * View/pure function called AFTER the sequence to verify state.
-             */
-            postCheckFunctionName?: string | null;
-            /**
-             * One row per post-check function argument.
-             */
-            postCheckArgs?:
-              | {
-                  value: string;
-                  id?: string | null;
-                }[]
-              | null;
-            /**
-             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller. Defaults to the final step's caller.
-             */
-            postCheckCaller?: string | null;
-            /**
-             * Expected return value. Typed against the last step's return (when assertion=lastReturn) or the post-check function's return (when assertion=postCheck).
-             */
-            expected: string;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'sequence';
-          }
-      )[]
+    | {
+        /**
+         * Ordered list of calls (max 16). Each step is a function call against the freshly deployed contract.
+         */
+        steps: {
+          /**
+           * Function to call. Picked from the contract's ABI.
+           */
+          functionName: string;
+          /**
+           * One row per function argument, in declaration order.
+           */
+          args?:
+            | {
+                value: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Optional ETH (in wei) sent as msg.value with this step. Decimal string. Example: `5` or `1000000000000000000`.
+           */
+          valueWei?: string | null;
+          /**
+           * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
+           */
+          caller?: string | null;
+          /**
+           * Optional. When set, the runner decodes this step's return value and compares against this. Typed per the function's return type. Leave blank for state-changing calls you don't need to assert.
+           */
+          expected?: string | null;
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
     | null;
   /**
    * Short context for the AI reviewer (not shown to students via the public API).
@@ -751,7 +649,7 @@ export interface LessonsSelect<T extends boolean = true> {
   solidityTestCases?:
     | T
     | {
-        returnAssertion?:
+        steps?:
           | T
           | {
               functionName?: T;
@@ -765,62 +663,8 @@ export interface LessonsSelect<T extends boolean = true> {
               caller?: T;
               expected?: T;
               id?: T;
-              blockName?: T;
             };
-        postCheckAssertion?:
-          | T
-          | {
-              functionName?: T;
-              args?:
-                | T
-                | {
-                    value?: T;
-                    id?: T;
-                  };
-              valueWei?: T;
-              caller?: T;
-              postCheckFunctionName?: T;
-              postCheckArgs?:
-                | T
-                | {
-                    value?: T;
-                    id?: T;
-                  };
-              postCheckCaller?: T;
-              expected?: T;
-              id?: T;
-              blockName?: T;
-            };
-        sequence?:
-          | T
-          | {
-              steps?:
-                | T
-                | {
-                    functionName?: T;
-                    args?:
-                      | T
-                      | {
-                          value?: T;
-                          id?: T;
-                        };
-                    valueWei?: T;
-                    caller?: T;
-                    id?: T;
-                  };
-              assertion?: T;
-              postCheckFunctionName?: T;
-              postCheckArgs?:
-                | T
-                | {
-                    value?: T;
-                    id?: T;
-                  };
-              postCheckCaller?: T;
-              expected?: T;
-              id?: T;
-              blockName?: T;
-            };
+        id?: T;
       };
   aiTaskSummary?: T;
   aiPossibleSolutions?: T;

@@ -19,14 +19,9 @@ import {
   boolean,
   type AnyPgColumn,
   jsonb,
-  text,
 } from 'drizzle-orm/pg-core'
 import { sql, relations } from 'drizzle-orm'
 export const db_schema = pgSchema('payload')
-export const enum_lessons_blocks_sequence_assertion = db_schema.enum('enum_lessons_blocks_sequence_assertion', [
-  'lastReturn',
-  'postCheck',
-])
 export const enum_lessons_type = db_schema.enum('enum_lessons_type', ['lecture', 'test', 'coding_task', 'review_task'])
 export const enum_lessons_coding_language = db_schema.enum('enum_lessons_coding_language', [
   'solidity',
@@ -233,8 +228,8 @@ export const lessons_executable_test_cases = db_schema.table(
   ],
 )
 
-export const lessons_blocks_return_assertion_args = db_schema.table(
-  'lessons_blocks_return_assertion_args',
+export const lessons_solidity_test_cases_steps_args = db_schema.table(
+  'lessons_solidity_test_cases_steps_args',
   {
     _order: integer('_order').notNull(),
     _parentID: varchar('_parent_id').notNull(),
@@ -242,127 +237,18 @@ export const lessons_blocks_return_assertion_args = db_schema.table(
     value: varchar('value'),
   },
   (columns) => [
-    index('lessons_blocks_return_assertion_args_order_idx').on(columns._order),
-    index('lessons_blocks_return_assertion_args_parent_id_idx').on(columns._parentID),
+    index('lessons_solidity_test_cases_steps_args_order_idx').on(columns._order),
+    index('lessons_solidity_test_cases_steps_args_parent_id_idx').on(columns._parentID),
     foreignKey({
       columns: [columns['_parentID']],
-      foreignColumns: [lessons_blocks_return_assertion.id],
-      name: 'lessons_blocks_return_assertion_args_parent_id_fk',
+      foreignColumns: [lessons_solidity_test_cases_steps.id],
+      name: 'lessons_solidity_test_cases_steps_args_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
 
-export const lessons_blocks_return_assertion = db_schema.table(
-  'lessons_blocks_return_assertion',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: integer('_parent_id').notNull(),
-    _path: text('_path').notNull(),
-    id: varchar('id').primaryKey(),
-    functionName: varchar('function_name'),
-    valueWei: varchar('value_wei'),
-    caller: varchar('caller'),
-    expected: varchar('expected'),
-    blockName: varchar('block_name'),
-  },
-  (columns) => [
-    index('lessons_blocks_return_assertion_order_idx').on(columns._order),
-    index('lessons_blocks_return_assertion_parent_id_idx').on(columns._parentID),
-    index('lessons_blocks_return_assertion_path_idx').on(columns._path),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons.id],
-      name: 'lessons_blocks_return_assertion_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
-export const lessons_blocks_post_check_assertion_args = db_schema.table(
-  'lessons_blocks_post_check_assertion_args',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: varchar('_parent_id').notNull(),
-    id: varchar('id').primaryKey(),
-    value: varchar('value'),
-  },
-  (columns) => [
-    index('lessons_blocks_post_check_assertion_args_order_idx').on(columns._order),
-    index('lessons_blocks_post_check_assertion_args_parent_id_idx').on(columns._parentID),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons_blocks_post_check_assertion.id],
-      name: 'lessons_blocks_post_check_assertion_args_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
-export const lessons_blocks_post_check_assertion_post_check_args = db_schema.table(
-  'lessons_blocks_post_check_assertion_post_check_args',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: varchar('_parent_id').notNull(),
-    id: varchar('id').primaryKey(),
-    value: varchar('value'),
-  },
-  (columns) => [
-    index('lessons_blocks_post_check_assertion_post_check_args_order_idx').on(columns._order),
-    index('lessons_blocks_post_check_assertion_post_check_args_parent_id_idx').on(columns._parentID),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons_blocks_post_check_assertion.id],
-      name: 'lessons_blocks_post_check_assertion_post_check_args_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
-export const lessons_blocks_post_check_assertion = db_schema.table(
-  'lessons_blocks_post_check_assertion',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: integer('_parent_id').notNull(),
-    _path: text('_path').notNull(),
-    id: varchar('id').primaryKey(),
-    functionName: varchar('function_name'),
-    valueWei: varchar('value_wei'),
-    caller: varchar('caller'),
-    postCheckFunctionName: varchar('post_check_function_name'),
-    postCheckCaller: varchar('post_check_caller'),
-    expected: varchar('expected'),
-    blockName: varchar('block_name'),
-  },
-  (columns) => [
-    index('lessons_blocks_post_check_assertion_order_idx').on(columns._order),
-    index('lessons_blocks_post_check_assertion_parent_id_idx').on(columns._parentID),
-    index('lessons_blocks_post_check_assertion_path_idx').on(columns._path),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons.id],
-      name: 'lessons_blocks_post_check_assertion_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
-export const lessons_blocks_sequence_steps_args = db_schema.table(
-  'lessons_blocks_sequence_steps_args',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: varchar('_parent_id').notNull(),
-    id: varchar('id').primaryKey(),
-    value: varchar('value'),
-  },
-  (columns) => [
-    index('lessons_blocks_sequence_steps_args_order_idx').on(columns._order),
-    index('lessons_blocks_sequence_steps_args_parent_id_idx').on(columns._parentID),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons_blocks_sequence_steps.id],
-      name: 'lessons_blocks_sequence_steps_args_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
-export const lessons_blocks_sequence_steps = db_schema.table(
-  'lessons_blocks_sequence_steps',
+export const lessons_solidity_test_cases_steps = db_schema.table(
+  'lessons_solidity_test_cases_steps',
   {
     _order: integer('_order').notNull(),
     _parentID: varchar('_parent_id').notNull(),
@@ -370,58 +256,33 @@ export const lessons_blocks_sequence_steps = db_schema.table(
     functionName: varchar('function_name'),
     valueWei: varchar('value_wei'),
     caller: varchar('caller'),
+    expected: varchar('expected'),
   },
   (columns) => [
-    index('lessons_blocks_sequence_steps_order_idx').on(columns._order),
-    index('lessons_blocks_sequence_steps_parent_id_idx').on(columns._parentID),
+    index('lessons_solidity_test_cases_steps_order_idx').on(columns._order),
+    index('lessons_solidity_test_cases_steps_parent_id_idx').on(columns._parentID),
     foreignKey({
       columns: [columns['_parentID']],
-      foreignColumns: [lessons_blocks_sequence.id],
-      name: 'lessons_blocks_sequence_steps_parent_id_fk',
+      foreignColumns: [lessons_solidity_test_cases.id],
+      name: 'lessons_solidity_test_cases_steps_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
 
-export const lessons_blocks_sequence_post_check_args = db_schema.table(
-  'lessons_blocks_sequence_post_check_args',
-  {
-    _order: integer('_order').notNull(),
-    _parentID: varchar('_parent_id').notNull(),
-    id: varchar('id').primaryKey(),
-    value: varchar('value'),
-  },
-  (columns) => [
-    index('lessons_blocks_sequence_post_check_args_order_idx').on(columns._order),
-    index('lessons_blocks_sequence_post_check_args_parent_id_idx').on(columns._parentID),
-    foreignKey({
-      columns: [columns['_parentID']],
-      foreignColumns: [lessons_blocks_sequence.id],
-      name: 'lessons_blocks_sequence_post_check_args_parent_id_fk',
-    }).onDelete('cascade'),
-  ],
-)
-
-export const lessons_blocks_sequence = db_schema.table(
-  'lessons_blocks_sequence',
+export const lessons_solidity_test_cases = db_schema.table(
+  'lessons_solidity_test_cases',
   {
     _order: integer('_order').notNull(),
     _parentID: integer('_parent_id').notNull(),
-    _path: text('_path').notNull(),
     id: varchar('id').primaryKey(),
-    assertion: enum_lessons_blocks_sequence_assertion('assertion').default('lastReturn'),
-    postCheckFunctionName: varchar('post_check_function_name'),
-    postCheckCaller: varchar('post_check_caller'),
-    expected: varchar('expected'),
-    blockName: varchar('block_name'),
   },
   (columns) => [
-    index('lessons_blocks_sequence_order_idx').on(columns._order),
-    index('lessons_blocks_sequence_parent_id_idx').on(columns._parentID),
-    index('lessons_blocks_sequence_path_idx').on(columns._path),
+    index('lessons_solidity_test_cases_order_idx').on(columns._order),
+    index('lessons_solidity_test_cases_parent_id_idx').on(columns._parentID),
     foreignKey({
       columns: [columns['_parentID']],
       foreignColumns: [lessons.id],
-      name: 'lessons_blocks_sequence_parent_id_fk',
+      name: 'lessons_solidity_test_cases_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -733,106 +594,37 @@ export const relations_lessons_executable_test_cases = relations(lessons_executa
     relationName: 'executableTestCases',
   }),
 }))
-export const relations_lessons_blocks_return_assertion_args = relations(
-  lessons_blocks_return_assertion_args,
+export const relations_lessons_solidity_test_cases_steps_args = relations(
+  lessons_solidity_test_cases_steps_args,
   ({ one }) => ({
-    _parentID: one(lessons_blocks_return_assertion, {
-      fields: [lessons_blocks_return_assertion_args._parentID],
-      references: [lessons_blocks_return_assertion.id],
+    _parentID: one(lessons_solidity_test_cases_steps, {
+      fields: [lessons_solidity_test_cases_steps_args._parentID],
+      references: [lessons_solidity_test_cases_steps.id],
       relationName: 'args',
     }),
   }),
 )
-export const relations_lessons_blocks_return_assertion = relations(
-  lessons_blocks_return_assertion,
+export const relations_lessons_solidity_test_cases_steps = relations(
+  lessons_solidity_test_cases_steps,
   ({ one, many }) => ({
-    _parentID: one(lessons, {
-      fields: [lessons_blocks_return_assertion._parentID],
-      references: [lessons.id],
-      relationName: '_blocks_returnAssertion',
+    _parentID: one(lessons_solidity_test_cases, {
+      fields: [lessons_solidity_test_cases_steps._parentID],
+      references: [lessons_solidity_test_cases.id],
+      relationName: 'steps',
     }),
-    args: many(lessons_blocks_return_assertion_args, {
+    args: many(lessons_solidity_test_cases_steps_args, {
       relationName: 'args',
     }),
   }),
 )
-export const relations_lessons_blocks_post_check_assertion_args = relations(
-  lessons_blocks_post_check_assertion_args,
-  ({ one }) => ({
-    _parentID: one(lessons_blocks_post_check_assertion, {
-      fields: [lessons_blocks_post_check_assertion_args._parentID],
-      references: [lessons_blocks_post_check_assertion.id],
-      relationName: 'args',
-    }),
-  }),
-)
-export const relations_lessons_blocks_post_check_assertion_post_check_args = relations(
-  lessons_blocks_post_check_assertion_post_check_args,
-  ({ one }) => ({
-    _parentID: one(lessons_blocks_post_check_assertion, {
-      fields: [lessons_blocks_post_check_assertion_post_check_args._parentID],
-      references: [lessons_blocks_post_check_assertion.id],
-      relationName: 'postCheckArgs',
-    }),
-  }),
-)
-export const relations_lessons_blocks_post_check_assertion = relations(
-  lessons_blocks_post_check_assertion,
-  ({ one, many }) => ({
-    _parentID: one(lessons, {
-      fields: [lessons_blocks_post_check_assertion._parentID],
-      references: [lessons.id],
-      relationName: '_blocks_postCheckAssertion',
-    }),
-    args: many(lessons_blocks_post_check_assertion_args, {
-      relationName: 'args',
-    }),
-    postCheckArgs: many(lessons_blocks_post_check_assertion_post_check_args, {
-      relationName: 'postCheckArgs',
-    }),
-  }),
-)
-export const relations_lessons_blocks_sequence_steps_args = relations(
-  lessons_blocks_sequence_steps_args,
-  ({ one }) => ({
-    _parentID: one(lessons_blocks_sequence_steps, {
-      fields: [lessons_blocks_sequence_steps_args._parentID],
-      references: [lessons_blocks_sequence_steps.id],
-      relationName: 'args',
-    }),
-  }),
-)
-export const relations_lessons_blocks_sequence_steps = relations(lessons_blocks_sequence_steps, ({ one, many }) => ({
-  _parentID: one(lessons_blocks_sequence, {
-    fields: [lessons_blocks_sequence_steps._parentID],
-    references: [lessons_blocks_sequence.id],
-    relationName: 'steps',
-  }),
-  args: many(lessons_blocks_sequence_steps_args, {
-    relationName: 'args',
-  }),
-}))
-export const relations_lessons_blocks_sequence_post_check_args = relations(
-  lessons_blocks_sequence_post_check_args,
-  ({ one }) => ({
-    _parentID: one(lessons_blocks_sequence, {
-      fields: [lessons_blocks_sequence_post_check_args._parentID],
-      references: [lessons_blocks_sequence.id],
-      relationName: 'postCheckArgs',
-    }),
-  }),
-)
-export const relations_lessons_blocks_sequence = relations(lessons_blocks_sequence, ({ one, many }) => ({
+export const relations_lessons_solidity_test_cases = relations(lessons_solidity_test_cases, ({ one, many }) => ({
   _parentID: one(lessons, {
-    fields: [lessons_blocks_sequence._parentID],
+    fields: [lessons_solidity_test_cases._parentID],
     references: [lessons.id],
-    relationName: '_blocks_sequence',
+    relationName: 'solidityTestCases',
   }),
-  steps: many(lessons_blocks_sequence_steps, {
+  steps: many(lessons_solidity_test_cases_steps, {
     relationName: 'steps',
-  }),
-  postCheckArgs: many(lessons_blocks_sequence_post_check_args, {
-    relationName: 'postCheckArgs',
   }),
 }))
 export const relations_lessons_review_grading_tasks = relations(lessons_review_grading_tasks, ({ one }) => ({
@@ -864,14 +656,8 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   executableTestCases: many(lessons_executable_test_cases, {
     relationName: 'executableTestCases',
   }),
-  _blocks_returnAssertion: many(lessons_blocks_return_assertion, {
-    relationName: '_blocks_returnAssertion',
-  }),
-  _blocks_postCheckAssertion: many(lessons_blocks_post_check_assertion, {
-    relationName: '_blocks_postCheckAssertion',
-  }),
-  _blocks_sequence: many(lessons_blocks_sequence, {
-    relationName: '_blocks_sequence',
+  solidityTestCases: many(lessons_solidity_test_cases, {
+    relationName: 'solidityTestCases',
   }),
   reviewGradingTasks: many(lessons_review_grading_tasks, {
     relationName: 'reviewGradingTasks',
@@ -951,7 +737,6 @@ export const relations_payload_migrations = relations(payload_migrations, () => 
 
 type DatabaseSchema = {
   db_schema: typeof db_schema
-  enum_lessons_blocks_sequence_assertion: typeof enum_lessons_blocks_sequence_assertion
   enum_lessons_type: typeof enum_lessons_type
   enum_lessons_coding_language: typeof enum_lessons_coding_language
   users_sessions: typeof users_sessions
@@ -963,15 +748,9 @@ type DatabaseSchema = {
   lessons_questions: typeof lessons_questions
   lessons_solidity_constructor_args: typeof lessons_solidity_constructor_args
   lessons_executable_test_cases: typeof lessons_executable_test_cases
-  lessons_blocks_return_assertion_args: typeof lessons_blocks_return_assertion_args
-  lessons_blocks_return_assertion: typeof lessons_blocks_return_assertion
-  lessons_blocks_post_check_assertion_args: typeof lessons_blocks_post_check_assertion_args
-  lessons_blocks_post_check_assertion_post_check_args: typeof lessons_blocks_post_check_assertion_post_check_args
-  lessons_blocks_post_check_assertion: typeof lessons_blocks_post_check_assertion
-  lessons_blocks_sequence_steps_args: typeof lessons_blocks_sequence_steps_args
-  lessons_blocks_sequence_steps: typeof lessons_blocks_sequence_steps
-  lessons_blocks_sequence_post_check_args: typeof lessons_blocks_sequence_post_check_args
-  lessons_blocks_sequence: typeof lessons_blocks_sequence
+  lessons_solidity_test_cases_steps_args: typeof lessons_solidity_test_cases_steps_args
+  lessons_solidity_test_cases_steps: typeof lessons_solidity_test_cases_steps
+  lessons_solidity_test_cases: typeof lessons_solidity_test_cases
   lessons_review_grading_tasks: typeof lessons_review_grading_tasks
   lessons_review_paths: typeof lessons_review_paths
   lessons: typeof lessons
@@ -991,15 +770,9 @@ type DatabaseSchema = {
   relations_lessons_questions: typeof relations_lessons_questions
   relations_lessons_solidity_constructor_args: typeof relations_lessons_solidity_constructor_args
   relations_lessons_executable_test_cases: typeof relations_lessons_executable_test_cases
-  relations_lessons_blocks_return_assertion_args: typeof relations_lessons_blocks_return_assertion_args
-  relations_lessons_blocks_return_assertion: typeof relations_lessons_blocks_return_assertion
-  relations_lessons_blocks_post_check_assertion_args: typeof relations_lessons_blocks_post_check_assertion_args
-  relations_lessons_blocks_post_check_assertion_post_check_args: typeof relations_lessons_blocks_post_check_assertion_post_check_args
-  relations_lessons_blocks_post_check_assertion: typeof relations_lessons_blocks_post_check_assertion
-  relations_lessons_blocks_sequence_steps_args: typeof relations_lessons_blocks_sequence_steps_args
-  relations_lessons_blocks_sequence_steps: typeof relations_lessons_blocks_sequence_steps
-  relations_lessons_blocks_sequence_post_check_args: typeof relations_lessons_blocks_sequence_post_check_args
-  relations_lessons_blocks_sequence: typeof relations_lessons_blocks_sequence
+  relations_lessons_solidity_test_cases_steps_args: typeof relations_lessons_solidity_test_cases_steps_args
+  relations_lessons_solidity_test_cases_steps: typeof relations_lessons_solidity_test_cases_steps
+  relations_lessons_solidity_test_cases: typeof relations_lessons_solidity_test_cases
   relations_lessons_review_grading_tasks: typeof relations_lessons_review_grading_tasks
   relations_lessons_review_paths: typeof relations_lessons_review_paths
   relations_lessons: typeof relations_lessons

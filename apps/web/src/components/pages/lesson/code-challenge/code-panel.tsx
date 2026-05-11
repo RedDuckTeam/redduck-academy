@@ -52,10 +52,24 @@ export function CodePanel({
   const parsedCases = useMemo(() => parseLessonTestCases(lesson), [lesson])
   const hasExecutableTests = parsedCases.length > 0
 
+  // Snapshot the persisted submission id the FIRST render where userLesson has
+  // loaded. The status bar only shows the "latest" row when a *fresh* submission
+  // appears in this session — on a page reload we suppress the historical verdict
+  // so the user starts from a clean state. The ref is initialized via a single
+  // render-time assignment (idempotent: only runs while current === undefined),
+  // which React permits for lazy capture of stable values.
+  const initialLatestIdRef = useRef<number | null | undefined>(undefined)
+  if (initialLatestIdRef.current === undefined && userLesson) {
+    initialLatestIdRef.current = latest?.id ?? null
+  }
+  const capturedInitialId = initialLatestIdRef.current
+  const sessionLatest =
+    capturedInitialId !== undefined && latest && latest.id !== capturedInitialId ? latest : undefined
+
   const statusBarState = useStatusBarState({
     rateLimitError,
     liveStatus,
-    latest,
+    latest: sessionLatest,
     isPending,
     isRunning,
   })

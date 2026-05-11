@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
-import { formatValue } from './utils'
+import { formatValue } from '../utils'
 
 interface ValueBoxProps {
   name?: string

@@ -73,48 +73,22 @@ export interface SolidityArgValue {
   value: string
 }
 
-/** One step inside a 'sequence' Solidity test case, mirroring the Payload step row. */
-export interface SoliditySequenceStep {
+/** One step inside a Solidity test case, mirroring the Payload step row. */
+export interface SolidityCaseStep {
   id?: string | null
   functionName: string
   args?: SolidityArgValue[] | null
   valueWei?: string | null
   caller?: string | null
+  /** Optional. When set, the runner decodes this step's return and compares against it. */
+  expected?: string | null
 }
 
-/** Solidity test-case wire shape (Payload `solidityTestCases` blocks). Discriminated by `blockType`. */
-export type SolidityTestCase =
-  | {
-      id: string
-      blockType: 'returnAssertion'
-      functionName: string
-      args?: SolidityArgValue[] | null
-      valueWei?: string | null
-      caller?: string | null
-      expected: string
-    }
-  | {
-      id: string
-      blockType: 'postCheckAssertion'
-      functionName: string
-      args?: SolidityArgValue[] | null
-      valueWei?: string | null
-      caller?: string | null
-      postCheckFunctionName: string
-      postCheckArgs?: SolidityArgValue[] | null
-      postCheckCaller?: string | null
-      expected: string
-    }
-  | {
-      id: string
-      blockType: 'sequence'
-      steps?: SoliditySequenceStep[] | null
-      assertion: 'lastReturn' | 'postCheck'
-      postCheckFunctionName?: string | null
-      postCheckArgs?: SolidityArgValue[] | null
-      postCheckCaller?: string | null
-      expected: string
-    }
+/** Solidity test-case wire shape (Payload `solidityTestCases` array row). */
+export interface SolidityTestCase {
+  id: string
+  steps?: SolidityCaseStep[] | null
+}
 
 export type CodingTaskSubmission = LearnerCodingTaskSubmission
 

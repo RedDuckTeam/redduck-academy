@@ -5830,6 +5830,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openzeppelin/contracts@npm:5.1.0":
+  version: 5.1.0
+  resolution: "@openzeppelin/contracts@npm:5.1.0"
+  checksum: 10c0/dd6cf97fbc07910e57efefec1ca5b49cbe70ad7f53ff66fa7d1ecb4ec0c47a8609220e46496665dbebed9dba95a4524679adf0cf36fdd58c59a98787fd019678
+  languageName: node
+  linkType: hard
+
 "@openzeppelin/contracts@npm:^5.6.1":
   version: 5.6.1
   resolution: "@openzeppelin/contracts@npm:5.6.1"
@@ -9260,6 +9267,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@redduck/solc-utils@workspace:packages/solc-utils"
   dependencies:
+    "@openzeppelin/contracts": "npm:5.1.0"
+    solc: "npm:0.8.24"
     typescript: "npm:^5.7.2"
   peerDependencies:
     viem: ^2.44.4
@@ -25982,6 +25991,23 @@ __metadata:
     ip-address: "npm:^10.0.1"
     smart-buffer: "npm:^4.2.0"
   checksum: 10c0/2805a43a1c4bcf9ebf6e018268d87b32b32b06fbbc1f9282573583acc155860dc361500f89c73bfbb157caa1b4ac78059eac0ef15d1811eb0ca75e0bdadbc9d2
+  languageName: node
+  linkType: hard
+
+"solc@npm:0.8.24":
+  version: 0.8.24
+  resolution: "solc@npm:0.8.24"
+  dependencies:
+    command-exists: "npm:^1.2.8"
+    commander: "npm:^8.1.0"
+    follow-redirects: "npm:^1.12.1"
+    js-sha3: "npm:0.8.0"
+    memorystream: "npm:^0.3.1"
+    semver: "npm:^5.5.0"
+    tmp: "npm:0.0.33"
+  bin:
+    solcjs: solc.js
+  checksum: 10c0/31f748be9998d9dee6a4c59aa6800a87802827766ccab2429cce2783898561658c98bad89c081a7b69510e3741668245375ab3dd73b840f15213352d5caf0a91
   languageName: node
   linkType: hard
 

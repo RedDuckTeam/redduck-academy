@@ -1,7 +1,9 @@
-import type { RunnerResult, RunnerTestCase } from '@/lib/code-runner'
-import { Section } from './section'
-import { ValueBox } from './value-box'
+import type { ReactNode } from 'react'
+import type { RunnerResult, RunnerTestCase, SolidityTestCase } from '@/lib/code-runner'
 import { getDisplayArgs, getDisplayExpected } from './utils'
+import { Section } from './case-detail/section'
+import { ValueBox } from './case-detail/value-box'
+import { CallBox } from './case-detail/call-box'
 
 interface CaseDetailProps {
   testCase: RunnerTestCase
@@ -10,39 +12,24 @@ interface CaseDetailProps {
 }
 
 export function CaseDetail({ testCase, argNames, result }: CaseDetailProps) {
-  const inputs = getDisplayArgs(testCase)
   const expected = getDisplayExpected(testCase)
   const isSolidity = 'kind' in testCase
-  const isSequence = isSolidity && testCase.kind === 'sequence'
-  const fnLabel = isSolidity && !isSequence ? testCase.functionName : null
-  const sequenceLabel = isSequence
-    ? testCase.steps.map((s) => `${s.functionName}()`).join(' → ')
-    : null
-  const modeLabel =
-    isSolidity && testCase.kind === 'postCheckAssertion'
-      ? `post-check ${testCase.postCheckFunctionName}()`
-      : isSequence && testCase.assertion === 'postCheck' && testCase.postCheckFunctionName
-        ? `post-check ${testCase.postCheckFunctionName}()`
-        : null
 
   return (
     <div className="flex flex-col gap-3">
-      {(fnLabel || sequenceLabel || modeLabel) && (
+      {isSolidity ? (
         <Section label="Call">
-          <div className="text-[13px] text-muted-foreground">
-            {fnLabel ?? sequenceLabel}
-            {modeLabel ? <span className="ml-2 opacity-70">→ {modeLabel}</span> : null}
+          <div className="flex flex-col gap-2">{renderSolidityCalls(testCase)}</div>
+        </Section>
+      ) : (
+        <Section label="Input">
+          <div className="flex flex-col gap-2">
+            {getDisplayArgs(testCase).map((value, i) => (
+              <ValueBox key={i} name={argNames[i] ?? `arg${i + 1}`} value={value} />
+            ))}
           </div>
         </Section>
       )}
-
-      <Section label="Input">
-        <div className="flex flex-col gap-2">
-          {inputs.map((value, i) => (
-            <ValueBox key={i} name={argNames[i] ?? `arg${i + 1}`} value={value} />
-          ))}
-        </div>
-      </Section>
 
       <Section label="Output">
         <ValueBox value={expected} />
@@ -63,4 +50,10 @@ export function CaseDetail({ testCase, argNames, result }: CaseDetailProps) {
       )}
     </div>
   )
+}
+
+function renderSolidityCalls(tc: SolidityTestCase): ReactNode[] {
+  return tc.steps.map((s, i) => (
+    <CallBox key={`step-${i}`} functionName={s.functionName} args={s.rawArgs} valueWei={s.valueWei} caller={s.caller} />
+  ))
 }

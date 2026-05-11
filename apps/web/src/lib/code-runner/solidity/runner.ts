@@ -56,7 +56,7 @@ export async function runSolidity(
         id: tc.id,
         passed: false,
         input: caseInput(tc),
-        expected: tc.rawExpected,
+        expected: lastExpectedOf(tc),
         error: response.fatalError,
         durationMs: 0,
       })),
@@ -72,7 +72,7 @@ export async function runSolidity(
         id: tc.id,
         passed: false,
         input: caseInput(tc),
-        expected: tc.rawExpected,
+        expected: lastExpectedOf(tc),
         error: 'no result returned',
         durationMs: 0,
       }
@@ -81,9 +81,10 @@ export async function runSolidity(
       id: tc.id,
       passed: r.passed,
       input: caseInput(tc),
-      expected: r.expected ?? tc.rawExpected,
+      expected: r.expected ?? lastExpectedOf(tc),
       got: r.got,
       error: r.error,
+      failedStepIndex: r.failedStepIndex,
       durationMs: 0,
     }
   })
@@ -99,46 +100,28 @@ export async function runSolidity(
  * paths so users see something meaningful in the results table when a case has no runner output.
  */
 function caseInput(tc: SolidityTestCase): unknown {
-  if (tc.kind === 'sequence') {
-    return tc.steps.map((s) => ({ fn: s.functionName, args: s.rawArgs }))
+  return tc.steps.map((s) => ({ fn: s.functionName, args: s.rawArgs }))
+}
+
+/** Last asserting step's raw expected, surfaced as the case-level expected for display. */
+function lastExpectedOf(tc: SolidityTestCase): string | undefined {
+  let last: string | undefined
+  for (const s of tc.steps) {
+    if (s.rawExpected !== undefined && s.rawExpected !== '') last = s.rawExpected
   }
-  return tc.rawArgs
+  return last
 }
 
 function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
-  if (tc.kind === 'returnAssertion') {
-    return {
-      id: tc.id,
-      kind: 'returnAssertion',
-      functionName: tc.functionName,
-      rawArgs: tc.rawArgs,
-      valueWei: tc.valueWei,
-      caller: tc.caller,
-      rawExpected: tc.rawExpected,
-    }
-  }
-  if (tc.kind === 'postCheckAssertion') {
-    return {
-      id: tc.id,
-      kind: 'postCheckAssertion',
-      functionName: tc.functionName,
-      rawArgs: tc.rawArgs,
-      valueWei: tc.valueWei,
-      caller: tc.caller,
-      postCheckFunctionName: tc.postCheckFunctionName,
-      rawPostCheckArgs: tc.rawPostCheckArgs,
-      postCheckCaller: tc.postCheckCaller,
-      rawExpected: tc.rawExpected,
-    }
-  }
   return {
     id: tc.id,
-    kind: 'sequence',
-    steps: tc.steps,
-    assertion: tc.assertion,
-    postCheckFunctionName: tc.postCheckFunctionName,
-    rawPostCheckArgs: tc.rawPostCheckArgs,
-    postCheckCaller: tc.postCheckCaller,
-    rawExpected: tc.rawExpected,
+    kind: 'case',
+    steps: tc.steps.map((s) => ({
+      functionName: s.functionName,
+      rawArgs: s.rawArgs,
+      valueWei: s.valueWei,
+      caller: s.caller,
+      rawExpected: s.rawExpected,
+    })),
   }
 }

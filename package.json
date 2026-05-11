@@ -62,6 +62,7 @@
   },
   "scripts": {
     "payload-config:generate": "yarn workspace @redduck/payload-config generate",
+    "solc-utils:build-stdlib": "yarn workspace @redduck/solc-utils build:stdlib",
     "admin:build": "yarn workspace admin build",
     "admin:dev": "yarn workspace admin dev",
     "admin:db:generate": "yarn workspace admin payload migrate:create",

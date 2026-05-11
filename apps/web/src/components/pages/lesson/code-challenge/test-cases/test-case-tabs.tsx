@@ -5,8 +5,8 @@ import { extractArgNames } from '@/lib/lessons/extract-arg-names'
 import { PanelHeader } from '../panel-header'
 import { CaseTab } from './case-tab'
 import { CaseDetail } from './case-detail'
+import { useVisibleCases } from './hooks/use-visible-cases'
 import { resolveCaseStatus } from './utils'
-import { useVisibleCases } from './use-visible-cases'
 import { CodingAppTerminalIcon } from '@/components/ui/icons/coding-app-terminal'
 
 interface TestCaseTabsProps {
@@ -24,12 +24,10 @@ export function TestCaseTabs({ executableCases, functionSignature, report, isRun
   const argCount = useMemo(
     () =>
       executableCases.reduce((acc, tc) => {
-        if ('kind' in tc) {
-          // Sequence cases have per-step args, not a single function signature; skip them
-          // here — their detail view renders step-level labels instead of named args.
-          if (tc.kind === 'sequence') return acc
-          return Math.max(acc, tc.rawArgs.length)
-        }
+        // Solidity cases have per-step args, not a single function signature — their
+        // detail view renders step-level labels instead of named args, so skip them
+        // for the case-level argument-name count.
+        if ('kind' in tc) return acc
         return Math.max(acc, Array.isArray(tc.input) ? tc.input.length : 1)
       }, 0),
     [executableCases],
