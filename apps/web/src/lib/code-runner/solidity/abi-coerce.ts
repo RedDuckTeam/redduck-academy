@@ -24,12 +24,23 @@ function coerceOne(arg: unknown, type: string): unknown {
 }
 
 /**
- * After viem decodes an EVM return, normalize bigints to decimal strings so the
- * report can be JSON-serialized by postMessage and compared via the runner's
- * deepEqual (which expects parsed-from-JSON shapes).
+ * After viem decodes an EVM return, normalize numeric scalars to decimal strings.
+ *
+ * Two cases matter:
+ *  - `bigint` (returned for uint64+ / int64+) → toString.
+ *  - integer `number` (returned for uint8…uint53 / int8…int53) → toString.
+ *
+ * Both branches must stringify so the comparison treats `uint8` returns identically
+ * to `uint256` returns. Without this, `parseTypedValue` (which always produces
+ * bigint for uint*) would mismatch viem's small-uint decode. Floats (non-integer
+ * numbers) pass through untouched — they don't appear in Solidity ABI returns.
+ *
+ * The string form also keeps postMessage JSON-serializable across the worker
+ * boundary, which doesn't ship bigint through structured clone.
  */
 export function normalizeReturnValue(value: unknown): unknown {
   if (typeof value === 'bigint') return value.toString()
+  if (typeof value === 'number' && Number.isInteger(value)) return value.toString()
   if (Array.isArray(value)) return value.map(normalizeReturnValue)
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {}
