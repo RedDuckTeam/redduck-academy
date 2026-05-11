@@ -4,7 +4,11 @@ import type { RunnerReport, RunnerResult, RunnerTestCase } from '@/lib/code-runn
 import { extractArgNames } from '@/lib/lessons/extract-arg-names'
 import { PanelHeader } from '../panel-header'
 import { CaseTab } from './case-tab'
-import { CaseDetail } from './case-detail'
+// Import from the directory's index explicitly. Earlier, a stale orphan
+// `./case-detail.tsx` kept getting recreated at this path and shadowed the
+// `./case-detail/` directory — using the explicit index path removes the
+// ambiguity so the resolution can't drift back.
+import { CaseDetail } from './case-detail/index'
 import { useVisibleCases } from './hooks/use-visible-cases'
 import { resolveCaseStatus } from './utils'
 import { CodingAppTerminalIcon } from '@/components/ui/icons/coding-app-terminal'

@@ -1,6 +1,7 @@
 import { createEVM } from '@ethereumjs/evm'
 import { type Address, hexToBytes, bytesToHex, createAddressFromString } from '@ethereumjs/util'
 import {
+  decodeErrorResult,
   encodeFunctionData,
   decodeFunctionResult,
   encodeDeployData,
@@ -163,6 +164,11 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
 
   const evm = await createEVM()
   const aliasMap = newCaseAliasMap()
+  // Union of all ABIs in this case, used to decode revert payloads. Combining
+  // student + every fixture means we can match custom-error selectors regardless
+  // of which contract bubbled the revert up — OZ's `ERC20InsufficientBalance`,
+  // for example, is in the ABI of any contract that inherits ERC20.
+  const unionAbi: Abi = [...input.studentAbi, ...input.fixtures.flatMap((f) => f.abi)]
 
   // --- 1. fixtures, in declaration order
   for (const fixture of input.fixtures) {
@@ -174,7 +180,7 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
     }
     let addr: Address
     try {
-      addr = await deploy(evm, fixture.bytecode, fixture.abi, ctorArgs)
+      addr = await deploy(evm, fixture.bytecode, fixture.abi, ctorArgs, unionAbi)
     } catch (err) {
       return { passed: false, error: `fixture '${fixture.alias}' deploy failed: ${msg(err)}` }
     }
@@ -190,7 +196,7 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
   }
   let studentAddr: Address
   try {
-    studentAddr = await deploy(evm, input.studentBytecode, input.studentAbi, studentArgs)
+    studentAddr = await deploy(evm, input.studentBytecode, input.studentAbi, studentArgs, unionAbi)
   } catch (err) {
     return { passed: false, error: `student deploy failed: ${msg(err)}` }
   }
@@ -217,7 +223,7 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
 
     let got: unknown
     try {
-      got = await callContract(evm, targetAddr, step.fnAbi, argValues, step.valueWei, callerAddr)
+      got = await callContract(evm, targetAddr, step.fnAbi, argValues, step.valueWei, callerAddr, unionAbi)
     } catch (err) {
       const original = err instanceof Error ? err.message : String(err)
       const stripped = original.replace(/^call reverted:\s*/, '')
@@ -325,6 +331,7 @@ async function deploy(
   bytecode: `0x${string}`,
   abi: Abi,
   constructorArgs: unknown[] | undefined,
+  unionAbi: Abi,
 ): Promise<Address> {
   const constructorAbi = abi.find((item) => item.type === 'constructor') as
     | { type: 'constructor'; inputs?: readonly { type: string }[] }
@@ -346,7 +353,12 @@ async function deploy(
   })
 
   if (result.execResult.exceptionError) {
-    throw new Error(`deploy reverted: ${result.execResult.exceptionError.error}`)
+    const reason = formatRevertReason(
+      result.execResult.returnValue,
+      result.execResult.exceptionError.error,
+      unionAbi,
+    )
+    throw new Error(`deploy reverted: ${reason}`)
   }
   if (!result.createdAddress) throw new Error('deploy did not produce a contract address')
   return result.createdAddress as Address
@@ -359,6 +371,7 @@ async function callContract(
   args: unknown[],
   valueWei: string | undefined,
   caller: Address,
+  unionAbi: Abi,
 ): Promise<unknown> {
   const inputs = (fnAbi.inputs ?? []) as readonly { type: string }[]
   const coercedArgs = coerceArgs(args, inputs)
@@ -378,7 +391,12 @@ async function callContract(
   })
 
   if (result.execResult.exceptionError) {
-    throw new Error(`call reverted: ${result.execResult.exceptionError.error}`)
+    const reason = formatRevertReason(
+      result.execResult.returnValue,
+      result.execResult.exceptionError.error,
+      unionAbi,
+    )
+    throw new Error(`call reverted: ${reason}`)
   }
 
   if (!fnAbi.outputs || fnAbi.outputs.length === 0) return null
@@ -388,4 +406,49 @@ async function callContract(
     data: bytesToHex(result.execResult.returnValue) as `0x${string}`,
   })
   return normalizeReturnValue(decoded)
+}
+
+/**
+ * Decode a revert payload against the case's union ABI and return a readable
+ * reason string. Falls back to the EVM's generic error label (e.g. "revert",
+ * "out of gas") when the returnValue isn't a recognized error shape.
+ *
+ * Built-in handlers always work: `Error(string)` (require/revert with message)
+ * and `Panic(uint256)` (arithmetic, assertions). Custom errors from OZ or the
+ * user's own contracts decode when the relevant definition lives in `unionAbi`,
+ * which we build per-case from the student's contract + every fixture's ABI.
+ */
+function formatRevertReason(returnValue: Uint8Array, fallback: string, unionAbi: Abi): string {
+  if (returnValue.length === 0) return fallback
+  const data = bytesToHex(returnValue) as `0x${string}`
+  try {
+    const decoded = decodeErrorResult({ abi: unionAbi, data })
+    return formatDecodedError(decoded.errorName, (decoded.args ?? []) as readonly unknown[])
+  } catch {
+    // Couldn't decode against any known ABI — surface the raw payload so the
+    // author can at least pattern-match the selector (first 4 bytes).
+    const preview = data.length > 18 ? `${data.slice(0, 18)}…` : data
+    return `${fallback} (data=${preview})`
+  }
+}
+
+function formatDecodedError(name: string, args: readonly unknown[]): string {
+  if (name === 'Error') return String(args[0] ?? '')
+  if (name === 'Panic') return `Panic(${formatErrorArg(args[0])})`
+  if (args.length === 0) return name
+  return `${name}(${args.map(formatErrorArg).join(', ')})`
+}
+
+function formatErrorArg(value: unknown): string {
+  if (typeof value === 'bigint') return value.toString()
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return `[${value.map(formatErrorArg).join(', ')}]`
+  if (value && typeof value === 'object') {
+    try {
+      return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v))
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
 }
