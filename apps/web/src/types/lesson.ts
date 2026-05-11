@@ -73,6 +73,15 @@ export interface SolidityArgValue {
   value: string
 }
 
+/** One step inside a 'sequence' Solidity test case, mirroring the Payload step row. */
+export interface SoliditySequenceStep {
+  id?: string | null
+  functionName: string
+  args?: SolidityArgValue[] | null
+  valueWei?: string | null
+  caller?: string | null
+}
+
 /** Solidity test-case wire shape (Payload `solidityTestCases` blocks). Discriminated by `blockType`. */
 export type SolidityTestCase =
   | {
@@ -92,6 +101,16 @@ export type SolidityTestCase =
       valueWei?: string | null
       caller?: string | null
       postCheckFunctionName: string
+      postCheckArgs?: SolidityArgValue[] | null
+      postCheckCaller?: string | null
+      expected: string
+    }
+  | {
+      id: string
+      blockType: 'sequence'
+      steps?: SoliditySequenceStep[] | null
+      assertion: 'lastReturn' | 'postCheck'
+      postCheckFunctionName?: string | null
       postCheckArgs?: SolidityArgValue[] | null
       postCheckCaller?: string | null
       expected: string

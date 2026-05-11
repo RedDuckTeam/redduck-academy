@@ -55,7 +55,7 @@ export async function runSolidity(
       results: testCases.map((tc) => ({
         id: tc.id,
         passed: false,
-        input: tc.rawArgs,
+        input: caseInput(tc),
         expected: tc.rawExpected,
         error: response.fatalError,
         durationMs: 0,
@@ -71,7 +71,7 @@ export async function runSolidity(
       return {
         id: tc.id,
         passed: false,
-        input: tc.rawArgs,
+        input: caseInput(tc),
         expected: tc.rawExpected,
         error: 'no result returned',
         durationMs: 0,
@@ -80,7 +80,7 @@ export async function runSolidity(
     return {
       id: tc.id,
       passed: r.passed,
-      input: tc.rawArgs,
+      input: caseInput(tc),
       expected: r.expected ?? tc.rawExpected,
       got: r.got,
       error: r.error,
@@ -92,6 +92,17 @@ export async function runSolidity(
     allPassed: results.every((r) => r.passed),
     results,
   }
+}
+
+/**
+ * UI-facing `input` summary for a case. Used in both the fatal-error and per-case fallback
+ * paths so users see something meaningful in the results table when a case has no runner output.
+ */
+function caseInput(tc: SolidityTestCase): unknown {
+  if (tc.kind === 'sequence') {
+    return tc.steps.map((s) => ({ fn: s.functionName, args: s.rawArgs }))
+  }
+  return tc.rawArgs
 }
 
 function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
@@ -106,13 +117,25 @@ function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
       rawExpected: tc.rawExpected,
     }
   }
+  if (tc.kind === 'postCheckAssertion') {
+    return {
+      id: tc.id,
+      kind: 'postCheckAssertion',
+      functionName: tc.functionName,
+      rawArgs: tc.rawArgs,
+      valueWei: tc.valueWei,
+      caller: tc.caller,
+      postCheckFunctionName: tc.postCheckFunctionName,
+      rawPostCheckArgs: tc.rawPostCheckArgs,
+      postCheckCaller: tc.postCheckCaller,
+      rawExpected: tc.rawExpected,
+    }
+  }
   return {
     id: tc.id,
-    kind: 'postCheckAssertion',
-    functionName: tc.functionName,
-    rawArgs: tc.rawArgs,
-    valueWei: tc.valueWei,
-    caller: tc.caller,
+    kind: 'sequence',
+    steps: tc.steps,
+    assertion: tc.assertion,
     postCheckFunctionName: tc.postCheckFunctionName,
     rawPostCheckArgs: tc.rawPostCheckArgs,
     postCheckCaller: tc.postCheckCaller,

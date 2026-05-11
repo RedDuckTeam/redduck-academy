@@ -8,8 +8,16 @@ export interface ResolvedType {
 }
 
 interface FormReader {
+  /** Main fn name for the case-level args / expected of the existing two block types. */
   readonly functionName?: string
+  /** Post-check fn name for postCheckAssertion and sequence(assertion=postCheck). */
   readonly postCheckFunctionName?: string
+  /** Function name for the step the path is rooted in (sequence block only). */
+  readonly stepFunctionName?: string
+  /** Function name of the last step (sequence block, used when assertion=lastReturn). */
+  readonly lastStepFunctionName?: string
+  /** Sequence-block assertion mode, only used when resolving `expected`. */
+  readonly assertion?: 'lastReturn' | 'postCheck'
 }
 
 /**
@@ -17,10 +25,13 @@ interface FormReader {
  * return the AbiParameter the value should conform to.
  *
  * Supported path shapes:
- *   `solidityConstructorArgs.<i>.value`                          → constructor input #i
- *   `solidityTestCases.<i>.args.<j>.value`                       → main fn input #j
- *   `solidityTestCases.<i>.postCheckArgs.<j>.value`              → post-check fn input #j
- *   `solidityTestCases.<i>.expected`                             → main fn (or post-check fn) return
+ *   `solidityConstructorArgs.<i>.value`                                  → constructor input #i
+ *   `solidityTestCases.<i>.args.<j>.value`                               → main fn input #j
+ *   `solidityTestCases.<i>.postCheckArgs.<j>.value`                      → post-check fn input #j
+ *   `solidityTestCases.<i>.steps.<k>.args.<j>.value`                     → step k's fn input #j
+ *   `solidityTestCases.<i>.expected`                                     → main fn / post-check fn /
+ *                                                                          last-step fn return,
+ *                                                                          depending on block type
  */
 export function resolveTypeForPath(path: string, abi: Abi | undefined, form: FormReader): ResolvedType | null {
   if (!abi) return null
@@ -30,6 +41,13 @@ export function resolveTypeForPath(path: string, abi: Abi | undefined, form: For
     const idx = Number(ctorMatch[1])
     const ctor = abi.find((item): item is Extract<Abi[number], { type: 'constructor' }> => item.type === 'constructor')
     return paramAt(ctor?.inputs, idx)
+  }
+
+  const stepArgMatch = path.match(/^solidityTestCases\.(\d+)\.steps\.(\d+)\.args\.(\d+)\.value$/)
+  if (stepArgMatch) {
+    const idx = Number(stepArgMatch[3])
+    const fn = findFunction(abi, form.stepFunctionName)
+    return paramAt(fn?.inputs, idx)
   }
 
   const argMatch = path.match(/^solidityTestCases\.(\d+)\.(args|postCheckArgs)\.(\d+)\.value$/)
@@ -43,9 +61,7 @@ export function resolveTypeForPath(path: string, abi: Abi | undefined, form: For
 
   const expectedMatch = path.match(/^solidityTestCases\.(\d+)\.expected$/)
   if (expectedMatch) {
-    // For postCheck blocks, the expected refers to the post-check fn's return.
-    // Otherwise it's the main fn's return.
-    const fnName = form.postCheckFunctionName || form.functionName
+    const fnName = pickExpectedFunctionName(form)
     const fn = findFunction(abi, fnName)
     if (!fn || !fn.outputs || fn.outputs.length === 0) return null
     if (fn.outputs.length === 1) return paramFor(fn.outputs[0])
@@ -55,6 +71,17 @@ export function resolveTypeForPath(path: string, abi: Abi | undefined, form: For
   }
 
   return null
+}
+
+/**
+ * Decide which function's outputs `expected` is typed against. Sequence cases pick by
+ * assertion; the two original block types fall back to the legacy postCheck-or-main heuristic.
+ */
+function pickExpectedFunctionName(form: FormReader): string | undefined {
+  if (form.assertion === 'lastReturn') return form.lastStepFunctionName
+  if (form.assertion === 'postCheck') return form.postCheckFunctionName
+  // Legacy: a postCheckAssertion block has postCheckFunctionName set; everything else uses functionName.
+  return form.postCheckFunctionName || form.functionName
 }
 
 function findFunction(abi: Abi, name: string | undefined): AbiFunction | undefined {

@@ -1,8 +1,15 @@
 import type { Abi, AbiFunction } from 'viem'
 import { compile, type CompiledContract, parseTypedValue } from '@redduck/solc-utils'
-import { resolveCaller, runTestCase } from './run-test-case'
+import { resolveCaller, runTestCase, type RunSequenceAssertion } from './run-test-case'
 import { normalizeReturnValue } from './abi-coerce'
 import { deepEqual } from '../compare'
+
+export interface SolWorkerStep {
+  functionName: string
+  rawArgs: string[]
+  valueWei?: string
+  caller?: string
+}
 
 export type SolWorkerCase =
   | {
@@ -26,6 +33,19 @@ export type SolWorkerCase =
       postCheckCaller?: string
       rawExpected: string
     }
+  | {
+      id: string
+      kind: 'sequence'
+      steps: SolWorkerStep[]
+      assertion: 'lastReturn' | 'postCheck'
+      postCheckFunctionName?: string
+      rawPostCheckArgs?: string[]
+      postCheckCaller?: string
+      rawExpected: string
+    }
+
+/** Per-case hard cap on the number of steps in a sequence; mirrors Payload-side validation. */
+const MAX_SEQUENCE_STEPS = 16
 
 export interface SolRunRequest {
   type: 'compile-and-run'
@@ -73,14 +93,12 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
   const results: SolRunResponse['results'] = []
   for (const tc of msg.cases) {
     try {
-      const fnAbi = requireFunction(compiled.abi, tc.functionName)
-      const args = parseArgs(tc.rawArgs, fnAbi)
-      const expected = parseExpected(tc.rawExpected, fnAbi.outputs)
-      const caller = resolveCaller(tc.caller)
-
-      let got: unknown
       if (tc.kind === 'returnAssertion') {
-        got = await runTestCase({
+        const fnAbi = requireFunction(compiled.abi, tc.functionName)
+        const args = parseArgs(tc.rawArgs, fnAbi)
+        const expected = parseExpected(tc.rawExpected, fnAbi.outputs)
+        const caller = resolveCaller(tc.caller)
+        const got = await runTestCase({
           kind: 'returnAssertion',
           bytecode: compiled.bytecode,
           abi: compiled.abi,
@@ -90,12 +108,20 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
           valueWei: tc.valueWei,
           caller,
         })
-      } else {
+        const passed = deepEqual(got, expected)
+        results.push({ id: tc.id, passed, got, expected })
+        continue
+      }
+
+      if (tc.kind === 'postCheckAssertion') {
+        const fnAbi = requireFunction(compiled.abi, tc.functionName)
+        const args = parseArgs(tc.rawArgs, fnAbi)
+        const caller = resolveCaller(tc.caller)
         const postFn = requireFunction(compiled.abi, tc.postCheckFunctionName)
         const postArgs = parseArgs(tc.rawPostCheckArgs, postFn)
         const postExpected = parseExpected(tc.rawExpected, postFn.outputs)
         const postCheckCaller = tc.postCheckCaller ? resolveCaller(tc.postCheckCaller) : undefined
-        got = await runTestCase({
+        const got = await runTestCase({
           kind: 'postCheckAssertion',
           bytecode: compiled.bytecode,
           abi: compiled.abi,
@@ -114,6 +140,48 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
         continue
       }
 
+      // tc.kind === 'sequence'
+      if (tc.steps.length === 0) throw new Error('sequence has no steps')
+      if (tc.steps.length > MAX_SEQUENCE_STEPS) {
+        throw new Error(`sequence exceeds ${MAX_SEQUENCE_STEPS}-step cap`)
+      }
+      const resolvedSteps = tc.steps.map((step, i) => {
+        const fnAbi = requireFunction(compiled.abi, step.functionName)
+        return {
+          fnAbi,
+          args: parseArgs(step.rawArgs, fnAbi),
+          valueWei: step.valueWei,
+          caller: step.caller ? resolveCallerLabeled(step.caller, `step ${i + 1}`) : undefined,
+        }
+      })
+      const lastFnAbi = resolvedSteps[resolvedSteps.length - 1].fnAbi
+      let assertion: RunSequenceAssertion
+      let expected: unknown
+      if (tc.assertion === 'lastReturn') {
+        assertion = { kind: 'lastReturn' }
+        expected = parseExpected(tc.rawExpected, lastFnAbi.outputs)
+      } else {
+        if (!tc.postCheckFunctionName) {
+          throw new Error('sequence assertion=postCheck requires postCheckFunctionName')
+        }
+        const postFn = requireFunction(compiled.abi, tc.postCheckFunctionName)
+        const postArgs = parseArgs(tc.rawPostCheckArgs ?? [], postFn)
+        assertion = {
+          kind: 'postCheck',
+          fnAbi: postFn,
+          args: postArgs,
+          caller: tc.postCheckCaller ? resolveCallerLabeled(tc.postCheckCaller, 'postCheckCaller') : undefined,
+        }
+        expected = parseExpected(tc.rawExpected, postFn.outputs)
+      }
+      const got = await runTestCase({
+        kind: 'sequence',
+        bytecode: compiled.bytecode,
+        abi: compiled.abi,
+        constructorArgs,
+        steps: resolvedSteps,
+        assertion,
+      })
       const passed = deepEqual(got, expected)
       results.push({ id: tc.id, passed, got, expected })
     } catch (err) {
@@ -173,4 +241,16 @@ function coerceConstructorArgs(abi: Abi, raw: string[]): unknown[] {
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
+}
+
+/**
+ * Resolve a caller alias/address and prefix any failure with a label so multi-step
+ * cases point the author at the exact step (or post-check) that had the bad value.
+ */
+function resolveCallerLabeled(value: string, label: string): ReturnType<typeof resolveCaller> {
+  try {
+    return resolveCaller(value)
+  } catch (err) {
+    throw new Error(`${label}: ${err instanceof Error ? err.message : String(err)}`)
+  }
 }

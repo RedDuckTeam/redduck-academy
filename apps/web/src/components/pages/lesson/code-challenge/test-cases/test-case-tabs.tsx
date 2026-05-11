@@ -24,7 +24,12 @@ export function TestCaseTabs({ executableCases, functionSignature, report, isRun
   const argCount = useMemo(
     () =>
       executableCases.reduce((acc, tc) => {
-        if ('kind' in tc) return Math.max(acc, tc.rawArgs.length)
+        if ('kind' in tc) {
+          // Sequence cases have per-step args, not a single function signature; skip them
+          // here — their detail view renders step-level labels instead of named args.
+          if (tc.kind === 'sequence') return acc
+          return Math.max(acc, tc.rawArgs.length)
+        }
         return Math.max(acc, Array.isArray(tc.input) ? tc.input.length : 1)
       }, 0),
     [executableCases],

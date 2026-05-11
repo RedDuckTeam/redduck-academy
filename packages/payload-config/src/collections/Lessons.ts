@@ -48,6 +48,9 @@ const testQuestionLexicalFeatures = [
  * Caller aliases recognised by the in-browser Solidity runner. Keep this list in
  * sync with `CALLER_ALIASES` in `apps/web/src/lib/code-runner/solidity/run-test-case.ts`.
  */
+/** Hard cap on the number of steps per sequence test case. Mirrors the worker-side check. */
+const MAX_SEQUENCE_STEPS = 16
+
 const SOLIDITY_CALLER_ALIASES = ['default', 'alice', 'bob', 'carol', 'dave']
 const SOLIDITY_CALLER_HELP =
   'Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.'
@@ -136,9 +139,64 @@ export const Lessons: CollectionConfig = {
                 caller?: unknown
                 postCheckFunctionName?: unknown
                 postCheckCaller?: unknown
+                steps?: unknown
+                assertion?: unknown
               }
+              const casePrefix = `Solidity test case ${i + 1}`
+
+              if (row.blockType === 'sequence') {
+                if (!Array.isArray(row.steps) || row.steps.length === 0) {
+                  throw new APIError(`${casePrefix}: sequence needs at least one step.`, 400)
+                }
+                if (row.steps.length > MAX_SEQUENCE_STEPS) {
+                  throw new APIError(
+                    `${casePrefix}: sequence exceeds ${MAX_SEQUENCE_STEPS}-step cap (got ${row.steps.length}).`,
+                    400,
+                  )
+                }
+                for (let j = 0; j < row.steps.length; j++) {
+                  const step = row.steps[j] as {
+                    functionName?: unknown
+                    valueWei?: unknown
+                    caller?: unknown
+                  }
+                  const stepPrefix = `${casePrefix}, step ${j + 1}`
+                  if (typeof step.functionName !== 'string' || step.functionName.trim() === '') {
+                    throw new APIError(`${stepPrefix}: functionName is required.`, 400)
+                  }
+                  if (typeof step.valueWei === 'string' && step.valueWei.trim() !== '') {
+                    try {
+                      const v = BigInt(step.valueWei.trim())
+                      if (v < 0n) throw new Error('negative')
+                    } catch {
+                      throw new APIError(
+                        `${stepPrefix}: valueWei must be a non-negative integer (decimal string).`,
+                        400,
+                      )
+                    }
+                  }
+                  assertValidCaller(step.caller, stepPrefix, 'caller')
+                }
+                if (row.assertion !== 'lastReturn' && row.assertion !== 'postCheck') {
+                  throw new APIError(
+                    `${casePrefix}: assertion must be 'lastReturn' or 'postCheck'.`,
+                    400,
+                  )
+                }
+                if (row.assertion === 'postCheck') {
+                  if (typeof row.postCheckFunctionName !== 'string' || row.postCheckFunctionName.trim() === '') {
+                    throw new APIError(
+                      `${casePrefix}: postCheckFunctionName is required when assertion is 'postCheck'.`,
+                      400,
+                    )
+                  }
+                  assertValidCaller(row.postCheckCaller, casePrefix, 'postCheckCaller')
+                }
+                continue
+              }
+
               if (typeof row.functionName !== 'string' || row.functionName.trim() === '') {
-                throw new APIError(`Solidity test case ${i + 1}: functionName is required.`, 400)
+                throw new APIError(`${casePrefix}: functionName is required.`, 400)
               }
               if (typeof row.valueWei === 'string' && row.valueWei.trim() !== '') {
                 try {
@@ -146,20 +204,20 @@ export const Lessons: CollectionConfig = {
                   if (v < 0n) throw new Error('negative')
                 } catch {
                   throw new APIError(
-                    `Solidity test case ${i + 1}: valueWei must be a non-negative integer (decimal string).`,
+                    `${casePrefix}: valueWei must be a non-negative integer (decimal string).`,
                     400,
                   )
                 }
               }
-              assertValidCaller(row.caller, `Solidity test case ${i + 1}`, 'caller')
+              assertValidCaller(row.caller, casePrefix, 'caller')
               if (row.blockType === 'postCheckAssertion') {
                 if (typeof row.postCheckFunctionName !== 'string' || row.postCheckFunctionName.trim() === '') {
                   throw new APIError(
-                    `Solidity test case ${i + 1}: postCheckFunctionName is required for post-check assertions.`,
+                    `${casePrefix}: postCheckFunctionName is required for post-check assertions.`,
                     400,
                   )
                 }
-                assertValidCaller(row.postCheckCaller, `Solidity test case ${i + 1}`, 'postCheckCaller')
+                assertValidCaller(row.postCheckCaller, casePrefix, 'postCheckCaller')
               }
             }
           }
@@ -559,6 +617,117 @@ export const Lessons: CollectionConfig = {
               admin: {
                 components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
                 description: 'Expected return of the post-check view function.',
+              },
+            },
+          ],
+        },
+        {
+          slug: 'sequence',
+          labels: { singular: 'Sequence (multi-step)', plural: 'Sequences (multi-step)' },
+          fields: [
+            {
+              name: 'steps',
+              type: 'array',
+              required: true,
+              maxRows: MAX_SEQUENCE_STEPS,
+              admin: {
+                description: `Chained calls within one case (max ${MAX_SEQUENCE_STEPS}). Steps share EVM state; each gets a fresh case-level deploy.`,
+              },
+              fields: [
+                {
+                  name: 'functionName',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    components: { Field: '@/admin-components/abi-driven-test-case/function-select#FunctionSelect' },
+                    description: 'Function to call at this step. Picked from the compiled ABI.',
+                  },
+                },
+                {
+                  name: 'args',
+                  type: 'array',
+                  admin: { description: 'One row per function argument, in declaration order.' },
+                  fields: [
+                    {
+                      name: 'value',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                      },
+                    },
+                  ],
+                },
+                {
+                  name: 'valueWei',
+                  type: 'text',
+                  admin: {
+                    description: 'Optional ETH (in wei) sent as msg.value with this step. Decimal string.',
+                  },
+                },
+                {
+                  name: 'caller',
+                  type: 'text',
+                  admin: { description: SOLIDITY_CALLER_HELP },
+                },
+              ],
+            },
+            {
+              name: 'assertion',
+              type: 'radio',
+              required: true,
+              defaultValue: 'lastReturn',
+              options: [
+                { label: 'Compare last step\'s return value', value: 'lastReturn' },
+                { label: 'Run a view function after the chain', value: 'postCheck' },
+              ],
+              admin: { description: 'How the test is judged after all steps run.' },
+            },
+            {
+              name: 'postCheckFunctionName',
+              type: 'text',
+              admin: {
+                condition: (_, sibling) => (sibling as { assertion?: unknown })?.assertion === 'postCheck',
+                components: {
+                  Field: '@/admin-components/abi-driven-test-case/post-check-function-select#PostCheckFunctionSelect',
+                },
+                description: 'View/pure function called AFTER the sequence to verify state.',
+              },
+            },
+            {
+              name: 'postCheckArgs',
+              type: 'array',
+              admin: {
+                condition: (_, sibling) => (sibling as { assertion?: unknown })?.assertion === 'postCheck',
+                description: 'One row per post-check function argument.',
+              },
+              fields: [
+                {
+                  name: 'value',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                  },
+                },
+              ],
+            },
+            {
+              name: 'postCheckCaller',
+              type: 'text',
+              admin: {
+                condition: (_, sibling) => (sibling as { assertion?: unknown })?.assertion === 'postCheck',
+                description: `${SOLIDITY_CALLER_HELP} Defaults to the final step's caller.`,
+              },
+            },
+            {
+              name: 'expected',
+              type: 'text',
+              required: true,
+              admin: {
+                components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
+                description:
+                  'Expected return value. Typed against the last step\'s return (when assertion=lastReturn) or the post-check function\'s return (when assertion=postCheck).',
               },
             },
           ],

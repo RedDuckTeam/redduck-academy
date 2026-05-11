@@ -23,6 +23,10 @@ import {
 } from 'drizzle-orm/pg-core'
 import { sql, relations } from 'drizzle-orm'
 export const db_schema = pgSchema('payload')
+export const enum_lessons_blocks_sequence_assertion = db_schema.enum('enum_lessons_blocks_sequence_assertion', [
+  'lastReturn',
+  'postCheck',
+])
 export const enum_lessons_type = db_schema.enum('enum_lessons_type', ['lecture', 'test', 'coding_task', 'review_task'])
 export const enum_lessons_coding_language = db_schema.enum('enum_lessons_coding_language', [
   'solidity',
@@ -334,6 +338,90 @@ export const lessons_blocks_post_check_assertion = db_schema.table(
       columns: [columns['_parentID']],
       foreignColumns: [lessons.id],
       name: 'lessons_blocks_post_check_assertion_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_blocks_sequence_steps_args = db_schema.table(
+  'lessons_blocks_sequence_steps_args',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: varchar('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    value: varchar('value'),
+  },
+  (columns) => [
+    index('lessons_blocks_sequence_steps_args_order_idx').on(columns._order),
+    index('lessons_blocks_sequence_steps_args_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons_blocks_sequence_steps.id],
+      name: 'lessons_blocks_sequence_steps_args_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_blocks_sequence_steps = db_schema.table(
+  'lessons_blocks_sequence_steps',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: varchar('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    functionName: varchar('function_name'),
+    valueWei: varchar('value_wei'),
+    caller: varchar('caller'),
+  },
+  (columns) => [
+    index('lessons_blocks_sequence_steps_order_idx').on(columns._order),
+    index('lessons_blocks_sequence_steps_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons_blocks_sequence.id],
+      name: 'lessons_blocks_sequence_steps_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_blocks_sequence_post_check_args = db_schema.table(
+  'lessons_blocks_sequence_post_check_args',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: varchar('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    value: varchar('value'),
+  },
+  (columns) => [
+    index('lessons_blocks_sequence_post_check_args_order_idx').on(columns._order),
+    index('lessons_blocks_sequence_post_check_args_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons_blocks_sequence.id],
+      name: 'lessons_blocks_sequence_post_check_args_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_blocks_sequence = db_schema.table(
+  'lessons_blocks_sequence',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    _path: text('_path').notNull(),
+    id: varchar('id').primaryKey(),
+    assertion: enum_lessons_blocks_sequence_assertion('assertion').default('lastReturn'),
+    postCheckFunctionName: varchar('post_check_function_name'),
+    postCheckCaller: varchar('post_check_caller'),
+    expected: varchar('expected'),
+    blockName: varchar('block_name'),
+  },
+  (columns) => [
+    index('lessons_blocks_sequence_order_idx').on(columns._order),
+    index('lessons_blocks_sequence_parent_id_idx').on(columns._parentID),
+    index('lessons_blocks_sequence_path_idx').on(columns._path),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_blocks_sequence_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -704,6 +792,49 @@ export const relations_lessons_blocks_post_check_assertion = relations(
     }),
   }),
 )
+export const relations_lessons_blocks_sequence_steps_args = relations(
+  lessons_blocks_sequence_steps_args,
+  ({ one }) => ({
+    _parentID: one(lessons_blocks_sequence_steps, {
+      fields: [lessons_blocks_sequence_steps_args._parentID],
+      references: [lessons_blocks_sequence_steps.id],
+      relationName: 'args',
+    }),
+  }),
+)
+export const relations_lessons_blocks_sequence_steps = relations(lessons_blocks_sequence_steps, ({ one, many }) => ({
+  _parentID: one(lessons_blocks_sequence, {
+    fields: [lessons_blocks_sequence_steps._parentID],
+    references: [lessons_blocks_sequence.id],
+    relationName: 'steps',
+  }),
+  args: many(lessons_blocks_sequence_steps_args, {
+    relationName: 'args',
+  }),
+}))
+export const relations_lessons_blocks_sequence_post_check_args = relations(
+  lessons_blocks_sequence_post_check_args,
+  ({ one }) => ({
+    _parentID: one(lessons_blocks_sequence, {
+      fields: [lessons_blocks_sequence_post_check_args._parentID],
+      references: [lessons_blocks_sequence.id],
+      relationName: 'postCheckArgs',
+    }),
+  }),
+)
+export const relations_lessons_blocks_sequence = relations(lessons_blocks_sequence, ({ one, many }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_blocks_sequence._parentID],
+    references: [lessons.id],
+    relationName: '_blocks_sequence',
+  }),
+  steps: many(lessons_blocks_sequence_steps, {
+    relationName: 'steps',
+  }),
+  postCheckArgs: many(lessons_blocks_sequence_post_check_args, {
+    relationName: 'postCheckArgs',
+  }),
+}))
 export const relations_lessons_review_grading_tasks = relations(lessons_review_grading_tasks, ({ one }) => ({
   _parentID: one(lessons, {
     fields: [lessons_review_grading_tasks._parentID],
@@ -738,6 +869,9 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   }),
   _blocks_postCheckAssertion: many(lessons_blocks_post_check_assertion, {
     relationName: '_blocks_postCheckAssertion',
+  }),
+  _blocks_sequence: many(lessons_blocks_sequence, {
+    relationName: '_blocks_sequence',
   }),
   reviewGradingTasks: many(lessons_review_grading_tasks, {
     relationName: 'reviewGradingTasks',
@@ -817,6 +951,7 @@ export const relations_payload_migrations = relations(payload_migrations, () => 
 
 type DatabaseSchema = {
   db_schema: typeof db_schema
+  enum_lessons_blocks_sequence_assertion: typeof enum_lessons_blocks_sequence_assertion
   enum_lessons_type: typeof enum_lessons_type
   enum_lessons_coding_language: typeof enum_lessons_coding_language
   users_sessions: typeof users_sessions
@@ -833,6 +968,10 @@ type DatabaseSchema = {
   lessons_blocks_post_check_assertion_args: typeof lessons_blocks_post_check_assertion_args
   lessons_blocks_post_check_assertion_post_check_args: typeof lessons_blocks_post_check_assertion_post_check_args
   lessons_blocks_post_check_assertion: typeof lessons_blocks_post_check_assertion
+  lessons_blocks_sequence_steps_args: typeof lessons_blocks_sequence_steps_args
+  lessons_blocks_sequence_steps: typeof lessons_blocks_sequence_steps
+  lessons_blocks_sequence_post_check_args: typeof lessons_blocks_sequence_post_check_args
+  lessons_blocks_sequence: typeof lessons_blocks_sequence
   lessons_review_grading_tasks: typeof lessons_review_grading_tasks
   lessons_review_paths: typeof lessons_review_paths
   lessons: typeof lessons
@@ -857,6 +996,10 @@ type DatabaseSchema = {
   relations_lessons_blocks_post_check_assertion_args: typeof relations_lessons_blocks_post_check_assertion_args
   relations_lessons_blocks_post_check_assertion_post_check_args: typeof relations_lessons_blocks_post_check_assertion_post_check_args
   relations_lessons_blocks_post_check_assertion: typeof relations_lessons_blocks_post_check_assertion
+  relations_lessons_blocks_sequence_steps_args: typeof relations_lessons_blocks_sequence_steps_args
+  relations_lessons_blocks_sequence_steps: typeof relations_lessons_blocks_sequence_steps
+  relations_lessons_blocks_sequence_post_check_args: typeof relations_lessons_blocks_sequence_post_check_args
+  relations_lessons_blocks_sequence: typeof relations_lessons_blocks_sequence
   relations_lessons_review_grading_tasks: typeof relations_lessons_review_grading_tasks
   relations_lessons_review_paths: typeof relations_lessons_review_paths
   relations_lessons: typeof relations_lessons

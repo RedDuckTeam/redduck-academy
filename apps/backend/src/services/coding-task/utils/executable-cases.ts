@@ -11,8 +11,15 @@ interface SolArgRow {
   value?: string | null
 }
 
+interface SolStepRow {
+  functionName?: string | null
+  args?: SolArgRow[] | null
+  valueWei?: string | null
+  caller?: string | null
+}
+
 export interface SolidityCaseRow {
-  blockType: 'returnAssertion' | 'postCheckAssertion'
+  blockType: 'returnAssertion' | 'postCheckAssertion' | 'sequence'
   functionName?: string | null
   args?: SolArgRow[] | null
   valueWei?: string | null
@@ -22,6 +29,9 @@ export interface SolidityCaseRow {
   postCheckFunctionName?: string | null
   postCheckArgs?: SolArgRow[] | null
   postCheckCaller?: string | null
+  // sequence-only
+  steps?: SolStepRow[] | null
+  assertion?: 'lastReturn' | 'postCheck' | null
 }
 
 /** TS path: convert Payload's `executableTestCases` rows into prompt-ready cases. */
@@ -33,23 +43,31 @@ export function deserializeExecutableCases(rows: TsExecutableCaseRow[] | undefin
   }))
 }
 
-/** Solidity path: convert Payload's `solidityTestCases` blocks into prompt-ready cases. */
+/**
+ * Solidity path: convert Payload's `solidityTestCases` blocks into prompt-ready cases.
+ *
+ * `sequence` cases are intentionally omitted from the second-layer AI grader prompt:
+ * the chain's intermediate state doesn't help the cheat-detection signal, and the
+ * structured XML would add noise without improving the verdict. They still participate
+ * in the case-set hash (see `executableCasesHash`) so admin edits bust stale verdicts.
+ */
 export function deserializeSolidityCases(rows: SolidityCaseRow[] | undefined | null): SecondLayerCase[] {
   if (!rows || rows.length === 0) return []
-  return rows.map((c) => {
+  return rows.flatMap((c): SecondLayerCase[] => {
+    if (c.blockType === 'sequence') return []
     const rawArgs = (c.args ?? []).map((a) => a?.value ?? '')
     if (c.blockType === 'returnAssertion') {
-      return {
-        kind: 'returnAssertion' as const,
+      return [{
+        kind: 'returnAssertion',
         functionName: c.functionName ?? '',
         rawArgs,
         valueWei: c.valueWei ?? null,
         caller: c.caller ?? null,
         rawExpected: c.expected ?? '',
-      }
+      }]
     }
-    return {
-      kind: 'postCheckAssertion' as const,
+    return [{
+      kind: 'postCheckAssertion',
       functionName: c.functionName ?? '',
       rawArgs,
       valueWei: c.valueWei ?? null,
@@ -58,7 +76,7 @@ export function deserializeSolidityCases(rows: SolidityCaseRow[] | undefined | n
       rawPostCheckArgs: (c.postCheckArgs ?? []).map((a) => a?.value ?? ''),
       postCheckCaller: c.postCheckCaller ?? null,
       rawExpected: c.expected ?? '',
-    }
+    }]
   })
 }
 
@@ -87,6 +105,14 @@ export function executableCasesHash(
       c.postCheckFunctionName ?? '',
       (c.postCheckArgs ?? []).map((a) => a?.value ?? ''),
       c.postCheckCaller ?? '',
+      // sequence-only — empty/[] for the other two block types
+      c.assertion ?? '',
+      (c.steps ?? []).map((s) => [
+        s?.functionName ?? '',
+        (s?.args ?? []).map((a) => a?.value ?? ''),
+        s?.valueWei ?? '',
+        s?.caller ?? '',
+      ]),
     ]),
   })
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)

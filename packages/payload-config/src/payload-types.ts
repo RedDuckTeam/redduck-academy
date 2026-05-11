@@ -408,6 +408,63 @@ export interface Lesson {
             blockName?: string | null;
             blockType: 'postCheckAssertion';
           }
+        | {
+            /**
+             * Chained calls within one case (max 16). Steps share EVM state; each gets a fresh case-level deploy.
+             */
+            steps: {
+              /**
+               * Function to call at this step. Picked from the compiled ABI.
+               */
+              functionName: string;
+              /**
+               * One row per function argument, in declaration order.
+               */
+              args?:
+                | {
+                    value: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              /**
+               * Optional ETH (in wei) sent as msg.value with this step. Decimal string.
+               */
+              valueWei?: string | null;
+              /**
+               * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
+               */
+              caller?: string | null;
+              id?: string | null;
+            }[];
+            /**
+             * How the test is judged after all steps run.
+             */
+            assertion: 'lastReturn' | 'postCheck';
+            /**
+             * View/pure function called AFTER the sequence to verify state.
+             */
+            postCheckFunctionName?: string | null;
+            /**
+             * One row per post-check function argument.
+             */
+            postCheckArgs?:
+              | {
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller. Defaults to the final step's caller.
+             */
+            postCheckCaller?: string | null;
+            /**
+             * Expected return value. Typed against the last step's return (when assertion=lastReturn) or the post-check function's return (when assertion=postCheck).
+             */
+            expected: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'sequence';
+          }
       )[]
     | null;
   /**
@@ -722,6 +779,36 @@ export interface LessonsSelect<T extends boolean = true> {
                   };
               valueWei?: T;
               caller?: T;
+              postCheckFunctionName?: T;
+              postCheckArgs?:
+                | T
+                | {
+                    value?: T;
+                    id?: T;
+                  };
+              postCheckCaller?: T;
+              expected?: T;
+              id?: T;
+              blockName?: T;
+            };
+        sequence?:
+          | T
+          | {
+              steps?:
+                | T
+                | {
+                    functionName?: T;
+                    args?:
+                      | T
+                      | {
+                          value?: T;
+                          id?: T;
+                        };
+                    valueWei?: T;
+                    caller?: T;
+                    id?: T;
+                  };
+              assertion?: T;
               postCheckFunctionName?: T;
               postCheckArgs?:
                 | T

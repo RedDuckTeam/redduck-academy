@@ -74,7 +74,32 @@ export interface RunPostCheckInput {
   postCheckCaller?: Address
 }
 
-export type RunTestCaseInput = RunReturnInput | RunPostCheckInput
+/**
+ * One call inside a `sequence` test case. All steps share EVM state for the case; the
+ * last step's return value (or a post-check view, depending on assertion kind) is the
+ * comparison target.
+ */
+export interface RunSequenceStep {
+  fnAbi: AbiFunction
+  args: unknown[]
+  valueWei?: string
+  caller?: Address
+}
+
+export type RunSequenceAssertion =
+  | { kind: 'lastReturn' }
+  | { kind: 'postCheck'; fnAbi: AbiFunction; args: unknown[]; caller?: Address }
+
+export interface RunSequenceInput {
+  kind: 'sequence'
+  bytecode: `0x${string}`
+  abi: Abi
+  constructorArgs?: unknown[]
+  steps: RunSequenceStep[]
+  assertion: RunSequenceAssertion
+}
+
+export type RunTestCaseInput = RunReturnInput | RunPostCheckInput | RunSequenceInput
 
 /**
  * Runs one Solidity test case and returns the value that should be compared to `expected`.
@@ -83,6 +108,11 @@ export type RunTestCaseInput = RunReturnInput | RunPostCheckInput
 export async function runTestCase(input: RunTestCaseInput): Promise<unknown> {
   const evm = await createEVM()
   const address = await deploy(evm, input.bytecode, input.abi, input.constructorArgs)
+
+  if (input.kind === 'sequence') {
+    return runSequence(evm, address, input)
+  }
+
   const mainCaller = input.caller ?? DEFAULT_CALLER
   const mainReturn = await callMain(evm, address, input.fnAbi, input.args, input.valueWei, mainCaller)
   if (input.kind === 'postCheckAssertion') {
@@ -95,6 +125,35 @@ export async function runTestCase(input: RunTestCaseInput): Promise<unknown> {
     )
   }
   return mainReturn
+}
+
+async function runSequence(evm: Evm, to: Address, input: RunSequenceInput): Promise<unknown> {
+  if (input.steps.length === 0) {
+    throw new Error('sequence has no steps')
+  }
+  let lastReturn: unknown = null
+  let lastCaller: Address = DEFAULT_CALLER
+  for (let i = 0; i < input.steps.length; i++) {
+    const step = input.steps[i]
+    lastCaller = step.caller ?? DEFAULT_CALLER
+    try {
+      lastReturn = await callMain(evm, to, step.fnAbi, step.args, step.valueWei, lastCaller)
+    } catch (err) {
+      const original = err instanceof Error ? err.message : String(err)
+      // Rewrite "call reverted: ..." into "step N reverted: ..." so the case-level error
+      // tells the author exactly which call in the chain failed.
+      const stripped = original.replace(/^call reverted:\s*/, '')
+      throw new Error(`step ${i + 1} (${step.fnAbi.name}) reverted: ${stripped}`)
+    }
+  }
+  if (input.assertion.kind === 'lastReturn') return lastReturn
+  return callPostCheck(
+    evm,
+    to,
+    input.assertion.fnAbi,
+    input.assertion.args,
+    input.assertion.caller ?? lastCaller,
+  )
 }
 
 async function deploy(

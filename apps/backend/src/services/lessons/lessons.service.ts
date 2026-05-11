@@ -46,6 +46,16 @@ export class LessonsService {
             postCheckArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
           },
         },
+        _blocks_sequence: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: {
+            steps: {
+              orderBy: (s, { asc }) => [asc(s._order)],
+              with: { args: { orderBy: (a, { asc }) => [asc(a._order)] } },
+            },
+            postCheckArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
+          },
+        },
       },
     })
 
@@ -121,6 +131,16 @@ export class LessonsService {
             postCheckArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
           },
         },
+        _blocks_sequence: {
+          orderBy: (cols, { asc }) => [asc(cols._order)],
+          with: {
+            steps: {
+              orderBy: (s, { asc }) => [asc(s._order)],
+              with: { args: { orderBy: (a, { asc }) => [asc(a._order)] } },
+            },
+            postCheckArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
+          },
+        },
       },
     })
 
@@ -143,6 +163,7 @@ export class LessonsService {
   static #mergeSolidityBlocks<L extends Record<string, unknown>>(lesson: L): L & { solidityTestCases: unknown[] } {
     const ret = (lesson as { _blocks_returnAssertion?: unknown[] })._blocks_returnAssertion ?? []
     const post = (lesson as { _blocks_postCheckAssertion?: unknown[] })._blocks_postCheckAssertion ?? []
+    const seq = (lesson as { _blocks_sequence?: unknown[] })._blocks_sequence ?? []
     const tagged: Array<{ _order: number } & Record<string, unknown>> = []
     for (const row of ret) {
       const r = row as Record<string, unknown>
@@ -152,10 +173,15 @@ export class LessonsService {
       const r = row as Record<string, unknown>
       tagged.push({ ...(r as { _order: number } & Record<string, unknown>), blockType: 'postCheckAssertion' })
     }
+    for (const row of seq) {
+      const r = row as Record<string, unknown>
+      tagged.push({ ...(r as { _order: number } & Record<string, unknown>), blockType: 'sequence' })
+    }
     tagged.sort((a, b) => Number(a._order ?? 0) - Number(b._order ?? 0))
     const merged = { ...lesson, solidityTestCases: tagged } as L & { solidityTestCases: unknown[] }
     delete (merged as Record<string, unknown>)._blocks_returnAssertion
     delete (merged as Record<string, unknown>)._blocks_postCheckAssertion
+    delete (merged as Record<string, unknown>)._blocks_sequence
     return merged
   }
 

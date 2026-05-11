@@ -8,9 +8,14 @@ export function toArgArray(input: unknown): unknown[] {
   return [input]
 }
 
-/** Display-friendly args for a runner test case (handles both TS parsed and Solidity raw shapes). */
+/** Display-friendly args for a runner test case (handles TS, single-call Solidity, and sequences). */
 export function getDisplayArgs(tc: RunnerTestCase): unknown[] {
-  if ('kind' in tc) return tc.rawArgs
+  if ('kind' in tc) {
+    if (tc.kind === 'sequence') {
+      return tc.steps.map((s) => ({ fn: s.functionName, args: s.rawArgs }))
+    }
+    return tc.rawArgs
+  }
   return toArgArray(tc.input)
 }
 

@@ -13,18 +13,24 @@ export function CaseDetail({ testCase, argNames, result }: CaseDetailProps) {
   const inputs = getDisplayArgs(testCase)
   const expected = getDisplayExpected(testCase)
   const isSolidity = 'kind' in testCase
-  const fnLabel = isSolidity ? testCase.functionName : null
+  const isSequence = isSolidity && testCase.kind === 'sequence'
+  const fnLabel = isSolidity && !isSequence ? testCase.functionName : null
+  const sequenceLabel = isSequence
+    ? testCase.steps.map((s) => `${s.functionName}()`).join(' → ')
+    : null
   const modeLabel =
     isSolidity && testCase.kind === 'postCheckAssertion'
       ? `post-check ${testCase.postCheckFunctionName}()`
-      : null
+      : isSequence && testCase.assertion === 'postCheck' && testCase.postCheckFunctionName
+        ? `post-check ${testCase.postCheckFunctionName}()`
+        : null
 
   return (
     <div className="flex flex-col gap-3">
-      {(fnLabel || modeLabel) && (
+      {(fnLabel || sequenceLabel || modeLabel) && (
         <Section label="Call">
           <div className="text-[13px] text-muted-foreground">
-            {fnLabel}
+            {fnLabel ?? sequenceLabel}
             {modeLabel ? <span className="ml-2 opacity-70">→ {modeLabel}</span> : null}
           </div>
         </Section>

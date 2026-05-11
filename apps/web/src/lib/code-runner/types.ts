@@ -35,7 +35,28 @@ export interface SolPostCheckCase {
   rawExpected: string
 }
 
-export type SolidityTestCase = SolReturnCase | SolPostCheckCase
+/** One call inside a `sequence` test case. Steps within a case share EVM state. */
+export interface SolSequenceStep {
+  functionName: string
+  rawArgs: string[]
+  valueWei?: string
+  caller?: string
+}
+
+/** Solidity test case (chained calls, all sharing case-level EVM state). */
+export interface SolSequenceCase {
+  id: string
+  kind: 'sequence'
+  steps: SolSequenceStep[]
+  /** 'lastReturn' compares the last step's return value; 'postCheck' calls a view after the loop. */
+  assertion: 'lastReturn' | 'postCheck'
+  postCheckFunctionName?: string
+  rawPostCheckArgs?: string[]
+  postCheckCaller?: string
+  rawExpected: string
+}
+
+export type SolidityTestCase = SolReturnCase | SolPostCheckCase | SolSequenceCase
 export type RunnerTestCase = TsTestCase | SolidityTestCase
 
 export interface RunnerResult {

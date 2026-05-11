@@ -27,6 +27,25 @@ export function parseTsTestCases(cases: ExecutableTestCase[] | undefined | null)
 export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | null): SolidityTestCase[] {
   if (!cases || cases.length === 0) return []
   return cases.map((c) => {
+    if (c.blockType === 'sequence') {
+      const postCheckCaller =
+        c.postCheckCaller && c.postCheckCaller.trim() !== '' ? c.postCheckCaller.trim() : undefined
+      return {
+        id: c.id,
+        kind: 'sequence',
+        steps: (c.steps ?? []).map((s) => ({
+          functionName: s.functionName,
+          rawArgs: (s.args ?? []).map((a) => a.value ?? ''),
+          valueWei: s.valueWei && s.valueWei.trim() !== '' ? s.valueWei.trim() : undefined,
+          caller: s.caller && s.caller.trim() !== '' ? s.caller.trim() : undefined,
+        })),
+        assertion: c.assertion,
+        postCheckFunctionName: c.postCheckFunctionName ?? undefined,
+        rawPostCheckArgs: c.postCheckArgs ? c.postCheckArgs.map((a) => a.value ?? '') : undefined,
+        postCheckCaller,
+        rawExpected: c.expected ?? '',
+      }
+    }
     const rawArgs = (c.args ?? []).map((a) => a.value ?? '')
     const valueWei = c.valueWei && c.valueWei.trim() !== '' ? c.valueWei.trim() : undefined
     const caller = c.caller && c.caller.trim() !== '' ? c.caller.trim() : undefined
