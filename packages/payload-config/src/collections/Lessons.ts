@@ -53,9 +53,20 @@ const MAX_CASE_STEPS = 16
 
 const SOLIDITY_CALLER_ALIASES = ['default', 'alice', 'bob', 'carol', 'dave']
 const SOLIDITY_CALLER_HELP =
-  'Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.'
+  'Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @default, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.'
 const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
+const ALIAS_REF_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*$/
 
+/**
+ * Save-time validation for address-shaped fields (caller, postCheckCaller, target).
+ * Accepts either an @-prefixed identifier (resolved at runtime against EOA aliases,
+ * lesson fixtures, or @self) or a raw 0x-prefixed 40-hex address. Bare names are
+ * rejected to keep the syntax consistent everywhere.
+ *
+ * The fixture-alias check happens at runtime — at save time we accept any
+ * well-formed @identifier so admins can author cases that reference fixtures
+ * declared in the same lesson without coupling validation order to field order.
+ */
 function assertValidCaller(value: unknown, casePrefix: string, fieldName: string): void {
   if (value === undefined || value === null) return
   if (typeof value !== 'string') {
@@ -63,10 +74,10 @@ function assertValidCaller(value: unknown, casePrefix: string, fieldName: string
   }
   const trimmed = value.trim()
   if (trimmed === '') return
-  if (SOLIDITY_CALLER_ALIASES.includes(trimmed.toLowerCase())) return
+  if (ALIAS_REF_RE.test(trimmed)) return
   if (RAW_ADDRESS_RE.test(trimmed)) return
   throw new APIError(
-    `${casePrefix}: ${fieldName} "${value}" is not a known alias (${SOLIDITY_CALLER_ALIASES.join(', ')}) or 0x-prefixed 40-hex address.`,
+    `${casePrefix}: ${fieldName} "${value}" is not a valid reference. Use an @-prefixed alias (e.g. @alice) or a 0x-prefixed 40-hex address.`,
     400,
   )
 }
@@ -128,6 +139,43 @@ export const Lessons: CollectionConfig = {
             }
           }
 
+          // Solidity fixtures: peer contracts deployed before the student's.
+          // Validate aliases here; source compilation / address resolution happens
+          // at test-run time so admins can author cases that reference fixtures
+          // declared in the same lesson without coupling field order.
+          const solFixtures = data.solidityFixtures
+          if (Array.isArray(solFixtures) && solFixtures.length > 0) {
+            const seenAliases = new Set<string>()
+            for (let i = 0; i < solFixtures.length; i++) {
+              const row = solFixtures[i] as { alias?: unknown; source?: unknown }
+              const fixturePrefix = `Solidity fixture ${i + 1}`
+              if (typeof row.alias !== 'string' || row.alias.trim() === '') {
+                throw new APIError(`${fixturePrefix}: alias is required.`, 400)
+              }
+              const alias = row.alias.trim()
+              if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(alias)) {
+                throw new APIError(
+                  `${fixturePrefix}: alias "${alias}" must match /^[a-zA-Z_][a-zA-Z0-9_]*$/.`,
+                  400,
+                )
+              }
+              const aliasLower = alias.toLowerCase()
+              if (SOLIDITY_CALLER_ALIASES.includes(aliasLower) || aliasLower === 'self') {
+                throw new APIError(
+                  `${fixturePrefix}: alias "${alias}" is reserved (default, alice, bob, carol, dave, self).`,
+                  400,
+                )
+              }
+              if (seenAliases.has(aliasLower)) {
+                throw new APIError(`${fixturePrefix}: alias "${alias}" is duplicated.`, 400)
+              }
+              seenAliases.add(aliasLower)
+              if (typeof row.source !== 'string' || row.source.trim() === '') {
+                throw new APIError(`${fixturePrefix}: source is required.`, 400)
+              }
+            }
+          }
+
           // Solidity path: each row is a `case` with an ordered list of steps.
           // A step can optionally carry an `expected` to assert that step's return.
           const solCases = data.solidityTestCases
@@ -150,6 +198,7 @@ export const Lessons: CollectionConfig = {
                   functionName?: unknown
                   valueWei?: unknown
                   caller?: unknown
+                  target?: unknown
                 }
                 const stepPrefix = `${casePrefix}, step ${j + 1}`
                 if (typeof step.functionName !== 'string' || step.functionName.trim() === '') {
@@ -166,6 +215,7 @@ export const Lessons: CollectionConfig = {
                     )
                   }
                 }
+                assertValidCaller(step.target, stepPrefix, 'target')
                 assertValidCaller(step.caller, stepPrefix, 'caller')
               }
             }
@@ -428,6 +478,55 @@ export const Lessons: CollectionConfig = {
       ],
     },
     {
+      name: 'solidityFixtures',
+      type: 'array',
+      admin: {
+        condition: (data) => data?.type === 'coding_task' && data?.codingLanguage === 'solidity',
+        description:
+          'Peer Solidity contracts deployed alongside the student\'s contract — used to set up scenarios ' +
+          '(e.g. a mock ERC20 the student\'s vault interacts with). Each row gets an alias; tests reference ' +
+          'the deployed address via @alias in callers, args, constructor args, and the step `target` field. ' +
+          'Students never see these sources.',
+      },
+      fields: [
+        {
+          name: 'alias',
+          type: 'text',
+          required: true,
+          admin: {
+            description:
+              'Identifier used to reference this fixture from tests (e.g. `mockToken` → `@mockToken`). ' +
+              'Reserved names (default / alice / bob / carol / dave / self) are rejected.',
+          },
+        },
+        {
+          name: 'source',
+          type: 'textarea',
+          required: true,
+          admin: { description: 'Full Solidity source for this fixture. May import @openzeppelin/contracts/...' },
+        },
+        {
+          name: 'contractName',
+          type: 'text',
+          admin: {
+            description:
+              'Optional. Name of the contract inside `source` to deploy. Defaults to the first contract in the source.',
+          },
+        },
+        {
+          name: 'constructorArgs',
+          type: 'array',
+          admin: {
+            description:
+              'Constructor arguments for this fixture, one row per parameter. Values may reference earlier ' +
+              'fixtures via @alias (deploy order = declaration order). `@self` is NOT available here — the ' +
+              'student\'s contract is deployed after all fixtures.',
+          },
+          fields: [{ name: 'value', type: 'text', required: true }],
+        },
+      ],
+    },
+    {
       name: 'solidityTestCases',
       type: 'array',
       admin: {
@@ -448,12 +547,21 @@ export const Lessons: CollectionConfig = {
           },
           fields: [
             {
+              name: 'target',
+              type: 'text',
+              admin: {
+                description:
+                  'Which deployed contract this step calls. Defaults to @self (the student\'s contract). ' +
+                  'Use a fixture alias (e.g. @mockToken) to call a peer contract.',
+              },
+            },
+            {
               name: 'functionName',
               type: 'text',
               required: true,
               admin: {
                 components: { Field: '@/admin-components/abi-driven-test-case/function-select#FunctionSelect' },
-                description: 'Function to call. Picked from the contract\'s ABI.',
+                description: 'Function to call. Picked from the target contract\'s ABI.',
               },
             },
             {

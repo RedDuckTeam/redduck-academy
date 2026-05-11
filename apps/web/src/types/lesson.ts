@@ -76,6 +76,8 @@ export interface SolidityArgValue {
 /** One step inside a Solidity test case, mirroring the Payload step row. */
 export interface SolidityCaseStep {
   id?: string | null
+  /** Which contract this step targets. Defaults to '@self' (the student's contract). */
+  target?: string | null
   functionName: string
   args?: SolidityArgValue[] | null
   valueWei?: string | null
@@ -88,6 +90,18 @@ export interface SolidityCaseStep {
 export interface SolidityTestCase {
   id: string
   steps?: SolidityCaseStep[] | null
+}
+
+/**
+ * Peer contract deployed alongside the student's contract for the duration of a test
+ * case. Hidden from the student. Referenced by tests via `@<alias>`.
+ */
+export interface SolidityFixture {
+  id?: string | null
+  alias: string
+  source: string
+  contractName?: string | null
+  constructorArgs?: SolidityArgValue[] | null
 }
 
 export type CodingTaskSubmission = LearnerCodingTaskSubmission
@@ -123,6 +137,7 @@ export interface Lesson {
   functionSignature?: string | null
   solidityContractName?: string | null
   solidityConstructorArgs?: SolidityArgValue[] | null
+  solidityFixtures?: SolidityFixture[] | null
   executableTestCases?: ExecutableTestCase[]
   solidityTestCases?: SolidityTestCase[]
 }

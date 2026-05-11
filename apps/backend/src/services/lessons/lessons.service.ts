@@ -35,6 +35,12 @@ export class LessonsService {
           orderBy: (cols, { asc }) => [asc(cols._order)],
           with: {},
         },
+        solidityFixtures: {
+          orderBy: (fix, { asc }) => [asc(fix._order)],
+          with: {
+            constructorArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
+          },
+        },
         solidityTestCases: {
           orderBy: (cases, { asc }) => [asc(cases._order)],
           with: {
@@ -107,6 +113,12 @@ export class LessonsService {
         },
         solidityConstructorArgs: {
           orderBy: (cols, { asc }) => [asc(cols._order)],
+        },
+        solidityFixtures: {
+          orderBy: (fix, { asc }) => [asc(fix._order)],
+          with: {
+            constructorArgs: { orderBy: (a, { asc }) => [asc(a._order)] },
+          },
         },
         solidityTestCases: {
           orderBy: (cases, { asc }) => [asc(cases._order)],

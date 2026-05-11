@@ -15,6 +15,8 @@ interface CallBoxProps {
   failed?: boolean
   /** Revert / mismatch message for this step, when set. */
   errorMessage?: string
+  /** Label substituted for `@self` in arg / caller display (typically the contract name). */
+  selfLabel?: string
 }
 
 export function CallBox({
@@ -27,14 +29,15 @@ export function CallBox({
   got,
   failed,
   errorMessage,
+  selfLabel,
 }: CallBoxProps) {
-  const formattedArgs = args.map(formatSolidityArg).join(', ')
+  const formattedArgs = args.map((a) => formatSolidityArg(a, { selfLabel })).join(', ')
   const isPostCheck = variant === 'postCheck'
   const meta: string[] = []
   if (valueWei && valueWei.trim() !== '' && safeBigInt(valueWei) !== 0n) {
     meta.push(`value: ${formatValueWei(valueWei)}`)
   }
-  if (caller && caller.trim() !== '') meta.push(`from: ${formatCaller(caller)}`)
+  if (caller && caller.trim() !== '') meta.push(`from: ${formatCaller(caller, { selfLabel })}`)
 
   const hasExpected = expected !== undefined && expected !== ''
   const isAssertionFail = failed && got !== undefined

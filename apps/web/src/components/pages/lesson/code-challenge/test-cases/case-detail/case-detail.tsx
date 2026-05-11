@@ -9,9 +9,11 @@ interface CaseDetailProps {
   testCase: RunnerTestCase
   argNames: string[]
   result: RunnerResult | undefined
+  /** Display label for `@self` references (typically the student's contract name). */
+  selfLabel?: string
 }
 
-export function CaseDetail({ testCase, argNames, result }: CaseDetailProps) {
+export function CaseDetail({ testCase, argNames, result, selfLabel }: CaseDetailProps) {
   const isSolidity = 'kind' in testCase
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function CaseDetail({ testCase, argNames, result }: CaseDetailProps) {
     return (
       <div className="flex flex-col gap-3">
         <Section label="Call">
-          <SolidityCallList testCase={testCase} result={result} />
+          <SolidityCallList testCase={testCase} result={result} selfLabel={selfLabel} />
         </Section>
         {hasCaseLevelError && (
           <Section label="Error">

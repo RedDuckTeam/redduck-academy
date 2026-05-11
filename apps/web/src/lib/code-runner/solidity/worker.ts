@@ -1,12 +1,18 @@
 import type { Abi, AbiFunction } from 'viem'
-import { compile, type CompiledContract, parseTypedValue } from '@redduck/solc-utils'
-import { expandAddressAlias, resolveCaller, runTestCase, type RunCaseStep } from './run-test-case'
-import { normalizeReturnValue } from './abi-coerce'
+import { compileMulti } from '@redduck/solc-utils'
+import {
+  runTestCase,
+  type RunCaseStep,
+  type RunFixture,
+} from './run-test-case'
 
-/** Per-case hard cap on the number of steps. Mirrors Payload-side validation. */
 const MAX_CASE_STEPS = 16
 
+const STUDENT_FILENAME = 'user.sol'
+const FIXTURE_FILE_PREFIX = 'fixture/'
+
 export interface SolWorkerStep {
+  target?: string
   functionName: string
   rawArgs: string[]
   valueWei?: string
@@ -20,11 +26,19 @@ export interface SolWorkerCase {
   steps: SolWorkerStep[]
 }
 
+export interface SolWorkerFixture {
+  alias: string
+  source: string
+  contractName?: string
+  rawConstructorArgs: string[]
+}
+
 export interface SolRunRequest {
   type: 'compile-and-run'
   source: string
   contractName?: string
   rawConstructorArgs?: string[]
+  fixtures: SolWorkerFixture[]
   cases: SolWorkerCase[]
 }
 
@@ -46,23 +60,45 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
   if (msg?.type !== 'compile-and-run') return
   const respond = (resp: SolRunResponse) => (self as unknown as Worker).postMessage(resp)
 
-  let compiled: CompiledContract
+  // Compile student source + every fixture source in one solc invocation. Shared
+  // import callback + STDLIB across all files, so any source can `import "@openzeppelin/..."`.
+  let studentArtifact: { abi: Abi; bytecode: `0x${string}` }
+  const fixtureArtifacts = new Map<string, { abi: Abi; bytecode: `0x${string}` }>()
   try {
-    compiled = await compile(msg.source, msg.contractName)
+    const files = [
+      { path: STUDENT_FILENAME, content: msg.source, preferredContract: msg.contractName },
+      ...msg.fixtures.map((f) => ({
+        path: `${FIXTURE_FILE_PREFIX}${f.alias}.sol`,
+        content: f.source,
+        preferredContract: f.contractName,
+      })),
+    ]
+    const result = await compileMulti(files)
+    const student = result.contracts[STUDENT_FILENAME]
+    if (!student) throw new Error('student source produced no contract')
+    studentArtifact = student
+    for (const f of msg.fixtures) {
+      const art = result.contracts[`${FIXTURE_FILE_PREFIX}${f.alias}.sol`]
+      if (!art) throw new Error(`fixture '${f.alias}' produced no contract`)
+      fixtureArtifacts.set(f.alias.toLowerCase(), art)
+    }
   } catch (err) {
     respond({ type: 'result', results: [], fatalError: errorMessage(err) })
     return
   }
 
-  let constructorArgs: unknown[] | undefined
-  try {
-    constructorArgs = msg.rawConstructorArgs && msg.rawConstructorArgs.length > 0
-      ? coerceConstructorArgs(compiled.abi, msg.rawConstructorArgs)
-      : undefined
-  } catch (err) {
-    respond({ type: 'result', results: [], fatalError: `constructor args: ${errorMessage(err)}` })
-    return
-  }
+  // Per-step ABI routing depends on each step's `target`. Build helpers.
+  const studentCtorInputs = ctorInputsOf(studentArtifact.abi)
+  const fixtures: RunFixture[] = msg.fixtures.map((f) => {
+    const art = fixtureArtifacts.get(f.alias.toLowerCase())!
+    return {
+      alias: f.alias.toLowerCase(),
+      abi: art.abi,
+      bytecode: art.bytecode,
+      rawConstructorArgs: f.rawConstructorArgs,
+      ctorInputs: ctorInputsOf(art.abi),
+    }
+  })
 
   const results: SolRunResponse['results'] = []
   for (const tc of msg.cases) {
@@ -72,23 +108,40 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
         throw new Error(`test case exceeds ${MAX_CASE_STEPS}-step cap`)
       }
       const resolvedSteps: RunCaseStep[] = tc.steps.map((step, i) => {
-        const fnAbi = requireFunction(compiled.abi, step.functionName)
-        const hasExpected = step.rawExpected !== undefined && step.rawExpected !== null && step.rawExpected !== ''
+        const targetAbi = resolveTargetAbi(step.target, studentArtifact.abi, fixtureArtifacts)
+        if (!targetAbi) {
+          throw new Error(
+            `step ${i + 1}: unknown target '${step.target}'. ` +
+              `Use @self for the student contract or a fixture alias (e.g. @mockToken).`,
+          )
+        }
+        const fnAbi = requireFunction(targetAbi, step.functionName)
+        if (step.rawArgs.length !== (fnAbi.inputs ?? []).length) {
+          throw new Error(
+            `step ${i + 1} (${fnAbi.name}): expected ${(fnAbi.inputs ?? []).length} arg(s), got ${step.rawArgs.length}`,
+          )
+        }
+        const hasExpected =
+          step.rawExpected !== undefined && step.rawExpected !== null && step.rawExpected !== ''
         return {
           fnAbi,
-          args: parseArgs(step.rawArgs, fnAbi),
+          argInputs: (fnAbi.inputs ?? []) as readonly { type: string }[],
+          rawArgs: step.rawArgs,
           valueWei: step.valueWei,
-          caller: step.caller ? resolveCallerLabeled(step.caller, `step ${i + 1}`) : undefined,
+          rawCaller: step.caller,
+          target: step.target,
+          rawExpected: step.rawExpected,
           hasExpected,
-          expectedDecoded: hasExpected ? parseExpected(step.rawExpected!, fnAbi.outputs) : undefined,
         }
       })
 
       const outcome = await runTestCase({
         kind: 'case',
-        bytecode: compiled.bytecode,
-        abi: compiled.abi,
-        constructorArgs,
+        studentBytecode: studentArtifact.bytecode,
+        studentAbi: studentArtifact.abi,
+        studentRawConstructorArgs: msg.rawConstructorArgs ?? [],
+        studentCtorInputs,
+        fixtures,
         steps: resolvedSteps,
       })
       results.push({
@@ -106,79 +159,33 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
   respond({ type: 'result', results })
 }
 
+function ctorInputsOf(abi: Abi): readonly { type: string }[] {
+  const ctor = abi.find(
+    (item): item is Extract<Abi[number], { type: 'constructor' }> => item.type === 'constructor',
+  )
+  return (ctor?.inputs ?? []) as readonly { type: string }[]
+}
+
+function resolveTargetAbi(
+  target: string | undefined,
+  studentAbi: Abi,
+  fixtureArtifacts: Map<string, { abi: Abi; bytecode: `0x${string}` }>,
+): Abi | null {
+  const trimmed = target?.trim() ?? ''
+  if (trimmed === '' || trimmed === '@self') return studentAbi
+  if (!trimmed.startsWith('@')) return null
+  const key = trimmed.slice(1).toLowerCase()
+  if (key === 'self') return studentAbi
+  const hit = fixtureArtifacts.get(key)
+  return hit ? hit.abi : null
+}
+
 function requireFunction(abi: Abi, name: string): AbiFunction {
   const fn = abi.find((item): item is AbiFunction => item.type === 'function' && item.name === name)
   if (!fn) throw new Error(`function "${name}" not found in compiled ABI`)
   return fn
 }
 
-function parseArgs(raw: string[], fnAbi: AbiFunction): unknown[] {
-  const inputs = fnAbi.inputs ?? []
-  if (raw.length !== inputs.length) {
-    throw new Error(
-      `${fnAbi.name}: expected ${inputs.length} arg(s), got ${raw.length}`,
-    )
-  }
-  return raw.map((value, i) => parseTypedValue(prepareArgValue(value, inputs[i].type), inputs[i].type))
-}
-
-/**
- * Substitute alias names for their resolved hex when the argument is typed `address`.
- * `address[]` and address-bearing tuples are left untouched — those still require
- * hex literals for now. (If you hit a real need for `["alice", "bob"]` style arrays,
- * extend this to JSON-walk the value.)
- */
-function prepareArgValue(value: string, abiType: string): string {
-  if (abiType === 'address' || abiType.startsWith('address ')) {
-    return expandAddressAlias(value)
-  }
-  return value
-}
-
-function parseExpected(raw: string, outputs: readonly { type: string }[] | undefined): unknown {
-  if (!outputs || outputs.length === 0) return null
-  if (outputs.length === 1) {
-    const parsed = parseTypedValue(raw, outputs[0].type)
-    return normalizeReturnValue(parsed)
-  }
-  // Multiple outputs — admin types a JSON array; each element parsed against its type.
-  let arr: unknown
-  try {
-    arr = JSON.parse(raw)
-  } catch {
-    throw new Error('Expected JSON array for multi-output return value')
-  }
-  if (!Array.isArray(arr) || arr.length !== outputs.length) {
-    throw new Error(`Expected JSON array of length ${outputs.length}`)
-  }
-  return normalizeReturnValue(
-    arr.map((v, i) => parseTypedValue(typeof v === 'string' ? v : JSON.stringify(v), outputs[i].type)),
-  )
-}
-
-function coerceConstructorArgs(abi: Abi, raw: string[]): unknown[] {
-  const ctor = abi.find(
-    (item): item is Extract<Abi[number], { type: 'constructor' }> => item.type === 'constructor',
-  )
-  const inputs = ctor?.inputs ?? []
-  if (raw.length !== inputs.length) {
-    throw new Error(`constructor: expected ${inputs.length} arg(s), got ${raw.length}`)
-  }
-  return raw.map((value, i) => parseTypedValue(prepareArgValue(value, inputs[i].type), inputs[i].type))
-}
-
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
-}
-
-/**
- * Resolve a caller alias/address and prefix any failure with a label so multi-step
- * cases point the author at the exact step that had the bad value.
- */
-function resolveCallerLabeled(value: string, label: string): ReturnType<typeof resolveCaller> {
-  try {
-    return resolveCaller(value)
-  } catch (err) {
-    throw new Error(`${label}: ${err instanceof Error ? err.message : String(err)}`)
-  }
 }

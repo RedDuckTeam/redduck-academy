@@ -10,6 +10,7 @@ import {
   executableCasesHash,
   type TsExecutableCaseRow,
   type SolidityCaseRow,
+  type SolidityFixtureRow,
 } from './utils/executable-cases'
 import { packVerdictComment } from './utils/verdict-comment'
 
@@ -41,6 +42,8 @@ export class CodingTaskService {
 
     const tsCases = (lesson as unknown as { executableTestCases?: TsExecutableCaseRow[] }).executableTestCases ?? []
     const solCases = (lesson as unknown as { solidityTestCases?: SolidityCaseRow[] }).solidityTestCases ?? []
+    const solFixtures =
+      (lesson as unknown as { solidityFixtures?: SolidityFixtureRow[] }).solidityFixtures ?? []
     const constructorArgs = (
       (lesson as unknown as { solidityConstructorArgs?: { value?: string | null }[] }).solidityConstructorArgs ?? []
     ).map((c) => c?.value ?? '')
@@ -48,7 +51,7 @@ export class CodingTaskService {
     // Each language exposes one of these arrays at most; pick whichever is populated.
     const hasExecutable = tsCases.length > 0 || solCases.length > 0
     const codeHash = computeCodeHash(submittedCode, language)
-    const cacheKey = `${codeHash}:${executableCasesHash(tsCases, solCases, lesson.functionSignature, constructorArgs)}`
+    const cacheKey = `${codeHash}:${executableCasesHash(tsCases, solCases, lesson.functionSignature, constructorArgs, solFixtures)}`
 
     const verdict = await CodingTaskService.#resolveVerdict({
       cacheKey,

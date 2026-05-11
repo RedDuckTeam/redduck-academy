@@ -12,6 +12,7 @@ interface SolArgRow {
 }
 
 interface SolStepRow {
+  target?: string | null
   functionName?: string | null
   args?: SolArgRow[] | null
   valueWei?: string | null
@@ -21,6 +22,13 @@ interface SolStepRow {
 
 export interface SolidityCaseRow {
   steps?: SolStepRow[] | null
+}
+
+export interface SolidityFixtureRow {
+  alias?: string | null
+  source?: string | null
+  contractName?: string | null
+  constructorArgs?: SolArgRow[] | null
 }
 
 /** TS path: convert Payload's `executableTestCases` rows into prompt-ready cases. */
@@ -47,21 +55,29 @@ export function deserializeSolidityCases(_rows: SolidityCaseRow[] | undefined | 
 
 /**
  * Stable hash of the test set, used as part of the verdict cache key. Bumps when
- * admins edit a case so stale verdicts don't get reused. Handles both shapes.
+ * admins edit a case (or a fixture) so stale verdicts don't get reused. Mixes
+ * TS rows, Solidity cases (steps + target), Solidity fixtures (source + ctor args),
+ * function signature, and constructor args.
  */
 export function executableCasesHash(
   tsRows: TsExecutableCaseRow[] | undefined | null,
   solRows: SolidityCaseRow[] | undefined | null,
   signature: string | null | undefined,
   constructorArgs: string[] | null | undefined,
+  solFixtures?: SolidityFixtureRow[] | null,
 ): string {
-  if ((!tsRows || tsRows.length === 0) && (!solRows || solRows.length === 0)) return 'none'
+  const hasNothing =
+    (!tsRows || tsRows.length === 0) &&
+    (!solRows || solRows.length === 0) &&
+    (!solFixtures || solFixtures.length === 0)
+  if (hasNothing) return 'none'
   const payload = JSON.stringify({
     sig: signature ?? '',
     ctor: constructorArgs ?? [],
     ts: (tsRows ?? []).map((c) => [c.inputJson ?? '', c.expectedJson ?? '']),
     sol: (solRows ?? []).map((c) =>
       (c.steps ?? []).map((s) => [
+        s?.target ?? '',
         s?.functionName ?? '',
         (s?.args ?? []).map((a) => a?.value ?? ''),
         s?.valueWei ?? '',
@@ -69,6 +85,12 @@ export function executableCasesHash(
         s?.expected ?? '',
       ]),
     ),
+    fix: (solFixtures ?? []).map((f) => [
+      f?.alias ?? '',
+      f?.source ?? '',
+      f?.contractName ?? '',
+      (f?.constructorArgs ?? []).map((a) => a?.value ?? ''),
+    ]),
   })
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)
 }

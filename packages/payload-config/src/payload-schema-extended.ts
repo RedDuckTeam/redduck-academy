@@ -71,5 +71,9 @@ export {
   relations_lessons_solidity_test_cases_steps,
   lessons_solidity_test_cases_steps_args,
   relations_lessons_solidity_test_cases_steps_args,
+  lessons_solidity_fixtures,
+  relations_lessons_solidity_fixtures,
+  lessons_solidity_fixtures_constructor_args,
+  relations_lessons_solidity_fixtures_constructor_args,
   enum_lessons_coding_language,
 } from './payload-generated-schema'

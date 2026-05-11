@@ -9,28 +9,32 @@ interface AddressInputProps {
 }
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/
-// Keep in sync with CALLER_ALIASES in apps/web/.../run-test-case.ts and the
-// validator in packages/payload-config/.../Lessons.ts. The runner expands these
-// to their EOA addresses at EVM-call time.
-const ALIAS_NAMES = ['default', 'alice', 'bob', 'carol', 'dave']
-const ALIAS_RE = new RegExp(`^@?(?:${ALIAS_NAMES.join('|')})$`, 'i')
+// Lenient: any well-formed @identifier passes save-time validation. The runner
+// validates against the actual alias set (EOAs + this lesson's fixtures + @self)
+// when the test runs. Keeping the widget lenient means admins can reference a
+// fixture they're about to define without field-order gotchas.
+const ALIAS_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*$/
+// Helpful baseline list — fixture aliases extend this at runtime.
+const KNOWN_EOA_ALIASES = ['@default', '@alice', '@bob', '@carol', '@dave', '@self']
 
-/** `address` — 0x-prefixed 20-byte hex, or a named caller alias (alice, bob, ...). */
+/** `address` — 0x-prefixed 20-byte hex, or an @-prefixed alias. */
 export function AddressInput({ label, value, onChange }: AddressInputProps) {
   const trimmed = value.trim()
   const isValid = trimmed === '' || ALIAS_RE.test(trimmed) || ADDRESS_RE.test(trimmed)
-  const error = isValid ? null : `Expected 0x + 40 hex chars, or an alias (${ALIAS_NAMES.join(', ')}).`
+  const error = isValid
+    ? null
+    : 'Expected an @-prefixed alias (e.g. @alice) or a 0x-prefixed 40-hex address.'
   return (
     <WidgetShell
       label={label}
-      description={`20-byte hex address, or an alias: ${ALIAS_NAMES.join(', ')}.`}
+      description={`20-byte hex address, or an @-prefixed alias. Built-in: ${KNOWN_EOA_ALIASES.join(', ')}. Fixtures defined on this lesson are also valid (e.g. @mockToken).`}
       error={error}
     >
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="0x0000000000000000000000000000000000000000"
+        placeholder="@alice or 0x0000000000000000000000000000000000000000"
         spellCheck={false}
         style={inputStyle(error)}
       />

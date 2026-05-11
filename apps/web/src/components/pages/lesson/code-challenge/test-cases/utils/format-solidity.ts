@@ -5,9 +5,10 @@ export function shortenHex(hex: string): string {
 }
 
 /** Format a single Solidity raw arg string for inline call display. */
-export function formatSolidityArg(raw: string): string {
+export function formatSolidityArg(raw: string, opts?: { selfLabel?: string }): string {
   const trimmed = raw.trim()
   if (trimmed === '') return '""'
+  if (trimmed.startsWith('@')) return formatAlias(trimmed, opts?.selfLabel)
   if (/^0x[0-9a-fA-F]+$/.test(trimmed) && trimmed.length > 10) return shortenHex(trimmed)
   if (/^-?\d+$/.test(trimmed)) return trimmed
   if (trimmed === 'true' || trimmed === 'false') return trimmed
@@ -15,6 +16,17 @@ export function formatSolidityArg(raw: string): string {
     return trimmed
   }
   return `"${trimmed}"`
+}
+
+/**
+ * Strip the `@` prefix for display. `@self` is special-cased to the student's
+ * contract name (if known) so the UI reads as `Vault.deposit(...)` rather than
+ * `@self.deposit(...)`. Falls back to `address(this)` when no name is available.
+ */
+function formatAlias(raw: string, selfLabel: string | undefined): string {
+  const alias = raw.startsWith('@') ? raw.slice(1) : raw
+  if (alias.toLowerCase() === 'self') return selfLabel && selfLabel.trim() !== '' ? selfLabel : 'address(this)'
+  return alias
 }
 
 /** Format a wei amount string into the most readable unit (ETH / gwei / wei). */
@@ -36,9 +48,10 @@ export function formatValueWei(valueWei: string): string {
 }
 
 /** Format a caller alias / hex address for display. */
-export function formatCaller(caller: string): string {
+export function formatCaller(caller: string, opts?: { selfLabel?: string }): string {
   const trimmed = caller.trim()
   if (/^0x[0-9a-fA-F]{40}$/.test(trimmed)) return shortenHex(trimmed)
+  if (trimmed.startsWith('@')) return formatAlias(trimmed, opts?.selfLabel)
   return trimmed
 }
 

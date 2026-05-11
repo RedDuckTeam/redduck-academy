@@ -23,6 +23,12 @@ export function buildRunnerSpec(lesson: Lesson): RunnerSpec | null {
       language: 'solidity',
       contractName: lesson.solidityContractName ?? undefined,
       rawConstructorArgs: (lesson.solidityConstructorArgs ?? []).map((a) => a.value ?? ''),
+      fixtures: (lesson.solidityFixtures ?? []).map((f) => ({
+        alias: f.alias,
+        source: f.source,
+        contractName: f.contractName ?? undefined,
+        rawConstructorArgs: (f.constructorArgs ?? []).map((a) => a.value ?? ''),
+      })),
     }
   }
 

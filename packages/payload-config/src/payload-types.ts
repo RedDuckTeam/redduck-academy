@@ -327,6 +327,35 @@ export interface Lesson {
       }[]
     | null;
   /**
+   * Peer Solidity contracts deployed alongside the student's contract — used to set up scenarios (e.g. a mock ERC20 the student's vault interacts with). Each row gets an alias; tests reference the deployed address via @alias in callers, args, constructor args, and the step `target` field. Students never see these sources.
+   */
+  solidityFixtures?:
+    | {
+        /**
+         * Identifier used to reference this fixture from tests (e.g. `mockToken` → `@mockToken`). Reserved names (default / alice / bob / carol / dave / self) are rejected.
+         */
+        alias: string;
+        /**
+         * Full Solidity source for this fixture. May import @openzeppelin/contracts/...
+         */
+        source: string;
+        /**
+         * Optional. Name of the contract inside `source` to deploy. Defaults to the first contract in the source.
+         */
+        contractName?: string | null;
+        /**
+         * Constructor arguments for this fixture, one row per parameter. Values may reference earlier fixtures via @alias (deploy order = declaration order). `@self` is NOT available here — the student's contract is deployed after all fixtures.
+         */
+        constructorArgs?:
+          | {
+              value: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Solidity test cases. Each row is a chain of calls (steps). Steps within a case share EVM state. Set a step's "expected" to assert that call's return value.
    */
   solidityTestCases?:
@@ -336,7 +365,11 @@ export interface Lesson {
          */
         steps: {
           /**
-           * Function to call. Picked from the contract's ABI.
+           * Which deployed contract this step calls. Defaults to @self (the student's contract). Use a fixture alias (e.g. @mockToken) to call a peer contract.
+           */
+          target?: string | null;
+          /**
+           * Function to call. Picked from the target contract's ABI.
            */
           functionName: string;
           /**
@@ -353,7 +386,7 @@ export interface Lesson {
            */
           valueWei?: string | null;
           /**
-           * Optional msg.sender for the call. Use a named alias (default, alice, bob, carol, dave) or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
+           * Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @default, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.
            */
           caller?: string | null;
           /**
@@ -646,12 +679,27 @@ export interface LessonsSelect<T extends boolean = true> {
         expectedJson?: T;
         id?: T;
       };
+  solidityFixtures?:
+    | T
+    | {
+        alias?: T;
+        source?: T;
+        contractName?: T;
+        constructorArgs?:
+          | T
+          | {
+              value?: T;
+              id?: T;
+            };
+        id?: T;
+      };
   solidityTestCases?:
     | T
     | {
         steps?:
           | T
           | {
+              target?: T;
               functionName?: T;
               args?:
                 | T

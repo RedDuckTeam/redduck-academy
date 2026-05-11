@@ -17,6 +17,20 @@ export interface CompileOptions {
   imports?: Record<string, string>
 }
 
+/** One input file for a multi-source compile. */
+export interface CompileInputFile {
+  path: string
+  content: string
+  /** Optional contract name to select from this file. Defaults to first contract. */
+  preferredContract?: string
+}
+
+/** Result of a multi-source compile — one chosen contract per input file. */
+export interface CompileMultiResult {
+  /** Keyed by input file path. */
+  contracts: Record<string, CompiledContract>
+}
+
 interface SolcOutput {
   errors?: Array<{ severity?: string; formattedMessage?: string; message?: string }>
   contracts?: Record<string, Record<string, { abi: Abi; evm?: { bytecode?: { object?: string } } }>>
@@ -37,19 +51,37 @@ export async function compile(
   preferredContract?: string,
   options: CompileOptions = {},
 ): Promise<CompiledContract> {
+  const result = await compileMulti(
+    [{ path: SOURCE_FILENAME, content: source, preferredContract }],
+    options,
+  )
+  const chosen = result.contracts[SOURCE_FILENAME]
+  if (!chosen) throw new Error('No contracts found in source')
+  return chosen
+}
+
+/**
+ * Compiles multiple Solidity sources in one solc invocation and returns the chosen
+ * contract per input file. Used by the test-case runner to compile the student's
+ * source alongside lesson fixtures (peer contracts) — all share the same import
+ * resolver, so any source can import OZ or the per-call overlay.
+ *
+ * If any source fails to compile, throws a single error containing the formatted
+ * solc messages (with the failing file path inline).
+ */
+export async function compileMulti(
+  files: CompileInputFile[],
+  options: CompileOptions = {},
+): Promise<CompileMultiResult> {
+  if (files.length === 0) throw new Error('compileMulti: no input files')
+
   const Module = await loadSolc()
   const callback = loadImportCallback(Module)
-  // `solidity_compile` is a 3-arg C function: (input, readCallback, readCallbackContext).
-  // Declaring fewer args makes wasm read garbage for the missing context, which can
-  // trigger `Aborted()` once the callback is actually used. Pass 0 for the context.
   const compileFn = Module.cwrap('solidity_compile', 'string', ['string', 'number', 'number']) as (
     input: string,
     callbackPtr: number,
     contextPtr: number,
   ) => string
-  // `solidity_reset` releases everything allocated via `solidity_alloc` during the
-  // compile (including memory we handed back via the import callback). Without this,
-  // solc never frees those buffers and we leak per-compile.
   const resetFn = Module.cwrap('solidity_reset', null, []) as (() => void) | undefined
 
   const overlay = options.imports
@@ -57,9 +89,16 @@ export async function compile(
     ? (path) => (path in overlay ? overlay[path] : path in STDLIB ? STDLIB[path] : null)
     : (path) => (path in STDLIB ? STDLIB[path] : null)
 
+  const sources: Record<string, { content: string }> = {}
+  for (const f of files) {
+    if (sources[f.path]) {
+      throw new Error(`compileMulti: duplicate source path "${f.path}"`)
+    }
+    sources[f.path] = { content: f.content }
+  }
   const standardInput = {
     language: 'Solidity',
-    sources: { [SOURCE_FILENAME]: { content: source } },
+    sources,
     settings: {
       optimizer: { enabled: false },
       outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object'] } },
@@ -72,8 +111,6 @@ export async function compile(
     rawOutput = compileFn(JSON.stringify(standardInput), callback.pointer, 0)
   } finally {
     callback.setLookup(null)
-    // Free everything solc + the import callback allocated this compile. Matches
-    // solc-js's post-compile cleanup.
     resetFn?.()
   }
 
@@ -90,17 +127,25 @@ export async function compile(
     throw new Error(msg.trim() || 'Compilation failed')
   }
 
-  const fileContracts = output.contracts?.[SOURCE_FILENAME] ?? {}
-  const contractNames = Object.keys(fileContracts)
-  if (contractNames.length === 0) throw new Error('No contracts found in source')
-
-  const chosenName = preferredContract && fileContracts[preferredContract] ? preferredContract : contractNames[0]
-  const chosen = fileContracts[chosenName]
-  const bytecodeHex = chosen?.evm?.bytecode?.object
-  if (!bytecodeHex) throw new Error(`Contract "${chosenName}" has no bytecode`)
-
-  return {
-    abi: chosen.abi,
-    bytecode: (bytecodeHex.startsWith('0x') ? bytecodeHex : `0x${bytecodeHex}`) as `0x${string}`,
+  const contracts: Record<string, CompiledContract> = {}
+  for (const f of files) {
+    const fileContracts = output.contracts?.[f.path] ?? {}
+    const contractNames = Object.keys(fileContracts)
+    if (contractNames.length === 0) {
+      throw new Error(`No contracts found in source "${f.path}"`)
+    }
+    const chosenName =
+      f.preferredContract && fileContracts[f.preferredContract] ? f.preferredContract : contractNames[0]
+    const chosen = fileContracts[chosenName]
+    const bytecodeHex = chosen?.evm?.bytecode?.object
+    if (!bytecodeHex) {
+      throw new Error(`Contract "${chosenName}" in "${f.path}" has no bytecode`)
+    }
+    contracts[f.path] = {
+      abi: chosen.abi,
+      bytecode: (bytecodeHex.startsWith('0x') ? bytecodeHex : `0x${bytecodeHex}`) as `0x${string}`,
+    }
   }
+
+  return { contracts }
 }

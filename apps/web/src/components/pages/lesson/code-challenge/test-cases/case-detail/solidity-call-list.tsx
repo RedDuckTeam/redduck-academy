@@ -4,6 +4,8 @@ import { CallBox } from './call-box'
 interface SolidityCallListProps {
   testCase: SolidityTestCase
   result: RunnerResult | undefined
+  /** Label substituted for `@self` in step args/callers (typically the contract name). */
+  selfLabel?: string
 }
 
 /**
@@ -12,7 +14,7 @@ interface SolidityCallListProps {
  * attributable to a specific step, that step's CallBox shows the `got` value
  * and any revert reason in red.
  */
-export function SolidityCallList({ testCase, result }: SolidityCallListProps) {
+export function SolidityCallList({ testCase, result, selfLabel }: SolidityCallListProps) {
   const failedIndex = result?.failedStepIndex
 
   return (
@@ -26,6 +28,7 @@ export function SolidityCallList({ testCase, result }: SolidityCallListProps) {
             args={step.rawArgs}
             valueWei={step.valueWei}
             caller={step.caller}
+            selfLabel={selfLabel}
             expected={step.rawExpected}
             got={isFailedStep ? result?.got : undefined}
             failed={isFailedStep}

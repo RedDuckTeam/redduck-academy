@@ -41,6 +41,7 @@ export async function runSolidity(
     source,
     contractName: spec.contractName,
     rawConstructorArgs: spec.rawConstructorArgs,
+    fixtures: spec.fixtures ?? [],
     cases: testCases.map(toWorkerCase),
   }
 
@@ -117,6 +118,7 @@ function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
     id: tc.id,
     kind: 'case',
     steps: tc.steps.map((s) => ({
+      target: s.target,
       functionName: s.functionName,
       rawArgs: s.rawArgs,
       valueWei: s.valueWei,

@@ -228,6 +228,46 @@ export const lessons_executable_test_cases = db_schema.table(
   ],
 )
 
+export const lessons_solidity_fixtures_constructor_args = db_schema.table(
+  'lessons_solidity_fixtures_constructor_args',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: varchar('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    value: varchar('value'),
+  },
+  (columns) => [
+    index('lessons_solidity_fixtures_constructor_args_order_idx').on(columns._order),
+    index('lessons_solidity_fixtures_constructor_args_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons_solidity_fixtures.id],
+      name: 'lessons_solidity_fixtures_constructor_args_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const lessons_solidity_fixtures = db_schema.table(
+  'lessons_solidity_fixtures',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    alias: varchar('alias'),
+    source: varchar('source'),
+    contractName: varchar('contract_name'),
+  },
+  (columns) => [
+    index('lessons_solidity_fixtures_order_idx').on(columns._order),
+    index('lessons_solidity_fixtures_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_solidity_fixtures_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
 export const lessons_solidity_test_cases_steps_args = db_schema.table(
   'lessons_solidity_test_cases_steps_args',
   {
@@ -253,6 +293,7 @@ export const lessons_solidity_test_cases_steps = db_schema.table(
     _order: integer('_order').notNull(),
     _parentID: varchar('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
+    target: varchar('target'),
     functionName: varchar('function_name'),
     valueWei: varchar('value_wei'),
     caller: varchar('caller'),
@@ -594,6 +635,26 @@ export const relations_lessons_executable_test_cases = relations(lessons_executa
     relationName: 'executableTestCases',
   }),
 }))
+export const relations_lessons_solidity_fixtures_constructor_args = relations(
+  lessons_solidity_fixtures_constructor_args,
+  ({ one }) => ({
+    _parentID: one(lessons_solidity_fixtures, {
+      fields: [lessons_solidity_fixtures_constructor_args._parentID],
+      references: [lessons_solidity_fixtures.id],
+      relationName: 'constructorArgs',
+    }),
+  }),
+)
+export const relations_lessons_solidity_fixtures = relations(lessons_solidity_fixtures, ({ one, many }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_solidity_fixtures._parentID],
+    references: [lessons.id],
+    relationName: 'solidityFixtures',
+  }),
+  constructorArgs: many(lessons_solidity_fixtures_constructor_args, {
+    relationName: 'constructorArgs',
+  }),
+}))
 export const relations_lessons_solidity_test_cases_steps_args = relations(
   lessons_solidity_test_cases_steps_args,
   ({ one }) => ({
@@ -655,6 +716,9 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
   }),
   executableTestCases: many(lessons_executable_test_cases, {
     relationName: 'executableTestCases',
+  }),
+  solidityFixtures: many(lessons_solidity_fixtures, {
+    relationName: 'solidityFixtures',
   }),
   solidityTestCases: many(lessons_solidity_test_cases, {
     relationName: 'solidityTestCases',
@@ -748,6 +812,8 @@ type DatabaseSchema = {
   lessons_questions: typeof lessons_questions
   lessons_solidity_constructor_args: typeof lessons_solidity_constructor_args
   lessons_executable_test_cases: typeof lessons_executable_test_cases
+  lessons_solidity_fixtures_constructor_args: typeof lessons_solidity_fixtures_constructor_args
+  lessons_solidity_fixtures: typeof lessons_solidity_fixtures
   lessons_solidity_test_cases_steps_args: typeof lessons_solidity_test_cases_steps_args
   lessons_solidity_test_cases_steps: typeof lessons_solidity_test_cases_steps
   lessons_solidity_test_cases: typeof lessons_solidity_test_cases
@@ -770,6 +836,8 @@ type DatabaseSchema = {
   relations_lessons_questions: typeof relations_lessons_questions
   relations_lessons_solidity_constructor_args: typeof relations_lessons_solidity_constructor_args
   relations_lessons_executable_test_cases: typeof relations_lessons_executable_test_cases
+  relations_lessons_solidity_fixtures_constructor_args: typeof relations_lessons_solidity_fixtures_constructor_args
+  relations_lessons_solidity_fixtures: typeof relations_lessons_solidity_fixtures
   relations_lessons_solidity_test_cases_steps_args: typeof relations_lessons_solidity_test_cases_steps_args
   relations_lessons_solidity_test_cases_steps: typeof relations_lessons_solidity_test_cases_steps
   relations_lessons_solidity_test_cases: typeof relations_lessons_solidity_test_cases

@@ -14,11 +14,19 @@ interface TestCaseTabsProps {
   executableCases: RunnerTestCase[]
   /** Raw signature from Payload — used only to extract argument names for display. */
   functionSignature?: string | null
+  /** Display label for `@self` in Solidity call rendering (e.g. the contract name). */
+  selfLabel?: string
   report: RunnerReport | null
   isRunning: boolean
 }
 
-export function TestCaseTabs({ executableCases, functionSignature, report, isRunning }: TestCaseTabsProps) {
+export function TestCaseTabs({
+  executableCases,
+  functionSignature,
+  selfLabel,
+  report,
+  isRunning,
+}: TestCaseTabsProps) {
   const [selected, setSelected] = useState(0)
 
   const argCount = useMemo(
@@ -86,7 +94,9 @@ export function TestCaseTabs({ executableCases, functionSignature, report, isRun
           ))}
         </div>
 
-        {current && <CaseDetail testCase={current} argNames={argNames} result={currentResult} />}
+        {current && (
+          <CaseDetail testCase={current} argNames={argNames} result={currentResult} selfLabel={selfLabel} />
+        )}
       </div>
     </div>
   )

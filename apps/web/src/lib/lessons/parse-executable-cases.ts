@@ -32,8 +32,10 @@ export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | n
     steps: (c.steps ?? []).map((s) => {
       const valueWei = s.valueWei && s.valueWei.trim() !== '' ? s.valueWei.trim() : undefined
       const caller = s.caller && s.caller.trim() !== '' ? s.caller.trim() : undefined
+      const target = s.target && s.target.trim() !== '' ? s.target.trim() : undefined
       const rawExpected = s.expected != null && s.expected.trim() !== '' ? s.expected : undefined
       return {
+        target,
         functionName: s.functionName,
         rawArgs: (s.args ?? []).map((a) => a.value ?? ''),
         valueWei,

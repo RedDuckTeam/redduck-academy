@@ -3,6 +3,7 @@
 import { useField, useAllFormFields } from '@payloadcms/ui'
 import type { Abi } from 'viem'
 import { useCompiledAbi } from './use-compiled-abi'
+import { resolveTargetSource } from './target-source'
 import { resolveTypeForPath } from './type-resolver'
 import { widgetForAbiType } from './widget-registry'
 import { UintInput } from './widgets/uint-input'
@@ -28,9 +29,12 @@ export function TypedValueField({ path }: TypedValueFieldProps) {
   const { value, setValue } = useField<string>({ path })
   const [fields] = useAllFormFields()
 
-  const starterCode = readString(fields, 'starterCode')
-  const solidityContractName = readString(fields, 'solidityContractName')
-  const compileState = useCompiledAbi(starterCode, solidityContractName)
+  // For step-rooted paths, the target contract's source drives the ABI. For
+  // non-step paths (constructor args), fall back to the lesson's starterCode.
+  const target = resolveTargetSource(path, fields)
+  const source = target?.source ?? readString(fields, 'starterCode')
+  const contractName = target?.contractName ?? readString(fields, 'solidityContractName')
+  const compileState = useCompiledAbi(source, contractName)
   const abi: Abi | undefined = compileState.status === 'ok' ? compileState.abi : undefined
 
   const stepPath = parentStepPath(path)

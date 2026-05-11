@@ -3,6 +3,7 @@
 import { useField, useAllFormFields } from '@payloadcms/ui'
 import type { Abi, AbiFunction, AbiStateMutability } from 'viem'
 import { useCompiledAbi } from './use-compiled-abi'
+import { resolveTargetSource } from './target-source'
 import { WidgetShell } from './widgets/widget-shell'
 
 export interface FunctionSelectBaseProps {
@@ -24,9 +25,13 @@ export function FunctionSelectBase({ path, label, description, mutabilityFilter 
   const { value, setValue } = useField<string>({ path })
   const [fields] = useAllFormFields()
 
-  const starterCode = readString(fields, 'starterCode')
-  const solidityContractName = readString(fields, 'solidityContractName')
-  const compileState = useCompiledAbi(starterCode, solidityContractName)
+  // If this widget lives on a test-case step, the relevant ABI comes from the
+  // step's `target` (defaults to the student's contract). Otherwise we're on the
+  // global FunctionSelect or another non-step path — fall back to starterCode.
+  const target = resolveTargetSource(path, fields)
+  const source = target?.source ?? readString(fields, 'starterCode')
+  const contractName = target?.contractName ?? readString(fields, 'solidityContractName')
+  const compileState = useCompiledAbi(source, contractName)
 
   const stringValue = typeof value === 'string' ? value : ''
   const onChange = (next: string) => setValue(next)

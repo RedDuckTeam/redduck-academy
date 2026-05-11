@@ -7,14 +7,15 @@ import {
   type Abi,
   type AbiFunction,
 } from 'viem'
+import { parseTypedValue } from '@redduck/solc-utils'
 import { coerceArgs, normalizeReturnValue } from './abi-coerce'
 import { deepEqual } from '../compare'
 
 /**
  * Named caller addresses for test cases. Each alias maps to a fixed 20-byte
- * address whose last hex chars spell the name. Test authors can use any alias
- * (case-insensitive) as the case-level `caller` value; an empty/unset caller
- * falls back to `default`. Raw 0x-prefixed 40-hex addresses are also accepted.
+ * address whose last hex chars spell the name. Tests reference them via
+ * `@-prefixed` syntax (`@alice`); raw 0x-prefixed 40-hex addresses are also
+ * accepted everywhere an address is expected.
  */
 export const CALLER_ALIASES: Record<string, Address> = {
   default: createAddressFromString('0x000000000000000000000000000000000000c0de'),
@@ -29,84 +30,111 @@ export const DEFAULT_CALLER: Address = CALLER_ALIASES.default
 const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
 
 /**
- * Resolve an alias or raw hex address to an EVM `Address`. Empty/undefined yields
- * the default caller. Unknown names throw with the list of valid aliases so the
- * worker can surface the error per-case.
+ * Per-case map of `@alias` (lowercased name, no @) → Address. Seeded with EOA
+ * aliases, extended with fixture aliases after each fixture deploys, and bound
+ * to `self` after the student's contract deploys.
  */
-export function resolveCaller(value: string | undefined | null): Address {
-  if (value === undefined || value === null) return DEFAULT_CALLER
+export type AliasMap = Map<string, Address>
+
+export function newCaseAliasMap(): AliasMap {
+  const map: AliasMap = new Map()
+  for (const [name, addr] of Object.entries(CALLER_ALIASES)) map.set(name, addr)
+  return map
+}
+
+/**
+ * Resolve an `@`-prefixed alias or a raw 0x hex string to an EVM Address.
+ * Throws with a list of valid aliases when the lookup fails. Empty/undefined
+ * is treated as "no value" by the caller — this helper expects a real input.
+ */
+export function resolveAddress(value: string, aliasMap: AliasMap): Address {
   const trimmed = value.trim()
-  if (trimmed === '') return DEFAULT_CALLER
-  const alias = CALLER_ALIASES[trimmed.toLowerCase()]
-  if (alias) return alias
+  if (trimmed === '') {
+    throw new Error('address required')
+  }
+  if (trimmed.startsWith('@')) {
+    const key = trimmed.slice(1).toLowerCase()
+    const hit = aliasMap.get(key)
+    if (hit) return hit
+    const known = Array.from(aliasMap.keys())
+      .map((n) => `@${n}`)
+      .join(', ')
+    throw new Error(`unknown alias "${value}"; known: [${known}] or use a 0x-prefixed 40-hex address`)
+  }
   if (RAW_ADDRESS_RE.test(trimmed)) return createAddressFromString(trimmed)
-  const aliasList = Object.keys(CALLER_ALIASES).join(', ')
   throw new Error(
-    `unknown caller "${value}"; expected one of [${aliasList}] or a 0x-prefixed 40-hex address`,
+    `invalid address "${value}"; use an @-prefixed alias (e.g. @alice) or a 0x-prefixed 40-hex address`,
   )
 }
 
 /**
- * Lowercased alias → canonical 0x hex string. Used by the worker to expand alias
- * names typed in `address`-typed function args (e.g. `alice` becomes the EOA hex
- * before `parseTypedValue` sees it).
+ * Like resolveAddress but returns DEFAULT_CALLER when value is empty/undefined.
+ * Used for the step `caller` field where blank means "use the default EOA."
  */
-const ALIAS_HEX: Record<string, `0x${string}`> = Object.fromEntries(
-  Object.entries(CALLER_ALIASES).map(([k, v]) => [k, v.toString() as `0x${string}`]),
-)
+export function resolveCaller(value: string | undefined | null, aliasMap: AliasMap): Address {
+  if (value === undefined || value === null) return DEFAULT_CALLER
+  const trimmed = value.trim()
+  if (trimmed === '') return DEFAULT_CALLER
+  return resolveAddress(trimmed, aliasMap)
+}
 
 /**
- * If `value` is a known alias name (case-insensitive, optional leading `@`),
- * returns the corresponding 0x-prefixed hex address. Otherwise returns the input
- * unchanged so downstream parsers can validate it (or fail with a hex error).
- *
- * The leading-`@` form is accepted now so it stays consistent once fixture
- * aliases (`@mockToken`) land. Today, both `alice` and `@alice` resolve.
+ * If `value` is `@-prefixed` and the alias resolves, return its 0x-hex form.
+ * Otherwise return the input unchanged so downstream parsers can validate it
+ * (or fail with a hex error). Used to substitute `@alias` in `address`-typed
+ * args / constructor args before `parseTypedValue` sees them.
  */
-export function expandAddressAlias(value: string): string {
+export function expandAddressAlias(value: string, aliasMap: AliasMap): string {
   const trimmed = value.trim()
-  if (trimmed === '') return value
-  const key = (trimmed.startsWith('@') ? trimmed.slice(1) : trimmed).toLowerCase()
-  return ALIAS_HEX[key] ?? value
+  if (!trimmed.startsWith('@')) return value
+  const key = trimmed.slice(1).toLowerCase()
+  const hit = aliasMap.get(key)
+  return hit ? (hit.toString() as `0x${string}`) : value
 }
 
 const GAS_LIMIT = 0xffffffn
 
 type Evm = Awaited<ReturnType<typeof createEVM>>
 
+/** A peer contract deployed before the student's contract for the duration of a case. */
+export interface RunFixture {
+  /** Lowercased alias name (no @ prefix); becomes the key in the case's alias map. */
+  alias: string
+  abi: Abi
+  bytecode: `0x${string}`
+  rawConstructorArgs: string[]
+  /** Constructor input types (from the fixture's own ABI). Used to coerce raw args. */
+  ctorInputs: readonly { type: string }[]
+}
+
 /** One step inside a test case. Steps share EVM state; each may carry its own assertion. */
 export interface RunCaseStep {
   fnAbi: AbiFunction
-  args: unknown[]
+  /** ABI input types of `fnAbi`, pre-extracted so the runner can `parseTypedValue` raw args. */
+  argInputs: readonly { type: string }[]
+  rawArgs: string[]
   valueWei?: string
-  caller?: Address
-  /**
-   * Decoded expected return value (already coerced via ABI by the worker). When set,
-   * the runner decodes this step's return and compares via `deepEqual`. When unset,
-   * the step is just executed; success means "did not revert".
-   */
-  expectedDecoded?: unknown
-  /** True when this step's `expectedDecoded` was intentionally set (distinguishes undefined-as-value from "no assertion"). */
+  /** Raw caller string ('@alice' / '@self' / 0x-hex / blank). Resolved at call time. */
+  rawCaller?: string
+  /** Raw target string ('@mockToken' / '@self' / blank). Defaults to '@self'. */
+  target?: string
+  /** Raw expected string. Decoded against `fnAbi.outputs` at compare time. */
+  rawExpected?: string
   hasExpected: boolean
 }
 
 export interface RunCaseInput {
   kind: 'case'
-  bytecode: `0x${string}`
-  abi: Abi
-  constructorArgs?: unknown[]
+  studentBytecode: `0x${string}`
+  studentAbi: Abi
+  studentRawConstructorArgs: string[]
+  studentCtorInputs: readonly { type: string }[]
+  fixtures: RunFixture[]
   steps: RunCaseStep[]
 }
 
 export type RunTestCaseInput = RunCaseInput
 
-/**
- * Outcome shape parallel to a single RunnerResult row. `expected` / `got` are
- * populated by the LAST step that had an assertion when everything passed, or by
- * the FIRST failing step when something failed. `error` is set when a step reverted
- * or an assertion mismatched. `failedStepIndex` is set whenever the failure can be
- * attributed to a specific step, so the UI can render the diff inline with that step.
- */
 export interface RunCaseResult {
   passed: boolean
   failedStepIndex?: number
@@ -116,9 +144,17 @@ export interface RunCaseResult {
 }
 
 /**
- * Runs one Solidity test case (a sequence of EVM calls sharing state). Each step
- * may optionally compare its decoded return against `expectedDecoded`. The case
- * stops at the first failing step.
+ * Runs one Solidity test case (a sequence of EVM calls sharing state).
+ *
+ * Per-case flow:
+ *   1. fresh EVM
+ *   2. deploy each fixture in declaration order, binding `@<alias>` to its address
+ *   3. resolve and deploy the student's contract, bind `@self`
+ *   4. execute each step routed to its `target` (defaults to `@self`); resolve
+ *      `caller` and `@`-aliases in address args against the now-complete map
+ *   5. assertion compare per step that sets `expected`
+ *
+ * Stops at the first failure (revert, mismatch, or resolution error).
  */
 export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
   if (input.steps.length === 0) {
@@ -126,15 +162,62 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
   }
 
   const evm = await createEVM()
-  const to = await deploy(evm, input.bytecode, input.abi, input.constructorArgs)
+  const aliasMap = newCaseAliasMap()
 
+  // --- 1. fixtures, in declaration order
+  for (const fixture of input.fixtures) {
+    let ctorArgs: unknown[]
+    try {
+      ctorArgs = parseRawArgs(fixture.rawConstructorArgs, fixture.ctorInputs, aliasMap)
+    } catch (err) {
+      return { passed: false, error: `fixture '${fixture.alias}' constructor args: ${msg(err)}` }
+    }
+    let addr: Address
+    try {
+      addr = await deploy(evm, fixture.bytecode, fixture.abi, ctorArgs)
+    } catch (err) {
+      return { passed: false, error: `fixture '${fixture.alias}' deploy failed: ${msg(err)}` }
+    }
+    aliasMap.set(fixture.alias.toLowerCase(), addr)
+  }
+
+  // --- 2. student's contract
+  let studentArgs: unknown[]
+  try {
+    studentArgs = parseRawArgs(input.studentRawConstructorArgs, input.studentCtorInputs, aliasMap)
+  } catch (err) {
+    return { passed: false, error: `student constructor args: ${msg(err)}` }
+  }
+  let studentAddr: Address
+  try {
+    studentAddr = await deploy(evm, input.studentBytecode, input.studentAbi, studentArgs)
+  } catch (err) {
+    return { passed: false, error: `student deploy failed: ${msg(err)}` }
+  }
+  aliasMap.set('self', studentAddr)
+
+  // --- 3. steps
   let lastAssertion: { expected: unknown; got: unknown } | undefined
   for (let i = 0; i < input.steps.length; i++) {
     const step = input.steps[i]
-    const caller = step.caller ?? DEFAULT_CALLER
+    let targetAddr: Address
+    let callerAddr: Address
+    let argValues: unknown[]
+    try {
+      targetAddr = step.target ? resolveAddress(step.target, aliasMap) : studentAddr
+      callerAddr = resolveCaller(step.rawCaller, aliasMap)
+      argValues = parseRawArgs(step.rawArgs, step.argInputs, aliasMap)
+    } catch (err) {
+      return {
+        passed: false,
+        failedStepIndex: i,
+        error: `step ${i + 1} (${step.fnAbi.name}): ${msg(err)}`,
+      }
+    }
+
     let got: unknown
     try {
-      got = await callMain(evm, to, step.fnAbi, step.args, step.valueWei, caller)
+      got = await callContract(evm, targetAddr, step.fnAbi, argValues, step.valueWei, callerAddr)
     } catch (err) {
       const original = err instanceof Error ? err.message : String(err)
       const stripped = original.replace(/^call reverted:\s*/, '')
@@ -147,27 +230,95 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
 
     if (!step.hasExpected) continue
 
-    const passed = deepEqual(got, step.expectedDecoded)
-    if (!passed) {
+    let expectedDecoded: unknown
+    try {
+      expectedDecoded = parseExpected(step.rawExpected ?? '', step.fnAbi.outputs ?? [], aliasMap)
+    } catch (err) {
       return {
         passed: false,
         failedStepIndex: i,
-        expected: step.expectedDecoded,
+        error: `step ${i + 1} (${step.fnAbi.name}) expected: ${msg(err)}`,
+      }
+    }
+
+    if (!deepEqual(got, expectedDecoded)) {
+      return {
+        passed: false,
+        failedStepIndex: i,
+        expected: expectedDecoded,
         got,
         error: `step ${i + 1} (${step.fnAbi.name}): expected mismatch`,
       }
     }
-    lastAssertion = { expected: step.expectedDecoded, got }
+    lastAssertion = { expected: expectedDecoded, got }
   }
 
-  if (lastAssertion) {
-    return { passed: true, expected: lastAssertion.expected, got: lastAssertion.got }
-  }
-  // No step had an assertion — every step ran without reverting. Surface that as a pass
-  // without expected/got, so the UI just shows the calls without a phantom output.
-  return { passed: true }
+  return lastAssertion
+    ? { passed: true, expected: lastAssertion.expected, got: lastAssertion.got }
+    : { passed: true }
 }
 
+function msg(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
+/**
+ * Coerce raw arg strings to decoded JS values per ABI input types. Substitutes
+ * `@alias` for the resolved hex address when the slot is `address`-typed.
+ */
+function parseRawArgs(
+  raw: string[],
+  inputs: readonly { type: string }[],
+  aliasMap: AliasMap,
+): unknown[] {
+  if (raw.length !== inputs.length) {
+    throw new Error(`expected ${inputs.length} arg(s), got ${raw.length}`)
+  }
+  return raw.map((value, i) => {
+    const type = inputs[i].type
+    const prepared =
+      type === 'address' || type.startsWith('address ') ? expandAddressAlias(value, aliasMap) : value
+    return parseTypedValue(prepared, type)
+  })
+}
+
+/**
+ * Parse a raw `expected` string against the function's output type(s).
+ * Mirrors the logic that used to live in worker.ts, now alias-aware so an
+ * expected like `@mockToken` can match an address-returning view.
+ */
+function parseExpected(
+  raw: string,
+  outputs: readonly { type: string }[],
+  aliasMap: AliasMap,
+): unknown {
+  if (outputs.length === 0) return null
+  if (outputs.length === 1) {
+    const type = outputs[0].type
+    const prepared =
+      type === 'address' || type.startsWith('address ') ? expandAddressAlias(raw, aliasMap) : raw
+    const parsed = parseTypedValue(prepared, type)
+    return normalizeReturnValue(parsed)
+  }
+  let arr: unknown
+  try {
+    arr = JSON.parse(raw)
+  } catch {
+    throw new Error('Expected JSON array for multi-output return value')
+  }
+  if (!Array.isArray(arr) || arr.length !== outputs.length) {
+    throw new Error(`Expected JSON array of length ${outputs.length}`)
+  }
+  return normalizeReturnValue(
+    arr.map((v, i) => {
+      const type = outputs[i].type
+      const raw = typeof v === 'string' ? v : JSON.stringify(v)
+      const prepared =
+        type === 'address' || type.startsWith('address ') ? expandAddressAlias(raw, aliasMap) : raw
+      return parseTypedValue(prepared, type)
+    }),
+  )
+}
 
 async function deploy(
   evm: Evm,
@@ -201,7 +352,7 @@ async function deploy(
   return result.createdAddress as Address
 }
 
-async function callMain(
+async function callContract(
   evm: Evm,
   to: Address,
   fnAbi: AbiFunction,
@@ -238,4 +389,3 @@ async function callMain(
   })
   return normalizeReturnValue(decoded)
 }
-
