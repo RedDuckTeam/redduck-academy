@@ -19,14 +19,14 @@ import { deepEqual } from '../compare'
  * accepted everywhere an address is expected.
  */
 export const CALLER_ALIASES: Record<string, Address> = {
-  default: createAddressFromString('0x000000000000000000000000000000000000c0de'),
+  deployer: createAddressFromString('0x000000000000000000000000000000000000c0de'),
   alice: createAddressFromString('0x00000000000000000000000000000000000a11ce'),
   bob: createAddressFromString('0x0000000000000000000000000000000000000b0b'),
   carol: createAddressFromString('0x00000000000000000000000000000000000ca201'),
   dave: createAddressFromString('0x000000000000000000000000000000000000dabe'),
 }
 
-export const DEFAULT_CALLER: Address = CALLER_ALIASES.default
+export const DEFAULT_CALLER: Address = CALLER_ALIASES.deployer
 
 const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
 

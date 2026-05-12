@@ -51,9 +51,9 @@ const testQuestionLexicalFeatures = [
 /** Hard cap on the number of steps per test case. Mirrors the worker-side check. */
 const MAX_CASE_STEPS = 16
 
-const SOLIDITY_CALLER_ALIASES = ['default', 'alice', 'bob', 'carol', 'dave']
+const SOLIDITY_CALLER_ALIASES = ['deployer', 'alice', 'bob', 'carol', 'dave']
 const SOLIDITY_CALLER_HELP =
-  'Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @default, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use the default caller.'
+  'Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @deployer, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use @deployer.'
 const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
 const ALIAS_REF_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*$/
 
@@ -166,7 +166,7 @@ export const Lessons: CollectionConfig = {
               const aliasLower = alias.toLowerCase()
               if (SOLIDITY_CALLER_ALIASES.includes(aliasLower) || aliasLower === 'self') {
                 throw new APIError(
-                  `${fixturePrefix}: alias "${alias}" is reserved (default, alice, bob, carol, dave, self).`,
+                  `${fixturePrefix}: alias "${alias}" is reserved (deployer, alice, bob, carol, dave, self).`,
                   400,
                 )
               }
@@ -500,7 +500,7 @@ export const Lessons: CollectionConfig = {
           admin: {
             description:
               'Identifier used to reference this fixture from tests (e.g. `mockToken` → `@mockToken`). ' +
-              'Reserved names (default / alice / bob / carol / dave / self) are rejected.',
+              'Reserved names (deployer / alice / bob / carol / dave / self) are rejected.',
           },
         },
         {

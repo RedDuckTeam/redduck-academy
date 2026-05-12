@@ -14,7 +14,7 @@ export interface SolCaseStep {
   functionName: string
   rawArgs: string[]
   valueWei?: string
-  /** Optional msg.sender. `@-prefixed` alias or 0x-prefixed address. Defaults to '@default'. */
+  /** Optional msg.sender. `@-prefixed` alias or 0x-prefixed address. Defaults to '@deployer'. */
   caller?: string
   /** Optional raw expected return; when present the runner decodes this step's return and compares. */
   rawExpected?: string

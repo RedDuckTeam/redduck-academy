@@ -1,11 +1,13 @@
 import { cn } from '@/lib/utils'
-import { formatCaller, formatSolidityArg, formatValue, formatValueWei } from '../utils'
+import { formatCaller, formatSolidityArg, formatTargetPrefix, formatValue, formatValueWei } from '../utils'
 
 interface CallBoxProps {
   functionName: string
   args: string[]
   valueWei?: string
   caller?: string
+  /** Raw target alias / address. `@self` and blank render no prefix (call is on the student's contract). */
+  target?: string
   variant?: 'main' | 'postCheck'
   /** Raw expected return value (as authored by admin). Renders an `expected:` line. */
   expected?: string
@@ -24,6 +26,7 @@ export function CallBox({
   args,
   valueWei,
   caller,
+  target,
   variant = 'main',
   expected,
   got,
@@ -32,12 +35,14 @@ export function CallBox({
   selfLabel,
 }: CallBoxProps) {
   const formattedArgs = args.map((a) => formatSolidityArg(a, { selfLabel })).join(', ')
+  const targetPrefix = formatTargetPrefix(target)
   const isPostCheck = variant === 'postCheck'
   const meta: string[] = []
   if (valueWei && valueWei.trim() !== '' && safeBigInt(valueWei) !== 0n) {
     meta.push(`value: ${formatValueWei(valueWei)}`)
   }
-  if (caller && caller.trim() !== '') meta.push(`from: ${formatCaller(caller, { selfLabel })}`)
+  const callerLabel = caller && caller.trim() !== '' ? formatCaller(caller, { selfLabel }) : 'deployer'
+  meta.push(`from: ${callerLabel}`)
 
   const hasExpected = expected !== undefined && expected !== ''
   const isAssertionFail = failed && got !== undefined
@@ -52,6 +57,12 @@ export function CallBox({
       )}
     >
       <pre className="text-[14px] leading-[18px] whitespace-pre-wrap break-all">
+        {targetPrefix && (
+          <>
+            <span className="text-muted-foreground">{targetPrefix}</span>
+            <span className="text-muted-foreground">.</span>
+          </>
+        )}
         <span>{functionName}</span>
         <span>(</span>
         <span>{formattedArgs}</span>

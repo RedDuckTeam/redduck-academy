@@ -55,6 +55,21 @@ export function formatCaller(caller: string, opts?: { selfLabel?: string }): str
   return trimmed
 }
 
+/**
+ * Label for a step's `target` contract when it isn't the student's contract.
+ * Returns `null` for blank / `@self` (no prefix should be rendered — the call
+ * is on the student's own contract, which is the implicit case). Aliases drop
+ * their `@`; raw 0x addresses are shortened.
+ */
+export function formatTargetPrefix(target: string | undefined | null): string | null {
+  if (!target) return null
+  const trimmed = target.trim()
+  if (trimmed === '' || trimmed.toLowerCase() === '@self') return null
+  if (trimmed.startsWith('@')) return trimmed.slice(1)
+  if (/^0x[0-9a-fA-F]{40}$/.test(trimmed)) return shortenHex(trimmed)
+  return trimmed
+}
+
 function trimFractional(s: string): string {
   if (!s.includes('.')) return s
   return s.replace(/0+$/, '').replace(/\.$/, '')

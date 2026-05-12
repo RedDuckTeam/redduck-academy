@@ -28,6 +28,7 @@ export function SolidityCallList({ testCase, result, selfLabel }: SolidityCallLi
             args={step.rawArgs}
             valueWei={step.valueWei}
             caller={step.caller}
+            target={step.target}
             selfLabel={selfLabel}
             expected={step.rawExpected}
             got={isFailedStep ? result?.got : undefined}

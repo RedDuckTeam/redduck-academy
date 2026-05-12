@@ -15,7 +15,7 @@ const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/
 // fixture they're about to define without field-order gotchas.
 const ALIAS_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*$/
 // Helpful baseline list — fixture aliases extend this at runtime.
-const KNOWN_EOA_ALIASES = ['@default', '@alice', '@bob', '@carol', '@dave', '@self']
+const KNOWN_EOA_ALIASES = ['@deployer', '@alice', '@bob', '@carol', '@dave', '@self']
 
 /** `address` — 0x-prefixed 20-byte hex, or an @-prefixed alias. */
 export function AddressInput({ label, value, onChange }: AddressInputProps) {
