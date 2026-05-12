@@ -28,21 +28,24 @@ export class CoursesTestService {
       )
       .limit(1)
 
-    if (existing) {
-      const correctAnswers: Record<string, string[]> = {}
-      result.questions.forEach((q) => {
-        correctAnswers[q.id] = q.options.filter((o) => o.isCorrect).map((o) => o.id)
-      })
-      return { correctAnswers }
-    }
+    // Already passed — idempotent.
+    if (existing) return
 
     const { lesson: foundLesson, questions } = result
-    const correctAnswers: Record<string, string[]> = {}
 
-    questions.forEach((q) => {
-      const correctOptionIds = q.options.filter((o) => o.isCorrect).map((o) => o.id)
-      correctAnswers[q.id] = correctOptionIds
+    const allCorrect = questions.every((q) => {
+      const correctIds = new Set(q.options.filter((o) => o.isCorrect).map((o) => o.id))
+      const userIds = new Set(userAnswers[q.id] ?? [])
+      if (correctIds.size !== userIds.size) return false
+      for (const id of correctIds) {
+        if (!userIds.has(id)) return false
+      }
+      return true
     })
+
+    if (!allCorrect) {
+      throw new AppError(400, 'Some answers are incorrect. Review your choices and try again.')
+    }
 
     await db.insert(userLessons).values({
       userId: userId,
@@ -50,7 +53,5 @@ export class CoursesTestService {
       userAnswers: userAnswers,
       isCompleted: true,
     })
-
-    return { correctAnswers }
   }
 }

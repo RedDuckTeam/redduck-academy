@@ -49,17 +49,16 @@ export class CertificatesService {
     if (!course) throw new AppError(404, 'Course not found')
     if (!userRow) throw new AppError(404, 'User not found')
 
-    const name = userRow.name
-
+    // Dedupe by (userId, courseSlug) only — a rename must not allow a second
+    // certificate (and a second NFT mint) for the same course.
     const existing = await db.query.userCertificates.findFirst({
-      where: and(
-        eq(userCertificates.userId, userId),
-        eq(userCertificates.courseSlug, courseSlug),
-        eq(userCertificates.name, name),
-      ),
+      where: and(eq(userCertificates.userId, userId), eq(userCertificates.courseSlug, courseSlug)),
     })
 
     if (existing) return formatCert(existing)
+
+    // Snapshot the user's name at issue time for display on the certificate.
+    const name = userRow.name
 
     const allLessons = (course.modules ?? []).flatMap((m) => m.lessons ?? [])
     const gradedLessonIds = allLessons.filter((l) => l.type !== 'lecture').map((l) => l.id)

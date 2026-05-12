@@ -15,7 +15,8 @@ export const Courses: CollectionConfig = {
     },
   },
   access: {
-    read: () => true,
+    // See note on Lessons.access.read. Hono uses Drizzle directly; this blocks anonymous Payload REST.
+    read: ({ req: { user } }) => Boolean(user),
   },
   hooks: {
     beforeValidate: [

@@ -247,7 +247,21 @@ export class GitHubService {
   async fetchExpectedFilesFromRepoUrl(repoUrl: string, expectedPaths: string[]): Promise<FetchExpectedFilesResult> {
     const { owner, repo, refFromUrl } = parseGitHubRepoUrl(repoUrl)
     const { commitSha, resolvedRef } = await this.resolveRepoRef(owner, repo, refFromUrl)
+    return this.fetchExpectedFilesAtCommit(owner, repo, commitSha, resolvedRef, expectedPaths)
+  }
 
+  /**
+   * Same as `fetchExpectedFilesFromRepoUrl` but pinned to a caller-provided commit SHA.
+   * Use this when the SHA was already resolved earlier in the flow (e.g. for duplicate-submission
+   * checks) so re-resolution can't drift to a newer branch tip.
+   */
+  async fetchExpectedFilesAtCommit(
+    owner: string,
+    repo: string,
+    commitSha: string,
+    resolvedRef: string,
+    expectedPaths: string[],
+  ): Promise<FetchExpectedFilesResult> {
     const fileTreePaths = await this.listBlobPathsAtCommit(owner, repo, commitSha)
 
     const { concretePaths, missingPatterns } = expandReviewPatterns(expectedPaths, fileTreePaths)

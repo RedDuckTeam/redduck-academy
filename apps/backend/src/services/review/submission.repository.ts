@@ -134,7 +134,10 @@ export const SubmissionRepository = {
 
       if (!updated) return
 
-      await tx.update(userLessons).set({ isCompleted: passed }).where(eq(userLessons.id, userLessonId))
+      // Sticky pass: a failing re-submission must not revoke a previously-earned completion.
+      if (passed) {
+        await tx.update(userLessons).set({ isCompleted: true }).where(eq(userLessons.id, userLessonId))
+      }
     })
   },
 }

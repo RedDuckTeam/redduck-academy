@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
-import { requireAuth } from '../../lib/middleware'
+import { requireAuth, requireAdmin } from '../../lib/middleware'
 import type { AuthVariables } from '../../lib/types'
 import {
   claimCertificateDesc,
@@ -23,6 +23,7 @@ const certificatesApp = new Hono<{ Variables: AuthVariables }>()
 
 certificatesApp.post(
   '/admin/generate',
+  requireAdmin,
   adminGenerateCertificateDesc,
   validator('json', adminGenerateCertificateBodySchema),
   async (c) => {
@@ -34,6 +35,7 @@ certificatesApp.post(
 
 certificatesApp.post(
   '/admin/:id/claim',
+  requireAdmin,
   adminMarkClaimedDesc,
   validator('param', certificateIdParamSchema),
   validator('json', adminMarkClaimedBodySchema),

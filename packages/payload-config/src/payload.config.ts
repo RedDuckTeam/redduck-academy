@@ -19,8 +19,17 @@ import { rootEditorFeatures } from './editor-features'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+const adminUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL ?? process.env.NEXT_PUBLIC_SERVER_URL ?? ''
+const allowedOrigins = (process.env.PAYLOAD_ALLOWED_ORIGINS ?? adminUrl)
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean)
+
 export default buildConfig({
   graphQL: { disable: true },
+  serverURL: adminUrl || undefined,
+  cors: allowedOrigins.length > 0 ? allowedOrigins : undefined,
+  csrf: allowedOrigins.length > 0 ? allowedOrigins : undefined,
   admin: {
     user: Users.slug,
     importMap: {
@@ -70,6 +79,7 @@ export default buildConfig({
     }),
     payloadTotp({
       collection: 'users',
+      forceSetup: true,
     }),
   ],
 })

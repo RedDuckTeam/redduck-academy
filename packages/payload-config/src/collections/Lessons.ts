@@ -99,7 +99,11 @@ export const Lessons: CollectionConfig = {
     },
   },
   access: {
-    read: () => true,
+    // Hono backend reads lessons directly via Drizzle (bypassing Payload access), so locking
+    // Payload's REST/admin read here only blocks anonymous requests to /api/payload/lessons,
+    // which would otherwise leak spoiler fields (aiExpectedResult, aiTaskSummary, aiPossibleSolutions,
+    // executableTestCases.expectedJson, solidityFixtures.source, etc.).
+    read: ({ req: { user } }) => Boolean(user),
   },
   hooks: {
     beforeValidate: [

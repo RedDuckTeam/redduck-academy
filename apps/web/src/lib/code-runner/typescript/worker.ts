@@ -1,5 +1,31 @@
 import { transform } from 'sucrase'
 
+// Defense-in-depth: strip network and storage globals from the worker scope
+// before any user-submitted code runs. Even though this is intended for trusted
+// users, removing these closes the obvious "fetch the user's session against
+// the API" channel from inside `new Function`-evaluated submissions.
+;(function lockdownWorkerGlobals() {
+  const toRemove = [
+    'fetch',
+    'XMLHttpRequest',
+    'WebSocket',
+    'EventSource',
+    'importScripts',
+    'sendBeacon',
+    'caches',
+    'indexedDB',
+    'navigator',
+  ] as const
+  for (const key of toRemove) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(self as any)[key] = undefined
+    } catch {
+      // ignore: some globals may be non-configurable in older runtimes
+    }
+  }
+})()
+
 export interface TsRunRequest {
   type: 'run'
   id: string

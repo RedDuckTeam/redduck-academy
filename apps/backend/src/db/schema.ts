@@ -117,11 +117,7 @@ export const userCertificates = pgTable(
     walletAddress: text('wallet_address'),
   },
   (t) => ({
-    userCourseNameUnique: uniqueIndex('user_certificates_user_id_course_slug_name_unique').on(
-      t.userId,
-      t.courseSlug,
-      t.name,
-    ),
+    userCourseUnique: uniqueIndex('user_certificates_user_id_course_slug_unique').on(t.userId, t.courseSlug),
     statusIssuedAtIdx: index('user_certificates_status_issued_at_idx').on(t.status, t.issuedAt.desc()),
     txHashUnique: uniqueIndex('user_certificates_tx_hash_unique')
       .on(t.txHash)
@@ -135,24 +131,6 @@ export const userCertificatesRelations = relations(userCertificates, ({ one }) =
     references: [user.id],
   }),
 }))
-
-export const codingTaskReviewCache = pgTable(
-  'coding_task_review_cache',
-  {
-    id: serial('id').primaryKey(),
-    lessonId: integer('lesson_id').notNull(),
-    codeHash: text('code_hash').notNull(),
-    passed: boolean('passed').notNull(),
-    aiComment: text('ai_comment'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-  },
-  (t) => ({
-    lessonCodeHashUnique: uniqueIndex('coding_task_review_cache_lesson_id_code_hash_unique').on(
-      t.lessonId,
-      t.codeHash,
-    ),
-  }),
-)
 
 export const submissionRateLimits = pgTable(
   'submission_rate_limits',

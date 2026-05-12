@@ -15,7 +15,7 @@ export const Modules: CollectionConfig = {
     },
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => Boolean(user),
   },
   fields: [
     {

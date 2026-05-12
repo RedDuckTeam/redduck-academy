@@ -10,7 +10,7 @@ export const CommunityEvents: CollectionConfig = {
     defaultColumns: ['title', 'eventDate', 'updatedAt'],
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => Boolean(user),
   },
   fields: [
     {

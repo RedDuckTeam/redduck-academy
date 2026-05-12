@@ -12,9 +12,11 @@ import certificatesApp from './services/certificates/certificates.routes'
 import adminApp from './services/admin/admin.routes'
 import { AppError, GENERIC_ERROR_MESSAGE } from './lib/errors'
 import { Logger } from './lib/logger'
+import { env } from './env'
 
 const port = Number(process.env.PORT) || 3001
 const backendOrigin = `http://localhost:${port}`
+const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
 
 const app = new Hono({ strict: false })
 const rootLogger = new Logger('HonoApp')
@@ -32,7 +34,7 @@ app.onError((err, c) => {
 app.use(
   '/api/*',
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:8787', 'https://redduck-academy.jeleika.com'],
+    origin: allowedOrigins,
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     exposeHeaders: ['Content-Length'],
@@ -40,6 +42,8 @@ app.use(
     credentials: true,
   }),
 )
+
+app.get('/healthz', (c) => c.json({ ok: true }))
 
 app.route('/', authApp)
 app.route('/api/courses', coursesApp)
@@ -50,25 +54,26 @@ app.route('/api/community', communityApp)
 app.route('/api/certificates', certificatesApp)
 app.route('/api/admin', adminApp)
 
-app.get(
-  '/openapi',
-  openAPIRouteHandler(app, {
-    documentation: {
-      info: {
-        title: 'Hono API',
-        version: '1.0.0',
-        description: 'Redduck Academy backend API',
+if (env.NODE_ENV !== 'production') {
+  app.get(
+    '/openapi',
+    openAPIRouteHandler(app, {
+      documentation: {
+        info: {
+          title: 'Hono API',
+          version: '1.0.0',
+          description: 'Redduck Academy backend API',
+        },
+        servers: [
+          { url: backendOrigin, description: 'Backend (this server)' },
+          { url: 'http://localhost:3000', description: 'Web app origin (if proxied)' },
+        ],
       },
-      servers: [
-        { url: backendOrigin, description: 'Backend (this server)' },
-        { url: 'http://localhost:3000', description: 'Web app origin (if proxied)' },
-      ],
-    },
-  }),
-)
+    }),
+  )
 
-/** Swagger-like UI: GET /docs on this server (spec URL uses PORT from env). */
-app.get('/docs', (c) => {
+  /** Swagger-like UI: GET /docs on this server (spec URL uses PORT from env). */
+  app.get('/docs', (c) => {
   const specUrl = `${backendOrigin}/openapi`
   return c.html(`<!DOCTYPE html>
 <html lang="en">
@@ -88,7 +93,8 @@ app.get('/docs', (c) => {
   </script>
 </body>
 </html>`)
-})
+  })
+}
 
 console.log(`Server is running on ${backendOrigin}`)
 

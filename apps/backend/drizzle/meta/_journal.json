@@ -148,6 +148,20 @@
       "when": 1777330728604,
       "tag": "0020_fluffy_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778621959808,
+      "tag": "0021_nifty_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1778622040031,
+      "tag": "0022_warm_firedrake",
+      "breakpoints": true
     }
   ]
 }

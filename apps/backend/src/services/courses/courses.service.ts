@@ -4,6 +4,10 @@ import { AppError } from '../../lib/errors'
 
 export class CoursesService {
   static async getCourseBySlug(slug: string) {
+    // Lessons projected to non-sensitive columns only. AI-grader fields, expected test outputs,
+    // and fixture sources are never returned by this endpoint — see LessonsService for the
+    // per-lesson route that strips them lazily. Course-detail consumers only need navigation
+    // shape (slug/title/order/type), so no learner-facing UX regresses.
     const result = await payloadDb.query.courses.findFirst({
       where: (c, { and }) => and(eq(c.slug, slug), ne(c.isHidden, true)),
       with: {
@@ -14,6 +18,16 @@ export class CoursesService {
             lessons: {
               where: (l) => ne(l.isHidden, true),
               orderBy: (l, { asc }) => [asc(l.order)],
+              columns: {
+                id: true,
+                title: true,
+                slug: true,
+                module: true,
+                order: true,
+                type: true,
+                updatedAt: true,
+                createdAt: true,
+              },
             },
           },
         },

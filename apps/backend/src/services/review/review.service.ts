@@ -44,9 +44,10 @@ export class ReviewService {
     }
 
     // Reject re-submissions of the same commit before doing any expensive work
-    // (file fetch, rate-limit consumption, OpenAI batch).
+    // (file fetch, rate-limit consumption, OpenAI batch). Reuse the resolved SHA for
+    // the file fetch so the branch can't drift to a newer tip between the two calls.
     const { owner, repo, refFromUrl } = parseGitHubRepoUrl(repoUrl)
-    const { commitSha: resolvedSha } = await githubService.resolveRepoRef(owner, repo, refFromUrl)
+    const { commitSha: resolvedSha, resolvedRef } = await githubService.resolveRepoRef(owner, repo, refFromUrl)
     const existingUserLesson = await SubmissionRepository.getUserLesson(userId, lesson.id)
     if (existingUserLesson) {
       const duplicate = await SubmissionRepository.findCompletedByCommit(existingUserLesson.id, resolvedSha)
@@ -60,7 +61,13 @@ export class ReviewService {
       throw new AppError(429, 'Rate limit exceeded', { retryAfterMs: rateLimit.retryAfterMs })
     }
 
-    const fetchResult = await githubService.fetchExpectedFilesFromRepoUrl(repoUrl, expectedPaths)
+    const fetchResult = await githubService.fetchExpectedFilesAtCommit(
+      owner,
+      repo,
+      resolvedSha,
+      resolvedRef,
+      expectedPaths,
+    )
     validateFetchResult(fetchResult)
 
     const submissionId = await SubmissionRepository.createForReview(userId, lesson.id, repoUrl)

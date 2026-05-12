@@ -1,0 +1,1 @@
+DROP TABLE "coding_task_review_cache" CASCADE;

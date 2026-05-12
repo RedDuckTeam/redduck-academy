@@ -50,7 +50,7 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001', 'https://redduck-academy.jeleika.com'],
+  trustedOrigins: env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean),
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
   socialProviders: {
@@ -62,7 +62,7 @@ export const auth = betterAuth({
   },
   plugins: [
     siwe({
-      domain: 'localhost',
+      domain: env.SIWE_DOMAIN,
       anonymous: true,
       getNonce: async () => crypto.randomUUID(),
       verifyMessage: async ({ message, signature, address }) => {
