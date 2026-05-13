@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -26,6 +27,11 @@ import { Route as AdminUsersUserIdIndexRouteImport } from './routes/admin/users/
 import { Route as CoursesCourseSlugModuleSlugLessonSlugRouteImport } from './routes/courses/$courseSlug.$moduleSlug.$lessonSlug'
 import { Route as AdminUsersUserIdCourseSlugLessonSlugRouteImport } from './routes/admin/users/$userId.$courseSlug.$lessonSlug'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/ranking': typeof RankingRoute
   '/sign-up': typeof SignUpRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/certificates/$certificateId': typeof CertificatesCertificateIdRoute
   '/community/$slug': typeof CommunitySlugRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugRouteWithChildren
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ranking'
     | '/sign-up'
+    | '/sitemap.xml'
     | '/certificates/$certificateId'
     | '/community/$slug'
     | '/courses/$courseSlug'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ranking'
     | '/sign-up'
+    | '/sitemap.xml'
     | '/certificates/$certificateId'
     | '/community/$slug'
     | '/profile/$username'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ranking'
     | '/sign-up'
+    | '/sitemap.xml'
     | '/certificates/$certificateId'
     | '/community/$slug'
     | '/courses/$courseSlug'
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   RankingRoute: typeof RankingRoute
   SignUpRoute: typeof SignUpRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   CertificatesCertificateIdRoute: typeof CertificatesCertificateIdRoute
   CommunitySlugRoute: typeof CommunitySlugRoute
   CoursesCourseSlugRoute: typeof CoursesCourseSlugRouteWithChildren
@@ -231,6 +244,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-up': {
       id: '/sign-up'
       path: '/sign-up'
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   RankingRoute: RankingRoute,
   SignUpRoute: SignUpRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   CertificatesCertificateIdRoute: CertificatesCertificateIdRoute,
   CommunitySlugRoute: CommunitySlugRoute,
   CoursesCourseSlugRoute: CoursesCourseSlugRouteWithChildren,

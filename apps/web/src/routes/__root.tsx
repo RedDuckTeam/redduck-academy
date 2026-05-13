@@ -12,6 +12,11 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
 
+import ibmPlex400 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url'
+import ibmPlex500 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2?url'
+import inter400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url'
+import inter500 from '@fontsource/inter/files/inter-latin-500-normal.woff2?url'
+
 import type { QueryClient } from '@tanstack/react-query'
 import { Providers } from '@/components/providers/providers'
 import { Toaster } from '@/components/ui/sonner'
@@ -26,9 +31,23 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem('redduck-the
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => {
     const defaultMeta = createDefaultMeta()
+    const preloadFont = (href: string) => ({
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href,
+      crossOrigin: 'anonymous' as const,
+    })
     return {
       meta: defaultMeta.meta,
-      links: [{ rel: 'stylesheet', href: appCss }, ...(defaultMeta.links ?? [])],
+      links: [
+        { rel: 'stylesheet', href: appCss },
+        preloadFont(ibmPlex400),
+        preloadFont(ibmPlex500),
+        preloadFont(inter400),
+        preloadFont(inter500),
+        ...(defaultMeta.links ?? []),
+      ],
     }
   },
 

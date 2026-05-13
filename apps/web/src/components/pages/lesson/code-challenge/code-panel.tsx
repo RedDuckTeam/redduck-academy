@@ -75,7 +75,7 @@ export function CodePanel({
   })
 
   return (
-    <div className="relative flex flex-col xl:h-full pb-9">
+    <div className="relative flex flex-col xl:h-full ">
       <CodePanelToolbar
         language={lesson.codingLanguage}
         isAuthenticated={isAuthenticated}

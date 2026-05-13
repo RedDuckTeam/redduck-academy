@@ -5,6 +5,7 @@ import { env } from '@/env'
 const SITE_NAME = 'RedDuck Academy'
 const SITE_DESCRIPTION =
   'Learn blockchain development with RedDuck Academy. Interactive courses, coding challenges, and hands-on projects.'
+const OG_IMAGE_URL = 'https://redduck.io/thumbnail.png'
 
 const META_DESCRIPTION_MAX_LENGTH = 160
 
@@ -52,6 +53,8 @@ export type HeadLinks = {
   href?: string
   type?: string
   sizes?: string
+  as?: string
+  crossOrigin?: '' | 'anonymous' | 'use-credentials'
 }
 
 export type HeadConfig = {
@@ -69,12 +72,16 @@ export function createDefaultMeta(): HeadConfig {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: SITE_NAME },
       { name: 'description', content: SITE_DESCRIPTION },
+      { property: 'og:site_name', content: SITE_NAME },
       { property: 'og:title', content: SITE_NAME },
       { property: 'og:description', content: SITE_DESCRIPTION },
       { property: 'og:type', content: 'website' },
+      { property: 'og:image', content: OG_IMAGE_URL },
+      { property: 'og:image:alt', content: SITE_NAME },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: SITE_NAME },
       { name: 'twitter:description', content: SITE_DESCRIPTION },
+      { name: 'twitter:image', content: OG_IMAGE_URL },
     ],
     links: [
       { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
@@ -99,22 +106,24 @@ export function createPageMeta({
 }): HeadConfig {
   const fullTitle = title === SITE_NAME ? title : `${title} | ${SITE_NAME}`
   const desc = description ?? SITE_DESCRIPTION
+  const canonicalUrl = path ? `${getBaseUrl()}${path.startsWith('/') ? path : `/${path}`}` : undefined
 
-  const config: HeadConfig = {
-    meta: [
-      { title: fullTitle },
-      { name: 'description', content: desc },
-      { property: 'og:title', content: fullTitle },
-      { property: 'og:description', content: desc },
-      { property: 'og:type', content: 'website' },
-      { name: 'twitter:title', content: fullTitle },
-      { name: 'twitter:description', content: desc },
-    ],
-  }
+  const meta: HeadMeta[] = [
+    { title: fullTitle },
+    { name: 'description', content: desc },
+    { property: 'og:title', content: fullTitle },
+    { property: 'og:description', content: desc },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:image', content: OG_IMAGE_URL },
+    { property: 'og:image:alt', content: fullTitle },
+    { name: 'twitter:title', content: fullTitle },
+    { name: 'twitter:description', content: desc },
+    { name: 'twitter:image', content: OG_IMAGE_URL },
+  ]
+  if (canonicalUrl) meta.push({ property: 'og:url', content: canonicalUrl })
 
-  if (path) {
-    config.links = [{ rel: 'canonical', href: `${getBaseUrl()}${path.startsWith('/') ? path : `/${path}`}` }]
-  }
+  const config: HeadConfig = { meta }
+  if (canonicalUrl) config.links = [{ rel: 'canonical', href: canonicalUrl }]
 
   return config
 }
@@ -136,7 +145,7 @@ export function createLessonMeta({
   const fullTitle = `${lesson.title} | ${SITE_NAME}`
   const rawDescription = lesson.content ? extractPlainText(lesson.content) : ''
   const description = rawDescription ? truncateDescription(rawDescription) : lesson.title
-  const canonicalPath = `/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`
+  const canonicalUrl = `${getBaseUrl()}/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`
 
   return {
     meta: [
@@ -145,10 +154,14 @@ export function createLessonMeta({
       { property: 'og:title', content: fullTitle },
       { property: 'og:description', content: description },
       { property: 'og:type', content: 'article' },
+      { property: 'og:url', content: canonicalUrl },
+      { property: 'og:image', content: OG_IMAGE_URL },
+      { property: 'og:image:alt', content: lesson.title },
       { name: 'twitter:title', content: fullTitle },
       { name: 'twitter:description', content: description },
+      { name: 'twitter:image', content: OG_IMAGE_URL },
     ],
-    links: [{ rel: 'canonical', href: `${getBaseUrl()}${canonicalPath}` }],
+    links: [{ rel: 'canonical', href: canonicalUrl }],
   }
 }
 
@@ -166,7 +179,7 @@ export function createCommunityEventMeta({
   const fromContent = event.content ? extractPlainText(event.content) : ''
   const rawDescription = event.description?.trim() || fromContent
   const description = rawDescription ? truncateDescription(rawDescription) : event.title
-  const canonicalPath = `/community/${slug}`
+  const canonicalUrl = `${getBaseUrl()}/community/${slug}`
 
   return {
     meta: [
@@ -175,10 +188,14 @@ export function createCommunityEventMeta({
       { property: 'og:title', content: fullTitle },
       { property: 'og:description', content: description },
       { property: 'og:type', content: 'article' },
+      { property: 'og:url', content: canonicalUrl },
+      { property: 'og:image', content: OG_IMAGE_URL },
+      { property: 'og:image:alt', content: event.title },
       { name: 'twitter:title', content: fullTitle },
       { name: 'twitter:description', content: description },
+      { name: 'twitter:image', content: OG_IMAGE_URL },
     ],
-    links: [{ rel: 'canonical', href: `${getBaseUrl()}${canonicalPath}` }],
+    links: [{ rel: 'canonical', href: canonicalUrl }],
   }
 }
 

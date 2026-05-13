@@ -9,10 +9,10 @@ import type {
 } from '@redduck/api-contracts'
 
 export const Route = createFileRoute('/admin/users/$userId/$courseSlug/$lessonSlug')({
-  ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     email: typeof search.email === 'string' ? search.email : '',
   }),
+  ssr: false,
   component: AdminUserLessonPage,
 })
 
@@ -105,6 +105,7 @@ function TestView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUs
           selectedIds={userAnswers[q.id] ?? []}
           onSelect={() => {}}
           isCompleted={lesson.isCompleted}
+          showUnansweredWarning={false}
         />
       ))}
     </div>

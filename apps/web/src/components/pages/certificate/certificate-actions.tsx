@@ -11,12 +11,7 @@ interface CertificateActionsProps {
   isOwner: boolean
 }
 
-export function CertificateActions({
-  certificate,
-  courseLine,
-  completionDate,
-  isOwner,
-}: CertificateActionsProps) {
+export function CertificateActions({ certificate, courseLine, completionDate, isOwner }: CertificateActionsProps) {
   const [isDownloading, setIsDownloading] = useState(false)
 
   const handleShare = async () => {

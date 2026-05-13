@@ -10,10 +10,10 @@ function parseTab(raw: unknown): AdminTab {
 }
 
 export const Route = createFileRoute('/admin')({
-  ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     tab: parseTab(search.tab),
   }),
+  ssr: false,
   component: AdminLayout,
 })
 

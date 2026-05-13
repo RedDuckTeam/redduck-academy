@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Text } from '@/components/ui/text'
 import type { RunnerReport, RunnerResult, RunnerTestCase } from '@/lib/code-runner'
 import { extractArgNames } from '@/lib/lessons/extract-arg-names'
@@ -24,13 +24,7 @@ interface TestCaseTabsProps {
   isRunning: boolean
 }
 
-export function TestCaseTabs({
-  executableCases,
-  functionSignature,
-  selfLabel,
-  report,
-  isRunning,
-}: TestCaseTabsProps) {
+export function TestCaseTabs({ executableCases, functionSignature, selfLabel, report, isRunning }: TestCaseTabsProps) {
   const [selected, setSelected] = useState(0)
 
   const argCount = useMemo(
@@ -54,17 +48,22 @@ export function TestCaseTabs({
 
   const tabsToShow = useVisibleCases({ cases: executableCases, report, resultsById })
 
-  // Jump to the first failing tab on a fresh report.
-  useEffect(() => {
-    if (!report || isRunning) return
-    const firstFail = tabsToShow.findIndex((tc) => resultsById.get(tc.id)?.passed === false)
-    if (firstFail >= 0) setSelected(firstFail)
-  }, [report, isRunning, tabsToShow, resultsById])
+  const lastReportRef = useRef<RunnerReport | null>(null)
 
-  // Keep `selected` in bounds when the tab set shrinks (e.g. hidden tab disappears on next run).
+  // Single effect: on a fresh report, jump to the first failing tab; otherwise clamp
+  // `selected` into bounds when the visible tab set shrinks. Combined to avoid the
+  // flicker that came from two effects racing across renders.
   useEffect(() => {
-    if (selected >= tabsToShow.length) setSelected(0)
-  }, [tabsToShow.length, selected])
+    if (isRunning) return
+    setSelected((prev) => {
+      if (report && report !== lastReportRef.current) {
+        lastReportRef.current = report
+        const firstFail = tabsToShow.findIndex((tc) => resultsById.get(tc.id)?.passed === false)
+        if (firstFail >= 0) return firstFail
+      }
+      return prev >= tabsToShow.length ? 0 : prev
+    })
+  }, [report, isRunning, tabsToShow, resultsById])
 
   if (executableCases.length === 0) return null
 
@@ -85,7 +84,7 @@ export function TestCaseTabs({
         </PanelHeader>
       </div>
 
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4 pb-12">
         <div className="flex flex-wrap gap-2">
           {tabsToShow.map((tc, index) => (
             <CaseTab
@@ -98,9 +97,7 @@ export function TestCaseTabs({
           ))}
         </div>
 
-        {current && (
-          <CaseDetail testCase={current} argNames={argNames} result={currentResult} selfLabel={selfLabel} />
-        )}
+        {current && <CaseDetail testCase={current} argNames={argNames} result={currentResult} selfLabel={selfLabel} />}
       </div>
     </div>
   )

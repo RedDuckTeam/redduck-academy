@@ -1,5 +1,5 @@
 import type { LatestProjectSubmission } from '@/types/lesson'
-import { Text } from '@/components/ui/text'
+import { Text, textVariants } from '@/components/ui/text'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { StatusBar } from '../status-bar'
@@ -25,7 +25,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
     >
       <TabsList
         variant="line"
-        className="grid w-full !h-auto grid-cols-2 items-center gap-4 sm:grid-cols-3 lg:grid-cols-4"
+        className="flex w-full h-[100%] overflow-y-hidden items-center justify-start gap-1 overflow-x-auto"
       >
         {filteredSubmissions.map((submission, index) => {
           const passed =
@@ -33,8 +33,15 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
             !!submission.feedback &&
             submission.feedback.criteria.every((c) => c.passed)
           return (
-            <TabsTrigger key={submission.id} value={`attempt-${index}`} className={cn(passed && 'after:bg-success')}>
-              Attempt {index + 1}
+            <TabsTrigger
+              key={submission.id}
+              value={`attempt-${index}`}
+              className={cn(
+                'flex-none px-3 py-1 w-[50px] group-data-[variant=line]/tabs-list:data-[state=active]:bg-foreground group-data-horizontal/tabs:after:h-[3px] data-[state=active]:text-background',
+                passed && 'after:bg-success',
+              )}
+            >
+              #{index < 9 ? `0${index + 1}` : index + 1}
             </TabsTrigger>
           )
         })}
@@ -51,8 +58,8 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
                 {submission.feedback.criteria.map((c, i) => (
                   <div key={c.taskId} className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <Text variant="main-18" className={cn(c.passed ? 'text-success' : 'text-primary')}>
-                        {i + 1}. {c.name}
+                      <Text variant="caps-20" className={cn(c.passed ? 'text-success' : 'text-primary')}>
+                        0{i + 1}. {c.name}
                       </Text>
                     </div>
                     <Text variant="main-18" className="text-muted-foreground text-justify">

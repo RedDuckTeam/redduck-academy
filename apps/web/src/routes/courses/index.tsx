@@ -6,7 +6,6 @@ export const coursesRoute = '/courses/' as const
 
 export const Route = createFileRoute('/courses/')({
   ssr: true,
-  head: () => createCoursesMeta({ courses: [] }),
   loader: async () => {
     const res = await getCourses()
     const courses = res?.data ?? []
@@ -18,6 +17,7 @@ export const Route = createFileRoute('/courses/')({
     }
     return { courses: [] }
   },
+  head: () => createCoursesMeta({ courses: [] }),
   component: CoursesRootPage,
 })
 
