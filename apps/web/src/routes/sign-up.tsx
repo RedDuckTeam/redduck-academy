@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/text'
 import { wagmiConfig } from '@/constants/wallet-config'
 import { queryKeys } from '@/lib/query-keys'
 import { useSession } from '@/hooks/useSession'
+import { createPageMeta } from '@/lib/seo'
 import { useEffect } from 'react'
 
 const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
@@ -23,6 +24,13 @@ export const Route = createFileRoute('/sign-up')({
     const session = queryClient.getQueryData(queryKeys.user.settings())
     if (session) throw redirect({ to: '/dashboard' })
   },
+  head: () =>
+    createPageMeta({
+      title: 'Sign in',
+      description:
+        'Sign in to RedDuck Academy to start learning blockchain development. Track your progress, earn certificates, and join the community.',
+      path: '/sign-up',
+    }),
   component: SignUp,
 })
 

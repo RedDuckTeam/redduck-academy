@@ -2,8 +2,5 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
-Disallow: /profile/
-Disallow: /certificates/
-Disallow: /sign-up
 
 Sitemap: https://redduck.io/sitemap.xml

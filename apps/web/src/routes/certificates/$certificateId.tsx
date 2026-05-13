@@ -5,6 +5,7 @@ import { Certificate } from '@/components/ui/certificate'
 import { useSession } from '@/hooks/useSession'
 import { CertificateHeader } from '@/components/pages/certificate/certificate-header'
 import { CertificateActions } from '@/components/pages/certificate/certificate-actions'
+import { createPageMeta } from '@/lib/seo'
 
 export const Route = createFileRoute('/certificates/$certificateId')({
   ssr: true,
@@ -14,6 +15,15 @@ export const Route = createFileRoute('/certificates/$certificateId')({
     } catch {
       throw notFound()
     }
+  },
+  head: ({ loaderData, params }) => {
+    const recipient = loaderData?.name ?? 'Student'
+    const courseTitle = loaderData?.courseTitle ?? 'Course'
+    return createPageMeta({
+      title: `${recipient}'s ${courseTitle} Certificate`,
+      description: `${recipient} completed the ${courseTitle} course at RedDuck Academy.`,
+      path: `/certificates/${params.certificateId}`,
+    })
   },
   component: CertificateRoute,
 })
