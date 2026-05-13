@@ -45,7 +45,10 @@ export default function Header() {
         )}
       >
         <button
+          type="button"
           onClick={handleOpenChange}
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={isOpen}
           className={cn(
             'rounded-full md:hidden w-10 h-10 border border-white flex items-center justify-center',
             isOpen && 'pointer-events-none',
@@ -54,7 +57,7 @@ export default function Header() {
           <HeaderMenuIcon isOpen={isOpen} />
         </button>
         <div className="md:w-[20%] xl:w-[15%]">
-          <Link to="/dashboard">
+          <Link to="/dashboard" aria-label="RedDuck Academy — home">
             <RedDuckIcon className="w-full max-sm:w-[130px]" />
           </Link>
         </div>

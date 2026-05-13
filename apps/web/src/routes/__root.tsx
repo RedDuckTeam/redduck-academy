@@ -7,6 +7,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/footer/Footer'
 import Header from '../components/header/Header'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { CookieBanner } from '@/components/cookie-banner/cookie-banner'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -85,6 +86,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             />
           )}
           <Toaster />
+          <CookieBanner />
 
           <Scripts />
         </Providers>

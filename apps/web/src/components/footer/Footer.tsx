@@ -37,17 +37,41 @@ export default function Footer() {
               'gap-[40px] max-lg:py-[35px] max-md:p-[30px] md:gap-[60px] 2xl:gap-[100px]',
             )}
           >
-            <a href={LINKS.Medium} target="_blank" rel="noreferrer" className={socialIconLinkClass}>
-              <MediumIcon className="size-[35px]" />
+            <a
+              href={LINKS.Medium}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="RedDuck on Medium"
+              className={socialIconLinkClass}
+            >
+              <MediumIcon className="size-[35px]" aria-hidden="true" />
             </a>
-            <a href={LINKS.Dou} target="_blank" rel="noreferrer" className={socialIconLinkClass}>
-              <DouIcon />
+            <a
+              href={LINKS.Dou}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="RedDuck on DOU"
+              className={socialIconLinkClass}
+            >
+              <DouIcon aria-hidden="true" />
             </a>
-            <a href={LINKS.LinkedIn} target="_blank" rel="noreferrer" className={socialIconLinkClass}>
-              <LinkedInIcon />
+            <a
+              href={LINKS.LinkedIn}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="RedDuck on LinkedIn"
+              className={socialIconLinkClass}
+            >
+              <LinkedInIcon aria-hidden="true" />
             </a>
-            <a href={LINKS.Upwork} target="_blank" rel="noreferrer" className={socialIconLinkClass}>
-              <UpWorkIcon />
+            <a
+              href={LINKS.Upwork}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="RedDuck on Upwork"
+              className={socialIconLinkClass}
+            >
+              <UpWorkIcon aria-hidden="true" />
             </a>
           </div>
 
@@ -80,7 +104,7 @@ export default function Footer() {
           )}
         >
           <p className="flex-1">© Copyright. All rights reserved</p>
-          <a href={LINKS.PrivacyPolicy} target="_blank" rel="noreferrer" className="flex-1 hover:bg-white/10">
+          <a href={LINKS.PrivacyPolicy} target="_blank" rel="noopener noreferrer" className="flex-1 hover:bg-white/10">
             Privacy Policy
           </a>
         </div>
