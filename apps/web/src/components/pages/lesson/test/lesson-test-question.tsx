@@ -42,7 +42,7 @@ export const LessonTestQuestion = ({
       <div ref={warningParent as Ref<HTMLDivElement>}>
         {showUnansweredWarning && (
           <Text variant="caps-20" className="text-primary">
-            Please select an answer
+            You should select an answer
           </Text>
         )}
       </div>

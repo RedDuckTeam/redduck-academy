@@ -2,7 +2,9 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Link } from '@tanstack/react-router'
 import { MoreHorizontal } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
+import { useState } from 'react'
 import { Text } from '@/components/ui/text'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { AdminUserRow } from '@/lib/api/admin'
 import { formatDate } from '../shared/table-utils'
 import { useBanUser } from '@/hooks/api/admin/useBanUser'
@@ -11,36 +13,60 @@ const avatarPlaceholder = '/pages/images/avatar.webp'
 
 function UserActionsCell({ row }: { row: { original: AdminUserRow } }) {
   const { mutate, isPending } = useBanUser()
-  const { id, blacklisted } = row.original
+  const { id, name, blacklisted } = row.original
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+  const action = blacklisted ? 'unban' : 'ban'
+  const displayName = name || 'this user'
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <button
-          className="flex items-center justify-center w-7 h-7 rounded hover:bg-muted transition-colors disabled:opacity-50"
-          disabled={isPending}
-          aria-label="User actions"
-        >
-          <MoreHorizontal className="size-4" />
-        </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={4}
-          className="z-50 min-w-[140px] bg-background border border-border shadow-md p-1 animate-in fade-in-0 zoom-in-95"
-        >
-          <DropdownMenu.Item
-            onSelect={() => mutate({ userId: id, ban: !blacklisted })}
-            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none hover:bg-muted transition-colors data-[highlighted]:bg-muted"
+    <>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button
+            className="flex items-center justify-center w-7 h-7 rounded hover:bg-muted transition-colors disabled:opacity-50"
+            disabled={isPending}
+            aria-label="User actions"
           >
-            <Text variant="caps-14" className={blacklisted ? undefined : 'text-destructive'}>
-              {blacklisted ? 'UNBAN USER' : 'BAN USER'}
-            </Text>
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+            <MoreHorizontal className="size-4" />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="end"
+            sideOffset={4}
+            className="z-50 min-w-[140px] bg-background border border-border shadow-md p-1 animate-in fade-in-0 zoom-in-95"
+          >
+            <DropdownMenu.Item
+              onSelect={() => setIsConfirmOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none hover:bg-muted transition-colors data-[highlighted]:bg-muted"
+            >
+              <Text variant="caps-14" className={blacklisted ? undefined : 'text-destructive'}>
+                {blacklisted ? 'UNBAN USER' : 'BAN USER'}
+              </Text>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+      <ConfirmDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        onConfirm={() => {
+          mutate(
+            { userId: id, ban: !blacklisted },
+            { onSettled: () => setIsConfirmOpen(false) },
+          )
+        }}
+        title={blacklisted ? 'Unban user?' : 'Ban user?'}
+        description={
+          blacklisted
+            ? `${displayName} will regain access to the platform.`
+            : `${displayName} will lose access to the platform.`
+        }
+        confirmLabel={action === 'ban' ? 'Ban' : 'Unban'}
+        isLoading={isPending}
+      />
+    </>
   )
 }
 

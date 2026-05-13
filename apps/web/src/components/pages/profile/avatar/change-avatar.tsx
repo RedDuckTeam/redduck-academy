@@ -57,10 +57,16 @@ export const ChangeAvatar = ({ imageUrl, editable = true }: ChangeAvatarProps) =
   }
 
   return (
-    <div className="relative group cursor-pointer" onClick={() => !isUploading && inputRef.current?.click()}>
+    <button
+      type="button"
+      aria-label="Upload avatar"
+      disabled={isUploading}
+      onClick={() => inputRef.current?.click()}
+      className="relative group cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed"
+    >
       <PageAvatarImage imageUrl={displayUrl} />
 
-      <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-1 bg-white/50 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center gap-1 bg-white/50 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
         <UploadCloud className="size-7 text-black" strokeWidth={1.5} />
         <span className="text-[11px] font-medium text-black leading-none">Upload image</span>
       </div>
@@ -73,6 +79,6 @@ export const ChangeAvatar = ({ imageUrl, editable = true }: ChangeAvatarProps) =
         onChange={handleFileChange}
         disabled={isUploading}
       />
-    </div>
+    </button>
   )
 }

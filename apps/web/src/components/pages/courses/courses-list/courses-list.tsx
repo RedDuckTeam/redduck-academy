@@ -3,6 +3,7 @@ import { Fragment } from 'react/jsx-runtime'
 import type { Course } from '@/types/lesson'
 import { LessonTypeEnum } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { lessonTypeToIcon, lessonTypeToLabel } from '@/lib/lessons/lessons'
 import { padIndex } from '@/lib/format-index'
 import { cn } from '@/lib/utils'
@@ -62,9 +63,18 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
 
               if (isLocked) {
                 return (
-                  <div key={lesson.slug} className="py-4 px-5 flex items-center gap-5 cursor-not-allowed">
-                    {inner}
-                  </div>
+                  <Tooltip key={lesson.slug}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="py-4 px-5 flex items-center gap-5 cursor-not-allowed"
+                        aria-disabled="true"
+                        tabIndex={0}
+                      >
+                        {inner}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Complete the prerequisite course to unlock this lesson</TooltipContent>
+                  </Tooltip>
                 )
               }
 

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { Ref } from 'react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { useRouter } from '@tanstack/react-router'
 import { InProgressDialog } from './inprogress-dialog'
 import { HowToSubmitDialog } from './how-to-submit-dialog'
@@ -26,12 +28,15 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const router = useRouter()
   const { session } = useSession()
   const [link, setLink] = useState('')
+  const [errorParent] = useAutoAnimate({ duration: 180, easing: 'ease-in-out' })
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const { mutate: submitProject, isPending, error: submitError } = useSubmitProject(courseSlug, lessonSlug)
   const submissions = (userLesson?.submissions ?? []) as LatestProjectSubmission[]
   const latest = submissions.at(-1)
   const rateLimitError = submitError instanceof RateLimitError ? submitError : null
-  const isGithubLink = /^https?:\/\/github\.com\/[^/]+\/[^/]+/i.test(link.trim())
+  const trimmedLink = link.trim()
+  const isGithubLink = /^https?:\/\/github\.com\/[^/]+\/[^/]+/i.test(trimmedLink)
+  const showLinkError = trimmedLink.length > 0 && !isGithubLink
 
   const handleSubmit = () => {
     submitProject({ courseSlug, lessonSlug, repoUrl: link })
@@ -72,21 +77,32 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
           <TerminalIcon className="" />
           <Text variant="main-18">Paste link to repository</Text>
         </div>
-        <div className="relative">
-          <Input
-            type="url"
-            placeholder="https://github.com/"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            className="max-sm:w-full sm:min-w-[420px] pr-10"
-          />
-          <button
-            onClick={handlePaste}
-            type="button"
-            className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2"
-          >
-            <ClipboardIcon />
-          </button>
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <Input
+              type="url"
+              placeholder="https://github.com/"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              aria-invalid={showLinkError}
+              aria-describedby={showLinkError ? 'project-link-error' : undefined}
+              className="max-sm:w-full sm:min-w-[420px] pr-10"
+            />
+            <button
+              onClick={handlePaste}
+              type="button"
+              className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2"
+            >
+              <ClipboardIcon />
+            </button>
+          </div>
+          <div ref={errorParent as Ref<HTMLDivElement>}>
+            {showLinkError && (
+              <Text id="project-link-error" variant="caps-14" className="text-primary">
+                Must be a GitHub URL (e.g. https://github.com/owner/repo)
+              </Text>
+            )}
+          </div>
         </div>
         {!session ? (
           <Button onClick={() => router.navigate({ to: '/sign-up' })} className="w-full">

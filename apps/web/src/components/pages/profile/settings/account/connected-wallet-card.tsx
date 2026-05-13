@@ -4,6 +4,7 @@ import { usePrivy, useLinkAccount } from '@privy-io/react-auth'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Text, textVariants } from '@/components/ui/text'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { shortAddress } from '@/lib/utils'
 import { SettingsCard, SettingsCardRow } from '../settings-card'
 
@@ -23,6 +24,8 @@ const providerLabel = (clientType: string | null | undefined): string => {
 
 export const ConnectedWalletCard = ({ address, provider, isPrimary }: ConnectedWalletCardProps) => {
   const [copied, setCopied] = useState(false)
+  const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false)
+  const [isDisconnecting, setIsDisconnecting] = useState(false)
   const { unlinkWallet } = usePrivy()
   const { linkWallet } = useLinkAccount({
     onSuccess: ({ linkedAccount }) => {
@@ -39,11 +42,15 @@ export const ConnectedWalletCard = ({ address, provider, isPrimary }: ConnectedW
 
   const handleDisconnect = async () => {
     if (!address) return
+    setIsDisconnecting(true)
     try {
       await unlinkWallet(address)
       toast.success('Wallet disconnected')
+      setIsDisconnectDialogOpen(false)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to disconnect wallet')
+    } finally {
+      setIsDisconnecting(false)
     }
   }
 
@@ -78,10 +85,24 @@ export const ConnectedWalletCard = ({ address, provider, isPrimary }: ConnectedW
         <span className={textVariants({ variant: 'caps-20' })}>{providerLabel(provider)}</span>
       </SettingsCardRow>
       {!isPrimary && (
-        <Button variant="outline-white" size="sm" onClick={handleDisconnect} className="mt-5 w-fit">
+        <Button
+          variant="outline-white"
+          size="sm"
+          onClick={() => setIsDisconnectDialogOpen(true)}
+          className="mt-5 w-fit"
+        >
           <Text variant="caps-20">Disconnect</Text>
         </Button>
       )}
+      <ConfirmDialog
+        open={isDisconnectDialogOpen}
+        onOpenChange={setIsDisconnectDialogOpen}
+        onConfirm={handleDisconnect}
+        title="Disconnect wallet?"
+        description="This wallet will be unlinked from your account. You'll need to reconnect it to use it again."
+        confirmLabel="Disconnect"
+        isLoading={isDisconnecting}
+      />
     </SettingsCard>
   )
 }

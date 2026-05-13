@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
@@ -7,6 +7,7 @@ import type { CodingTaskSubmission, Lesson } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { FileIcon } from '@/components/ui/icons/file'
 import { CodeIcon } from '@/components/ui/icons/code'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useSubmitCodingTask } from '@/hooks/api/lessons/useSubmitCodingTask'
 import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
@@ -53,6 +54,7 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
 
   const { report, isRunning, liveStatus, run, applyServerVerdict } = useCodeRunner(lesson)
   const { mutate: submit, isPending, error: submitError } = useSubmitCodingTask(courseSlug, lessonSlug)
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
 
   const language = lesson.codingLanguage
   const parsedCases = useMemo(() => parseLessonTestCases(lesson), [lesson])
@@ -101,7 +103,7 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
               userLesson={userLesson ?? null}
               code={code}
               onCodeChange={setCode}
-              onReset={() => setCode(starterCode)}
+              onReset={() => setIsResetDialogOpen(true)}
               onSubmit={handleSubmit}
               onRun={handleRun}
               onSignIn={() => router.navigate({ to: '/sign-up' })}
@@ -116,6 +118,17 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={isResetDialogOpen}
+        onOpenChange={setIsResetDialogOpen}
+        onConfirm={() => {
+          setCode(starterCode)
+          setIsResetDialogOpen(false)
+        }}
+        title="Reset code?"
+        description="Your current code will be replaced with the starter code. This cannot be undone."
+        confirmLabel="Reset"
+      />
     </div>
   )
 }
