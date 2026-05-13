@@ -12,7 +12,7 @@ function AccordionItem({ className, ...props }: React.ComponentProps<typeof Acco
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn('data-[state=open]:border-b border-0', className)}
+      className={cn('data-[state=open]:border-b border-border border-0', className)}
       {...props}
     />
   )

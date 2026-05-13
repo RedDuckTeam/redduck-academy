@@ -22,6 +22,7 @@ function CertificateRoute() {
   const certificate = Route.useLoaderData()
   const { session } = useSession()
   const isAuthenticated = !!session
+  const isOwner = session?.user.id === certificate.userId
 
   const completionDate = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(
     new Date(certificate.issuedAt),
@@ -46,7 +47,7 @@ function CertificateRoute() {
           certificate={certificate}
           courseLine={courseLine}
           completionDate={completionDate}
-          isAuthenticated={isAuthenticated}
+          isOwner={isOwner}
         />
       </div>
     </main>

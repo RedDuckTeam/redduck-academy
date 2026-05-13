@@ -1,3 +1,5 @@
+import type { Ref } from 'react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import type { TestQuestion } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -11,6 +13,7 @@ interface LessonTestQuestionProps {
   selectedIds: string[]
   onSelect: (optionId: string) => void
   isCompleted: boolean
+  showUnansweredWarning: boolean
 }
 
 export const LessonTestQuestion = ({
@@ -19,7 +22,10 @@ export const LessonTestQuestion = ({
   selectedIds,
   onSelect,
   isCompleted,
+  showUnansweredWarning,
 }: LessonTestQuestionProps) => {
+  const [warningParent] = useAutoAnimate({ duration: 180, easing: 'ease-in-out' })
+
   if (!question.options) return null
 
   const isMultiple = question.isMultipleChoices
@@ -31,6 +37,14 @@ export const LessonTestQuestion = ({
           {question.order < 10 ? `0${question.order}` : question.order}.
         </Text>
         <RichText data={question.question} className="min-w-0 [&>div>*]:mb-0" />
+      </div>
+
+      <div ref={warningParent as Ref<HTMLDivElement>}>
+        {showUnansweredWarning && (
+          <Text variant="caps-20" className="text-primary">
+            Please select an answer
+          </Text>
+        )}
       </div>
 
       {isMultiple ? (

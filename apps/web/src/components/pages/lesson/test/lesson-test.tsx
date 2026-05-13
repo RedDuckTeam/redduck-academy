@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { LessonTestQuestion } from './lesson-test-question'
 import type { Lesson } from '@/types/lesson'
@@ -24,6 +24,7 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
   >(`redduck:test-answers:${courseSlug}:${lessonSlug}`, {})
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const { mutate: submitTest, isPending } = useSubmitTest(courseSlug, lessonSlug)
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
 
   const handleSelect = useCallback(
     (questionId: string, optionId: string, isMultiple: boolean) => {
@@ -41,6 +42,16 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
   )
 
   const handleSubmit = () => {
+    if (!isAllAnswersSelected) {
+      setHasAttemptedSubmit(true)
+      const firstUnanswered = lesson.questions?.find((q) => !(answers[q.id]?.length > 0))
+      if (firstUnanswered) {
+        document
+          .getElementById(`question-${firstUnanswered.order}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      return
+    }
     submitTest(
       { courseSlug, lessonSlug, answers },
       { onSuccess: () => clearSavedAnswers() },
@@ -65,6 +76,9 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
           selectedIds={userAnswers[question.id] ?? []}
           onSelect={(optionId) => handleSelect(question.id, optionId, question.isMultipleChoices)}
           isCompleted={isCompleted}
+          showUnansweredWarning={
+            hasAttemptedSubmit && !isCompleted && !(answers[question.id]?.length > 0)
+          }
         />
       ))}
       {!isCompleted && (
@@ -75,7 +89,7 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
             </Button>
           ) : (
             <Button
-              disabled={!isAllAnswersSelected || isPending}
+              disabled={isPending}
               className="px-[60px] max-sm:w-full"
               onClick={handleSubmit}
             >

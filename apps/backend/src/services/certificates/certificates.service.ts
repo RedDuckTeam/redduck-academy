@@ -14,6 +14,7 @@ const { courses } = payloadSchema
 function formatCert(r: typeof userCertificates.$inferSelect) {
   return {
     id: r.id,
+    userId: r.userId,
     courseSlug: r.courseSlug,
     issuedAt: r.issuedAt.toISOString(),
     name: r.name,
