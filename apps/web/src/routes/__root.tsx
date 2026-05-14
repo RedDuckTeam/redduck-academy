@@ -61,29 +61,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   errorComponent: ErrorPage,
 })
 
-function MaybePostHog({ children }: { children: React.ReactNode }) {
-  if (!env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN) return <>{children}</>
-  return (
-    <PostHogProvider
-      apiKey={env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}
-      options={{
-        api_host: '/ingest',
-        capture_pageleave: false,
-        ui_host: env.VITE_PUBLIC_POSTHOG_HOST,
-        defaults: '2025-05-24',
-        capture_exceptions: true,
-        debug: import.meta.env.DEV,
-        opt_out_capturing_by_default: true,
-        opt_out_persistence_by_default: true,
-        autocapture: false,
-      }}
-    >
-      <PostHogConsentBridge />
-      {children}
-    </PostHogProvider>
-  )
-}
-
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
   return (
@@ -94,7 +71,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <CookieConsentProvider>
-          <MaybePostHog>
+          <PostHogProvider
+            apiKey={env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}
+            options={{
+              api_host: '/ingest',
+              capture_pageleave: false,
+              ui_host: env.VITE_PUBLIC_POSTHOG_HOST,
+              defaults: '2025-05-24',
+              capture_exceptions: true,
+              debug: import.meta.env.DEV,
+              opt_out_capturing_by_default: true,
+              opt_out_persistence_by_default: true,
+              autocapture: false,
+            }}
+          >
+            <PostHogConsentBridge />
             <Providers queryClient={queryClient}>
               <ScrollToTop />
               <Header />
@@ -119,7 +110,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
               <Scripts />
             </Providers>
-          </MaybePostHog>
+          </PostHogProvider>
         </CookieConsentProvider>
       </body>
     </html>
