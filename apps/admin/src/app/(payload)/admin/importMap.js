@@ -32,6 +32,7 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { TypedValueField as TypedValueField_e16535f6b68c18057fb07b1a49db8691 } from '@/admin-components/abi-driven-test-case/typed-value-field'
 import { FunctionSelect as FunctionSelect_92ffc788f6950e86b357de2a4aff75dc } from '@/admin-components/abi-driven-test-case/function-select'
 import { CopyMarkdownButton as CopyMarkdownButton_51beefa2197011ab28ebd6123c64ace8 } from '@/admin-components/copy-markdown-button'
+import { LessonPreviewButton as LessonPreviewButton_20fc89b35389850c4794e86e33566ef5 } from '@/admin-components/lesson-preview-button'
 import { LessonsTreeView as LessonsTreeView_9b2f0e5e989fb35d429ade0730db27dd } from '@/admin-components/lessons-tree'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { TOTPProvider as TOTPProvider_4eaf6cb33cfb75be01716613e3c9a512 } from 'payload-totp/rsc'
@@ -74,6 +75,7 @@ export const importMap = {
   "@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField": TypedValueField_e16535f6b68c18057fb07b1a49db8691,
   "@/admin-components/abi-driven-test-case/function-select#FunctionSelect": FunctionSelect_92ffc788f6950e86b357de2a4aff75dc,
   "@/admin-components/copy-markdown-button#CopyMarkdownButton": CopyMarkdownButton_51beefa2197011ab28ebd6123c64ace8,
+  "@/admin-components/lesson-preview-button#LessonPreviewButton": LessonPreviewButton_20fc89b35389850c4794e86e33566ef5,
   "@/admin-components/lessons-tree#LessonsTreeView": LessonsTreeView_9b2f0e5e989fb35d429ade0730db27dd,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "payload-totp/rsc#TOTPProvider": TOTPProvider_4eaf6cb33cfb75be01716613e3c9a512,

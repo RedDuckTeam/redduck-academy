@@ -89,7 +89,10 @@ export const Lessons: CollectionConfig = {
     defaultColumns: ['title', 'type', 'module', 'order', 'updatedAt'],
     components: {
       edit: {
-        beforeDocumentControls: ['@/admin-components/copy-markdown-button#CopyMarkdownButton'],
+        beforeDocumentControls: [
+          '@/admin-components/copy-markdown-button#CopyMarkdownButton',
+          '@/admin-components/lesson-preview-button#LessonPreviewButton',
+        ],
       },
       views: {
         list: {
