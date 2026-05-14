@@ -10,7 +10,7 @@ BEGIN
     LOOP
       new_human_id := 'RD-' || (
         SELECT string_agg(
-          substring('0123456789ABCDEFGHJKMNPQRSTVWXYZ' FROM (get_byte(gen_random_bytes(1), 0) % 32) + 1 FOR 1),
+          substring('0123456789ABCDEFGHJKMNPQRSTVWXYZ' FROM floor(random() * 32)::int + 1 FOR 1),
           ''
         )
         FROM generate_series(1, 8)
