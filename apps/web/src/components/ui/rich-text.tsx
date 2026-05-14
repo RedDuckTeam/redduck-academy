@@ -61,6 +61,17 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   // Lexical splits a heading across multiple text nodes (e.g. mixed inline formatting).
   const slugCounts = new Map<string, number>()
 
+  // Pasted multi-line SVG markup arrives as one paragraph per line. Buffer across paragraphs
+  // and emit the full SVG when </svg> is reached; continuation paragraphs render nothing.
+  let svgBuffer: string | null = null
+
+  const renderSvg = (markup: string) => (
+    <div
+      className="my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full"
+      dangerouslySetInnerHTML={{ __html: markup }}
+    />
+  )
+
   return (
     <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className, 'w-full')}>
       <PayloadRichText
@@ -98,6 +109,27 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
             )
           },
           paragraph: ({ node, nodesToJSX }) => {
+            const rawText = (node.children as Array<{ type?: string; text?: string }>)
+              .map((c) => (c.type === 'text' ? (c.text ?? '') : c.type === 'linebreak' ? '\n' : ''))
+              .join('')
+
+            if (svgBuffer !== null) {
+              svgBuffer += '\n' + rawText
+              if (svgBuffer.trimEnd().endsWith('</svg>')) {
+                const markup = svgBuffer.trim()
+                svgBuffer = null
+                return renderSvg(markup)
+              }
+              return <></>
+            }
+
+            const trimmed = rawText.trim()
+            if (trimmed.startsWith('<svg')) {
+              if (trimmed.endsWith('</svg>')) return renderSvg(trimmed)
+              svgBuffer = rawText
+              return <></>
+            }
+
             const textNode = node.children[0] as unknown as { type?: 'autolink'; fields?: { url?: string } }
             if (
               textNode?.type === 'autolink' &&
