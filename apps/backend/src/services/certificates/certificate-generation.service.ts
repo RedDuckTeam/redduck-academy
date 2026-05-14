@@ -16,6 +16,7 @@ const { courses } = payloadSchema
 
 interface CertificateManifest {
   name: string
+  humanId: string
   imageUrl: string
   metadataUri: string
   metadataHash: string
@@ -34,6 +35,7 @@ async function renderCertificateImage(
   userName: string,
   courseTitle: string,
   issuedAt: Date,
+  humanId: string,
 ): Promise<Buffer> {
   let browser
   try {
@@ -46,7 +48,7 @@ async function renderCertificateImage(
   const page = await browser.newPage()
   try {
     await page.setViewport({ width: 960, height: 960 })
-    await page.setContent(buildCertificateHtml(userName, courseTitle, issuedAt), {
+    await page.setContent(buildCertificateHtml(userName, courseTitle, issuedAt, humanId), {
       waitUntil: 'networkidle0',
     })
     return Buffer.from(await page.screenshot({ type: 'jpeg', quality: 85, fullPage: false }))
@@ -80,7 +82,7 @@ export class CertificateGenerationService {
       }),
       db.query.userCertificates.findFirst({
         where: and(eq(userCertificates.userId, userId), eq(userCertificates.courseSlug, courseSlug)),
-        columns: { id: true, walletAddress: true, name: true },
+        columns: { id: true, humanId: true, walletAddress: true, name: true },
         orderBy: (c, { desc }) => desc(c.issuedAt),
       }),
     ])
@@ -114,13 +116,14 @@ export class CertificateGenerationService {
     }
 
     const userName = certificate.name
+    const humanId = certificate.humanId
     const courseTitle = course.title as string
     const certKey = createHash('sha256').update(`${userId}:${courseSlug}`).digest('base64url').slice(0, 24)
     const base = `certificates/${certKey}`
     const manifestKey = `${base}/manifest.json`
 
     const existingManifest = await getJsonFromR2<CertificateManifest>(manifestKey)
-    if (existingManifest && existingManifest.name === userName) {
+    if (existingManifest && existingManifest.name === userName && existingManifest.humanId === humanId) {
       return {
         certificateId: certificate?.id ?? null,
         metadataUri: existingManifest.metadataUri,
@@ -132,7 +135,7 @@ export class CertificateGenerationService {
     }
 
     const issuedAt = new Date()
-    const imageBuffer = await renderCertificateImage(userName, courseTitle, issuedAt)
+    const imageBuffer = await renderCertificateImage(userName, courseTitle, issuedAt, humanId)
     const imageSuffix = createHash('sha256').update(imageBuffer).digest('hex').slice(0, 8)
 
     const noCache = 'no-cache, no-store, must-revalidate'
@@ -142,7 +145,7 @@ export class CertificateGenerationService {
       name: `${courseTitle} - RedDuck course certificate`,
       description: `Awarded to ${walletAddr} for completing ${courseTitle} course on RedDuck Academy.`,
       image: imageUrl,
-      external_url: certificate ? `https://redduck.academy/certificates/${certificate.id}` : `https://redduck.academy/certificates/${courseSlug}`,
+      external_url: `https://redduck.academy/certificates/${humanId}`,
       attributes: [
         { trait_type: 'Course', value: courseTitle },
         { trait_type: 'Recipient', value: userName },
@@ -160,7 +163,7 @@ export class CertificateGenerationService {
       noCache,
     )
 
-    const manifest: CertificateManifest = { name: userName, imageUrl, metadataUri, metadataHash }
+    const manifest: CertificateManifest = { name: userName, humanId, imageUrl, metadataUri, metadataHash }
     await uploadToR2(manifestKey, Buffer.from(JSON.stringify(manifest)), 'application/json', noCache)
 
     return { certificateId: certificate?.id ?? null, metadataUri, metadataHash, walletAddress: walletAddr, imageUrl, courseId: course.id as number }

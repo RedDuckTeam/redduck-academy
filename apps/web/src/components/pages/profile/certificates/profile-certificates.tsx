@@ -42,13 +42,14 @@ export function ProfileCertificates({ certificates: externalCertificates, isPriv
           <Link
             key={cert.id}
             to="/certificates/$certificateId"
-            params={{ certificateId: cert.id }}
+            params={{ certificateId: cert.humanId }}
             className="flex flex-col gap-3 group border border-border"
           >
             <Certificate
               recipientName={cert.name}
               courseName={`${cert.courseTitle} by RedDuck`}
               completionDate={completionDate}
+              humanId={cert.humanId}
               className="group-hover:opacity-90 transition-opacity duration-200"
             />
             <Text variant="caps-14" className="truncate text-center mb-1">

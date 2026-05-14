@@ -4,6 +4,7 @@ import { errorSchema } from './schemas'
 
 const certificateSchema = z.object({
   id: z.string().uuid(),
+  humanId: z.string(),
   courseSlug: z.string(),
   issuedAt: z.string(),
   name: z.string(),
@@ -23,6 +24,10 @@ export const requestNftBodySchema = z.object({
 
 export const certificateIdParamSchema = z.object({
   id: z.string().uuid(),
+})
+
+export const certificateHumanIdParamSchema = z.object({
+  id: z.string().regex(/^RD-[0-9A-HJKMNP-TV-Z]{8}$/, 'Invalid certificate ID'),
 })
 
 export const certificateCourseSlugParamSchema = z.object({

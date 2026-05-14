@@ -24,7 +24,7 @@ export function CertificateActions({ certificate, courseLine, completionDate, is
     try {
       const { downloadCertificatePdf } = await import('@/components/ui/certificate-pdf')
       const filename = `${certificate.courseTitle.replace(/\s+/g, '-').toLowerCase()}-certificate.pdf`
-      await downloadCertificatePdf(certificate.name, courseLine, completionDate, filename)
+      await downloadCertificatePdf(certificate.name, courseLine, completionDate, certificate.humanId, filename)
     } catch (error) {
       console.error(error)
       toast.error('Could not generate PDF')

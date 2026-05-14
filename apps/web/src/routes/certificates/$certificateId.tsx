@@ -51,7 +51,12 @@ function CertificateRoute() {
       <div className="w-full flex flex-col gap-10 px-6 py-14 md:px-10 md:py-[60px] bg-[#000]">
         {isAuthenticated && <CertificateHeader courseTitle={certificate.courseTitle} />}
         <div className="certificate-print-root mx-auto flex w-full max-w-[880px] justify-center print:max-w-none print:py-0">
-          <Certificate recipientName={certificate.name} courseName={courseLine} completionDate={completionDate} />
+          <Certificate
+            recipientName={certificate.name}
+            courseName={courseLine}
+            completionDate={completionDate}
+            humanId={certificate.humanId}
+          />
         </div>
         <CertificateActions
           certificate={certificate}

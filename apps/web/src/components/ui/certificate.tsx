@@ -9,6 +9,7 @@ export interface CertificateProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   recipientName: string
   courseName: string
   completionDate: string
+  humanId?: string
 }
 
 // All sizes derived from Figma canvas 1920×1080.
@@ -18,7 +19,7 @@ export interface CertificateProps extends Omit<React.HTMLAttributes<HTMLDivEleme
 // Font sizes        → cqw (container query width unit, requires container-type below).
 
 const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
-  ({ recipientName, courseName, completionDate, className, ...props }, ref) => {
+  ({ recipientName, courseName, completionDate, humanId, className, ...props }, ref) => {
     return (
       <article
         ref={ref}
@@ -73,6 +74,11 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
               Chief Executive Officer & Co-Founder
             </p>
           </div>
+          {humanId && (
+            <p style={{ fontSize: '1cqw' }} className="text-[#9b9b9b] mt-auto pb-[1.5%]">
+              Certificate id: {humanId}
+            </p>
+          )}
         </div>
 
         {/* ── Right panel ─────────────────────────────────────────── */}

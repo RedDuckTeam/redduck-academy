@@ -101,6 +101,7 @@ export const userCertificates = pgTable(
   'user_certificates',
   {
     id: uuid('id').defaultRandom().primaryKey(),
+    humanId: text('human_id').notNull(),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -118,6 +119,7 @@ export const userCertificates = pgTable(
   },
   (t) => ({
     userCourseUnique: uniqueIndex('user_certificates_user_id_course_slug_unique').on(t.userId, t.courseSlug),
+    humanIdUnique: uniqueIndex('user_certificates_human_id_unique').on(t.humanId),
     statusIssuedAtIdx: index('user_certificates_status_issued_at_idx').on(t.status, t.issuedAt.desc()),
     txHashUnique: uniqueIndex('user_certificates_tx_hash_unique')
       .on(t.txHash)

@@ -2,6 +2,7 @@ import { api } from './fetcher'
 
 export interface Certificate {
   id: string
+  humanId: string
   userId: string
   courseSlug: string
   courseTitle: string

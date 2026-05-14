@@ -77,7 +77,7 @@ export const CourseProgramHeader = ({
       { courseSlug: course.slug },
       {
         onSuccess: (data) => {
-          navigate({ to: '/certificates/$certificateId', params: { certificateId: data.id } })
+          navigate({ to: '/certificates/$certificateId', params: { certificateId: data.humanId } })
         },
         onError: () => toast.error('Could not issue certificate'),
       },
@@ -103,7 +103,7 @@ export const CourseProgramHeader = ({
             ) : showCertificate ? (
               certificate ? (
                 <Button size="sm" className="text-[#000]" asChild>
-                  <Link to="/certificates/$certificateId" params={{ certificateId: certificate.id }}>
+                  <Link to="/certificates/$certificateId" params={{ certificateId: certificate.humanId }}>
                     View Certificate
                   </Link>
                 </Button>

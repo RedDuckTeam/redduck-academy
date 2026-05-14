@@ -5,15 +5,26 @@ import { payloadSchema } from '@redduck/payload-config'
 import { AppError } from '../../lib/errors'
 import { Logger } from '../../lib/logger'
 import { privy } from '../../lib/privy'
+import { generateCertificateHumanId } from '../../lib/cert-id'
 import type { WalletWithMetadata } from '@privy-io/server-auth'
 
 const logger = new Logger('CertificatesService')
 
 const { courses } = payloadSchema
 
+const HUMAN_ID_UNIQUE_CONSTRAINT = 'user_certificates_human_id_unique'
+const MAX_HUMAN_ID_RETRIES = 5
+
+function isHumanIdCollision(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false
+  const e = err as { code?: string; constraint?: string; constraint_name?: string }
+  return e.code === '23505' && (e.constraint === HUMAN_ID_UNIQUE_CONSTRAINT || e.constraint_name === HUMAN_ID_UNIQUE_CONSTRAINT)
+}
+
 function formatCert(r: typeof userCertificates.$inferSelect) {
   return {
     id: r.id,
+    humanId: r.humanId,
     userId: r.userId,
     courseSlug: r.courseSlug,
     issuedAt: r.issuedAt.toISOString(),
@@ -82,10 +93,21 @@ export class CertificatesService {
       }
     }
 
-    const [certificate] = await db
-      .insert(userCertificates)
-      .values({ userId, courseSlug, name, status: 'created' })
-      .returning()
+    let certificate: typeof userCertificates.$inferSelect | undefined
+    for (let attempt = 0; attempt < MAX_HUMAN_ID_RETRIES; attempt++) {
+      const humanId = generateCertificateHumanId()
+      try {
+        ;[certificate] = await db
+          .insert(userCertificates)
+          .values({ userId, courseSlug, name, status: 'created', humanId })
+          .returning()
+        break
+      } catch (err) {
+        if (!isHumanIdCollision(err)) throw err
+      }
+    }
+
+    if (!certificate) throw new AppError(500, 'Failed to allocate unique certificate ID')
 
     return formatCert(certificate)
   }
@@ -148,9 +170,9 @@ export class CertificatesService {
     return formatCert(updated)
   }
 
-  static async getCertificateById(id: string) {
+  static async getCertificateByHumanId(humanId: string) {
     const row = await db.query.userCertificates.findFirst({
-      where: eq(userCertificates.id, id),
+      where: eq(userCertificates.humanId, humanId),
     })
 
     if (!row) throw new AppError(404, 'Certificate not found')

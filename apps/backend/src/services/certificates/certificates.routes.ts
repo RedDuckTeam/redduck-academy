@@ -14,6 +14,7 @@ import {
   adminMarkClaimedDesc,
   adminMarkClaimedBodySchema,
   certificateIdParamSchema,
+  certificateHumanIdParamSchema,
   certificateCourseSlugParamSchema,
 } from '../../descriptions/certificates'
 import { CertificatesService } from './certificates.service'
@@ -47,9 +48,9 @@ certificatesApp.post(
   },
 )
 
-certificatesApp.get('/:id', getCertificateByIdDesc, validator('param', certificateIdParamSchema), async (c) => {
+certificatesApp.get('/:id', getCertificateByIdDesc, validator('param', certificateHumanIdParamSchema), async (c) => {
   const { id } = c.req.valid('param')
-  const data = await CertificatesService.getCertificateById(id)
+  const data = await CertificatesService.getCertificateByHumanId(id)
   return c.json({ data })
 })
 

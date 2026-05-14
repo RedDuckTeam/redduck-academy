@@ -8,7 +8,7 @@ const redduckLogoSvg = readFileSync(join(assetsDir, 'redduck-logo.svg'), 'utf8')
 const markSignatureB64 = readFileSync(join(assetsDir, 'mark-signature.webp')).toString('base64')
 const certificateStampB64 = readFileSync(join(assetsDir, 'certificate-stamp.webp')).toString('base64')
 
-export function buildCertificateHtml(userName: string, courseTitle: string, issuedAt: Date): string {
+export function buildCertificateHtml(userName: string, courseTitle: string, issuedAt: Date, humanId: string): string {
   const date = issuedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 
   return `<!DOCTYPE html>
@@ -145,6 +145,14 @@ export function buildCertificateHtml(userName: string, courseTitle: string, issu
       color: #9b9b9b;
     }
 
+    /* Footer id — small line at the bottom-left of the body */
+    .footer-id {
+      font-size: 20px;
+      color: #9b9b9b;
+      margin-top: auto;
+      padding-bottom: 30px;
+    }
+
     /* ── Right panel ── */
     /* right-[3.125%]=60px w-[19.0625%]=366px h-[83.333%]=900px */
     /* px-[1.458%]=28px py-[6.771%]=130px */
@@ -214,6 +222,8 @@ export function buildCertificateHtml(userName: string, courseTitle: string, issu
         <p class="signature-name">Mark Virchenko</p>
         <p class="signature-title">Chief Executive Officer &amp; Co-Founder</p>
       </div>
+
+      <p class="footer-id">Certificate id: ${escapeHtml(humanId)}</p>
     </div>
 
     <!-- Right panel -->

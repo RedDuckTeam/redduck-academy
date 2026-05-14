@@ -91,6 +91,10 @@ const s = StyleSheet.create({
   signatureName: { fontSize: 12, color: C.light },
   signatureTitle: { fontSize: 12, color: C.light },
 
+  // Footer
+  footerSpacer: { flexGrow: 1 },
+  footerId: { fontSize: 10, color: C.light, paddingBottom: 8 },
+
   // Right panel
   rightPanel: {
     position: 'absolute',
@@ -137,10 +141,11 @@ interface CertificatePdfDocProps {
   recipientName: string
   courseName: string
   completionDate: string
+  humanId: string
   assets: Assets
 }
 
-function CertificatePdfDoc({ recipientName, courseName, completionDate, assets }: CertificatePdfDocProps) {
+function CertificatePdfDoc({ recipientName, courseName, completionDate, humanId, assets }: CertificatePdfDocProps) {
   return (
     <Document>
       <Page size={[W, H]} style={s.page}>
@@ -167,6 +172,9 @@ function CertificatePdfDoc({ recipientName, courseName, completionDate, assets }
               </View>
               <Text style={s.signatureTitle}>Chief Executive Officer & Co-Founder</Text>
             </View>
+
+            <View style={s.footerSpacer} />
+            <Text style={s.footerId}>Certificate id: {humanId}</Text>
           </View>
 
           {/* Right panel */}
@@ -211,6 +219,7 @@ export async function downloadCertificatePdf(
   recipientName: string,
   courseName: string,
   completionDate: string,
+  humanId: string,
   filename: string,
 ) {
   const base = `${window.location.origin}/certificate-assets`
@@ -225,6 +234,7 @@ export async function downloadCertificatePdf(
       recipientName={recipientName}
       courseName={courseName}
       completionDate={completionDate}
+      humanId={humanId}
       assets={{ logo, signature, stamp }}
     />,
   ).toBlob()
