@@ -36,6 +36,32 @@ function privySsrStub(): Plugin {
   }
 }
 
+// posthog-js is a browser SDK that bloats the Worker bundle past the size limit.
+// Stub @posthog/react on SSR — analytics only run client-side anyway.
+function posthogSsrStub(): Plugin {
+  const VIRTUAL = '\0posthog-ssr-stub'
+  return {
+    name: 'posthog-ssr-stub',
+    enforce: 'pre',
+    resolveId(id, _, opts) {
+      if (opts?.ssr && id === '@posthog/react') return VIRTUAL
+    },
+    load(id) {
+      if (id === VIRTUAL) {
+        return `
+          export const PostHogProvider = ({ children }) => children;
+          export const usePostHog = () => ({
+            capture: () => {},
+            captureException: () => {},
+            opt_in_capturing: () => {},
+            opt_out_capturing: () => {},
+          });
+        `
+      }
+    },
+  }
+}
+
 const config = defineConfig({
   resolve: {
     alias: [
@@ -48,6 +74,7 @@ const config = defineConfig({
   },
   plugins: [
     privySsrStub(),
+    posthogSsrStub(),
     nodePolyfills({ include: ['buffer', 'process'], globals: { Buffer: true, process: true } }),
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
