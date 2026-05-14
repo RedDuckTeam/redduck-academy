@@ -16,6 +16,7 @@ import { useLessonForUser } from '@/hooks/api/lessons/useLessonForUser'
 import { Dialog } from '@/components/ui/dialog'
 import { useSession } from '@/hooks/useSession'
 import { RateLimitError } from '@/lib/api/rate-limit'
+import { usePostHog } from '@posthog/react'
 
 interface ProjectSubmissionProps {
   lesson: Lesson
@@ -27,6 +28,7 @@ interface ProjectSubmissionProps {
 export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }: ProjectSubmissionProps) {
   const router = useRouter()
   const { session } = useSession()
+  const posthog = usePostHog()
   const [link, setLink] = useState('')
   const [errorParent] = useAutoAnimate({ duration: 180, easing: 'ease-in-out' })
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
@@ -39,6 +41,11 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const showLinkError = trimmedLink.length > 0 && !isGithubLink
 
   const handleSubmit = () => {
+    posthog.capture('project_submitted', {
+      course_slug: courseSlug,
+      lesson_slug: lessonSlug,
+      lesson_title: lesson.title,
+    })
     submitProject({ courseSlug, lessonSlug, repoUrl: link })
   }
 

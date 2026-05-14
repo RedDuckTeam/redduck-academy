@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
+import { usePostHog } from '@posthog/react'
 import { DescriptionPanel } from './description-panel'
 import { PanelHeader } from './panel-header'
 import { CodePanel } from './code-panel'
@@ -26,6 +27,7 @@ interface LessonCodeChallengeProps {
 export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCodeChallengeProps) {
   const router = useRouter()
   const { session } = useSession()
+  const posthog = usePostHog()
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
 
   const starterCode = lesson.starterCode ?? ''
@@ -67,6 +69,12 @@ export function LessonCodeChallenge({ lesson, courseSlug, lessonSlug }: LessonCo
   const canSubmit = code.trim().length > 0 && !isPending && !isRunning && !isHardBlocked
 
   const handleSubmit = () => {
+    posthog.capture('coding_task_submitted', {
+      course_slug: courseSlug,
+      lesson_slug: lessonSlug,
+      lesson_title: lesson.title,
+      language,
+    })
     submit(
       { courseSlug, lessonSlug, code, language, lesson },
       { onSuccess: (result) => applyServerVerdict({ passed: result.passed, report: result.report }) },

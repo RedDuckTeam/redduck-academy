@@ -3,6 +3,7 @@ import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCreateWallet, useLoginWithOAuth } from '@privy-io/react-auth'
 import { useRouter } from '@tanstack/react-router'
+import { usePostHog } from '@posthog/react'
 
 // Privy's `onComplete` can fire more than once per login (StrictMode double-invoke in dev, and
 // re-fires on remount after the OAuth redirect). Without this guard, `createWallet()` runs twice
@@ -12,6 +13,7 @@ const walletCreationAttempted = new Set<string>()
 export const SignUpGoogleButton = () => {
   const { createWallet } = useCreateWallet()
   const router = useRouter()
+  const posthog = usePostHog()
   const { initOAuth } = useLoginWithOAuth({
     onComplete: async ({ isNewUser, user }) => {
       if (isNewUser && user?.id && !walletCreationAttempted.has(user.id)) {
@@ -25,6 +27,15 @@ export const SignUpGoogleButton = () => {
           } catch {
             walletCreationAttempted.delete(user.id)
           }
+        }
+        if (user?.id) {
+          posthog.identify(user.id, { email: user.google?.email })
+          posthog.capture('user_signed_up', { method: 'google' })
+        }
+      } else {
+        if (user?.id) {
+          posthog.identify(user.id, { email: user.google?.email })
+          posthog.capture('user_logged_in', { method: 'google' })
         }
       }
       await router.navigate({ to: '/dashboard', replace: true })

@@ -4,6 +4,7 @@ import { useCourse } from '@/hooks/api/courses/useCourse'
 import { useSession } from '@/hooks/useSession'
 import { useMarkLessonCompleted } from '@/hooks/api/lessons/useMarkLessonCompleted'
 import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
+import { usePostHog } from '@posthog/react'
 
 interface LessonNavigationProps {
   courseSlug: string
@@ -21,6 +22,7 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
   const { data: course } = useCourse(courseSlug)
   const { mutate: markCompleted } = useMarkLessonCompleted()
   const courseAccess = useCourseAccess()
+  const posthog = usePostHog()
 
   const flat: NavTarget[] =
     course?.data.modules.flatMap((m) =>
@@ -36,6 +38,11 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
   const handleNextClick = () => {
     if (session && isLecture && !isCourseLocked) {
       markCompleted({ courseSlug, lessonSlug: lesson.slug, lessonTitle: lesson.title })
+      posthog.capture('lecture_completed', {
+        course_slug: courseSlug,
+        lesson_slug: lesson.slug,
+        lesson_title: lesson.title,
+      })
     }
   }
 

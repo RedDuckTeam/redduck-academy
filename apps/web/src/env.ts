@@ -8,6 +8,8 @@ export const env = createEnv({
     VITE_APP_URL: z.string().min(1),
     VITE_CHAIN_ENV: z.enum(['development', 'production']).default('development'),
     VITE_PRIVY_APP_ID: z.string().min(1),
+    VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().min(1),
+    VITE_PUBLIC_POSTHOG_HOST: z.string().url().default('https://eu.posthog.com'),
   },
 
   // @ts-expect-error - import.meta.env is not typed

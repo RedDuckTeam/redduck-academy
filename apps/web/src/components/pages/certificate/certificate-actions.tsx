@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { usePostHog } from '@posthog/react'
 import { CertificateNftSection } from './certificate-nft-section'
 import type { PublicCertificate } from '@/lib/api/certificates'
 
@@ -13,20 +14,27 @@ interface CertificateActionsProps {
 
 export function CertificateActions({ certificate, courseLine, completionDate, isOwner }: CertificateActionsProps) {
   const [isDownloading, setIsDownloading] = useState(false)
+  const posthog = usePostHog()
 
   const handleShare = async () => {
     await navigator.clipboard.writeText(window.location.href)
     toast.success('Certificate link copied to clipboard')
+    posthog.capture('certificate_shared', { course_slug: certificate.courseSlug, certificate_id: certificate.humanId })
   }
 
   const handleDownloadPdf = async () => {
     setIsDownloading(true)
+    posthog.capture('certificate_downloaded', {
+      course_slug: certificate.courseSlug,
+      certificate_id: certificate.humanId,
+    })
     try {
       const { downloadCertificatePdf } = await import('@/components/ui/certificate-pdf')
       const filename = `${certificate.courseTitle.replace(/\s+/g, '-').toLowerCase()}-certificate.pdf`
       await downloadCertificatePdf(certificate.name, courseLine, completionDate, certificate.humanId, filename)
     } catch (error) {
       console.error(error)
+      posthog.captureException(error)
       toast.error('Could not generate PDF')
     } finally {
       setIsDownloading(false)

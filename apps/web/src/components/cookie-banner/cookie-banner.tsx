@@ -2,32 +2,22 @@ import { useEffect, useState } from 'react'
 import { useLocation } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
-
-const STORAGE_KEY = 'redduck-cookie-consent'
-
-type Consent = 'agree' | 'decline'
+import { useCookieConsent, type Consent } from '@/lib/cookie-consent'
 
 export function CookieBanner() {
   const { pathname } = useLocation()
-  const [visible, setVisible] = useState(false)
+  const { consent, setConsent } = useCookieConsent()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored !== 'agree' && stored !== 'decline') setVisible(true)
-    } catch {
-      setVisible(true)
-    }
+    setMounted(true)
   }, [])
 
   if (pathname === '/sign-up') return null
-  if (!visible) return null
+  if (!mounted || consent !== null) return null
 
   const respond = (value: Consent) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, value)
-    } catch {}
-    setVisible(false)
+    setConsent(value)
   }
 
   return (

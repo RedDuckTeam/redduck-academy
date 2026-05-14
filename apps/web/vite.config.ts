@@ -62,6 +62,28 @@ const config = defineConfig({
     }),
     viteReact(),
   ],
+  server: {
+    proxy: {
+      '/ingest/static': {
+        target: 'https://eu-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+        secure: false,
+      },
+      '/ingest/array': {
+        target: 'https://eu-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+        secure: false,
+      },
+      '/ingest': {
+        target: 'https://eu.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+        secure: false,
+      },
+    },
+  },
 })
 
 export default config

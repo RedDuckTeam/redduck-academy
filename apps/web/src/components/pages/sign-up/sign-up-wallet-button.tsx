@@ -3,11 +3,17 @@ import { Text } from '../../ui/text'
 import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useLogin } from '@privy-io/react-auth'
 import { useRouter } from '@tanstack/react-router'
+import { usePostHog } from '@posthog/react'
 
 export const SignUpWalletButton = () => {
   const router = useRouter()
+  const posthog = usePostHog()
   const { login } = useLogin({
-    onComplete: async () => {
+    onComplete: async ({ isNewUser, user }) => {
+      if (user?.id) {
+        posthog.identify(user.id)
+        posthog.capture(isNewUser ? 'user_signed_up' : 'user_logged_in', { method: 'wallet' })
+      }
       await router.navigate({ to: '/dashboard', replace: true })
     },
   })

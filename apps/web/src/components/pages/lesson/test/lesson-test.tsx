@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
+import { usePostHog } from '@posthog/react'
 import { LessonTestQuestion } from './lesson-test-question'
 import type { Lesson } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
@@ -19,9 +20,12 @@ interface LessonTestProps {
 export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) => {
   const router = useRouter()
   const { session } = useSession()
-  const { value: answers, setValue: setAnswers, clear: clearSavedAnswers } = useLocalStorageState<
-    Record<string, string[]>
-  >(`redduck:test-answers:${courseSlug}:${lessonSlug}`, {})
+  const posthog = usePostHog()
+  const {
+    value: answers,
+    setValue: setAnswers,
+    clear: clearSavedAnswers,
+  } = useLocalStorageState<Record<string, string[]>>(`redduck:test-answers:${courseSlug}:${lessonSlug}`, {})
   const { data: userLesson } = useLessonForUser(courseSlug, lessonSlug)
   const { mutate: submitTest, isPending } = useSubmitTest(courseSlug, lessonSlug)
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
@@ -52,10 +56,8 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
       }
       return
     }
-    submitTest(
-      { courseSlug, lessonSlug, answers },
-      { onSuccess: () => clearSavedAnswers() },
-    )
+    posthog.capture('test_submitted', { course_slug: courseSlug, lesson_slug: lessonSlug, lesson_title: lesson.title })
+    submitTest({ courseSlug, lessonSlug, answers }, { onSuccess: () => clearSavedAnswers() })
   }
 
   const isAllAnswersSelected =
@@ -76,9 +78,7 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
           selectedIds={userAnswers[question.id] ?? []}
           onSelect={(optionId) => handleSelect(question.id, optionId, question.isMultipleChoices)}
           isCompleted={isCompleted}
-          showUnansweredWarning={
-            hasAttemptedSubmit && !isCompleted && !(answers[question.id]?.length > 0)
-          }
+          showUnansweredWarning={hasAttemptedSubmit && !isCompleted && !(answers[question.id]?.length > 0)}
         />
       ))}
       {!isCompleted && (
@@ -88,11 +88,7 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
               <Text variant="caps-20">Sign in</Text>
             </Button>
           ) : (
-            <Button
-              disabled={isPending}
-              className="px-[60px] max-sm:w-full"
-              onClick={handleSubmit}
-            >
+            <Button disabled={isPending} className="px-[60px] max-sm:w-full" onClick={handleSubmit}>
               <Text variant="caps-20">Submit</Text>
             </Button>
           )}
