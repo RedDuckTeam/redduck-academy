@@ -4,7 +4,6 @@ import { createQrSvgPath } from '@/lib/qr'
 import { RedDuckIcon } from '@/components/ui/icons/redduck'
 import { CertificateStamp } from './icons/certificate-stamp'
 import { MarkSignature } from './icons/mark-signature'
-import { Text } from './text'
 
 export interface CertificateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   recipientName: string
@@ -44,7 +43,7 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
           {/* logo cell: pl/pt/pb/pr → 20/1920, 20/1920, 40/1920, 40/1920 */}
           {/* logo: 186×24 @ 1920 — same as certificate-pdf (93×12 @ 960); w = 186/1920 → 9.6875cqw */}
           <div className="pl-[1.042%] pt-[1.042%] pb-[2.083%] pr-[2.083%] border-b border-border shrink-0">
-            <RedDuckIcon className="w-[18cqw] h-auto max-w-full" isDark />
+            <RedDuckIcon className="w-[18cqw] h-auto max-w-full block" isDark />
           </div>
           <div className="w-full flex-1 border-t border-l h-full border-border" />
         </div>
@@ -67,36 +66,16 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
           <p style={{ fontSize: '2.396cqw' }} className="text-[#000] font-medium mb-[6.25%]">
             {courseName}
           </p>
-          {/* signature — 20/1920=1.042%  w: 400/1920=20.833% */}
-          <div className="flex flex-col w-[20.833%]">
+          {/* signature — w: 400/1920=20.833%, shifted down 60px (3.125% @ 1920) */}
+          <div className="flex flex-col w-[20.833%] mt-[3.125%]">
             <MarkSignature className="w-full" />
-            <Text style={{ fontSize: '1.25cqw' }} className="border-t w-full text-[#9b9b9b] border-border">
+            <p style={{ fontSize: '1.25cqw' }} className="mt-[2.083%] border-t w-full text-[#9b9b9b] border-border">
               Mark Virchenko
-            </Text>
+            </p>
             <p style={{ fontSize: '1.25cqw' }} className="text-[#9b9b9b]">
               Chief Executive Officer & Co-Founder
             </p>
           </div>
-          {humanId && (
-            <div className="mt-auto pb-[1.5%] flex items-center gap-[1.5%]">
-              {/* Red QR tile — replaces the old decorative square. w: 100/1920=5.208% */}
-              <div className="w-[5.208%] aspect-square bg-primary p-[6%] shrink-0">
-                {qr && (
-                  <svg
-                    viewBox={`0 0 ${qr.size} ${qr.size}`}
-                    shapeRendering="crispEdges"
-                    aria-label="Certificate QR code"
-                    className="w-full h-full"
-                  >
-                    <path d={qr.path} fill="#000" />
-                  </svg>
-                )}
-              </div>
-              <p style={{ fontSize: '1cqw' }} className="text-[#9b9b9b]">
-                ID: {humanId}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* ── Right panel ─────────────────────────────────────────── */}
@@ -108,6 +87,35 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
           </p>
           <CertificateStamp className="w-[71.585%] h-fit" />
         </div>
+
+        {/* Decorative red square at its ORIGINAL position (right-[21.167%]), QR inside. */}
+        {/* w/h: 95/1920, 95/1080 — bottom: 60/1080, right: 406.4/1920=21.167% */}
+        {/* Inner QR sized to 95% of the square so the visible "padding" stays a constant
+            proportion of the square at any display width. */}
+        <div className="absolute bottom-[5.556%] right-[21.167%] w-[4.948%] h-[8.796%] bg-primary flex items-center justify-center">
+          {qr && (
+            <svg
+              viewBox={`0 0 ${qr.size} ${qr.size}`}
+              shapeRendering="crispEdges"
+              aria-label="Certificate QR code"
+              preserveAspectRatio="xMidYMid meet"
+              className="block w-[95%] h-[95%]"
+            >
+              <path d={qr.path} fill="#000" />
+            </svg>
+          )}
+        </div>
+
+        {/* ID — anchored to the right of the square with a small proportional gap. */}
+        {/* square's right edge from cert left: 100% - 21.167% = 78.833%. Plus 0.313% gap (~6px @ 1920). */}
+        {humanId && (
+          <div
+            className="absolute bottom-[5.556%] h-[8.796%] flex items-center text-[#9b9b9b] whitespace-nowrap"
+            style={{ fontSize: '1.302cqw', left: '79.146%' }}
+          >
+            ID: {humanId}
+          </div>
+        )}
       </article>
     )
   },

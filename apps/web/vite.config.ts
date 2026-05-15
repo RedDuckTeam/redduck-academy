@@ -63,6 +63,10 @@ function posthogSsrStub(): Plugin {
 }
 
 const config = defineConfig({
+  optimizeDeps: {
+    // Pre-bundle browser-only PDF/image libs so dev-server dynamic imports resolve cleanly.
+    include: ['jspdf', 'html-to-image'],
+  },
   resolve: {
     alias: [
       // `use-sidecar` (transitive via Radix) uses `detect-node-es` whose conditional

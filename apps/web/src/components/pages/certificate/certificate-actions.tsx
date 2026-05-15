@@ -12,7 +12,7 @@ interface CertificateActionsProps {
   isOwner: boolean
 }
 
-export function CertificateActions({ certificate, courseLine, completionDate, isOwner }: CertificateActionsProps) {
+export function CertificateActions({ certificate, courseLine: _courseLine, completionDate: _completionDate, isOwner }: CertificateActionsProps) {
   const [isDownloading, setIsDownloading] = useState(false)
   const posthog = usePostHog()
 
@@ -29,9 +29,13 @@ export function CertificateActions({ certificate, courseLine, completionDate, is
       certificate_id: certificate.humanId,
     })
     try {
+      const element = document.querySelector<HTMLElement>(
+        '.certificate-print-root article[role="document"]',
+      )
+      if (!element) throw new Error('Certificate not found on page')
       const { downloadCertificatePdf } = await import('@/components/ui/certificate-pdf')
       const filename = `${certificate.courseTitle.replace(/\s+/g, '-').toLowerCase()}-certificate.pdf`
-      await downloadCertificatePdf(certificate.name, courseLine, completionDate, certificate.humanId, filename)
+      await downloadCertificatePdf(element, filename)
     } catch (error) {
       console.error(error)
       posthog.captureException(error)

@@ -4,6 +4,7 @@ import { Toaster as Sonner } from 'sonner'
 import type { ToasterProps } from 'sonner'
 
 import { useTheme } from '@/components/providers/theme-context'
+import { CheckCircleIcon } from './icons/check-circle'
 
 /**
  * Toast shell aligned with RedDuck course Figma tokens (file kL27uFMvF5uzHWkgUAJMRq):
@@ -24,7 +25,7 @@ function ToasterInner({ ...props }: ToasterProps) {
       theme={theme}
       className="toaster group"
       icons={{
-        success: <CheckCircle className="h-4 w-4 shrink-0 text-white" aria-hidden />,
+        success: <CheckCircleIcon className="h-4 w-4 shrink-0 text-white" aria-hidden />,
         info: <InfoIcon className="h-4 w-4 shrink-0 text-yellow-700 dark:text-yellow-400" aria-hidden />,
         warning: <TriangleAlert className="h-4 w-4 shrink-0 text-[#565653] dark:text-[#E0CDC6]" aria-hidden />,
         error: <XCircle className="h-4 w-4 shrink-0 text-white" aria-hidden />,

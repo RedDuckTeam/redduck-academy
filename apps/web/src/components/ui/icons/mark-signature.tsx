@@ -3,10 +3,9 @@ import type { IconProps } from './types'
 export const MarkSignature = ({ className, ...props }: IconProps) => {
   return (
     <svg
-      width="364"
-      height="48"
       viewBox="0 0 364 48"
       fill="none"
+      preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       {...props}

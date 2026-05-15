@@ -8,10 +8,9 @@ export const RedDuckIcon = ({ className, isDark = false, ...props }: RedDuckIcon
   const fill = isDark ? 'black' : 'white'
   return (
     <svg
-      width="186"
-      height="24"
       viewBox="0 0 186 24"
       fill="none"
+      preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       {...props}

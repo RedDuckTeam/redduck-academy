@@ -3,6 +3,7 @@ import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificate
 import { Certificate } from '@/components/ui/certificate'
 import { Text } from '@/components/ui/text'
 import type { Certificate as CertificateType } from '@/lib/api/certificates'
+import { env } from '@/env'
 
 interface ProfileCertificatesProps {
   certificates?: CertificateType[]
@@ -50,6 +51,7 @@ export function ProfileCertificates({ certificates: externalCertificates, isPriv
               courseName={`${cert.courseTitle} by RedDuck`}
               completionDate={completionDate}
               humanId={cert.humanId}
+              qrUrl={`${env.VITE_APP_URL.replace(/\/$/, '')}/certificates/${cert.humanId}`}
               className="group-hover:opacity-90 transition-opacity duration-200"
             />
             <Text variant="caps-14" className="truncate text-center mb-1">
