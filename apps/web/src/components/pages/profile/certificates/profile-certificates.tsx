@@ -33,7 +33,7 @@ export function ProfileCertificates({
   if (!certificates || certificates.length === 0) {
     return (
       <Text variant="caps-24" className="text-muted-foreground text-center py-3">
-        No certificates yet
+        Complete your first course to earn a certificate
       </Text>
     )
   }
