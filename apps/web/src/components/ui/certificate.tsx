@@ -78,20 +78,23 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
             </p>
           </div>
           {humanId && (
-            <div className="mt-auto pb-[1.5%] flex items-end gap-[1.5%]">
+            <div className="mt-auto pb-[1.5%] flex items-center gap-[1.5%]">
+              {/* Red QR tile — replaces the old decorative square. w: 100/1920=5.208% */}
+              <div className="w-[5.208%] aspect-square bg-primary p-[6%] shrink-0">
+                {qr && (
+                  <svg
+                    viewBox={`0 0 ${qr.size} ${qr.size}`}
+                    shapeRendering="crispEdges"
+                    aria-label="Certificate QR code"
+                    className="w-full h-full"
+                  >
+                    <path d={qr.path} fill="#000" />
+                  </svg>
+                )}
+              </div>
               <p style={{ fontSize: '1cqw' }} className="text-[#9b9b9b]">
-                Certificate id: {humanId}
+                ID: {humanId}
               </p>
-              {qr && (
-                <svg
-                  viewBox={`0 0 ${qr.size} ${qr.size}`}
-                  shapeRendering="crispEdges"
-                  aria-label="Certificate QR code"
-                  className="w-[6%] h-auto shrink-0"
-                >
-                  <path d={qr.path} fill="#000" />
-                </svg>
-              )}
             </div>
           )}
         </div>
@@ -105,9 +108,6 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
           </p>
           <CertificateStamp className="w-[71.585%] h-fit" />
         </div>
-
-        {/* w/h: 95/1920, 95/1080 — bottom: 60/1080, right: 406.4/1920=21.167% (shifted left to keep 17px gap to panel) */}
-        <div className="absolute bottom-[5.556%] right-[21.167%] w-[4.948%] h-[8.796%] bg-primary" />
       </article>
     )
   },
