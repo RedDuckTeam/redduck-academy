@@ -6,6 +6,7 @@ import type { ToasterProps } from 'sonner'
 import { useTheme } from '@/components/providers/theme-context'
 import { CheckCircleIcon } from './icons/check-circle'
 import { CheckIcon } from './icons/check'
+import { XIcon } from './icons/x'
 
 /**
  * Toast shell aligned with RedDuck course Figma tokens (file kL27uFMvF5uzHWkgUAJMRq):
@@ -13,7 +14,7 @@ import { CheckIcon } from './icons/check'
  * error red #F22E1A, warning tint #E8B5A9, secondary text #565653.
  */
 // Avoid `!transition-*` here: Sonner’s injected stylesheet animates transform/opacity/height on `[data-sonner-toast]`; important foreground-only transitions override it and kill motion.
-const toastShell = '!flex !items-center !gap-3 !rounded-none !border !border-border !px-4 !py-3 !shadow-sm'
+const toastShell = '!flex !items-center !gap-1.5 !rounded-none !border !border-border !px-4 !py-3 !shadow-sm'
 
 /** Figma `main-14px`: Inter Regular 14 — see Text variant `main-14`. */
 const toastTitle = 'font-inter text-[14px] leading-[18px] min-h-[18px] !font-normal !leading-[18px]'
@@ -29,7 +30,7 @@ function ToasterInner({ ...props }: ToasterProps) {
         success: <CheckIcon className="h-4 w-4 shrink-0 text-white" aria-hidden />,
         info: <InfoIcon className="h-4 w-4 shrink-0 text-yellow-700 dark:text-yellow-400" aria-hidden />,
         warning: <TriangleAlert className="h-4 w-4 shrink-0 text-[#565653] dark:text-[#E0CDC6]" aria-hidden />,
-        error: <XCircle className="h-4 w-4 shrink-0 text-white" aria-hidden />,
+        error: <XIcon className="h-4 w-4 shrink-0 text-white" aria-hidden />,
         loading: <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" aria-hidden />,
       }}
       toastOptions={{

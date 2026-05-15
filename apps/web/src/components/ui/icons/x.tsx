@@ -1,0 +1,30 @@
+import type { IconProps } from './types'
+
+export const XIcon = ({ className, ...props }: IconProps) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="11"
+      height="11"
+      viewBox="0 0 11 11"
+      fill="currentColor"
+      shapeRendering="crispEdges"
+      className={className}
+      {...props}
+    >
+      <rect x={2} y={2} width={1} height={1} />
+      <rect x={8} y={2} width={1} height={1} />
+      <rect x={3} y={3} width={1} height={1} />
+      <rect x={7} y={3} width={1} height={1} />
+      <rect x={4} y={4} width={1} height={1} />
+      <rect x={6} y={4} width={1} height={1} />
+      <rect x={5} y={5} width={1} height={1} />
+      <rect x={4} y={6} width={1} height={1} />
+      <rect x={6} y={6} width={1} height={1} />
+      <rect x={3} y={7} width={1} height={1} />
+      <rect x={7} y={7} width={1} height={1} />
+      <rect x={2} y={8} width={1} height={1} />
+      <rect x={8} y={8} width={1} height={1} />
+    </svg>
+  )
+}

@@ -10,7 +10,10 @@ interface ProfileCertificatesProps {
   isPrivate?: boolean
 }
 
-export function ProfileCertificates({ certificates: externalCertificates, isPrivate = false }: ProfileCertificatesProps) {
+export function ProfileCertificates({
+  certificates: externalCertificates,
+  isPrivate = false,
+}: ProfileCertificatesProps) {
   const { data: ownCertificates, isPending } = useUserCertificates({
     enabled: externalCertificates === undefined && !isPrivate,
   })
