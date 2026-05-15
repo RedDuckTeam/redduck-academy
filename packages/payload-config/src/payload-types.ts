@@ -181,6 +181,13 @@ export interface Course {
   slug?: string | null;
   description?: string | null;
   coverImage?: (number | null) | Media;
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  durationHours?: number | null;
   order: number;
   publishedAt?: string | null;
   /**
@@ -617,6 +624,13 @@ export interface CoursesSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   coverImage?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  durationHours?: T;
   order?: T;
   publishedAt?: T;
   isHidden?: T;

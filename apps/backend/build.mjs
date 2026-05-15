@@ -1,5 +1,4 @@
 import { build } from 'esbuild'
-import { cpSync } from 'fs'
 
 await build({
   entryPoints: ['src/index.ts'],
@@ -21,9 +20,3 @@ await build({
     },
   ],
 })
-
-cpSync(
-  'src/services/certificates/template/assets',
-  'dist/assets',
-  { recursive: true },
-)

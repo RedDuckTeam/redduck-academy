@@ -69,6 +69,22 @@ export const Courses: CollectionConfig = {
       relationTo: 'media',
     },
     {
+      name: 'tags',
+      type: 'array',
+      fields: [
+        {
+          name: 'value',
+          type: 'text',
+          required: true,
+        },
+      ],
+    },
+    {
+      name: 'durationHours',
+      type: 'number',
+      min: 0,
+    },
+    {
       name: 'order',
       type: 'number',
       required: true,

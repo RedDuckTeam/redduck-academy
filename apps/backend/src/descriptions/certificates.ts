@@ -141,31 +141,46 @@ export const adminGenerateCertificateBodySchema = z.object({
     .min(1)
     .max(100)
     .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers, or hyphens'),
+  // Client-rendered JPEG/PNG as a data URL. Omit on the first call to receive
+  // a `needs-image` response with the data the client needs to render it.
+  imageDataUrl: z.string().min(1).max(8_000_000).optional(),
 })
 
-const generateCertificateResultSchema = z.object({
+const mintParamsSchema = z.object({
+  state: z.literal('ready'),
   certificateId: z.string().uuid().nullable(),
   metadataUri: z.string(),
   metadataHash: z.string(),
   walletAddress: z.string(),
   imageUrl: z.string(),
+  courseId: z.number(),
+})
+
+const needsImageSchema = z.object({
+  state: z.literal('needs-image'),
+  certificateId: z.string().uuid().nullable(),
+  walletAddress: z.string(),
+  courseId: z.number(),
+  userName: z.string(),
+  humanId: z.string(),
+  courseTitle: z.string(),
 })
 
 export const adminGenerateCertificateDesc = describeRoute({
-  summary: 'Generate certificate assets for a user (admin)',
+  summary: 'Generate certificate assets (admin)',
   description:
-    'Checks course completion, uploads JPEG/metadata to R2, and returns the data needed to mint the certificate NFT. Re-uses existing assets unless the user name has changed.',
+    'Validates wallet + course completion. If cached assets exist, returns them. If `imageDataUrl` is provided, uploads it + JSON metadata to R2 and returns mint params. Otherwise returns `needs-image` with the render payload the client must use to produce the image, then call this endpoint again with `imageDataUrl`.',
   tags: ['Certificates'],
   responses: {
     200: {
-      description: 'Certificate assets ready',
+      description: 'Cached, ready-to-mint, or needs-image',
       content: {
         'application/json': {
-          schema: resolver(z.object({ data: generateCertificateResultSchema })),
+          schema: resolver(z.object({ data: z.union([mintParamsSchema, needsImageSchema]) })),
         },
       },
     },
-    400: { description: 'User has no primary wallet connected', content: { 'application/json': { schema: errorSchema } } },
+    400: { description: 'Missing/invalid wallet or image', content: { 'application/json': { schema: errorSchema } } },
     403: { description: 'User has not completed all lessons', content: { 'application/json': { schema: errorSchema } } },
     404: { description: 'User or course not found', content: { 'application/json': { schema: errorSchema } } },
     500: { description: 'Server error', content: { 'application/json': { schema: errorSchema } } },

@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, Image, Font, StyleSheet, pdf } from '@react-pdf/renderer'
+import { createQrDataUrl } from '@/lib/qr'
 
 Font.register({
   family: 'Verdana',
@@ -93,14 +94,16 @@ const s = StyleSheet.create({
 
   // Footer
   footerSpacer: { flexGrow: 1 },
-  footerId: { fontSize: 10, color: C.light, paddingBottom: 8 },
+  footerRow: { flexDirection: 'row', alignItems: 'flex-end', paddingBottom: 8 },
+  footerId: { fontSize: 10, color: C.light },
+  footerQr: { width: 36, height: 36, marginLeft: 12 },
 
-  // Right panel
+  // Right panel — 10% narrower than the original 183px (90% of 1920×1080 design at 366px)
   rightPanel: {
     position: 'absolute',
     top: 0,
     right: 30,
-    width: 183,
+    width: 165,
     height: 450,
     backgroundColor: C.primary,
     flexDirection: 'column',
@@ -118,13 +121,13 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
     fontWeight: 400,
   },
-  stamp: { width: 131 },
+  stamp: { width: 118 },
 
-  // Decorative square
+  // Decorative square — shifted left to keep ~9px gap to the narrower panel
   decoSquare: {
     position: 'absolute',
     bottom: 30,
-    right: 222,
+    right: 204,
     width: 48,
     height: 48,
     backgroundColor: C.primary,
@@ -135,6 +138,7 @@ interface Assets {
   logo: string
   signature: string
   stamp: string
+  qr?: string
 }
 
 interface CertificatePdfDocProps {
@@ -162,7 +166,7 @@ function CertificatePdfDoc({ recipientName, courseName, completionDate, humanId,
           <View style={s.body}>
             <Text style={s.date}>{completionDate}</Text>
             <Text style={s.recipient}>{recipientName}</Text>
-            <Text style={s.hasCompleted}>has successfully completed</Text>
+            <Text style={s.hasCompleted}>has successfully completed the course</Text>
             <Text style={s.course}>{courseName}</Text>
 
             <View style={s.signatureBlock}>
@@ -174,7 +178,10 @@ function CertificatePdfDoc({ recipientName, courseName, completionDate, humanId,
             </View>
 
             <View style={s.footerSpacer} />
-            <Text style={s.footerId}>Certificate id: {humanId}</Text>
+            <View style={s.footerRow}>
+              <Text style={s.footerId}>Certificate id: {humanId}</Text>
+              {assets.qr && <Image style={s.footerQr} src={assets.qr} />}
+            </View>
           </View>
 
           {/* Right panel */}
@@ -221,12 +228,14 @@ export async function downloadCertificatePdf(
   completionDate: string,
   humanId: string,
   filename: string,
+  qrUrl?: string,
 ) {
   const base = `${window.location.origin}/certificate-assets`
-  const [logo, signature, stamp] = await Promise.all([
+  const [logo, signature, stamp, qr] = await Promise.all([
     toDataUrl(`${base}/redduck-logo.svg`),
     toDataUrl(`${base}/mark-signature.webp`),
     toDataUrl(`${base}/certificate-stamp.webp`),
+    qrUrl ? createQrDataUrl(qrUrl) : Promise.resolve(undefined),
   ])
 
   const blob = await pdf(
@@ -235,7 +244,7 @@ export async function downloadCertificatePdf(
       courseName={courseName}
       completionDate={completionDate}
       humanId={humanId}
-      assets={{ logo, signature, stamp }}
+      assets={{ logo, signature, stamp, qr }}
     />,
   ).toBlob()
 

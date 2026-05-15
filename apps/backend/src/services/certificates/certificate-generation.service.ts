@@ -4,15 +4,7 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { userLessons, userCertificates } from '../../db/schema'
 import { uploadToR2, getJsonFromR2 } from '../../lib/r2'
-import { AppError, GENERIC_ERROR_MESSAGE } from '../../lib/errors'
-import { Logger } from '../../lib/logger'
-import { getBrowser } from '../../lib/browser'
-import { buildCertificateHtml } from './template'
-import { payloadSchema } from '@redduck/payload-config'
-
-const logger = new Logger('CertificateGenerationService')
-
-const { courses } = payloadSchema
+import { AppError } from '../../lib/errors'
 
 interface CertificateManifest {
   name: string
@@ -22,7 +14,18 @@ interface CertificateManifest {
   metadataHash: string
 }
 
-export interface GenerateCertificateResult {
+interface CertContext {
+  certKey: string
+  userName: string
+  humanId: string
+  courseTitle: string
+  walletAddr: string
+  courseId: number
+  certificateId: string | null
+}
+
+interface MintParams {
+  state: 'ready'
   certificateId: string | null
   metadataUri: string
   metadataHash: string
@@ -31,32 +34,87 @@ export interface GenerateCertificateResult {
   courseId: number
 }
 
-async function renderCertificateImage(
-  userName: string,
-  courseTitle: string,
-  issuedAt: Date,
-  humanId: string,
-): Promise<Buffer> {
-  let browser
-  try {
-    browser = await getBrowser()
-  } catch (err) {
-    logger.error('Failed to launch Puppeteer browser', err)
-    throw new AppError(502, GENERIC_ERROR_MESSAGE)
+interface NeedsImage {
+  state: 'needs-image'
+  certificateId: string | null
+  walletAddress: string
+  courseId: number
+  userName: string
+  humanId: string
+  courseTitle: string
+}
+
+export type GenerateCertificateResult = MintParams | NeedsImage
+
+async function resolveCertContext(userId: string, courseSlug: string): Promise<CertContext> {
+  const [course, certificate] = await Promise.all([
+    payloadDb.query.courses.findFirst({
+      where: (c, { and, ne }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
+      with: {
+        modules: {
+          where: (m, { ne }) => ne(m.isHidden, true),
+          with: {
+            lessons: {
+              where: (l, { ne }) => ne(l.isHidden, true),
+              columns: { id: true, type: true },
+            },
+          },
+        },
+      },
+    }),
+    db.query.userCertificates.findFirst({
+      where: and(eq(userCertificates.userId, userId), eq(userCertificates.courseSlug, courseSlug)),
+      columns: { id: true, humanId: true, walletAddress: true, name: true },
+      orderBy: (c, { desc }) => desc(c.issuedAt),
+    }),
+  ])
+
+  if (!course) throw new AppError(404, 'Course not found')
+  if (!certificate?.walletAddress) {
+    throw new AppError(400, 'Certificate has no target wallet — user must request NFT first')
   }
 
-  const page = await browser.newPage()
-  try {
-    await page.setViewport({ width: 960, height: 960 })
-    await page.setContent(buildCertificateHtml(userName, courseTitle, issuedAt, humanId), {
-      waitUntil: 'networkidle0',
-    })
-    return Buffer.from(await page.screenshot({ type: 'jpeg', quality: 85, fullPage: false }))
-  } catch (err) {
-    logger.error('Failed to render certificate image', err, { userName, courseTitle })
-    throw new AppError(502, GENERIC_ERROR_MESSAGE)
-  } finally {
-    await page.close()
+  const allLessons = (course.modules ?? []).flatMap((m) => m.lessons ?? [])
+  const gradedLessonIds = allLessons.filter((l) => l.type !== 'lecture').map((l) => l.id)
+
+  if (gradedLessonIds.length > 0) {
+    const completedRows = await db
+      .select({ lessonId: userLessons.lessonId })
+      .from(userLessons)
+      .where(
+        and(
+          eq(userLessons.userId, userId),
+          eq(userLessons.isCompleted, true),
+          inArray(userLessons.lessonId, gradedLessonIds),
+        ),
+      )
+
+    const completedIds = new Set(completedRows.map((r) => r.lessonId))
+    if (!gradedLessonIds.every((id) => completedIds.has(id))) {
+      throw new AppError(403, 'User has not completed all lessons in the course')
+    }
+  }
+
+  return {
+    certKey: createHash('sha256').update(`${userId}:${courseSlug}`).digest('base64url').slice(0, 24),
+    userName: certificate.name,
+    humanId: certificate.humanId,
+    courseTitle: course.title as string,
+    walletAddr: certificate.walletAddress,
+    courseId: course.id as number,
+    certificateId: certificate.id ?? null,
+  }
+}
+
+function cachedMintParams(ctx: CertContext, manifest: CertificateManifest): MintParams {
+  return {
+    state: 'ready',
+    certificateId: ctx.certificateId,
+    metadataUri: manifest.metadataUri,
+    metadataHash: manifest.metadataHash,
+    walletAddress: ctx.walletAddr,
+    imageUrl: manifest.imageUrl,
+    courseId: ctx.courseId,
   }
 }
 
@@ -64,91 +122,43 @@ export class CertificateGenerationService {
   static async generateCertificateAssets(
     userId: string,
     courseSlug: string,
+    image?: { buffer: Buffer; contentType: 'image/jpeg' | 'image/png' },
   ): Promise<GenerateCertificateResult> {
-    const [course, certificate] = await Promise.all([
-      payloadDb.query.courses.findFirst({
-        where: (c, { and, ne }) => and(eq(c.slug, courseSlug), ne(c.isHidden, true)),
-        with: {
-          modules: {
-            where: (m, { ne }) => ne(m.isHidden, true),
-            with: {
-              lessons: {
-                where: (l, { ne }) => ne(l.isHidden, true),
-                columns: { id: true, type: true },
-              },
-            },
-          },
-        },
-      }),
-      db.query.userCertificates.findFirst({
-        where: and(eq(userCertificates.userId, userId), eq(userCertificates.courseSlug, courseSlug)),
-        columns: { id: true, humanId: true, walletAddress: true, name: true },
-        orderBy: (c, { desc }) => desc(c.issuedAt),
-      }),
-    ])
-
-    if (!course) throw new AppError(404, 'Course not found')
-    if (!certificate?.walletAddress) {
-      throw new AppError(400, 'Certificate has no target wallet — user must request NFT first')
-    }
-
-    const walletAddr = certificate.walletAddress
-
-    const allLessons = (course.modules ?? []).flatMap((m) => m.lessons ?? [])
-    const gradedLessonIds = allLessons.filter((l) => l.type !== 'lecture').map((l) => l.id)
-
-    if (gradedLessonIds.length > 0) {
-      const completedRows = await db
-        .select({ lessonId: userLessons.lessonId })
-        .from(userLessons)
-        .where(
-          and(
-            eq(userLessons.userId, userId),
-            eq(userLessons.isCompleted, true),
-            inArray(userLessons.lessonId, gradedLessonIds),
-          ),
-        )
-
-      const completedIds = new Set(completedRows.map((r) => r.lessonId))
-      if (!gradedLessonIds.every((id) => completedIds.has(id))) {
-        throw new AppError(403, 'User has not completed all lessons in the course')
-      }
-    }
-
-    const userName = certificate.name
-    const humanId = certificate.humanId
-    const courseTitle = course.title as string
-    const certKey = createHash('sha256').update(`${userId}:${courseSlug}`).digest('base64url').slice(0, 24)
-    const base = `certificates/${certKey}`
+    const ctx = await resolveCertContext(userId, courseSlug)
+    const base = `certificates/${ctx.certKey}`
     const manifestKey = `${base}/manifest.json`
 
-    const existingManifest = await getJsonFromR2<CertificateManifest>(manifestKey)
-    if (existingManifest && existingManifest.name === userName && existingManifest.humanId === humanId) {
+    const existing = await getJsonFromR2<CertificateManifest>(manifestKey)
+    if (existing && existing.name === ctx.userName && existing.humanId === ctx.humanId) {
+      return cachedMintParams(ctx, existing)
+    }
+
+    if (!image) {
       return {
-        certificateId: certificate?.id ?? null,
-        metadataUri: existingManifest.metadataUri,
-        metadataHash: existingManifest.metadataHash,
-        walletAddress: walletAddr,
-        imageUrl: existingManifest.imageUrl,
-        courseId: course.id as number,
+        state: 'needs-image',
+        certificateId: ctx.certificateId,
+        walletAddress: ctx.walletAddr,
+        courseId: ctx.courseId,
+        userName: ctx.userName,
+        humanId: ctx.humanId,
+        courseTitle: ctx.courseTitle,
       }
     }
 
     const issuedAt = new Date()
-    const imageBuffer = await renderCertificateImage(userName, courseTitle, issuedAt, humanId)
-    const imageSuffix = createHash('sha256').update(imageBuffer).digest('hex').slice(0, 8)
-
+    const imageExt = image.contentType === 'image/png' ? 'png' : 'jpg'
+    const imageSuffix = createHash('sha256').update(image.buffer).digest('hex').slice(0, 8)
     const noCache = 'no-cache, no-store, must-revalidate'
-    const imageUrl = await uploadToR2(`${base}/preview-${imageSuffix}.jpg`, imageBuffer, 'image/jpeg')
+    const imageUrl = await uploadToR2(`${base}/preview-${imageSuffix}.${imageExt}`, image.buffer, image.contentType)
 
     const metadata = {
-      name: `${courseTitle} - RedDuck course certificate`,
-      description: `Awarded to ${walletAddr} for completing ${courseTitle} course on RedDuck Academy.`,
+      name: `${ctx.courseTitle} - RedDuck course certificate`,
+      description: `Awarded to ${ctx.walletAddr} for completing ${ctx.courseTitle} course on RedDuck Academy.`,
       image: imageUrl,
-      external_url: `https://redduck.academy/certificates/${humanId}`,
+      external_url: `https://redduck.academy/certificates/${ctx.humanId}`,
       attributes: [
-        { trait_type: 'Course', value: courseTitle },
-        { trait_type: 'Recipient', value: userName },
+        { trait_type: 'Course', value: ctx.courseTitle },
+        { trait_type: 'Recipient', value: ctx.userName },
         { trait_type: 'Issued At', display_type: 'date', value: Math.floor(issuedAt.getTime() / 1000) },
       ],
     }
@@ -163,9 +173,23 @@ export class CertificateGenerationService {
       noCache,
     )
 
-    const manifest: CertificateManifest = { name: userName, humanId, imageUrl, metadataUri, metadataHash }
+    const manifest: CertificateManifest = {
+      name: ctx.userName,
+      humanId: ctx.humanId,
+      imageUrl,
+      metadataUri,
+      metadataHash,
+    }
     await uploadToR2(manifestKey, Buffer.from(JSON.stringify(manifest)), 'application/json', noCache)
 
-    return { certificateId: certificate?.id ?? null, metadataUri, metadataHash, walletAddress: walletAddr, imageUrl, courseId: course.id as number }
+    return {
+      state: 'ready',
+      certificateId: ctx.certificateId,
+      metadataUri,
+      metadataHash,
+      walletAddress: ctx.walletAddr,
+      imageUrl,
+      courseId: ctx.courseId,
+    }
   }
 }

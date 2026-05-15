@@ -98,6 +98,7 @@ export const getAdminCertificates = async (input: {
 }
 
 export type AdminMintParams = {
+  state: 'ready'
   certificateId: string | null
   walletAddress: string
   courseId: number
@@ -106,11 +107,24 @@ export type AdminMintParams = {
   imageUrl: string
 }
 
+export type AdminCertificateNeedsImage = {
+  state: 'needs-image'
+  certificateId: string | null
+  walletAddress: string
+  courseId: number
+  userName: string
+  humanId: string
+  courseTitle: string
+}
+
+export type AdminGenerateCertificateResult = AdminMintParams | AdminCertificateNeedsImage
+
 export const generateAdminCertificate = async (input: {
   userId: string
   courseSlug: string
-}): Promise<AdminMintParams> => {
-  const response = await api().post<{ data: AdminMintParams }>(
+  imageDataUrl?: string
+}): Promise<AdminGenerateCertificateResult> => {
+  const response = await api().post<{ data: AdminGenerateCertificateResult }>(
     '/api/certificates/admin/generate',
     input,
   )

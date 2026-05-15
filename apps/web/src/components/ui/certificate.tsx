@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { createQrSvgPath } from '@/lib/qr'
 import { RedDuckIcon } from '@/components/ui/icons/redduck'
 import { CertificateStamp } from './icons/certificate-stamp'
 import { MarkSignature } from './icons/mark-signature'
@@ -10,6 +11,7 @@ export interface CertificateProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   courseName: string
   completionDate: string
   humanId?: string
+  qrUrl?: string
 }
 
 // All sizes derived from Figma canvas 1920×1080.
@@ -19,7 +21,8 @@ export interface CertificateProps extends Omit<React.HTMLAttributes<HTMLDivEleme
 // Font sizes        → cqw (container query width unit, requires container-type below).
 
 const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
-  ({ recipientName, courseName, completionDate, humanId, className, ...props }, ref) => {
+  ({ recipientName, courseName, completionDate, humanId, qrUrl, className, ...props }, ref) => {
+    const qr = React.useMemo(() => (qrUrl ? createQrSvgPath(qrUrl) : null), [qrUrl])
     return (
       <article
         ref={ref}
@@ -58,7 +61,7 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
             {recipientName}
           </p>
           <p style={{ fontSize: '1.458cqw' }} className="text-[#565653] mb-[0.521%]">
-            has successfully completed
+            has successfully completed the course
           </p>
           {/* course — 120/1920=6.25% */}
           <p style={{ fontSize: '2.396cqw' }} className="text-[#000] font-medium mb-[6.25%]">
@@ -75,24 +78,36 @@ const Certificate = React.forwardRef<HTMLDivElement, CertificateProps>(
             </p>
           </div>
           {humanId && (
-            <p style={{ fontSize: '1cqw' }} className="text-[#9b9b9b] mt-auto pb-[1.5%]">
-              Certificate id: {humanId}
-            </p>
+            <div className="mt-auto pb-[1.5%] flex items-end gap-[1.5%]">
+              <p style={{ fontSize: '1cqw' }} className="text-[#9b9b9b]">
+                Certificate id: {humanId}
+              </p>
+              {qr && (
+                <svg
+                  viewBox={`0 0 ${qr.size} ${qr.size}`}
+                  shapeRendering="crispEdges"
+                  aria-label="Certificate QR code"
+                  className="w-[6%] h-auto shrink-0"
+                >
+                  <path d={qr.path} fill="#000" />
+                </svg>
+              )}
+            </div>
           )}
         </div>
 
         {/* ── Right panel ─────────────────────────────────────────── */}
-        {/* right: 60/1920=3.125%  w: 366/1920=19.0625%  h: 900/1080=83.333% */}
+        {/* right: 60/1920=3.125%  w: 329.4/1920=17.156% (10% narrower)  h: 900/1080=83.333% */}
         {/* px: 28/1920=1.458%  py: 130/1920=6.771% */}
-        <div className="absolute top-0 right-[3.125%] w-[19.0625%] h-[83.333%] flex bg-primary flex-col items-center justify-between px-[1.458%] py-[6.771%]">
+        <div className="absolute top-0 right-[3.125%] w-[17.156%] h-[83.333%] flex bg-primary flex-col items-center justify-between px-[1.458%] py-[6.771%]">
           <p style={{ fontSize: '1.458cqw' }} className="text-[#000] text-center uppercase font-medium leading-tight">
             Course certificate
           </p>
           <CertificateStamp className="w-[71.585%] h-fit" />
         </div>
 
-        {/* w/h: 95/1920, 95/1080 — bottom: 60/1080, right: 443/1920 */}
-        <div className="absolute bottom-[5.556%] right-[23.073%] w-[4.948%] h-[8.796%] bg-primary" />
+        {/* w/h: 95/1920, 95/1080 — bottom: 60/1080, right: 406.4/1920=21.167% (shifted left to keep 17px gap to panel) */}
+        <div className="absolute bottom-[5.556%] right-[21.167%] w-[4.948%] h-[8.796%] bg-primary" />
       </article>
     )
   },

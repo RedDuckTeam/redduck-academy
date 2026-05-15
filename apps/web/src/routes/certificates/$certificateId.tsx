@@ -6,6 +6,7 @@ import { useSession } from '@/hooks/useSession'
 import { CertificateHeader } from '@/components/pages/certificate/certificate-header'
 import { CertificateActions } from '@/components/pages/certificate/certificate-actions'
 import { createPageMeta } from '@/lib/seo'
+import { env } from '@/env'
 
 export const Route = createFileRoute('/certificates/$certificateId')({
   ssr: true,
@@ -56,6 +57,7 @@ function CertificateRoute() {
             courseName={courseLine}
             completionDate={completionDate}
             humanId={certificate.humanId}
+            qrUrl={`${env.VITE_APP_URL.replace(/\/$/, '')}/certificates/${certificate.humanId}`}
           />
         </div>
         <CertificateActions

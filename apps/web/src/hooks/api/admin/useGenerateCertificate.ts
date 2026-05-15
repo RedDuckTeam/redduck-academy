@@ -2,9 +2,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWriteContract, useSwitchChain, usePublicClient } from 'wagmi'
 import { parseEventLogs } from 'viem'
 import { toast } from 'sonner'
-import { generateAdminCertificate, markAdminClaimed } from '@/lib/api/admin'
+import { generateAdminCertificate, markAdminClaimed, type AdminMintParams } from '@/lib/api/admin'
 import { certificateAbi } from '@/constants/abi/certificateAbi'
 import { activeChain, certificateContractAddress } from '@/constants/chain'
+import { renderCertificateImage } from '@/lib/render-certificate-image'
 
 export const useGenerateCertificate = () => {
   const queryClient = useQueryClient()
@@ -16,7 +17,30 @@ export const useGenerateCertificate = () => {
     mutationFn: async ({ userId, courseSlug }: { userId: string; courseSlug: string }) => {
       await switchChainAsync({ chainId: activeChain.id })
 
-      const mintParams = await generateAdminCertificate({ userId, courseSlug })
+      let result = await generateAdminCertificate({ userId, courseSlug })
+      let mintParams: AdminMintParams
+
+      if (result.state === 'needs-image') {
+        const renderToast = toast.loading('Rendering certificate image...')
+        try {
+          const imageDataUrl = await renderCertificateImage({
+            recipientName: result.userName,
+            courseName: `${result.courseTitle} by RedDuck`,
+            completionDate: new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date()),
+            humanId: result.humanId,
+          })
+          toast.loading('Uploading certificate image...', { id: renderToast })
+          result = await generateAdminCertificate({ userId, courseSlug, imageDataUrl })
+          toast.dismiss(renderToast)
+        } catch (err) {
+          toast.dismiss(renderToast)
+          throw err
+        }
+        if (result.state !== 'ready') throw new Error('Backend did not return mint params after image upload')
+        mintParams = result
+      } else {
+        mintParams = result
+      }
 
       const toastId = toast.loading('Waiting for wallet signature...')
 

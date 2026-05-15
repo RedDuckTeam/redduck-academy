@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { usePostHog } from '@posthog/react'
 import { CertificateNftSection } from './certificate-nft-section'
 import type { PublicCertificate } from '@/lib/api/certificates'
+import { env } from '@/env'
 
 interface CertificateActionsProps {
   certificate: PublicCertificate
@@ -31,7 +32,8 @@ export function CertificateActions({ certificate, courseLine, completionDate, is
     try {
       const { downloadCertificatePdf } = await import('@/components/ui/certificate-pdf')
       const filename = `${certificate.courseTitle.replace(/\s+/g, '-').toLowerCase()}-certificate.pdf`
-      await downloadCertificatePdf(certificate.name, courseLine, completionDate, certificate.humanId, filename)
+      const qrUrl = `${env.VITE_APP_URL.replace(/\/$/, '')}/certificates/${certificate.humanId}`
+      await downloadCertificatePdf(certificate.name, courseLine, completionDate, certificate.humanId, filename, qrUrl)
     } catch (error) {
       console.error(error)
       posthog.captureException(error)

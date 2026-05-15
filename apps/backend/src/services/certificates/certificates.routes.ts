@@ -19,6 +19,7 @@ import {
 } from '../../descriptions/certificates'
 import { CertificatesService } from './certificates.service'
 import { CertificateGenerationService } from './certificate-generation.service'
+import { AppError } from '../../lib/errors'
 
 const certificatesApp = new Hono<{ Variables: AuthVariables }>()
 
@@ -28,8 +29,16 @@ certificatesApp.post(
   adminGenerateCertificateDesc,
   validator('json', adminGenerateCertificateBodySchema),
   async (c) => {
-    const { userId, courseSlug } = c.req.valid('json')
-    const data = await CertificateGenerationService.generateCertificateAssets(userId, courseSlug)
+    const { userId, courseSlug, imageDataUrl } = c.req.valid('json')
+    let image: { buffer: Buffer; contentType: 'image/jpeg' | 'image/png' } | undefined
+    if (imageDataUrl) {
+      const match = imageDataUrl.match(/^data:(image\/(?:jpeg|png));base64,(.+)$/)
+      if (!match) throw new AppError(400, 'imageDataUrl must be a base64 image/jpeg or image/png data URL')
+      const buffer = Buffer.from(match[2], 'base64')
+      if (buffer.length === 0) throw new AppError(400, 'Image is empty')
+      image = { buffer, contentType: match[1] as 'image/jpeg' | 'image/png' }
+    }
+    const data = await CertificateGenerationService.generateCertificateAssets(userId, courseSlug, image)
     return c.json({ data })
   },
 )
