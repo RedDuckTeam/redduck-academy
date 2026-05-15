@@ -58,7 +58,7 @@ export default function Header() {
         </button>
         <div className="md:w-[20%] xl:w-[15%]">
           <Link to="/dashboard" aria-label="RedDuck Academy — home">
-            <RedDuckIcon className="w-full max-sm:w-[130px]" />
+            <RedDuckIcon className="max-sm:w-[150px] h-full w-[186px]" />
           </Link>
         </div>
         <div className="flex-1 max-md:hidden">
