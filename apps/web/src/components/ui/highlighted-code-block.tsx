@@ -30,9 +30,8 @@ export function HighlightedCodeBlock({ code, language }: HighlightedCodeBlockPro
   const [html, setHtml] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const lang: CodingLanguage = CODING_LANGUAGES.includes(language as CodingLanguage)
-    ? (language as CodingLanguage)
-    : 'typescript'
+  const isHighlightable = CODING_LANGUAGES.includes(language as CodingLanguage)
+  const lang = isHighlightable ? (language as CodingLanguage) : null
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(code)
@@ -41,6 +40,10 @@ export function HighlightedCodeBlock({ code, language }: HighlightedCodeBlockPro
   }, [code])
 
   useEffect(() => {
+    if (!lang) {
+      setHtml(null)
+      return
+    }
     let cancelled = false
     const run = async () => {
       const hl = await getHighlighter()
@@ -56,7 +59,7 @@ export function HighlightedCodeBlock({ code, language }: HighlightedCodeBlockPro
   return (
     <div className="relative overflow-hidden border border-border !my-2">
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground dark:bg-[#2d2d2d] dark:text-white/50">
-        <span>{language || 'code'}</span>
+        <span>{lang ?? ''}</span>
         <button type="button" onClick={handleCopy} aria-label="Copy code" className="flex items-center gap-1.5">
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         </button>

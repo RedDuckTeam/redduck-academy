@@ -5,6 +5,8 @@ import {
   EXPERIMENTAL_TableFeature,
 } from '@payloadcms/richtext-lexical'
 
+import { buildCodeBlock } from './rich-text/code-block'
+
 export const rootEditorFeatures = ({ defaultFeatures }: { defaultFeatures: any[] }) => [
   ...defaultFeatures,
   EXPERIMENTAL_TableFeature(),
@@ -12,16 +14,6 @@ export const rootEditorFeatures = ({ defaultFeatures }: { defaultFeatures: any[]
     enabledHeadingSizes: ['h1', 'h2', 'h3'],
   }),
   BlocksFeature({
-    blocks: [
-      CodeBlock({
-        slug: 'code',
-        defaultLanguage: 'typescript',
-        languages: {
-          typescript: 'TypeScript',
-          rust: 'Rust',
-          solidity: 'Solidity',
-        },
-      }),
-    ],
+    blocks: [buildCodeBlock(CodeBlock)],
   }),
 ]

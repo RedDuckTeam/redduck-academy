@@ -19,6 +19,7 @@ import {
 
 import { formatSlug } from './hooks/formatSlug'
 import { rootEditorFeatures } from '../editor-features'
+import { buildCodeBlock } from '../rich-text/code-block'
 
 const testQuestionLexicalFeatures = [
   ParagraphFeature(),
@@ -30,17 +31,7 @@ const testQuestionLexicalFeatures = [
   LinkFeature(),
   InlineToolbarFeature(),
   BlocksFeature({
-    blocks: [
-      CodeBlock({
-        slug: 'code',
-        defaultLanguage: 'typescript',
-        languages: {
-          typescript: 'TypeScript',
-          rust: 'Rust',
-          solidity: 'Solidity',
-        },
-      }),
-    ],
+    blocks: [buildCodeBlock(CodeBlock)],
   }),
 ]
 
