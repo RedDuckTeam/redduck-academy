@@ -38,6 +38,19 @@ function getEthBuildUrl(text: string): string | null {
   }
 }
 
+function getPlgrndUrl(text: string): string | null {
+  const trimmed = text.trim()
+  try {
+    const url = new URL(trimmed)
+    if (url.hostname === 'plgrnd.io' || url.hostname.endsWith('.plgrnd.io')) {
+      return trimmed
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 function getYoutubeEmbedUrl(text: string): string | null {
   const trimmed = text.trim()
   try {
@@ -161,6 +174,22 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
                     <iframe
                       src={ethBuildUrl}
                       title="eth.build interactive flow"
+                      sandbox="allow-scripts allow-same-origin"
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full"
+                    />
+                  </div>
+                )
+              }
+            }
+            if (textNode?.type === 'autolink' && textNode.fields?.url?.includes('plgrnd.io')) {
+              const plgrndUrl = getPlgrndUrl(textNode.fields?.url ?? '')
+              if (plgrndUrl) {
+                return (
+                  <div className="aspect-[9/13] md:aspect-video w-full overflow-hidden rounded-xl my-4">
+                    <iframe
+                      src={plgrndUrl}
+                      title="plgrnd.io interactive flow"
                       sandbox="allow-scripts allow-same-origin"
                       referrerPolicy="no-referrer"
                       className="h-full w-full"
