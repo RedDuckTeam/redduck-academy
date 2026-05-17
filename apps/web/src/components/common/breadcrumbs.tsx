@@ -19,6 +19,7 @@ type PageBreadcrumbsProps =
       courseTitle: string
       moduleSlug?: string
       lessonSlug?: string
+      lessonTitle?: string
     }
   | {
       variant: 'community'
@@ -44,11 +45,11 @@ export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
         { label: props.eventTitle, href: undefined },
       ]
     }
-    const { courseSlug, courseTitle, moduleSlug, lessonSlug } = props
+    const { courseSlug, courseTitle, moduleSlug, lessonSlug, lessonTitle } = props
     return [
       { label: courseTitle, href: `${coursesRoute}${courseSlug}` },
       {
-        label: lessonSlug,
+        label: lessonTitle ?? lessonSlug,
         href: lessonSlug ? `${coursesRoute}${courseSlug}/${moduleSlug}/${lessonSlug}` : undefined,
       },
     ]
@@ -58,7 +59,7 @@ export const PageBreadcrumbs = (props: PageBreadcrumbsProps) => {
       ? [props.courseTitle, props.courseSlug]
       : props.variant === 'community'
         ? [props.eventTitle]
-        : [props.courseSlug, props.courseTitle, props.moduleSlug, props.lessonSlug]),
+        : [props.courseSlug, props.courseTitle, props.moduleSlug, props.lessonSlug, props.lessonTitle]),
   ])
 
   return (

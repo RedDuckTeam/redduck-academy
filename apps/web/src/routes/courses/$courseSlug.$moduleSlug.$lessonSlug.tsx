@@ -73,6 +73,7 @@ function LessonPage() {
         courseTitle={courseTitle}
         moduleSlug={moduleSlug}
         lessonSlug={lessonSlug}
+        lessonTitle={lesson.title}
       />
       <div
         id={isCodingChallenge ? 'coding-task-row' : undefined}
