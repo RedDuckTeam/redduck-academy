@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
+import { EmbedFrame } from '@/components/ui/embed-frame'
 import { extractText, slugify } from '@/components/pages/lesson/toc/build-toc-items'
 
 type EnrichedLessonDoc = {
@@ -169,33 +170,18 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
             ) {
               const ethBuildUrl = getEthBuildUrl(textNode.fields?.url ?? '')
               if (ethBuildUrl) {
-                return (
-                  <div className="aspect-[9/13] md:aspect-video w-full overflow-hidden rounded-xl my-4">
-                    <iframe
-                      src={ethBuildUrl}
-                      title="eth.build interactive flow"
-                      sandbox="allow-scripts allow-same-origin"
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full"
-                    />
-                  </div>
-                )
+                return <EmbedFrame src={ethBuildUrl} title="eth.build interactive flow" />
               }
             }
-            if (textNode?.type === 'autolink' && textNode.fields?.url?.includes('plgrnd.io')) {
+
+            if (
+              (textNode?.type === 'autolink' || textNode?.type === 'link') &&
+              textNode.fields?.url?.includes('plgrnd.io')
+            ) {
               const plgrndUrl = getPlgrndUrl(textNode.fields?.url ?? '')
+              console.log('plgrndUrl', plgrndUrl)
               if (plgrndUrl) {
-                return (
-                  <div className="aspect-[9/13] md:aspect-video w-full overflow-hidden rounded-xl my-4">
-                    <iframe
-                      src={plgrndUrl}
-                      title="plgrnd.io interactive flow"
-                      sandbox="allow-scripts allow-same-origin"
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full"
-                    />
-                  </div>
-                )
+                return <EmbedFrame src={plgrndUrl} title="plgrnd.io interactive flow" />
               }
             }
             return (
