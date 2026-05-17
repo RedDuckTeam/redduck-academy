@@ -165,7 +165,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               }
             }
             if (
-              textNode?.type === 'autolink' &&
+              (textNode?.type === 'autolink' || textNode?.type === 'link') &&
               (textNode.fields?.url?.includes('sandbox.eth.build') || textNode.fields?.url?.includes('eth.build'))
             ) {
               const ethBuildUrl = getEthBuildUrl(textNode.fields?.url ?? '')
