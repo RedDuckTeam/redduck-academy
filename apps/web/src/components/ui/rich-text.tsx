@@ -52,6 +52,19 @@ function getPlgrndUrl(text: string): string | null {
   }
 }
 
+function getAndersBrownworthUrl(text: string): string | null {
+  const trimmed = text.trim()
+  try {
+    const url = new URL(trimmed)
+    if (url.hostname === 'andersbrownworth.com' && url.pathname.startsWith('/blockchain')) {
+      return trimmed
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 function getYoutubeEmbedUrl(text: string): string | null {
   const trimmed = text.trim()
   try {
@@ -182,6 +195,30 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               console.log('plgrndUrl', plgrndUrl)
               if (plgrndUrl) {
                 return <EmbedFrame src={plgrndUrl} title="plgrnd.io interactive flow" />
+              }
+            }
+            if (
+              (textNode?.type === 'autolink' || textNode?.type === 'link') &&
+              textNode.fields?.url?.includes('andersbrownworth.com/blockchain')
+            ) {
+              const andersUrl = getAndersBrownworthUrl(textNode.fields?.url ?? '')
+              if (andersUrl) {
+                return (
+                  <div className="my-4">
+                    <EmbedFrame src={andersUrl} title="Blockchain demo by Anders Brownworth" />
+                    <Text variant="main-14" className="mt-2 text-muted-foreground">
+                      Interactive demo by{' '}
+                      <a
+                        href="https://github.com/anders94"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        Anders Brownworth
+                      </a>
+                    </Text>
+                  </div>
+                )
               }
             }
             return (

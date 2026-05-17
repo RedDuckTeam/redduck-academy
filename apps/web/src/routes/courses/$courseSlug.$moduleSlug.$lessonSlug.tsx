@@ -2,16 +2,18 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { useScrollMagnet } from '@/hooks/useScrollMagnet'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
+import { LessonNotFoundPage } from '@/components/pages/not-found/lesson-not-found-page'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
 import { getCourse, getLesson } from '@/lib/api/courses'
+import { ApiError } from '@/lib/api/errors'
 import { queryKeys } from '@/lib/query-keys'
 import { LessonTest } from '@/components/pages/lesson/test/lesson-test'
 import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
 import { LessonNavigation } from '@/components/pages/lesson/lesson-navigation/lesson-navigation'
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
-import { createLessonMeta } from '@/lib/seo'
+import { createDefaultMeta, createLessonMeta } from '@/lib/seo'
 import { RichText } from '@/components/ui/rich-text'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
@@ -22,36 +24,49 @@ import { useLessonCompletionToast } from '@/hooks/useLessonCompletionToast'
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
   loader: async ({ params, context: { queryClient } }) => {
-    const [lesson, course] = await Promise.all([
-      queryClient.ensureQueryData({
-        queryKey: queryKeys.lessons.detail(params.courseSlug, params.lessonSlug),
-        queryFn: () => getLesson(params.courseSlug, params.lessonSlug),
-        staleTime: 30 * 60 * 1000,
-      }),
-      queryClient.ensureQueryData({
-        queryKey: queryKeys.courses.detail(params.courseSlug),
-        queryFn: () => getCourse(params.courseSlug),
-        staleTime: 30 * 60 * 1000,
-      }),
-    ])
-    if (!lesson?.data || !course?.data) throw notFound()
-    return {
-      lesson: lesson.data,
-      courseTitle: course.data.title,
-      courseSlug: params.courseSlug,
-      moduleSlug: params.moduleSlug,
-      lessonSlug: params.lessonSlug,
+    try {
+      const [lesson, course] = await Promise.all([
+        queryClient.ensureQueryData({
+          queryKey: queryKeys.lessons.detail(params.courseSlug, params.lessonSlug),
+          queryFn: () => getLesson(params.courseSlug, params.lessonSlug),
+          staleTime: 30 * 60 * 1000,
+        }),
+        queryClient.ensureQueryData({
+          queryKey: queryKeys.courses.detail(params.courseSlug),
+          queryFn: () => getCourse(params.courseSlug),
+          staleTime: 30 * 60 * 1000,
+        }),
+      ])
+      if (!lesson?.data || !course?.data) throw notFound()
+      return {
+        lesson: lesson.data,
+        courseTitle: course.data.title,
+        courseSlug: params.courseSlug,
+        moduleSlug: params.moduleSlug,
+        lessonSlug: params.lessonSlug,
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) throw notFound()
+      throw err
     }
   },
-  head: ({ loaderData, params }) =>
-    createLessonMeta({
-      lesson: loaderData!.lesson,
+  head: ({ loaderData, params }) => {
+    if (!loaderData) return createDefaultMeta()
+    return createLessonMeta({
+      lesson: loaderData.lesson,
       courseSlug: params.courseSlug,
       moduleSlug: params.moduleSlug,
       lessonSlug: params.lessonSlug,
-    }),
+    })
+  },
   component: LessonPage,
+  notFoundComponent: LessonNotFound,
 })
+
+function LessonNotFound() {
+  const { courseSlug } = Route.useParams()
+  return <LessonNotFoundPage courseSlug={courseSlug} />
+}
 
 function LessonPage() {
   const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
