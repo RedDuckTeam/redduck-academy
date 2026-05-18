@@ -35,7 +35,9 @@ const LessonSidebarItem = forwardRef<HTMLAnchorElement, LessonSidebarItemProps>(
           <Text variant="main-16" className="min-w-0 flex-1 text-[#e0deda]">
             {lesson.title}
           </Text>
-          {isCompleted && <CheckIcon className="size-5 shrink-0 [&_path]:fill-primary" />}
+          <span className="size-5 shrink-0">
+            {isCompleted && <CheckIcon className="size-5 [&_path]:fill-primary" />}
+          </span>
         </div>
       </Link>
     )
