@@ -25,7 +25,7 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
     >
       <div
         ref={parent as Ref<HTMLDivElement>}
-        className="flex max-h-[800px] min-w-[320px] flex-col divide-y divide-border overflow-y-auto"
+        className="flex max-h-[calc(100%-40px)] min-h-[60px] min-w-[320px] flex-col divide-y divide-border overflow-y-auto custom-scrollbar"
       >
         {isOpen ? (
           <div className="flex w-full min-w-0 flex-col divide-y divide-border">

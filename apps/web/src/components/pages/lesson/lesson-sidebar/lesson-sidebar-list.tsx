@@ -101,7 +101,7 @@ export const LessonSidebarList = ({
       onValueChange={setAccordionOpen}
       type="single"
       collapsible
-      className="flex w-full min-w-0 flex-col divide-y divide-border"
+      className="flex w-full min-w-0 flex-col divide-y divide-border "
     >
       {course?.data.modules.map((module, index) => (
         <AccordionItem key={module.id} value={module.slug}>
