@@ -21,21 +21,21 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
   return (
     <div
       className="flex max-md:hidden flex-col overflow-hidden bg-sidebar transition-all duration-200 ease-in-out self-start sticky top-5 max-h-[calc(100vh-40px)]"
-      style={{ width: isOpen ? 320 : 60, minWidth: isOpen ? 320 : 60, height: isOpen ? 'auto' : 60 }}
+      style={{ width: isOpen ? 330 : 60, minWidth: isOpen ? 330 : 60, height: isOpen ? 'auto' : 60 }}
     >
       <div
         ref={parent as Ref<HTMLDivElement>}
-        className="flex max-h-[calc(100%-40px)] min-h-[60px] min-w-[320px] flex-col divide-y divide-border overflow-y-auto custom-scrollbar"
+        className="flex max-h-[calc(100%-40px)] min-h-[60px] min-w-[330px] flex-col divide-y divide-border overflow-y-auto custom-scrollbar"
       >
         {isOpen ? (
           <div className="flex w-full min-w-0 flex-col divide-y divide-border">
             <button
               type="button"
-              className="flex h-[60px] w-full shrink-0 cursor-pointer items-center gap-5 px-5 text-left"
+              className="flex h-[60px] w-full shrink-0 cursor-pointer items-center gap-2 px-5 text-left"
               onClick={() => setIsOpen(false)}
             >
               <ArrowRight className="shrink-0 rotate-180" />
-              <Text variant="caps-20" className="truncate text-[#e0deda]">
+              <Text variant="caps-20" className="truncate text-lg text-[#e0deda]">
                 {course?.data.title}
               </Text>
             </button>
