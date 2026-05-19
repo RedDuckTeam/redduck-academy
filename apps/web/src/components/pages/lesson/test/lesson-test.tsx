@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { usePostHog } from '@posthog/react'
 import { LessonTestQuestion } from './lesson-test-question'
@@ -68,9 +68,11 @@ export const LessonTest = ({ lesson, courseSlug, lessonSlug }: LessonTestProps) 
   const rightAnswers = userLesson?.correctAnswers ?? {}
   const userAnswers = isCompleted ? (userLesson?.userAnswers ?? {}) : answers
 
+  const questions = useMemo(() => lesson.questions?.sort((a, b) => a.order - b.order) ?? [], [lesson.questions])
+
   return (
     <div className="flex min-w-0 w-full max-w-full flex-col gap-14">
-      {lesson.questions?.map((question) => (
+      {questions.map((question) => (
         <LessonTestQuestion
           key={question.id}
           question={question}
