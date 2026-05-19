@@ -16,10 +16,7 @@ interface MyProgressProps {
 export const MyProgress = ({ courses, completedLessons, courseAccess }: MyProgressProps) => {
   const courseProgress = useCourseProgress(courses, completedLessons)
   const { data: certificates } = useUserCertificates()
-  const certifiedSlugs = useMemo(
-    () => new Set((certificates ?? []).map((c) => c.courseSlug)),
-    [certificates],
-  )
+  const certifiedSlugs = useMemo(() => new Set((certificates ?? []).map((c) => c.courseSlug)), [certificates])
 
   const completedCountBySlug = useMemo(() => {
     const counts = new Map<string, number>()

@@ -31,8 +31,8 @@ export const LessonTestQuestion = ({
   const isMultiple = question.isMultipleChoices
 
   return (
-    <div id={`question-${question.order}`} className="flex min-w-0 w-full max-w-full flex-col gap-5 scroll-mt-20">
-      <div className="min-w-0 max-w-full wrap-anywhere">
+    <div id={`question-${question.order}`} className="flex min-w-0 w-full max-w-full flex-col scroll-mt-20">
+      <div className="min-w-0 max-w-full wrap-anywhere mb-5">
         <Text variant="caps-20" className="text-primary float-left mr-1.5">
           {question.order < 10 ? `0${question.order}` : question.order}.
         </Text>
@@ -41,7 +41,7 @@ export const LessonTestQuestion = ({
 
       <div ref={warningParent as Ref<HTMLDivElement>}>
         {showUnansweredWarning && (
-          <Text variant="caps-20" className="text-primary">
+          <Text variant="caps-20" className="text-primary mb-5">
             You should select an answer
           </Text>
         )}

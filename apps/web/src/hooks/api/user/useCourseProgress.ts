@@ -29,11 +29,11 @@ export function useCourseProgress(courses: Course[], completedLessons: Completed
         ? { moduleSlug: nextLessonData.moduleSlug, lessonSlug: nextLessonData.lessonSlug }
         : null
 
-      const firstLesson = orderedLessons[0]
+      const hasAnyCompleted = orderedLessons.some((item) => completedLessonIds.has(item.lessonId))
       let status: CourseStatus
       if (!nextLessonData) {
         status = CourseStatusEnum.COMPLETED
-      } else if (nextLessonData.lessonId === firstLesson?.lessonId) {
+      } else if (!hasAnyCompleted) {
         status = CourseStatusEnum.START
       } else {
         status = CourseStatusEnum.CONTINUE
