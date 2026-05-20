@@ -50,7 +50,9 @@ export default buildConfig({
     pool: {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
       connectionString: process.env.DATABASE_URL,
-      max: 8,
+      max: 6,
+      idleTimeoutMillis: 20_000,
+      allowExitOnIdle: true,
       application_name: 'academy-admin',
     },
   }),

@@ -6,7 +6,9 @@ import { payloadSchema } from '@redduck/payload-config'
 
 const client = postgres(env.DATABASE_URL, {
   ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-  max: 8,
+  max: 6,
+  idle_timeout: 20,
+  max_lifetime: 60 * 30,
   connection: { application_name: 'academy-backend' },
 })
 
