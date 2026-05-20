@@ -38,6 +38,7 @@ function makeRowLabel(prefix: string) {
             fontSize: '0.9em',
             lineHeight: 1,
             opacity: 0.7,
+            pointerEvents: 'auto',
           }}
         >
           ✎
