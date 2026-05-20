@@ -465,9 +465,7 @@ export const Lessons: CollectionConfig = {
         {
           name: 'name',
           type: 'text',
-          admin: {
-            description: 'Optional admin-only label to help you keep cases organized. Not shown to students.',
-          },
+          admin: { hidden: true },
         },
         {
           name: 'inputJson',
@@ -546,9 +544,7 @@ export const Lessons: CollectionConfig = {
         {
           name: 'name',
           type: 'text',
-          admin: {
-            description: 'Optional admin-only label to help you keep cases organized. Not shown to students.',
-          },
+          admin: { hidden: true },
         },
         {
           name: 'steps',
@@ -564,9 +560,7 @@ export const Lessons: CollectionConfig = {
             {
               name: 'name',
               type: 'text',
-              admin: {
-                description: 'Optional admin-only label for this step. Not shown to students.',
-              },
+              admin: { hidden: true },
             },
             {
               name: 'target',

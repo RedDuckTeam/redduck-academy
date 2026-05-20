@@ -322,9 +322,6 @@ export interface Lesson {
    */
   executableTestCases?:
     | {
-        /**
-         * Optional admin-only label to help you keep cases organized. Not shown to students.
-         */
         name?: string | null;
         /**
          * JSON array of args. Example: `[[2,7,11,15], 9]`.
@@ -371,17 +368,11 @@ export interface Lesson {
    */
   solidityTestCases?:
     | {
-        /**
-         * Optional admin-only label to help you keep cases organized. Not shown to students.
-         */
         name?: string | null;
         /**
          * Ordered list of calls (max 16). Each step is a function call against the freshly deployed contract.
          */
         steps: {
-          /**
-           * Optional admin-only label for this step. Not shown to students.
-           */
           name?: string | null;
           /**
            * Which deployed contract this step calls. Defaults to @self (the student's contract). Use a fixture alias (e.g. @mockToken) to call a peer contract.
