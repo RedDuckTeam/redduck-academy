@@ -99,6 +99,25 @@ export const media = db_schema.table(
   ],
 )
 
+export const courses_tags = db_schema.table(
+  'courses_tags',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    value: varchar('value').notNull(),
+  },
+  (columns) => [
+    index('courses_tags_order_idx').on(columns._order),
+    index('courses_tags_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [courses.id],
+      name: 'courses_tags_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
 export const courses = db_schema.table(
   'courses',
   {
@@ -109,6 +128,7 @@ export const courses = db_schema.table(
     coverImage: integer('cover_image_id').references(() => media.id, {
       onDelete: 'set null',
     }),
+    durationHours: numeric('duration_hours', { mode: 'number' }),
     order: numeric('order', { mode: 'number' }).notNull().default(0),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true, precision: 3 }),
     isHidden: boolean('is_hidden').default(false),
@@ -214,6 +234,7 @@ export const lessons_executable_test_cases = db_schema.table(
     _order: integer('_order').notNull(),
     _parentID: integer('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
+    name: varchar('name'),
     inputJson: varchar('input_json'),
     expectedJson: varchar('expected_json'),
   },
@@ -293,6 +314,7 @@ export const lessons_solidity_test_cases_steps = db_schema.table(
     _order: integer('_order').notNull(),
     _parentID: varchar('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
+    name: varchar('name'),
     target: varchar('target'),
     functionName: varchar('function_name'),
     valueWei: varchar('value_wei'),
@@ -316,6 +338,7 @@ export const lessons_solidity_test_cases = db_schema.table(
     _order: integer('_order').notNull(),
     _parentID: integer('_parent_id').notNull(),
     id: varchar('id').primaryKey(),
+    name: varchar('name'),
   },
   (columns) => [
     index('lessons_solidity_test_cases_order_idx').on(columns._order),
@@ -585,11 +608,21 @@ export const relations_users = relations(users, ({ many }) => ({
   }),
 }))
 export const relations_media = relations(media, () => ({}))
-export const relations_courses = relations(courses, ({ one }) => ({
+export const relations_courses_tags = relations(courses_tags, ({ one }) => ({
+  _parentID: one(courses, {
+    fields: [courses_tags._parentID],
+    references: [courses.id],
+    relationName: 'tags',
+  }),
+}))
+export const relations_courses = relations(courses, ({ one, many }) => ({
   coverImage: one(media, {
     fields: [courses.coverImage],
     references: [media.id],
     relationName: 'coverImage',
+  }),
+  tags: many(courses_tags, {
+    relationName: 'tags',
   }),
   prerequisiteCourse: one(courses, {
     fields: [courses.prerequisiteCourse],
@@ -806,6 +839,7 @@ type DatabaseSchema = {
   users_sessions: typeof users_sessions
   users: typeof users
   media: typeof media
+  courses_tags: typeof courses_tags
   courses: typeof courses
   modules: typeof modules
   lessons_questions_options: typeof lessons_questions_options
@@ -830,6 +864,7 @@ type DatabaseSchema = {
   relations_users_sessions: typeof relations_users_sessions
   relations_users: typeof relations_users
   relations_media: typeof relations_media
+  relations_courses_tags: typeof relations_courses_tags
   relations_courses: typeof relations_courses
   relations_modules: typeof relations_modules
   relations_lessons_questions_options: typeof relations_lessons_questions_options

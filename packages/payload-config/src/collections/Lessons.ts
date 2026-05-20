@@ -459,8 +459,16 @@ export const Lessons: CollectionConfig = {
           'TypeScript test cases. Each row runs in the browser against the student\'s code. ' +
           '`inputJson` is a JSON array of arguments; `expectedJson` is the expected return value as JSON. ' +
           'Leave empty to keep AI-only grading (legacy mode).',
+        components: { RowLabel: '@/admin-components/test-case-row-label#TestCaseRowLabel' },
       },
       fields: [
+        {
+          name: 'name',
+          type: 'text',
+          admin: {
+            description: 'Optional admin-only label to help you keep cases organized. Not shown to students.',
+          },
+        },
         {
           name: 'inputJson',
           type: 'textarea',
@@ -532,8 +540,16 @@ export const Lessons: CollectionConfig = {
         description:
           'Solidity test cases. Each row is a chain of calls (steps). Steps within a case share ' +
           'EVM state. Set a step\'s "expected" to assert that call\'s return value.',
+        components: { RowLabel: '@/admin-components/test-case-row-label#TestCaseRowLabel' },
       },
       fields: [
+        {
+          name: 'name',
+          type: 'text',
+          admin: {
+            description: 'Optional admin-only label to help you keep cases organized. Not shown to students.',
+          },
+        },
         {
           name: 'steps',
           type: 'array',
@@ -542,8 +558,16 @@ export const Lessons: CollectionConfig = {
           admin: {
             description:
               `Ordered list of calls (max ${MAX_CASE_STEPS}). Each step is a function call against the freshly deployed contract.`,
+            components: { RowLabel: '@/admin-components/test-case-row-label#StepRowLabel' },
           },
           fields: [
+            {
+              name: 'name',
+              type: 'text',
+              admin: {
+                description: 'Optional admin-only label for this step. Not shown to students.',
+              },
+            },
             {
               name: 'target',
               type: 'text',
