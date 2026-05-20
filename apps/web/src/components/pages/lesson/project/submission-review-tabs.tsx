@@ -31,7 +31,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
           const passed =
             submission.status === 'completed' &&
             !!submission.feedback &&
-            submission.feedback.criteria.every((c) => c.passed)
+            submission.feedback.lessonPassed
           return (
             <TabsTrigger
               key={submission.id}
@@ -50,7 +50,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
         <TabsContent key={submission.id} value={`attempt-${index}`} className="mt-0 flex flex-col gap-4">
           {submission.status === 'completed' && submission.feedback && (
             <div className="flex flex-col gap-4">
-              <StatusBar passed={submission.feedback.criteria.every((c) => c.passed)} />
+              <StatusBar passed={submission.feedback.lessonPassed} />
               <Text variant="main-18" className="text-justify">
                 {submission.feedback.summary}
               </Text>
