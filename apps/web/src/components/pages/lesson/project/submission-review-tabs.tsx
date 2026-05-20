@@ -28,10 +28,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
         className="flex w-full h-[100%] overflow-y-hidden items-center justify-start gap-1 overflow-x-auto"
       >
         {filteredSubmissions.map((submission, index) => {
-          const passed =
-            submission.status === 'completed' &&
-            !!submission.feedback &&
-            submission.feedback.lessonPassed
+          const passed = submission.status === 'completed' && !!submission.feedback && submission.feedback.lessonPassed
           return (
             <TabsTrigger
               key={submission.id}
@@ -59,7 +56,7 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
                   <div key={c.taskId} className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <Text variant="caps-20" className={cn(c.passed ? 'text-success' : 'text-primary')}>
-                        0{i + 1}. {c.name}
+                        {i < 9 ? `0${i + 1}` : i + 1}. {c.name}
                       </Text>
                     </div>
                     <Text variant="main-18" className="text-muted-foreground text-justify">
