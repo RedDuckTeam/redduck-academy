@@ -157,6 +157,82 @@ export const banAdminUser = async (userId: string, ban: boolean): Promise<{ blac
   return response.data
 }
 
+export type AdminLessonTreeLesson = {
+  id: number
+  title: string
+  slug: string
+  type: 'lecture' | 'test' | 'coding_task' | 'review_task'
+  order: number
+  completedCount: number
+  totalAttempts: number
+  successAttempts: number
+}
+
+export type AdminLessonTreeModule = {
+  id: number
+  title: string
+  slug: string | null
+  order: number
+  lessons: AdminLessonTreeLesson[]
+}
+
+export type AdminLessonTreeCourse = {
+  id: number
+  title: string
+  slug: string
+  order: number
+  modules: AdminLessonTreeModule[]
+}
+
+export const getAdminLessonsTree = async (): Promise<AdminLessonTreeCourse[]> => {
+  const response = await api().get<{ data: AdminLessonTreeCourse[] }>('/api/admin/lessons/tree')
+  return response.data
+}
+
+export type AdminLessonSubmissionItem = {
+  id: string
+  kind: 'lecture' | 'test' | 'coding_task' | 'review_task'
+  userId: string
+  userName: string
+  userEmail: string | null
+  userImage: string | null
+  username: string | null
+  submittedAt: string
+  passed: boolean | null
+  status: string | null
+}
+
+export type AdminLessonSubmissionsPage = {
+  items: AdminLessonSubmissionItem[]
+  total: number
+  page: number
+  pageSize: number
+  lesson: {
+    id: number
+    title: string
+    slug: string
+    type: 'lecture' | 'test' | 'coding_task' | 'review_task'
+    courseSlug: string
+    courseTitle: string
+  }
+}
+
+export const getAdminLessonSubmissions = async (input: {
+  courseSlug: string
+  lessonSlug: string
+  page: number
+  pageSize?: number
+  search?: string
+}): Promise<AdminLessonSubmissionsPage> => {
+  const pageSize = input.pageSize ?? 20
+  const qs = new URLSearchParams({ page: String(input.page), pageSize: String(pageSize) })
+  if (input.search) qs.set('search', input.search)
+  const response = await api().get<{ data: AdminLessonSubmissionsPage }>(
+    `/api/admin/lessons/${input.courseSlug}/${input.lessonSlug}/submissions?${qs.toString()}`,
+  )
+  return response.data
+}
+
 export const markAdminClaimed = async (
   certificateId: string,
   data: { metadataUri: string; imageUrl: string; tokenId: string; txHash: string },

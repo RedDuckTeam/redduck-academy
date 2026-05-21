@@ -1,7 +1,12 @@
-import { asc, count, countDistinct, desc, eq, inArray, sql, and } from 'drizzle-orm'
+import { asc, count, countDistinct, desc, eq, inArray, sql, and, ne } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
-import { userLessons, userCertificates } from '../../db/schema'
+import {
+  userLessons,
+  userCertificates,
+  projectUserSubmissions,
+  codingTaskSubmissions,
+} from '../../db/schema'
 import { buildSearchFilter, buildWhereClause } from '../../lib/query-builder'
 import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
@@ -11,7 +16,7 @@ import { CoursesService } from '../courses/courses.service'
 import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 
-const { lessons } = payloadSchema
+const { lessons, modules, courses } = payloadSchema
 
 export type AdminStats = {
   totalUsers: number
@@ -279,6 +284,291 @@ export class AdminService {
         lessonId: lesson.id,
         lessonSlug: lesson.slug ?? '',
       }))
+  }
+
+  static async getLessonsTree() {
+    const allCourses = await payloadDb.query.courses.findMany({
+      where: (c) => ne(c.isHidden, true),
+      orderBy: (c, { asc: a }) => [a(c.order)],
+      columns: { id: true, title: true, slug: true, order: true },
+      with: {
+        modules: {
+          where: (m) => ne(m.isHidden, true),
+          orderBy: (m, { asc: a }) => [a(m.order)],
+          columns: { id: true, title: true, slug: true, order: true },
+          with: {
+            lessons: {
+              where: (l) => ne(l.isHidden, true),
+              orderBy: (l, { asc: a }) => [a(l.order)],
+              columns: { id: true, title: true, slug: true, order: true, type: true },
+            },
+          },
+        },
+      },
+    })
+    const allLessonIds = allCourses.flatMap((c) =>
+      (c.modules ?? []).flatMap((m) => (m.lessons ?? []).map((l) => l.id)),
+    )
+
+    if (allLessonIds.length === 0) return []
+
+    const completedRows = await db
+      .select({ lessonId: userLessons.lessonId, c: count() })
+      .from(userLessons)
+      .where(and(eq(userLessons.isCompleted, true), inArray(userLessons.lessonId, allLessonIds)))
+      .groupBy(userLessons.lessonId)
+    const completedMap = new Map(completedRows.map((r) => [r.lessonId, Number(r.c)]))
+
+    const codingRows = await db
+      .select({
+        lessonId: userLessons.lessonId,
+        total: count(),
+        success: sql<number>`count(*) filter (where ${codingTaskSubmissions.passed} = true)`,
+      })
+      .from(codingTaskSubmissions)
+      .innerJoin(userLessons, eq(codingTaskSubmissions.userLessonId, userLessons.id))
+      .where(inArray(userLessons.lessonId, allLessonIds))
+      .groupBy(userLessons.lessonId)
+    const codingMap = new Map(codingRows.map((r) => [r.lessonId, { total: Number(r.total), success: Number(r.success) }]))
+
+    const projectRows = await db
+      .select({
+        lessonId: userLessons.lessonId,
+        total: count(),
+        success: sql<number>`count(*) filter (where ${projectUserSubmissions.status} = 'completed')`,
+      })
+      .from(projectUserSubmissions)
+      .innerJoin(userLessons, eq(projectUserSubmissions.userLessonId, userLessons.id))
+      .where(inArray(userLessons.lessonId, allLessonIds))
+      .groupBy(userLessons.lessonId)
+    const projectMap = new Map(projectRows.map((r) => [r.lessonId, { total: Number(r.total), success: Number(r.success) }]))
+
+    return allCourses
+      .filter((c) => c.slug)
+      .map((c) => ({
+        id: c.id,
+        title: c.title,
+        slug: c.slug ?? '',
+        order: Number(c.order ?? 0),
+        modules: (c.modules ?? []).map((m) => ({
+          id: m.id,
+          title: m.title,
+          slug: m.slug ?? null,
+          order: Number(m.order ?? 0),
+          lessons: (m.lessons ?? []).map((l) => {
+            const stats =
+              l.type === 'coding_task'
+                ? codingMap.get(l.id)
+                : l.type === 'review_task'
+                  ? projectMap.get(l.id)
+                  : undefined
+            return {
+              id: l.id,
+              title: l.title,
+              slug: l.slug ?? '',
+              type: l.type,
+              order: Number(l.order ?? 0),
+              completedCount: completedMap.get(l.id) ?? 0,
+              totalAttempts: stats?.total ?? 0,
+              successAttempts: stats?.success ?? 0,
+            }
+          }),
+        })),
+      }))
+  }
+
+  static async getLessonSubmissionsPage(input: {
+    courseSlug: string
+    lessonSlug: string
+    limit: number
+    offset: number
+    search?: string
+  }) {
+    const { courseSlug, lessonSlug, limit, offset, search } = input
+
+    const lessonRow = await payloadDb
+      .select({
+        id: lessons.id,
+        title: lessons.title,
+        slug: lessons.slug,
+        type: lessons.type,
+        courseId: courses.id,
+        courseSlug: courses.slug,
+        courseTitle: courses.title,
+      })
+      .from(lessons)
+      .innerJoin(modules, eq(lessons.module, modules.id))
+      .innerJoin(courses, eq(modules.course, courses.id))
+      .where(
+        and(
+          eq(lessons.slug, lessonSlug),
+          eq(courses.slug, courseSlug),
+          ne(lessons.isHidden, true),
+          ne(modules.isHidden, true),
+          ne(courses.isHidden, true),
+        ),
+      )
+      .limit(1)
+
+    const lesson = lessonRow[0]
+    if (!lesson || !lesson.slug || !lesson.courseSlug) {
+      throw new AppError(404, 'Lesson not found')
+    }
+
+    const lessonInfo = {
+      id: lesson.id,
+      title: lesson.title,
+      slug: lesson.slug,
+      type: lesson.type as 'lecture' | 'test' | 'coding_task' | 'review_task',
+      courseSlug: lesson.courseSlug,
+      courseTitle: lesson.courseTitle,
+    }
+
+    const userSearchFilter = buildSearchFilter(search, [user.name, user.email, user.username])
+
+    if (lesson.type === 'coding_task') {
+      const whereClause = buildWhereClause(
+        eq(userLessons.lessonId, lesson.id),
+        userSearchFilter,
+      )
+      const [{ total: totalRaw }] = await db
+        .select({ total: count() })
+        .from(codingTaskSubmissions)
+        .innerJoin(userLessons, eq(codingTaskSubmissions.userLessonId, userLessons.id))
+        .innerJoin(user, eq(userLessons.userId, user.id))
+        .where(whereClause)
+
+      const rows = await db
+        .select({
+          id: codingTaskSubmissions.id,
+          submittedAt: codingTaskSubmissions.submittedAt,
+          passed: codingTaskSubmissions.passed,
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          userImage: user.image,
+          username: user.username,
+        })
+        .from(codingTaskSubmissions)
+        .innerJoin(userLessons, eq(codingTaskSubmissions.userLessonId, userLessons.id))
+        .innerJoin(user, eq(userLessons.userId, user.id))
+        .where(whereClause)
+        .orderBy(desc(codingTaskSubmissions.submittedAt))
+        .limit(limit)
+        .offset(offset)
+
+      return {
+        lesson: lessonInfo,
+        total: Number(totalRaw ?? 0),
+        items: rows.map((r) => ({
+          id: String(r.id),
+          kind: 'coding_task' as const,
+          userId: r.userId,
+          userName: r.userName,
+          userEmail: r.userEmail,
+          userImage: r.userImage,
+          username: r.username,
+          submittedAt: r.submittedAt.toISOString(),
+          passed: r.passed,
+          status: null as string | null,
+        })),
+      }
+    }
+
+    if (lesson.type === 'review_task') {
+      const whereClause = buildWhereClause(
+        eq(userLessons.lessonId, lesson.id),
+        userSearchFilter,
+      )
+      const [{ total: totalRaw }] = await db
+        .select({ total: count() })
+        .from(projectUserSubmissions)
+        .innerJoin(userLessons, eq(projectUserSubmissions.userLessonId, userLessons.id))
+        .innerJoin(user, eq(userLessons.userId, user.id))
+        .where(whereClause)
+
+      const rows = await db
+        .select({
+          id: projectUserSubmissions.id,
+          submittedAt: projectUserSubmissions.submittedAt,
+          status: projectUserSubmissions.status,
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          userImage: user.image,
+          username: user.username,
+        })
+        .from(projectUserSubmissions)
+        .innerJoin(userLessons, eq(projectUserSubmissions.userLessonId, userLessons.id))
+        .innerJoin(user, eq(userLessons.userId, user.id))
+        .where(whereClause)
+        .orderBy(desc(projectUserSubmissions.submittedAt))
+        .limit(limit)
+        .offset(offset)
+
+      return {
+        lesson: lessonInfo,
+        total: Number(totalRaw ?? 0),
+        items: rows.map((r) => ({
+          id: String(r.id),
+          kind: 'review_task' as const,
+          userId: r.userId,
+          userName: r.userName,
+          userEmail: r.userEmail,
+          userImage: r.userImage,
+          username: r.username,
+          submittedAt: r.submittedAt.toISOString(),
+          passed: r.status === 'completed',
+          status: r.status,
+        })),
+      }
+    }
+
+    // lecture or test — list completions from user_lessons
+    const whereClause = buildWhereClause(
+      eq(userLessons.lessonId, lesson.id),
+      eq(userLessons.isCompleted, true),
+      userSearchFilter,
+    )
+    const [{ total: totalRaw }] = await db
+      .select({ total: count() })
+      .from(userLessons)
+      .innerJoin(user, eq(userLessons.userId, user.id))
+      .where(whereClause)
+
+    const rows = await db
+      .select({
+        id: userLessons.id,
+        updatedAt: userLessons.updatedAt,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        userImage: user.image,
+        username: user.username,
+      })
+      .from(userLessons)
+      .innerJoin(user, eq(userLessons.userId, user.id))
+      .where(whereClause)
+      .orderBy(desc(userLessons.updatedAt))
+      .limit(limit)
+      .offset(offset)
+
+    return {
+      lesson: lessonInfo,
+      total: Number(totalRaw ?? 0),
+      items: rows.map((r) => ({
+        id: String(r.id),
+        kind: lesson.type as 'lecture' | 'test',
+        userId: r.userId,
+        userName: r.userName,
+        userEmail: r.userEmail,
+        userImage: r.userImage,
+        username: r.username,
+        submittedAt: r.updatedAt.toISOString(),
+        passed: true,
+        status: null as string | null,
+      })),
+    }
   }
 
   static async getLessonForUser(userId: string, courseSlug: string, lessonSlug: string) {

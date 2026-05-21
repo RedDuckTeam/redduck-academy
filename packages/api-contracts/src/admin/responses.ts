@@ -61,7 +61,66 @@ export const adminLessonProgressOverlaySchema = z.object({
 
 export const banUserResponseDataSchema = z.object({ blacklisted: z.boolean() })
 
+export const adminLessonTreeLessonSchema = z.object({
+  id: z.number().int(),
+  title: z.string(),
+  slug: z.string(),
+  type: z.enum(['lecture', 'test', 'coding_task', 'review_task']),
+  order: z.number(),
+  completedCount: z.number().int(),
+  totalAttempts: z.number().int(),
+  successAttempts: z.number().int(),
+})
+
+export const adminLessonTreeModuleSchema = z.object({
+  id: z.number().int(),
+  title: z.string(),
+  slug: z.string().nullable(),
+  order: z.number(),
+  lessons: z.array(adminLessonTreeLessonSchema),
+})
+
+export const adminLessonTreeCourseSchema = z.object({
+  id: z.number().int(),
+  title: z.string(),
+  slug: z.string(),
+  order: z.number(),
+  modules: z.array(adminLessonTreeModuleSchema),
+})
+
+export const adminLessonsTreeSchema = z.array(adminLessonTreeCourseSchema)
+
+export const adminLessonSubmissionItemSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['lecture', 'test', 'coding_task', 'review_task']),
+  userId: z.string(),
+  userName: z.string(),
+  userEmail: z.string().nullable(),
+  userImage: z.string().nullable(),
+  username: z.string().nullable(),
+  submittedAt: z.string(),
+  passed: z.boolean().nullable(),
+  status: z.string().nullable(),
+})
+
+export const adminLessonSubmissionsListSchema = paginatedDataSchema(adminLessonSubmissionItemSchema).extend({
+  lesson: z.object({
+    id: z.number().int(),
+    title: z.string(),
+    slug: z.string(),
+    type: z.enum(['lecture', 'test', 'coding_task', 'review_task']),
+    courseSlug: z.string(),
+    courseTitle: z.string(),
+  }),
+})
+
 export type AdminStats = z.infer<typeof adminStatsSchema>
 export type AdminUserItem = z.infer<typeof adminUserItemSchema>
 export type AdminCertificateItem = z.infer<typeof adminCertificateItemSchema>
 export type AdminLessonProgressOverlay = z.infer<typeof adminLessonProgressOverlaySchema>
+export type AdminLessonTreeLesson = z.infer<typeof adminLessonTreeLessonSchema>
+export type AdminLessonTreeModule = z.infer<typeof adminLessonTreeModuleSchema>
+export type AdminLessonTreeCourse = z.infer<typeof adminLessonTreeCourseSchema>
+export type AdminLessonsTree = z.infer<typeof adminLessonsTreeSchema>
+export type AdminLessonSubmissionItem = z.infer<typeof adminLessonSubmissionItemSchema>
+export type AdminLessonSubmissionsList = z.infer<typeof adminLessonSubmissionsListSchema>

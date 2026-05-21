@@ -27,10 +27,22 @@ export const adminUserLessonParamSchema = z.object({
   lessonSlug: slugField,
 })
 
+export const adminLessonParamSchema = z.object({
+  courseSlug: slugField,
+  lessonSlug: slugField,
+})
+
+export const adminLessonSubmissionsQuerySchema = z.object({
+  ...paginationQueryShape,
+  search: z.string().trim().min(1).max(100).optional(),
+})
+
 export const banUserBodySchema = z.object({ ban: z.boolean() })
 
 export type AdminUsersQuery = z.infer<typeof adminUsersQuerySchema>
 export type AdminCertificatesQuery = z.infer<typeof adminCertificatesQuerySchema>
 export type AdminUserIdParam = z.infer<typeof adminUserIdParamSchema>
 export type AdminUserLessonParam = z.infer<typeof adminUserLessonParamSchema>
+export type AdminLessonParam = z.infer<typeof adminLessonParamSchema>
+export type AdminLessonSubmissionsQuery = z.infer<typeof adminLessonSubmissionsQuerySchema>
 export type BanUserBody = z.infer<typeof banUserBodySchema>

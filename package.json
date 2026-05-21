@@ -1,6 +1,6 @@
 {
   "name": "redduck-academy",
-  "packageManager": "yarn@4.9.2",
+  "packageManager": "yarn@4.13.0",
   "private": true,
   "workspaces": [
     "apps/*",

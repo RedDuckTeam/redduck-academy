@@ -6,6 +6,7 @@ import { wagmiConfig } from '@/constants/wallet-config'
 import { AdminGeneralTab } from './general/general-tab'
 import { AdminUsersTab } from './users/users-tab'
 import { AdminCertificatesTab } from './certificates/certificates-tab'
+import { AdminLessonsTab } from './lessons/lessons-tab'
 
 const adminRouteApi = getRouteApi('/admin')
 
@@ -22,12 +23,18 @@ export function AdminPage() {
 
         <Tabs
           value={tab}
-          onValueChange={(t) => navigate({ to: '/admin', search: { tab: t as 'general' | 'users' | 'certificates' } })}
+          onValueChange={(t) =>
+            navigate({
+              to: '/admin',
+              search: { tab: t as 'general' | 'users' | 'certificates' | 'lessons' },
+            })
+          }
           className="flex w-full flex-col gap-6"
         >
-          <TabsList variant="line" className="w-full max-w-lg justify-start">
+          <TabsList variant="line" className="w-full max-w-2xl justify-start">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="certificates">Certificates</TabsTrigger>
           </TabsList>
 
@@ -37,6 +44,10 @@ export function AdminPage() {
 
           <TabsContent value="users" className="mt-0">
             <AdminUsersTab />
+          </TabsContent>
+
+          <TabsContent value="lessons" className="mt-0">
+            <AdminLessonsTab />
           </TabsContent>
 
           <TabsContent value="certificates" className="mt-0">

@@ -3,6 +3,8 @@ import { z } from 'zod'
 import {
   adminCertificatesListSchema,
   adminLessonProgressOverlaySchema,
+  adminLessonSubmissionsListSchema,
+  adminLessonsTreeSchema,
   adminStatsSchema,
   adminUsersListSchema,
   banUserResponseDataSchema,
@@ -97,6 +99,37 @@ export const adminUsersDesc = describeRoute({
     400: { description: 'Invalid pagination', content: { 'application/json': { schema: errorSchema } } },
     401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
     403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+export const adminLessonsTreeDesc = describeRoute({
+  summary: 'Admin: course → module → lesson tree with per-lesson submission stats',
+  description:
+    'Returns the full visible course/module/lesson hierarchy. Each lesson carries completedCount (users with isCompleted=true). For coding_task and review_task lessons, also includes totalAttempts and successAttempts across all users.',
+  tags: ['Admin'],
+  responses: {
+    200: {
+      description: 'Lessons tree with stats',
+      content: { 'application/json': { schema: resolver(z.object({ data: adminLessonsTreeSchema })) } },
+    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+export const adminLessonSubmissionsDesc = describeRoute({
+  summary: 'Admin: paginated submissions for a single lesson',
+  description:
+    'For coding/review/test lessons returns submission rows (newest first). For lecture lessons returns user_lesson completion rows. Filterable by user name/email/username.',
+  tags: ['Admin'],
+  responses: {
+    200: {
+      description: 'Submissions page',
+      content: { 'application/json': { schema: resolver(z.object({ data: adminLessonSubmissionsListSchema })) } },
+    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'Lesson not found', content: { 'application/json': { schema: errorSchema } } },
   },
 })
 

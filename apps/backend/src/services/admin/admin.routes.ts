@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { validator } from 'hono-openapi'
 import {
   adminCertificatesQuerySchema,
+  adminLessonParamSchema,
+  adminLessonSubmissionsQuerySchema,
   adminUserIdParamSchema,
   adminUserLessonParamSchema,
   adminUsersQuerySchema,
@@ -10,6 +12,8 @@ import {
 import {
   adminCertificatesDesc,
   adminHealthDesc,
+  adminLessonsTreeDesc,
+  adminLessonSubmissionsDesc,
   adminStatsDesc,
   adminUsersDesc,
   adminUserCompletedLessonsDesc,
@@ -73,6 +77,43 @@ adminApp.get(
       search: q.search,
     })
     return c.json({ data: { items: rows, total, page, pageSize } })
+  },
+)
+
+adminApp.get('/lessons/tree', requireAdmin, adminLessonsTreeDesc, async (c) => {
+  const data = await AdminService.getLessonsTree()
+  return c.json({ data })
+})
+
+adminApp.get(
+  '/lessons/:courseSlug/:lessonSlug/submissions',
+  requireAdmin,
+  adminLessonSubmissionsDesc,
+  validator('param', adminLessonParamSchema),
+  validator('query', adminLessonSubmissionsQuerySchema),
+  async (c) => {
+    const { courseSlug, lessonSlug } = c.req.valid('param')
+    const q = c.req.valid('query')
+    const { limit, offset, page, pageSize } = parsePaginationQuery({
+      page: q.page,
+      pageSize: q.pageSize,
+    })
+    const result = await AdminService.getLessonSubmissionsPage({
+      courseSlug,
+      lessonSlug,
+      limit,
+      offset,
+      search: q.search,
+    })
+    return c.json({
+      data: {
+        items: result.items,
+        total: result.total,
+        page,
+        pageSize,
+        lesson: result.lesson,
+      },
+    })
   },
 )
 

@@ -25,6 +25,7 @@ import { Route as CoursesCourseSlugIndexRouteImport } from './routes/courses/$co
 import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
 import { Route as AdminUsersUserIdIndexRouteImport } from './routes/admin/users/$userId.index'
 import { Route as CoursesCourseSlugModuleSlugLessonSlugRouteImport } from './routes/courses/$courseSlug.$moduleSlug.$lessonSlug'
+import { Route as AdminLessonsCourseSlugLessonSlugRouteImport } from './routes/admin/lessons.$courseSlug.$lessonSlug'
 import { Route as AdminUsersUserIdCourseSlugLessonSlugRouteImport } from './routes/admin/users/$userId.$courseSlug.$lessonSlug'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -109,6 +110,12 @@ const CoursesCourseSlugModuleSlugLessonSlugRoute =
     path: '/$moduleSlug/$lessonSlug',
     getParentRoute: () => CoursesCourseSlugRoute,
   } as any)
+const AdminLessonsCourseSlugLessonSlugRoute =
+  AdminLessonsCourseSlugLessonSlugRouteImport.update({
+    id: '/lessons/$courseSlug/$lessonSlug',
+    path: '/lessons/$courseSlug/$lessonSlug',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminUsersUserIdCourseSlugLessonSlugRoute =
   AdminUsersUserIdCourseSlugLessonSlugRouteImport.update({
     id: '/$courseSlug/$lessonSlug',
@@ -131,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/courses/': typeof CoursesIndexRoute
   '/admin/users/$userId': typeof AdminUsersUserIdRouteWithChildren
   '/courses/$courseSlug/': typeof CoursesCourseSlugIndexRoute
+  '/admin/lessons/$courseSlug/$lessonSlug': typeof AdminLessonsCourseSlugLessonSlugRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
   '/admin/users/$userId/': typeof AdminUsersUserIdIndexRoute
   '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
@@ -147,6 +155,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/courses/$courseSlug': typeof CoursesCourseSlugIndexRoute
+  '/admin/lessons/$courseSlug/$lessonSlug': typeof AdminLessonsCourseSlugLessonSlugRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
   '/admin/users/$userId': typeof AdminUsersUserIdIndexRoute
   '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
@@ -167,6 +176,7 @@ export interface FileRoutesById {
   '/courses/': typeof CoursesIndexRoute
   '/admin/users/$userId': typeof AdminUsersUserIdRouteWithChildren
   '/courses/$courseSlug/': typeof CoursesCourseSlugIndexRoute
+  '/admin/lessons/$courseSlug/$lessonSlug': typeof AdminLessonsCourseSlugLessonSlugRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
   '/admin/users/$userId/': typeof AdminUsersUserIdIndexRoute
   '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/courses/'
     | '/admin/users/$userId'
     | '/courses/$courseSlug/'
+    | '/admin/lessons/$courseSlug/$lessonSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
     | '/admin/users/$userId/'
     | '/admin/users/$userId/$courseSlug/$lessonSlug'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/courses'
     | '/courses/$courseSlug'
+    | '/admin/lessons/$courseSlug/$lessonSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
     | '/admin/users/$userId'
     | '/admin/users/$userId/$courseSlug/$lessonSlug'
@@ -223,6 +235,7 @@ export interface FileRouteTypes {
     | '/courses/'
     | '/admin/users/$userId'
     | '/courses/$courseSlug/'
+    | '/admin/lessons/$courseSlug/$lessonSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
     | '/admin/users/$userId/'
     | '/admin/users/$userId/$courseSlug/$lessonSlug'
@@ -356,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesCourseSlugModuleSlugLessonSlugRouteImport
       parentRoute: typeof CoursesCourseSlugRoute
     }
+    '/admin/lessons/$courseSlug/$lessonSlug': {
+      id: '/admin/lessons/$courseSlug/$lessonSlug'
+      path: '/lessons/$courseSlug/$lessonSlug'
+      fullPath: '/admin/lessons/$courseSlug/$lessonSlug'
+      preLoaderRoute: typeof AdminLessonsCourseSlugLessonSlugRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users/$userId/$courseSlug/$lessonSlug': {
       id: '/admin/users/$userId/$courseSlug/$lessonSlug'
       path: '/$courseSlug/$lessonSlug'
@@ -383,11 +403,13 @@ const AdminUsersUserIdRouteWithChildren =
 interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminUsersUserIdRoute: typeof AdminUsersUserIdRouteWithChildren
+  AdminLessonsCourseSlugLessonSlugRoute: typeof AdminLessonsCourseSlugLessonSlugRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminUsersUserIdRoute: AdminUsersUserIdRouteWithChildren,
+  AdminLessonsCourseSlugLessonSlugRoute: AdminLessonsCourseSlugLessonSlugRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
