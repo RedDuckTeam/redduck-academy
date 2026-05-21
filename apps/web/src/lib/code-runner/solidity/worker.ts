@@ -18,6 +18,7 @@ export interface SolWorkerStep {
   valueWei?: string
   caller?: string
   rawExpected?: string
+  rawExpectedRevert?: string
 }
 
 export interface SolWorkerCase {
@@ -123,6 +124,15 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
         }
         const hasExpected =
           step.rawExpected !== undefined && step.rawExpected !== null && step.rawExpected !== ''
+        const expectsRevert =
+          step.rawExpectedRevert !== undefined &&
+          step.rawExpectedRevert !== null &&
+          step.rawExpectedRevert !== ''
+        if (hasExpected && expectsRevert) {
+          throw new Error(
+            `step ${i + 1} (${fnAbi.name}): cannot set both 'expected' and 'expectedRevert' on the same step`,
+          )
+        }
         return {
           fnAbi,
           argInputs: (fnAbi.inputs ?? []) as readonly { type: string }[],
@@ -132,6 +142,8 @@ self.onmessage = async (event: MessageEvent<SolRunRequest>) => {
           target: step.target,
           rawExpected: step.rawExpected,
           hasExpected,
+          rawExpectedRevert: step.rawExpectedRevert,
+          expectsRevert,
         }
       })
 

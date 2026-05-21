@@ -86,6 +86,8 @@ export interface SolidityCaseStep {
   hideFromLearner?: boolean | null
   /** Optional. When set, the runner decodes this step's return and compares against it. */
   expected?: string | null
+  /** Optional. When set, the runner expects this step to revert; decoded reason must contain this substring. */
+  expectedRevert?: string | null
 }
 
 /** Solidity test-case wire shape (Payload `solidityTestCases` array row). */

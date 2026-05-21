@@ -20,6 +20,8 @@ export interface SolCaseStep {
   hideFromLearner?: boolean
   /** Optional raw expected return; when present the runner decodes this step's return and compares. */
   rawExpected?: string
+  /** Optional expected revert reason substring; when present the runner expects this step to revert. */
+  rawExpectedRevert?: string
 }
 
 /**

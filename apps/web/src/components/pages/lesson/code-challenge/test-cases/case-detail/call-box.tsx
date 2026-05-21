@@ -11,6 +11,8 @@ interface CallBoxProps {
   variant?: 'main' | 'postCheck'
   /** Raw expected return value (as authored by admin). Renders an `expected:` line. */
   expected?: string
+  /** Raw expected revert reason (as authored by admin). Renders an `expected revert:` line. */
+  expectedRevert?: string
   /** Decoded actual return value, set when this step failed an assertion. */
   got?: unknown
   /** True when this is the failing step (assertion mismatch or revert). */
@@ -29,6 +31,7 @@ export function CallBox({
   target,
   variant = 'main',
   expected,
+  expectedRevert,
   got,
   failed,
   errorMessage,
@@ -45,6 +48,7 @@ export function CallBox({
   meta.push(`from: ${callerLabel}`)
 
   const hasExpected = expected !== undefined && expected !== ''
+  const hasExpectedRevert = expectedRevert !== undefined && expectedRevert !== ''
   const isAssertionFail = failed && got !== undefined
   const isRevert = failed && got === undefined
 
@@ -78,6 +82,17 @@ export function CallBox({
           )}
         >
           <span className="opacity-70">expected:</span> {expected}
+        </div>
+      )}
+
+      {hasExpectedRevert && (
+        <div
+          className={cn(
+            'text-[12px] leading-[16px] font-mono pl-3 break-all',
+            failed ? 'text-primary' : 'text-muted-foreground',
+          )}
+        >
+          <span className="opacity-70">expected revert:</span> {expectedRevert}
         </div>
       )}
 

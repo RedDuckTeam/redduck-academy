@@ -124,6 +124,7 @@ function toWorkerCase(tc: SolidityTestCase): SolWorkerCase {
       valueWei: s.valueWei,
       caller: s.caller,
       rawExpected: s.rawExpected,
+      rawExpectedRevert: s.rawExpectedRevert,
     })),
   }
 }

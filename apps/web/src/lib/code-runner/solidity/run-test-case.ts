@@ -122,6 +122,9 @@ export interface RunCaseStep {
   /** Raw expected string. Decoded against `fnAbi.outputs` at compare time. */
   rawExpected?: string
   hasExpected: boolean
+  /** Raw expected revert reason substring. When set, the step is expected to revert. */
+  rawExpectedRevert?: string
+  expectsRevert: boolean
 }
 
 export interface RunCaseInput {
@@ -222,15 +225,43 @@ export async function runTestCase(input: RunCaseInput): Promise<RunCaseResult> {
     }
 
     let got: unknown
+    let revertReason: string | undefined
     try {
       got = await callContract(evm, targetAddr, step.fnAbi, argValues, step.valueWei, callerAddr, unionAbi)
     } catch (err) {
       const original = err instanceof Error ? err.message : String(err)
-      const stripped = original.replace(/^call reverted:\s*/, '')
+      revertReason = original.replace(/^call reverted:\s*/, '')
+    }
+
+    if (step.expectsRevert) {
+      const needle = step.rawExpectedRevert ?? ''
+      if (revertReason === undefined) {
+        return {
+          passed: false,
+          failedStepIndex: i,
+          expected: `revert: ${needle}`,
+          got,
+          error: `step ${i + 1} (${step.fnAbi.name}): expected revert containing "${needle}" but call succeeded`,
+        }
+      }
+      if (!revertReason.includes(needle)) {
+        return {
+          passed: false,
+          failedStepIndex: i,
+          expected: `revert: ${needle}`,
+          got: `revert: ${revertReason}`,
+          error: `step ${i + 1} (${step.fnAbi.name}): expected revert containing "${needle}" but got "${revertReason}"`,
+        }
+      }
+      lastAssertion = { expected: `revert: ${needle}`, got: `revert: ${revertReason}` }
+      continue
+    }
+
+    if (revertReason !== undefined) {
       return {
         passed: false,
         failedStepIndex: i,
-        error: `step ${i + 1} (${step.fnAbi.name}) reverted: ${stripped}`,
+        error: `step ${i + 1} (${step.fnAbi.name}) reverted: ${revertReason}`,
       }
     }
 

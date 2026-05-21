@@ -404,9 +404,13 @@ export interface Lesson {
            */
           hideFromLearner?: boolean | null;
           /**
-           * Optional. When set, the runner decodes this step's return value and compares against this. Typed per the function's return type. Leave blank for state-changing calls you don't need to assert.
+           * Optional. When set, the runner decodes this step's return value and compares against this. Typed per the function's return type. Leave blank for state-changing calls you don't need to assert. Mutually exclusive with `expectedRevert`.
            */
           expected?: string | null;
+          /**
+           * Optional. When set, the runner expects this step to revert and checks that the decoded revert reason CONTAINS this string (case-sensitive substring match). Examples: `TransferFailed`, `not owner`, `Panic(17)`. Mutually exclusive with `expected`.
+           */
+          expectedRevert?: string | null;
           id?: string | null;
         }[];
         id?: string | null;
@@ -735,6 +739,7 @@ export interface LessonsSelect<T extends boolean = true> {
               caller?: T;
               hideFromLearner?: T;
               expected?: T;
+              expectedRevert?: T;
               id?: T;
             };
         id?: T;

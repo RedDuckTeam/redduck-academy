@@ -197,6 +197,8 @@ export const Lessons: CollectionConfig = {
                   valueWei?: unknown
                   caller?: unknown
                   target?: unknown
+                  expected?: unknown
+                  expectedRevert?: unknown
                 }
                 const stepPrefix = `${casePrefix}, step ${j + 1}`
                 if (typeof step.functionName !== 'string' || step.functionName.trim() === '') {
@@ -215,6 +217,15 @@ export const Lessons: CollectionConfig = {
                 }
                 assertValidCaller(step.target, stepPrefix, 'target')
                 assertValidCaller(step.caller, stepPrefix, 'caller')
+                const expectedSet = typeof step.expected === 'string' && step.expected.trim() !== ''
+                const expectedRevertSet =
+                  typeof step.expectedRevert === 'string' && step.expectedRevert.trim() !== ''
+                if (expectedSet && expectedRevertSet) {
+                  throw new APIError(
+                    `${stepPrefix}: cannot set both 'expected' (return-value compare) and 'expectedRevert' (revert-reason compare). Choose one.`,
+                    400,
+                  )
+                }
               }
             }
           }
@@ -639,7 +650,15 @@ export const Lessons: CollectionConfig = {
               admin: {
                 components: { Field: '@/admin-components/abi-driven-test-case/typed-value-field#TypedValueField' },
                 description:
-                  'Optional. When set, the runner decodes this step\'s return value and compares against this. Typed per the function\'s return type. Leave blank for state-changing calls you don\'t need to assert.',
+                  'Optional. When set, the runner decodes this step\'s return value and compares against this. Typed per the function\'s return type. Leave blank for state-changing calls you don\'t need to assert. Mutually exclusive with `expectedRevert`.',
+              },
+            },
+            {
+              name: 'expectedRevert',
+              type: 'text',
+              admin: {
+                description:
+                  'Optional. When set, the runner expects this step to revert and checks that the decoded revert reason CONTAINS this string (case-sensitive substring match). Examples: `TransferFailed`, `not owner`, `Panic(17)`. Mutually exclusive with `expected`.',
               },
             },
           ],

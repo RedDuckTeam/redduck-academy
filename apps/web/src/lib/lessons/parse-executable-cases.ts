@@ -34,6 +34,8 @@ export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | n
       const caller = s.caller && s.caller.trim() !== '' ? s.caller.trim() : undefined
       const target = s.target && s.target.trim() !== '' ? s.target.trim() : undefined
       const rawExpected = s.expected != null && s.expected.trim() !== '' ? s.expected : undefined
+      const rawExpectedRevert =
+        s.expectedRevert != null && s.expectedRevert.trim() !== '' ? s.expectedRevert.trim() : undefined
       return {
         target,
         functionName: s.functionName,
@@ -42,6 +44,7 @@ export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | n
         caller,
         hideFromLearner: s.hideFromLearner === true,
         rawExpected,
+        rawExpectedRevert,
       }
     }),
   }))
