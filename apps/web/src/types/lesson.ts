@@ -82,6 +82,8 @@ export interface SolidityCaseStep {
   args?: SolidityArgValue[] | null
   valueWei?: string | null
   caller?: string | null
+  /** When true, this step is hidden from the learner in the test-case view (still executes). */
+  hideFromLearner?: boolean | null
   /** Optional. When set, the runner decodes this step's return and compares against it. */
   expected?: string | null
 }

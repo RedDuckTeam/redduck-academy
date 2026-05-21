@@ -40,6 +40,7 @@ export function parseSolidityTestCases(cases: WireSolidityCase[] | undefined | n
         rawArgs: (s.args ?? []).map((a) => a.value ?? ''),
         valueWei,
         caller,
+        hideFromLearner: s.hideFromLearner === true,
         rawExpected,
       }
     }),

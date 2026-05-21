@@ -16,6 +16,8 @@ export interface SolCaseStep {
   valueWei?: string
   /** Optional msg.sender. `@-prefixed` alias or 0x-prefixed address. Defaults to '@deployer'. */
   caller?: string
+  /** When true, this step is hidden from the learner in the UI. Runner still executes it. */
+  hideFromLearner?: boolean
   /** Optional raw expected return; when present the runner decodes this step's return and compares. */
   rawExpected?: string
 }

@@ -563,22 +563,29 @@ export const Lessons: CollectionConfig = {
               admin: { hidden: true },
             },
             {
-              name: 'target',
-              type: 'text',
-              admin: {
-                description:
-                  'Which deployed contract this step calls. Defaults to @self (the student\'s contract). ' +
-                  'Use a fixture alias (e.g. @mockToken) to call a peer contract.',
-              },
-            },
-            {
-              name: 'functionName',
-              type: 'text',
-              required: true,
-              admin: {
-                components: { Field: '@/admin-components/abi-driven-test-case/function-select#FunctionSelect' },
-                description: 'Function to call. Picked from the target contract\'s ABI.',
-              },
+              type: 'row',
+              fields: [
+                {
+                  name: 'functionName',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    width: '60%',
+                    components: { Field: '@/admin-components/abi-driven-test-case/function-select#FunctionSelect' },
+                    description: 'Function to call. Picked from the target contract\'s ABI.',
+                  },
+                },
+                {
+                  name: 'target',
+                  type: 'text',
+                  admin: {
+                    width: '40%',
+                    description:
+                      'Which deployed contract this step calls. Defaults to @self (the student\'s contract). ' +
+                      'Use a fixture alias (e.g. @mockToken) to call a peer contract.',
+                  },
+                },
+              ],
             },
             {
               name: 'args',
@@ -596,16 +603,35 @@ export const Lessons: CollectionConfig = {
               ],
             },
             {
-              name: 'valueWei',
-              type: 'text',
-              admin: {
-                description: 'Optional ETH (in wei) sent as msg.value with this step. Decimal string. Example: `5` or `1000000000000000000`.',
-              },
-            },
-            {
-              name: 'caller',
-              type: 'text',
-              admin: { description: SOLIDITY_CALLER_HELP },
+              type: 'row',
+              fields: [
+                {
+                  name: 'valueWei',
+                  type: 'text',
+                  admin: {
+                    width: '35%',
+                    description: 'Optional ETH (in wei) sent as msg.value with this step. Decimal string. Example: `5` or `1000000000000000000`.',
+                  },
+                },
+                {
+                  name: 'caller',
+                  type: 'text',
+                  admin: {
+                    width: '40%',
+                    description: SOLIDITY_CALLER_HELP,
+                  },
+                },
+                {
+                  name: 'hideFromLearner',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '25%',
+                    description:
+                      'When enabled, this step is not shown to learners in the test-case view. It still executes (state setup carries over to later steps).',
+                  },
+                },
+              ],
             },
             {
               name: 'expected',

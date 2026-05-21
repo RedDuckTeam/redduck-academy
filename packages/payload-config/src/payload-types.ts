@@ -375,13 +375,13 @@ export interface Lesson {
         steps: {
           name?: string | null;
           /**
-           * Which deployed contract this step calls. Defaults to @self (the student's contract). Use a fixture alias (e.g. @mockToken) to call a peer contract.
-           */
-          target?: string | null;
-          /**
            * Function to call. Picked from the target contract's ABI.
            */
           functionName: string;
+          /**
+           * Which deployed contract this step calls. Defaults to @self (the student's contract). Use a fixture alias (e.g. @mockToken) to call a peer contract.
+           */
+          target?: string | null;
           /**
            * One row per function argument, in declaration order.
            */
@@ -399,6 +399,10 @@ export interface Lesson {
            * Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @deployer, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use @deployer.
            */
           caller?: string | null;
+          /**
+           * When enabled, this step is not shown to learners in the test-case view. It still executes (state setup carries over to later steps).
+           */
+          hideFromLearner?: boolean | null;
           /**
            * Optional. When set, the runner decodes this step's return value and compares against this. Typed per the function's return type. Leave blank for state-changing calls you don't need to assert.
            */
@@ -719,8 +723,8 @@ export interface LessonsSelect<T extends boolean = true> {
           | T
           | {
               name?: T;
-              target?: T;
               functionName?: T;
+              target?: T;
               args?:
                 | T
                 | {
@@ -729,6 +733,7 @@ export interface LessonsSelect<T extends boolean = true> {
                   };
               valueWei?: T;
               caller?: T;
+              hideFromLearner?: T;
               expected?: T;
               id?: T;
             };

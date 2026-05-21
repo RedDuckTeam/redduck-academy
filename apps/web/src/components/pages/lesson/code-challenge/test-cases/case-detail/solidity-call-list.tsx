@@ -16,14 +16,17 @@ interface SolidityCallListProps {
  */
 export function SolidityCallList({ testCase, result, selfLabel }: SolidityCallListProps) {
   const failedIndex = result?.failedStepIndex
+  const visibleSteps = testCase.steps
+    .map((step, i) => ({ step, originalIndex: i }))
+    .filter(({ step }) => !step.hideFromLearner)
 
   return (
     <div className="flex flex-col gap-2">
-      {testCase.steps.map((step, i) => {
-        const isFailedStep = failedIndex === i
+      {visibleSteps.map(({ step, originalIndex }) => {
+        const isFailedStep = failedIndex === originalIndex
         return (
           <CallBox
-            key={`step-${i}`}
+            key={`step-${originalIndex}`}
             functionName={step.functionName}
             args={step.rawArgs}
             valueWei={step.valueWei}

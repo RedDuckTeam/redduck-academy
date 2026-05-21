@@ -36,7 +36,10 @@ export function CaseDetail({ testCase, argNames, result, selfLabel }: CaseDetail
     // Solidity cases render assertions inline per step (expected / got / revert),
     // so we don't show top-level Output / Got sections. Case-level errors that
     // can't be attributed to a step still surface as a fallback Error section.
-    const hasCaseLevelError = !!result?.error && result.failedStepIndex === undefined
+    const failedIndex = result?.failedStepIndex
+    const failedStepHidden =
+      failedIndex !== undefined && testCase.steps[failedIndex]?.hideFromLearner === true
+    const hasCaseLevelError = !!result?.error && failedIndex === undefined
     return (
       <div className="flex flex-col gap-3">
         <Section label="Call">
@@ -46,6 +49,13 @@ export function CaseDetail({ testCase, argNames, result, selfLabel }: CaseDetail
           <Section label="Error">
             <pre className="whitespace-pre-wrap text-primary text-[12px] leading-[16px] bg-primary/10 px-3 py-2">
               {result.error}
+            </pre>
+          </Section>
+        )}
+        {failedStepHidden && (
+          <Section label="Error">
+            <pre className="whitespace-pre-wrap text-primary text-[12px] leading-[16px] bg-primary/10 px-3 py-2">
+              Test case failed.
             </pre>
           </Section>
         )}
