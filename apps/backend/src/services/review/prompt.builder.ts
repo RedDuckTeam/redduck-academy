@@ -6,7 +6,7 @@ function escapeXmlAttr(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/\r\n/g, '\n')
 }
 
-/** Wrap text in CDATA; split `]]>` sequences so the block stays well-formed. */
+/** Wrap text in CDATA; split `]]>` sequences so the block stays well-formed */
 function wrapCdata(text: string): string {
   return `<![CDATA[${text.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`
 }

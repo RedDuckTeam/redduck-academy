@@ -37,8 +37,7 @@ export function CaseDetail({ testCase, argNames, result, selfLabel }: CaseDetail
     // so we don't show top-level Output / Got sections. Case-level errors that
     // can't be attributed to a step still surface as a fallback Error section.
     const failedIndex = result?.failedStepIndex
-    const failedStepHidden =
-      failedIndex !== undefined && testCase.steps[failedIndex]?.hideFromLearner === true
+    const failedStepHidden = failedIndex !== undefined && testCase.steps[failedIndex]?.hideFromLearner === true
     const hasCaseLevelError = !!result?.error && failedIndex === undefined
     return (
       <div className="flex flex-col gap-3">
