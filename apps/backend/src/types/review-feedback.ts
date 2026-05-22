@@ -12,7 +12,7 @@ export interface ReviewCriterionFeedback {
 }
 
 export interface ReviewFeedback {
-  /** Whether the learner passes the lesson; set by the grader model (authoritative for completion). */
+  /** Whether the learner passes the lesson; set by the grader model (authoritative for completion) */
   lessonPassed: boolean
   summary: string
   /** True when the grader flagged manipulation attempts in the submitted code. */
