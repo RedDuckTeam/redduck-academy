@@ -2,6 +2,7 @@ import { useLocation } from '@tanstack/react-router'
 
 import { LINKS } from '@/constants/links'
 import { cn } from '@/lib/utils'
+import { useCookieConsent } from '@/lib/cookie-consent'
 import { DuckIcon } from '@/components/ui/icons/duck'
 import { DouIcon } from '@/components/ui/icons/dou'
 import { LinkedInIcon } from '@/components/ui/icons/linked-in'
@@ -14,6 +15,7 @@ const socialIconLinkClass = '-m-2 rounded-md p-2 hover:bg-white/10'
 
 export default function Footer() {
   const location = useLocation()
+  const { resetConsent } = useCookieConsent()
   if (location.pathname === '/sign-up') {
     return null
   }
@@ -107,6 +109,9 @@ export default function Footer() {
           <a href={LINKS.PrivacyPolicy} target="_blank" rel="noopener noreferrer" className="flex-1 hover:bg-white/10">
             Privacy Policy
           </a>
+          <button type="button" onClick={resetConsent} className="flex-1 hover:bg-white/10">
+            Cookie settings
+          </button>
         </div>
       </div>
     </footer>

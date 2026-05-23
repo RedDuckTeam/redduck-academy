@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { LINKS } from '@/constants/links'
 import { useCookieConsent, type Consent } from '@/lib/cookie-consent'
 
 export function CookieBanner() {
@@ -21,19 +22,26 @@ export function CookieBanner() {
   }
 
   return (
-    <>
-      <div aria-hidden className="fixed inset-0 z-40 bg-black/50" />
-      <div
-        role="dialog"
-        aria-label="Cookie consent"
-        className="fixed bottom-4 right-4 z-50 w-[calc(100%-2rem)] max-w-[360px] border border-foreground bg-background text-foreground shadow-xl md:bottom-6 md:right-6"
-      >
+    <div
+      role="dialog"
+      aria-label="Cookie consent"
+      className="fixed bottom-4 right-4 z-50 w-[calc(100%-2rem)] max-w-[360px] border border-foreground bg-background text-foreground shadow-xl md:bottom-6 md:right-6"
+    >
       <div className="px-6 pt-5 pb-4">
         <Text variant="subtitle-32" element="h2" className="mb-1">
           COOKIES
         </Text>
         <Text variant="main-16" className="text-muted-foreground">
-          We use cookies to make your experience better.
+          We use cookies for analytics. <br /> See our{' '}
+          <a
+            href={LINKS.PrivacyPolicy}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Privacy Policy
+          </a>
+          .
         </Text>
       </div>
       <div className="grid grid-cols-2 border-t border-foreground">
@@ -44,8 +52,7 @@ export function CookieBanner() {
           Decline
         </ConsentButton>
       </div>
-      </div>
-    </>
+    </div>
   )
 }
 

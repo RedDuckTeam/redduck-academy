@@ -10,7 +10,8 @@ export function PostHogConsentBridge() {
     if (!posthog) return
     if (consent === 'agree') {
       posthog.opt_in_capturing()
-    } else if (consent === 'decline') {
+    } else {
+      // 'decline' or null (reset via "Cookie settings") — stop capturing.
       posthog.opt_out_capturing()
     }
   }, [consent, posthog])

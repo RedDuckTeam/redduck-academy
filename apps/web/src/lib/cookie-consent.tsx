@@ -8,6 +8,8 @@ interface CookieConsentContextValue {
   // null = not yet decided (or not yet read on client)
   consent: Consent | null
   setConsent: (value: Consent) => void
+  // Clears the stored decision so the banner shows again (used by "Cookie settings").
+  resetConsent: () => void
 }
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null)
@@ -37,7 +39,18 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [])
 
-  return <CookieConsentContext.Provider value={{ consent, setConsent }}>{children}</CookieConsentContext.Provider>
+  const resetConsent = useCallback(() => {
+    setConsentState(null)
+    try {
+      window.localStorage.removeItem(STORAGE_KEY)
+    } catch {}
+  }, [])
+
+  return (
+    <CookieConsentContext.Provider value={{ consent, setConsent, resetConsent }}>
+      {children}
+    </CookieConsentContext.Provider>
+  )
 }
 
 export function useCookieConsent(): CookieConsentContextValue {
