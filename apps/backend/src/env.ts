@@ -18,6 +18,13 @@ const envSchema = z.object({
   PRIVY_APP_SECRET: z.string().min(1),
   PRIVY_VERIFICATION_KEY: z.string().min(1),
   DATABASE_URL: z.string().min(1),
+  /**
+   * PgBouncer (transaction-mode) pooled connection string. Set by Heroku's
+   * `pg:connection-pooling:attach`. When present it's used for runtime queries
+   * so many client connections multiplex onto a few server connections;
+   * migrations still run against the direct DATABASE_URL.
+   */
+  DATABASE_CONNECTION_POOL_URL: z.string().optional(),
   PAYLOAD_SECRET: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
   R2_BUCKET: z.string().min(1),

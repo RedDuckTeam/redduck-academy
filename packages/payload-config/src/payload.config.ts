@@ -49,8 +49,10 @@ export default buildConfig({
     push: false,
     pool: {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-      connectionString: process.env.DATABASE_URL,
-      max: 6,
+      connectionString:
+        process.env.DATABASE_CONNECTION_POOL_URL ?? process.env.DATABASE_URL,
+      // Kept low to share the ~20-connection ceiling with the backend pool.
+      max: 3,
       idleTimeoutMillis: 20_000,
       allowExitOnIdle: true,
       application_name: 'academy-admin',
