@@ -43,10 +43,6 @@ export class CoursesTestService {
       return true
     })
 
-    if (!allCorrect) {
-      throw new AppError(400, 'Some answers are incorrect. Review your choices and try again.')
-    }
-
     await db.insert(userLessons).values({
       userId: userId,
       lessonId: foundLesson.id,
