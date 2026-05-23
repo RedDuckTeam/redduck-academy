@@ -22,7 +22,8 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
           },
           summary: {
             type: 'string',
-            description: 'Short overall summary of the review; if lessonPassed is false, say what is missing.',
+            description:
+              'SHOWN TO THE STUDENT. Short overall summary; if lessonPassed is false, say what is missing in plain words. Must not reveal the rubric\'s expected solution (no labels, prescribed order, or required-item checklist) — see <learner_comment_rules>.',
           },
           promptInjectionDetected: {
             type: 'boolean',
@@ -51,7 +52,7 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
                 evidence: {
                   type: 'string',
                   description:
-                    'FILL THIS BEFORE deciding "passed". Quote the exact code lines (each prefixed with its file path) that the gradingHint points at, then walk through them in execution order. For state/security rows, state the order of state mutations, external calls, and require/revert checks. If the gradingHint provides a known-buggy reference, state whether the student\'s code has the same bug. The verdict must follow from this text.',
+                    'INTERNAL — instructors only, never shown to the student. FILL THIS BEFORE deciding "passed". Quote the exact code lines (each prefixed with its file path) that the gradingHint points at, then walk through them in execution order. For state/security rows, state the order of state mutations, external calls, and require/revert checks. If the gradingHint provides a known-buggy reference, state whether the student\'s code has the same bug. Put all rubric labels (A/B/C/D, "Line A"), the prescribed order, and the required-item checklist HERE. The verdict must follow from this text.',
                 },
                 confidence: {
                   type: 'string',
@@ -64,7 +65,11 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
                   description:
                     "Your judgment for this row, decided AFTER evidence and confidence: true only if the quoted evidence meets this criterion's expectations and confidence is not low.",
                 },
-                comment: { type: 'string', description: 'Brief feedback for this criterion.' },
+                comment: {
+                  type: 'string',
+                  description:
+                    'SHOWN TO THE STUDENT. Brief feedback grounded in the student\'s own code or described in plain words. MUST NOT reveal the rubric\'s expected solution: no gradingHint labels (A/B/C/D, "Line A"), no prescribed order of operations, no enumerated list of required tests/cases — that detail belongs in "evidence". See <learner_comment_rules>.',
+                },
               },
               required: ['taskId', 'name', 'evidence', 'confidence', 'passed', 'comment'],
             },

@@ -91,15 +91,29 @@ For each criterion, set "confidence" to "high", "medium", or "low":
 A "low" confidence means the evidence is insufficient. In that case "passed" MUST be false — do NOT default to "looks fine" or give the benefit of the doubt. Absence of evidence is failure, not a pass.
 </confidence_calibration>
 
+<learner_comment_rules>
+"evidence" is INTERNAL (instructors only). "comment" is shown DIRECTLY to the student. Keep the spoilers in "evidence" and keep "comment" free of them.
+
+1. All of your detailed analysis — quoted lines, the gradingHint's letter/line labels (A, B, C, D, "Line A", etc.), the prescribed order of operations, and the explicit list of required tests/cases — goes in "evidence". NEVER in "comment".
+2. "comment" MUST NOT reveal the rubric's expected solution. Do not restate the gradingHint's prescribed flow/order, do not reuse its A/B/C/D or "Line A/B/C" labels, and do not reproduce its enumerated checklist of required items. That would hand the student the answer.
+3. Instead, write "comment" grounded in the STUDENT'S OWN code, or describe the issue in plain conceptual words — point at what their code actually does and why it falls short, without prescribing the exact fix.
+   - LEAK (forbidden): "The order is A (read), C (transfer), B (state update); CEI requires B before C."
+   - OK: "In your claim(), the token transfer to the caller happens before you zero out their locked balance, so state isn't updated before the external call."
+   - LEAK (forbidden): "Tests must cover A (happy path), B (pre-votingEnd revert), C (double-call revert), D (no votes)."
+   - OK: "Your finalize() tests check the happy path and the early-call revert, but I don't see coverage for calling it a second time or for the no-votes case."
+4. A passing "comment" can be a short confirmation in plain words; it still must not echo the rubric's labels or recipe.
+</learner_comment_rules>
+
 <grading_rules>
 1. For each <task> in <rubric>, follow <per_criterion_method> against the code in <submission_files>, evaluating that task's <gradingHint>.
 2. Echo "taskId" exactly as it appears in the <task>. Return one criterion per rubric task — no more, no less, no duplicates.
 3. "evidence" and "confidence" must be filled BEFORE "passed", per <per_criterion_method> and <confidence_calibration>.
 4. "passed": true ONLY if the quoted evidence plausibly meets the gradingHint expectations (subject to <comment_skepticism>) AND "confidence" is not "low".
 5. "lessonPassed": true ONLY IF every task with <requiredToPass>true</requiredToPass> has passed=true. Optional tasks affect feedback but do not by themselves fail the lesson.
-6. "summary": brief overall review. If lessonPassed is false, state which mandatory tasks or missing files caused it.
+6. "summary": brief overall review, also SHOWN TO THE STUDENT — it obeys <learner_comment_rules> too. If lessonPassed is false, say which mandatory tasks or missing files caused it in plain words, without restating the rubric's prescribed solution.
 7. "name": the criterion name MUST be the exact character-for-character <title> from the matching <task>. Do not paraphrase or translate.
-8. Output must conform to the JSON schema enforced by response_format. No markdown, no prose outside the schema.
+8. "comment": learner-facing feedback that obeys <learner_comment_rules> — no rubric labels, prescribed order, or required-item checklists. Put that detail in "evidence".
+9. Output must conform to the JSON schema enforced by response_format. No markdown, no prose outside the schema.
 </grading_rules>`
 
 export function buildReviewPrompt(
