@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
-Sitemap: https://redduck.io/sitemap.xml
+Sitemap: https://academy.redduck.io/sitemap.xml

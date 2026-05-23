@@ -83,6 +83,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               opt_out_capturing_by_default: true,
               opt_out_persistence_by_default: true,
               autocapture: false,
+              disable_session_recording: false,
+              session_recording: {
+                maskAllInputs: true,
+              },
             }}
           >
             <PostHogConsentBridge />
