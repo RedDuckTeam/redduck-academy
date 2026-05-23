@@ -251,7 +251,7 @@ export class LessonsService {
    * Strips AI-only lesson fields and maps grading tasks to a learner-safe shape (criteria optional; criteriaHidden when withheld).
    */
   static #toPublicReviewLesson<L extends Record<string, unknown>>(lesson: L) {
-    const { aiTaskSummary: _a, aiPossibleSolutions: _b, reviewGradingTasks: tasks, ...rest } = lesson
+    const { aiTaskSummary: _a, reviewGradingTasks: tasks, ...rest } = lesson
     const publicTasks = Array.isArray(tasks)
       ? [...tasks]
           .sort((x, y) => Number((x as { _order?: unknown })._order) - Number((y as { _order?: unknown })._order))

@@ -7,6 +7,10 @@ export interface ReviewCriterionFeedback {
   /** Payload `reviewGradingTasks` row id (public lesson API) */
   taskId: string
   name: string
+  /** Quoted code lines + line-by-line walkthrough the grader committed to before deciding `passed`. Instructor-only (stripped for learners). */
+  evidence: string
+  /** Grader's evidence strength for this row. `low` forces `passed` to false. Instructor-only (stripped for learners). */
+  confidence: 'high' | 'medium' | 'low'
   passed: boolean
   comment: string
 }

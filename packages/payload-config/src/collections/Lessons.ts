@@ -95,7 +95,7 @@ export const Lessons: CollectionConfig = {
   access: {
     // Hono backend reads lessons directly via Drizzle (bypassing Payload access), so locking
     // Payload's REST/admin read here only blocks anonymous requests to /api/payload/lessons,
-    // which would otherwise leak spoiler fields (aiExpectedResult, aiTaskSummary, aiPossibleSolutions,
+    // which would otherwise leak spoiler fields (aiExpectedResult, aiTaskSummary,
     // executableTestCases.expectedJson, solidityFixtures.source, etc.).
     read: ({ req: { user } }) => Boolean(user),
   },
@@ -676,14 +676,6 @@ export const Lessons: CollectionConfig = {
       },
     },
     {
-      name: 'aiPossibleSolutions',
-      type: 'textarea',
-      admin: {
-        condition: (data) => data?.type === 'review_task',
-        description: 'Acceptable approaches / solution hints for the model (not shown to students via the public API).',
-      },
-    },
-    {
       name: 'reviewGradingTasks',
       type: 'array',
       admin: {
@@ -700,7 +692,11 @@ export const Lessons: CollectionConfig = {
           name: 'criteria',
           type: 'textarea',
           admin: {
-            description: 'What the AI should verify for this row (pass/fail per rubric).',
+            description:
+              'What the AI must verify for this row (pass/fail). This is the AI\'s only source of truth — put the reference solution here. ' +
+              'Write it tight: each row should be checkable by reading at most ~20 lines of code. If verifying it needs the whole contract in working memory, split it into more rows. ' +
+              'Point at specific code: name the function/path to inspect (e.g. "In claim(): check the order of state mutation, external call, and require checks"). ' +
+              'When useful, paste a known-INCORRECT version and ask the AI whether the student\'s code has the same bug. Set "hide criteria from learner" for any row that contains spoilers.',
           },
         },
         {

@@ -421,17 +421,13 @@ export interface Lesson {
    */
   aiTaskSummary?: string | null;
   /**
-   * Acceptable approaches / solution hints for the model (not shown to students via the public API).
-   */
-  aiPossibleSolutions?: string | null;
-  /**
    * Each row is one graded item the AI will evaluate as pass/fail.
    */
   reviewGradingTasks?:
     | {
         title: string;
         /**
-         * What the AI should verify for this row (pass/fail per rubric).
+         * What the AI must verify for this row (pass/fail). This is the AI's only source of truth — put the reference solution here. Write it tight: each row should be checkable by reading at most ~20 lines of code. If verifying it needs the whole contract in working memory, split it into more rows. Point at specific code: name the function/path to inspect (e.g. "In claim(): check the order of state mutation, external call, and require checks"). When useful, paste a known-INCORRECT version and ask the AI whether the student's code has the same bug. Set "hide criteria from learner" for any row that contains spoilers.
          */
         criteria?: string | null;
         /**
@@ -745,7 +741,6 @@ export interface LessonsSelect<T extends boolean = true> {
         id?: T;
       };
   aiTaskSummary?: T;
-  aiPossibleSolutions?: T;
   reviewGradingTasks?:
     | T
     | {

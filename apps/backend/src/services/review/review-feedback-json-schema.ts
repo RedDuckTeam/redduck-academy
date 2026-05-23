@@ -48,14 +48,25 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
                   description:
                     'Must exactly match the rubric task title for this taskId (same string as the title in the rubric XML).',
                 },
+                evidence: {
+                  type: 'string',
+                  description:
+                    'FILL THIS BEFORE deciding "passed". Quote the exact code lines (each prefixed with its file path) that the gradingHint points at, then walk through them in execution order. For state/security rows, state the order of state mutations, external calls, and require/revert checks. If the gradingHint provides a known-buggy reference, state whether the student\'s code has the same bug. The verdict must follow from this text.',
+                },
+                confidence: {
+                  type: 'string',
+                  enum: ['high', 'medium', 'low'],
+                  description:
+                    'How clearly the quoted evidence settles this row. "high": concrete lines directly satisfy/violate it. "medium": partial or indirect. "low": no clear evidence / path missing or stubbed. "low" forces "passed" to false — do not give the benefit of the doubt.',
+                },
                 passed: {
                   type: 'boolean',
                   description:
-                    "Your judgment for this row: true if the student met this criterion's expectations well enough for credit.",
+                    "Your judgment for this row, decided AFTER evidence and confidence: true only if the quoted evidence meets this criterion's expectations and confidence is not low.",
                 },
                 comment: { type: 'string', description: 'Brief feedback for this criterion.' },
               },
-              required: ['taskId', 'name', 'passed', 'comment'],
+              required: ['taskId', 'name', 'evidence', 'confidence', 'passed', 'comment'],
             },
           },
         },

@@ -34,11 +34,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
  * Returns the batch id.
  * @see https://platform.openai.com/docs/guides/batch
  */
-export async function createBatch(
-  prompt: ReviewPrompt,
-  submissionId: number,
-  criteriaCount: number,
-): Promise<string> {
+export async function createBatch(prompt: ReviewPrompt, submissionId: number, criteriaCount: number): Promise<string> {
   const openai = getOpenAiClient()
   const line =
     JSON.stringify({
@@ -66,7 +62,11 @@ export async function createBatch(
     })
     return batch.id
   } finally {
-    try { unlinkSync(path) } catch { /* temp file cleanup — best effort */ }
+    try {
+      unlinkSync(path)
+    } catch {
+      /* temp file cleanup — best effort */
+    }
   }
 }
 
@@ -85,7 +85,11 @@ function extractChatCompletionContent(jsonlText: string, submissionId: number): 
     const trimmed = line.trim()
     if (!trimmed) continue
     let parsed: unknown
-    try { parsed = JSON.parse(trimmed) } catch { continue }
+    try {
+      parsed = JSON.parse(trimmed)
+    } catch {
+      continue
+    }
     if (!isRecord(parsed) || parsed.custom_id !== want) continue
 
     const response = parsed.response
@@ -142,6 +146,10 @@ function parseReviewFeedback(
   for (const c of parsed.criteria) {
     if (!isRecord(c) || typeof c.passed !== 'boolean') throw new Error('Invalid feedback: criterion passed')
     if (typeof c.taskId !== 'string') throw new Error('Invalid feedback: criterion taskId')
+    if (typeof c.evidence !== 'string') throw new Error('Invalid feedback: criterion evidence')
+    if (c.confidence !== 'high' && c.confidence !== 'medium' && c.confidence !== 'low') {
+      throw new Error('Invalid feedback: criterion confidence')
+    }
   }
 
   // Verify the model returned exactly one criterion per rubric task — no
@@ -166,11 +174,26 @@ function parseReviewFeedback(
   return parsed as unknown as ReviewFeedback
 }
 
+/**
+ * Enforces the confidence floor and recomputes pass/fail deterministically.
+ * - A `low`-confidence row means the grader saw no clear evidence, so its `passed` is forced false.
+ * - `lessonPassed` is then forced false if any required rubric task ends up failed (downward only —
+ *   we never flip the model's verdict to pass).
+ */
+function applyConfidenceRules(feedback: ReviewFeedback, tasks: NonNullable<Lesson['reviewGradingTasks']>): ReviewFeedback {
+  const criteria = feedback.criteria.map((c) => (c.confidence === 'low' && c.passed ? { ...c, passed: false } : c))
+  const requiredIds = new Set(tasks.filter((t) => t.isRequired).map((t) => String(t.id)))
+  const anyRequiredFailed =
+    requiredIds.size > 0 && criteria.some((c) => requiredIds.has(c.taskId) && !c.passed)
+  return {
+    ...feedback,
+    criteria,
+    lessonPassed: anyRequiredFailed ? false : feedback.lessonPassed,
+  }
+}
+
 /** Overwrites criterion names with CMS grading-task titles so the UI always matches the admin panel. */
-function applyAdminTitles(
-  feedback: ReviewFeedback,
-  tasks: NonNullable<Lesson['reviewGradingTasks']>,
-): ReviewFeedback {
+function applyAdminTitles(feedback: ReviewFeedback, tasks: NonNullable<Lesson['reviewGradingTasks']>): ReviewFeedback {
   if (tasks.length === 0) return feedback
   const titleByTaskId = new Map(tasks.map((t) => [String(t.id), t.title != null ? String(t.title).trim() : '']))
   return {
@@ -234,7 +257,8 @@ export async function pollAndParse(
 
   try {
     const content = extractChatCompletionContent(jsonlText, submissionId)
-    const feedback = applyAdminTitles(parseReviewFeedback(content, submissionId, tasks), tasks)
+    const parsed = parseReviewFeedback(content, submissionId, tasks)
+    const feedback = applyAdminTitles(applyConfidenceRules(parsed, tasks), tasks)
     return { type: 'completed', feedback }
   } catch (err) {
     logger.error('Failed to parse batch output', err, { batchRequestId, submissionId })

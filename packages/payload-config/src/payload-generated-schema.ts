@@ -414,7 +414,6 @@ export const lessons = db_schema.table(
     functionSignature: varchar('function_signature'),
     solidityContractName: varchar('solidity_contract_name'),
     aiTaskSummary: varchar('ai_task_summary'),
-    aiPossibleSolutions: varchar('ai_possible_solutions'),
     templateRepoUrl: varchar('template_repo_url'),
     isHidden: boolean('is_hidden').default(false),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
