@@ -8,19 +8,27 @@ interface SubmissionReviewTabsProps {
   submissions: Array<LatestProjectSubmission & { repoUrl?: string | null; commitSha?: string | null }>
   /** Admin-only: render the submitted repository URL + reviewed commit per attempt. Never set in the learner view. */
   showRepository?: boolean
+  /** Open this submission's tab by default (e.g. the one clicked in the admin list); falls back to the latest. */
+  initialSubmissionId?: number
 }
 
-export function SubmissionReviewTabs({ submissions, showRepository = false }: SubmissionReviewTabsProps) {
+export function SubmissionReviewTabs({ submissions, showRepository = false, initialSubmissionId }: SubmissionReviewTabsProps) {
   if (submissions.length === 0) {
     return null
   }
 
+  // Pending submissions have no tab, so default-tab math must use the filtered list, not the raw one.
   const filteredSubmissions = submissions.filter((s) => s.status !== 'pending')
-  const defaultValue = `attempt-${submissions.length - 1}`
+  const requestedIndex =
+    initialSubmissionId != null
+      ? filteredSubmissions.findIndex((s) => s.id === initialSubmissionId)
+      : -1
+  const defaultIndex = requestedIndex >= 0 ? requestedIndex : filteredSubmissions.length - 1
+  const defaultValue = `attempt-${defaultIndex}`
 
   return (
     <Tabs
-      key={submissions.map((s) => s.id).join('-')}
+      key={`${submissions.map((s) => s.id).join('-')}:${defaultValue}`}
       defaultValue={defaultValue}
       orientation="horizontal"
       className="flex flex-col gap-3 w-full "

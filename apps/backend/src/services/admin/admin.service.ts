@@ -625,6 +625,7 @@ export class AdminService {
           id: projectUserSubmissions.id,
           submittedAt: projectUserSubmissions.submittedAt,
           status: projectUserSubmissions.status,
+          feedback: projectUserSubmissions.feedback,
           userId: user.id,
           userName: user.name,
           userEmail: user.email,
@@ -651,7 +652,9 @@ export class AdminService {
           userImage: r.userImage,
           username: r.username,
           submittedAt: r.submittedAt.toISOString(),
-          passed: r.status === 'completed',
+          // A review is "passed" only when it finished AND the grader's verdict was a pass.
+          // `status === 'completed'` alone includes failing verdicts, so consult feedback.lessonPassed.
+          passed: r.status === 'completed' && (r.feedback as { lessonPassed?: boolean } | null)?.lessonPassed === true,
           status: r.status,
         })),
       }

@@ -9,16 +9,24 @@ import type {
 } from '@redduck/api-contracts'
 
 export const Route = createFileRoute('/admin/users/$userId/$courseSlug/$lessonSlug')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    email: typeof search.email === 'string' ? search.email : '',
-  }),
+  validateSearch: (search: Record<string, unknown>): { email: string; submissionId?: number } => {
+    // Which submission to open by default (from the lesson submissions list); falls back to latest.
+    // Kept optional so other links into this route needn't supply it.
+    const raw = search.submissionId
+    const submissionId =
+      typeof raw === 'number' ? raw : typeof raw === 'string' && raw !== '' ? Number(raw) : undefined
+    return {
+      email: typeof search.email === 'string' ? search.email : '',
+      ...(submissionId != null && !Number.isNaN(submissionId) ? { submissionId } : {}),
+    }
+  },
   ssr: false,
   component: AdminUserLessonPage,
 })
 
 function AdminUserLessonPage() {
   const { userId, courseSlug, lessonSlug } = Route.useParams()
-  const { email } = Route.useSearch()
+  const { email, submissionId } = Route.useSearch()
   const { data: lesson, isPending, isError } = useAdminUserLessonDetail(userId, courseSlug, lessonSlug)
 
   return (
@@ -69,7 +77,7 @@ function AdminUserLessonPage() {
           </div>
 
           {lesson.type === 'test' && <TestView lesson={lesson} />}
-          {lesson.type === 'review_task' && <ReviewView lesson={lesson} />}
+          {lesson.type === 'review_task' && <ReviewView lesson={lesson} initialSubmissionId={submissionId} />}
           {lesson.type === 'coding_task' && <CodingView lesson={lesson} />}
           {lesson.type === 'lecture' && <LectureView lesson={lesson} />}
         </div>
@@ -112,7 +120,13 @@ function TestView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUs
   )
 }
 
-function ReviewView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdminUserLessonDetail>['data']> }) {
+function ReviewView({
+  lesson,
+  initialSubmissionId,
+}: {
+  lesson: NonNullable<ReturnType<typeof useAdminUserLessonDetail>['data']>
+  initialSubmissionId?: number
+}) {
   const submissions = (lesson.submissions ?? []) as LatestProjectSubmission[]
   if (!submissions.length) {
     return (
@@ -129,7 +143,7 @@ function ReviewView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdmin
           {pending.length} submission{pending.length > 1 ? 's' : ''} pending review.
         </Text>
       )}
-      <SubmissionReviewTabs submissions={submissions} showRepository />
+      <SubmissionReviewTabs submissions={submissions} showRepository initialSubmissionId={initialSubmissionId} />
     </div>
   )
 }

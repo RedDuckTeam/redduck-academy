@@ -61,6 +61,8 @@ lessonsApp.post(
   },
 )
 
+// TODO: CACHE post-deploy — public lesson content, NO user data here (user answers/progress live on /api/user/lessons/*).
+// Key cardinality bounded by lesson count (safe for RAM). cacheHandler(cache, { prefix: 'lesson', ttl: 600, staleTtl: 300 }) → cache 10m / staleWhileRevalidate 5m.
 lessonsApp.get('/:courseSlug/:lessonSlug', getLessonDesc, validator('param', courseLessonParamSchema), async (c) => {
   const { courseSlug, lessonSlug } = c.req.valid('param')
   const data = await LessonsService.getLesson(courseSlug, lessonSlug)

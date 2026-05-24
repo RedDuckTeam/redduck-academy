@@ -33,6 +33,9 @@ import { env } from '../../env'
 
 const userApp = new Hono<{ Variables: AuthVariables }>()
 
+// TODO: CACHE (user-scoped ONLY) post-deploy — per-user payload (answers, progress, submissions). The route-level
+// cacheHandler keys by URL only (no userId) → it would leak data across users. Cache at the service layer with
+// userCacheKeys.lessonProgress(userId, courseSlug, lessonSlug) + invalidateUserCache on submit/sync. cache 600s / staleWhileRevalidate 120s.
 userApp.get(
   '/lessons/:courseSlug/:lessonSlug',
   requireAuth,
@@ -59,12 +62,15 @@ userApp.post(
   },
 )
 
+// TODO: CACHE (user-scoped ONLY) post-deploy — per-user; do NOT route-cache (URL has no userId → cross-user leak).
+// Service layer w/ userCacheKeys.completedLessons(userId) + invalidateUserCache on complete/submit. cache 600s / staleWhileRevalidate 120s.
 userApp.get('/completed-lessons', requireAuth, getUserCompletedLessonsDesc, async (c) => {
   const authUser = c.get('user')
   const data = await UserService.getUserCompletedLessons(authUser.id)
   return c.json({ data })
 })
 
+// TODO: CACHE (user-scoped ONLY) post-deploy — per-user; service layer keyed by userId + invalidateUserCache. cache 600s / staleWhileRevalidate 120s.
 userApp.get('/progress-cards', requireAuth, getProgressCardsDesc, async (c) => {
   const authUser = c.get('user')
   const data = await UserService.getProgressCards(authUser.id)
@@ -78,12 +84,14 @@ userApp.patch('/name', requireAuth, requireNotBanned, updateUserNameDesc, valida
   return c.json({ data })
 })
 
+// TODO: CACHE (user-scoped ONLY) post-deploy — per-user; service layer w/ userCacheKeys.stats(userId) + invalidateUserCache. cache 600s / staleWhileRevalidate 120s.
 userApp.get('/stats', requireAuth, getUserStatsDesc, async (c) => {
   const authUser = c.get('user')
   const data = await UserService.getUserStats(authUser.id)
   return c.json({ data })
 })
 
+// TODO: CACHE (user-scoped ONLY) post-deploy — per-user; service layer keyed by userId, invalidate on PATCH /settings. cache 600s / staleWhileRevalidate 120s.
 userApp.get('/settings', requireAuth, getUserSettingsDesc, async (c) => {
   const authUser = c.get('user')
   const data = await UserService.getUserSettings(authUser.id)
@@ -160,12 +168,16 @@ userApp.patch('/bio', requireAuth, requireNotBanned, updateUserBioDesc, validato
   return c.json({ data })
 })
 
+// TODO: CACHE post-deploy — public profile, route-cacheable (key = username, bounded by user count). Keep TTL short
+// since profile/progress updates won't be invalidated here. cacheHandler(cache, { prefix: 'profile', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
 userApp.get('/profile/:username', getPublicProfileDesc, validator('param', usernameParamSchema), async (c) => {
   const { username } = c.req.valid('param')
   const data = await UserService.getPublicProfile(username)
   return c.json({ data })
 })
 
+// TODO: CACHE post-deploy — global leaderboard, single key, expensive to compute, tolerates slight staleness.
+// cacheHandler(cache, { prefix: 'rating', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
 userApp.get('/rating', getRatingDesc, async (c) => {
   const data = await UserService.getRating()
   return c.json({ data })

@@ -57,12 +57,16 @@ certificatesApp.post(
   },
 )
 
+// TODO: CACHE post-deploy — public certificate by human id, mostly immutable once issued (status created→requested→claimed
+// changes rarely). Key = id (bounded by cert count). cacheHandler(cache, { prefix: 'cert', ttl: 300, staleTtl: 120 }) → cache 5m / staleWhileRevalidate 2m.
 certificatesApp.get('/:id', getCertificateByIdDesc, validator('param', certificateHumanIdParamSchema), async (c) => {
   const { id } = c.req.valid('param')
   const data = await CertificatesService.getCertificateByHumanId(id)
   return c.json({ data })
 })
 
+// TODO: CACHE (user-scoped ONLY) post-deploy — per-user list; do NOT route-cache (URL has no userId → cross-user leak).
+// Service layer keyed by userId, invalidate on claim/request-nft. cache 300s / staleWhileRevalidate 60s.
 certificatesApp.get('/', requireAuth, getUserCertificatesDesc, async (c) => {
   const authUser = c.get('user')
   const data = await CertificatesService.getUserCertificates(authUser.id)

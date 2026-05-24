@@ -26,16 +26,16 @@ function StatusCell({ item }: { item: AdminLessonSubmissionItem }) {
     )
   }
   if (item.kind === 'review_task') {
-    const label = (item.status ?? 'pending').toUpperCase()
-    const color =
-      item.status === 'completed'
-        ? 'text-green-600'
-        : item.status === 'failed'
-          ? 'text-red-600'
-          : 'text-muted-foreground'
+    // pending = review still running; failed = review process errored; completed = graded → show the verdict.
+    if (item.status === 'pending') {
+      return <Text variant="caps-14" className="text-muted-foreground">PENDING</Text>
+    }
+    if (item.status === 'failed') {
+      return <Text variant="caps-14" className="text-red-600">REVIEW FAILED</Text>
+    }
     return (
-      <Text variant="caps-14" className={color}>
-        {label}
+      <Text variant="caps-14" className={item.passed ? 'text-green-600' : 'text-red-600'}>
+        {item.passed ? 'PASSED' : 'NOT PASSED'}
       </Text>
     )
   }
@@ -136,9 +136,9 @@ export function AdminLessonSubmissionsPage() {
         </div>
       ) : (
         <div className="border border-border">
-          <div className="hidden lg:grid grid-cols-[2fr_2fr_1fr_1.5fr_2fr] gap-4 px-5 py-3 border-b border-border bg-muted/30">
+          <div className="hidden lg:grid grid-cols-[2fr_1fr_1.2fr_1.5fr_2fr] gap-4 px-5 py-3 border-b border-border bg-muted/30">
             <Text variant="caps-14" className="text-border">USER</Text>
-            <Text variant="caps-14" className="text-border">EMAIL</Text>
+            <Text variant="caps-14" className="text-border">ID</Text>
             <Text variant="caps-14" className="text-border">STATUS</Text>
             <Text variant="caps-14" className="text-border">DATE</Text>
             <Text variant="caps-14" className="text-border">ACTIONS</Text>
@@ -146,7 +146,7 @@ export function AdminLessonSubmissionsPage() {
           {data.items.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1.5fr_2fr] gap-3 lg:gap-4 px-5 py-4 border-b border-border last:border-b-0 items-center"
+              className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1.2fr_1.5fr_2fr] gap-3 lg:gap-4 px-5 py-4 border-b border-border last:border-b-0 items-center"
             >
               <div className="flex flex-col gap-1 min-w-0">
                 <Text variant="caps-14" className="lg:hidden text-border">USER</Text>
@@ -160,9 +160,9 @@ export function AdminLessonSubmissionsPage() {
                 )}
               </div>
               <div className="flex flex-col gap-1 min-w-0">
-                <Text variant="caps-14" className="lg:hidden text-border">EMAIL</Text>
-                <Text variant="caps-14" className="break-all text-secondary">
-                  {item.userEmail ?? '—'}
+                <Text variant="caps-14" className="lg:hidden text-border">ID</Text>
+                <Text variant="caps-14" className="text-secondary font-mono">
+                  #{item.id}
                 </Text>
               </div>
               <div className="flex flex-col gap-1">
@@ -187,6 +187,7 @@ export function AdminLessonSubmissionsPage() {
                     search={{
                       tab: 'lessons' as const,
                       email: item.userEmail ?? item.username ?? item.userId,
+                      submissionId: Number(item.id),
                     }}
                     className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                   >
