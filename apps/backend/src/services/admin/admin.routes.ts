@@ -10,6 +10,7 @@ import {
   banUserBodySchema,
 } from '@redduck/api-contracts'
 import {
+  adminAiCostsDesc,
   adminCertificatesDesc,
   adminHealthDesc,
   adminLessonsTreeDesc,
@@ -82,6 +83,11 @@ adminApp.get(
 
 adminApp.get('/lessons/tree', requireAdmin, adminLessonsTreeDesc, async (c) => {
   const data = await AdminService.getLessonsTree()
+  return c.json({ data })
+})
+
+adminApp.get('/ai-costs', requireAdmin, adminAiCostsDesc, async (c) => {
+  const data = await AdminService.getAiCostDashboard()
   return c.json({ data })
 })
 

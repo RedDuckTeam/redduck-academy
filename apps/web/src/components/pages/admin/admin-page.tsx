@@ -7,6 +7,7 @@ import { AdminGeneralTab } from './general/general-tab'
 import { AdminUsersTab } from './users/users-tab'
 import { AdminCertificatesTab } from './certificates/certificates-tab'
 import { AdminLessonsTab } from './lessons/lessons-tab'
+import { AdminCostsTab } from './costs/costs-tab'
 
 const adminRouteApi = getRouteApi('/admin')
 
@@ -26,7 +27,7 @@ export function AdminPage() {
           onValueChange={(t) =>
             navigate({
               to: '/admin',
-              search: { tab: t as 'general' | 'users' | 'certificates' | 'lessons' },
+              search: { tab: t as 'general' | 'users' | 'certificates' | 'lessons' | 'costs' },
             })
           }
           className="flex w-full flex-col gap-6"
@@ -36,6 +37,7 @@ export function AdminPage() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="certificates">Certificates</TabsTrigger>
+            <TabsTrigger value="costs">AI Costs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-0">
@@ -52,6 +54,10 @@ export function AdminPage() {
 
           <TabsContent value="certificates" className="mt-0">
             <AdminCertificatesTab />
+          </TabsContent>
+
+          <TabsContent value="costs" className="mt-0">
+            <AdminCostsTab />
           </TabsContent>
         </Tabs>
       </main>

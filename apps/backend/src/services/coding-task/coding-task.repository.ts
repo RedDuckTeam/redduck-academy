@@ -16,7 +16,7 @@ export const CodingTaskRepository = {
     passed: boolean,
     aiComment: string | null,
     ipAddress: string,
-  ): Promise<{ submissionId: number }> {
+  ): Promise<{ submissionId: number; userLessonId: number }> {
     return db.transaction(async (tx) => {
       const [userLesson] = await tx
         .insert(userLessons)
@@ -50,7 +50,7 @@ export const CodingTaskRepository = {
           .where(eq(userLessons.id, userLesson.id))
       }
 
-      return { submissionId: submission.id }
+      return { submissionId: submission.id, userLessonId: userLesson.id }
     })
   },
 

@@ -5,6 +5,7 @@ import OpenAI from 'openai'
 import type { Lesson } from '@redduck/payload-config'
 import { env } from '../../env'
 import { DEFAULT_MODEL } from '../ai/openai-client'
+import { normalizeUsage, type NormalizedUsage } from '../ai/usage.service'
 import type { ReviewFeedback } from '../../types/review-feedback'
 import { buildReviewFeedbackResponseFormat } from './review-feedback-json-schema'
 import type { ReviewPrompt } from './prompt.builder'
@@ -17,7 +18,7 @@ const ASSISTANT_OUTPUT_LOG_MAX_CHARS = 8_000
 export type BatchPollResult =
   | { type: 'pending' }
   | { type: 'failed'; message: string }
-  | { type: 'completed'; feedback: ReviewFeedback }
+  | { type: 'completed'; feedback: ReviewFeedback; usage: NormalizedUsage | null; model: string }
 
 function getOpenAiClient(): OpenAI {
   return new OpenAI({ apiKey: env.OPENAI_API_KEY })
@@ -79,7 +80,10 @@ function extractBatchErrorMessage(batch: Awaited<ReturnType<OpenAI['batches']['r
   return `OpenAI batch ${batch.status}`
 }
 
-function extractChatCompletionContent(jsonlText: string, submissionId: number): string {
+function extractBatchCompletion(
+  jsonlText: string,
+  submissionId: number,
+): { content: string; usage: unknown; model: string | null } {
   const want = `submission-${submissionId}`
   for (const line of jsonlText.split('\n')) {
     const trimmed = line.trim()
@@ -112,7 +116,11 @@ function extractChatCompletionContent(jsonlText: string, submissionId: number): 
     if (!isRecord(choice0)) throw new Error('Invalid choice shape')
     const message = choice0.message
     if (!isRecord(message) || typeof message.content !== 'string') throw new Error('Missing assistant message content')
-    return message.content
+    return {
+      content: message.content,
+      usage: body.usage ?? null,
+      model: typeof body.model === 'string' ? body.model : null,
+    }
   }
   throw new Error('No batch output line for this submission')
 }
@@ -256,10 +264,10 @@ export async function pollAndParse(
   }
 
   try {
-    const content = extractChatCompletionContent(jsonlText, submissionId)
+    const { content, usage, model } = extractBatchCompletion(jsonlText, submissionId)
     const parsed = parseReviewFeedback(content, submissionId, tasks)
     const feedback = applyAdminTitles(applyConfidenceRules(parsed, tasks), tasks)
-    return { type: 'completed', feedback }
+    return { type: 'completed', feedback, usage: normalizeUsage(usage), model: model ?? DEFAULT_MODEL }
   } catch (err) {
     logger.error('Failed to parse batch output', err, { batchRequestId, submissionId })
     return { type: 'failed', message: 'batch output parse failed' }

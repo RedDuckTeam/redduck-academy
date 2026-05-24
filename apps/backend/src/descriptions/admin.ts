@@ -1,6 +1,7 @@
 import { describeRoute, resolver } from 'hono-openapi'
 import { z } from 'zod'
 import {
+  adminAiCostsSchema,
   adminCertificatesListSchema,
   adminLessonProgressOverlaySchema,
   adminLessonSubmissionsListSchema,
@@ -11,6 +12,21 @@ import {
   completedLessonSchema,
 } from '@redduck/api-contracts'
 import { errorSchema } from './schemas'
+
+export const adminAiCostsDesc = describeRoute({
+  summary: 'Admin: AI review cost dashboard',
+  description:
+    'Aggregates AI review token usage into estimated USD spend: time-window totals (today/7d/30d/all-time), per-model breakdown, per-lesson cost grouped by course, and top users by spend. Costs are estimates derived from a hardcoded pricing map (see pricingVersion), not the OpenAI invoice. Forward-only from when usage capture shipped.',
+  tags: ['Admin'],
+  responses: {
+    200: {
+      description: 'AI cost dashboard payload',
+      content: { 'application/json': { schema: resolver(z.object({ data: adminAiCostsSchema })) } },
+    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
 
 export const adminHealthDesc = describeRoute({
   summary: 'Admin health check',

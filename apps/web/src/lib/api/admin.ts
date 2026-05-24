@@ -239,3 +239,55 @@ export const markAdminClaimed = async (
 ): Promise<void> => {
   await api().post(`/api/certificates/admin/${certificateId}/claim`, data)
 }
+
+// ─── AI cost dashboard ──────────────────────────────────────────────────────
+// `cost` values are estimated USD (token counts × pricing map), not the exact invoice.
+
+export type AdminAiCostSummary = {
+  today: number
+  last7d: number
+  last30d: number
+  allTime: number
+  totalCalls: number
+}
+
+export type AdminAiCostModel = { model: string; cost: number; calls: number; totalTokens: number }
+
+export type AdminAiCostLesson = {
+  lessonId: number
+  title: string
+  slug: string
+  type: string
+  cost: number
+  calls: number
+}
+
+export type AdminAiCostCourse = {
+  courseId: number | null
+  courseTitle: string
+  courseSlug: string
+  cost: number
+  lessons: AdminAiCostLesson[]
+}
+
+export type AdminAiCostUser = {
+  userId: string
+  userName: string
+  userEmail: string | null
+  username: string | null
+  cost: number
+  calls: number
+}
+
+export type AdminAiCosts = {
+  pricingVersion: string
+  summary: AdminAiCostSummary
+  byModel: AdminAiCostModel[]
+  courses: AdminAiCostCourse[]
+  topUsers: AdminAiCostUser[]
+}
+
+export const getAdminAiCosts = async (): Promise<AdminAiCosts> => {
+  const response = await api().get<{ data: AdminAiCosts }>('/api/admin/ai-costs')
+  return response.data
+}

@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   uuid,
   check,
+  numeric,
 } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
@@ -154,6 +155,45 @@ export const submissionRateLimits = pgTable(
   (t) => ({
     ipLessonIdx: index('submission_rate_limits_ip_lesson_idx').on(t.ipAddress, t.lessonId),
     userLessonIdx: index('submission_rate_limits_user_lesson_idx').on(t.userId, t.lessonId),
+  }),
+)
+
+/**
+ * Append-only log of every LLM API call made for reviews. One row per call.
+ * `userId` / `lessonId` are denormalized so per-user and per-lesson rollups stay fast
+ * and survive deletion of the source submission. Cost is forward-only: rows only exist
+ * from the day capture shipped (past calls didn't record `usage`).
+ * `costUsd` is derived from raw tokens via the pricing map; `pricingVersion` records which
+ * map produced it so cost can be recomputed from tokens if rates were wrong.
+ */
+export const aiUsageLogs = pgTable(
+  'ai_usage_logs',
+  {
+    id: serial('id').primaryKey(),
+    // set null (not cascade): keep cost in account-wide totals even if the user is deleted.
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    lessonId: integer('lesson_id'),
+    userLessonId: integer('user_lesson_id').references(() => userLessons.id, { onDelete: 'set null' }),
+    // 'project' | 'coding_task' | 'coding_task_recheck'
+    submissionType: text('submission_type').notNull(),
+    // id within the matching submission table (polymorphic, so no FK). Nullable.
+    submissionId: integer('submission_id'),
+    model: text('model').notNull(),
+    isBatch: boolean('is_batch').notNull().default(false),
+    promptTokens: integer('prompt_tokens').notNull().default(0),
+    cachedTokens: integer('cached_tokens').notNull().default(0),
+    completionTokens: integer('completion_tokens').notNull().default(0),
+    totalTokens: integer('total_tokens').notNull().default(0),
+    // microdollar precision; tiny per-call costs need the scale.
+    costUsd: numeric('cost_usd', { precision: 12, scale: 6 }).notNull().default('0'),
+    pricingVersion: text('pricing_version').notNull(),
+    batchRequestId: text('batch_request_id'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    userCreatedIdx: index('ai_usage_logs_user_created_idx').on(t.userId, t.createdAt),
+    lessonIdx: index('ai_usage_logs_lesson_idx').on(t.lessonId),
+    createdIdx: index('ai_usage_logs_created_idx').on(t.createdAt),
   }),
 )
 

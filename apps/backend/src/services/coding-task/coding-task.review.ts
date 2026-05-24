@@ -3,8 +3,9 @@ import { env } from '../../env'
 import { AppError, GENERIC_ERROR_MESSAGE } from '../../lib/errors'
 import { Logger } from '../../lib/logger'
 import { buildCodingTaskReviewPrompt, buildSecondLayerReviewPrompt, type SecondLayerCase } from './prompt.builder'
+import { normalizeUsage, type NormalizedUsage } from '../ai/usage.service'
 
-const CODING_TASK_MODEL = 'gpt-4.1-mini'
+export const CODING_TASK_MODEL = 'gpt-4.1-mini'
 const logger = new Logger('CodingTaskReview')
 
 const codingTaskResponseFormat = {
@@ -37,7 +38,7 @@ export async function reviewCodingTask(
   language: string,
   aiExpectedResult: string,
   testCases: { title: string; description?: string | null }[],
-): Promise<{ passed: boolean; adminComment: string }> {
+): Promise<{ passed: boolean; adminComment: string; usage: NormalizedUsage | null }> {
   const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY })
   const { system, user } = buildCodingTaskReviewPrompt(submittedCode, language, aiExpectedResult, testCases)
 
@@ -81,7 +82,7 @@ export async function reviewCodingTask(
   }
 
   const { passed, adminComment } = parsed as { passed: boolean; adminComment: string }
-  return { passed, adminComment }
+  return { passed, adminComment, usage: normalizeUsage(completion.usage) }
 }
 
 const secondLayerResponseFormat = {
@@ -115,7 +116,7 @@ export async function secondLayerReview(
   language: string,
   functionSignature: string,
   testCases: SecondLayerCase[],
-): Promise<{ approved: boolean; adminComment: string }> {
+): Promise<{ approved: boolean; adminComment: string; usage: NormalizedUsage | null }> {
   const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY })
   const { system, user } = buildSecondLayerReviewPrompt(submittedCode, language, functionSignature, testCases)
 
@@ -159,5 +160,5 @@ export async function secondLayerReview(
   }
 
   const { approved, adminComment } = parsed as { approved: boolean; adminComment: string }
-  return { approved, adminComment }
+  return { approved, adminComment, usage: normalizeUsage(completion.usage) }
 }

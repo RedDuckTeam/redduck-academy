@@ -2,10 +2,10 @@ import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useUserSettings } from '@/hooks/api/user/useUserSettings'
 
-type AdminTab = 'general' | 'users' | 'certificates' | 'lessons'
+type AdminTab = 'general' | 'users' | 'certificates' | 'lessons' | 'costs'
 
 function parseTab(raw: unknown): AdminTab {
-  const allowed: AdminTab[] = ['general', 'users', 'certificates', 'lessons']
+  const allowed: AdminTab[] = ['general', 'users', 'certificates', 'lessons', 'costs']
   return typeof raw === 'string' && (allowed as string[]).includes(raw) ? (raw as AdminTab) : 'general'
 }
 

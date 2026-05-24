@@ -114,6 +114,62 @@ export const adminLessonSubmissionsListSchema = paginatedDataSchema(adminLessonS
   }),
 })
 
+// ─── AI cost dashboard ────────────────────────────────────────────────────────
+// All `cost` values are estimated USD (derived from token counts via a hardcoded
+// pricing map). Treat as relative attribution, not an exact invoice figure.
+
+export const adminAiCostSummarySchema = z.object({
+  today: z.number(), // since UTC midnight
+  last7d: z.number(),
+  last30d: z.number(),
+  allTime: z.number(),
+  totalCalls: z.number().int(),
+})
+
+export const adminAiCostModelSchema = z.object({
+  model: z.string(),
+  cost: z.number(),
+  calls: z.number().int(),
+  totalTokens: z.number().int(),
+})
+
+export const adminAiCostLessonSchema = z.object({
+  lessonId: z.number().int(),
+  title: z.string(),
+  slug: z.string(),
+  type: z.string(),
+  cost: z.number(),
+  calls: z.number().int(),
+})
+
+export const adminAiCostCourseSchema = z.object({
+  courseId: z.number().int().nullable(),
+  courseTitle: z.string(),
+  courseSlug: z.string(),
+  cost: z.number(),
+  lessons: z.array(adminAiCostLessonSchema),
+})
+
+export const adminAiCostUserSchema = z.object({
+  userId: z.string(),
+  userName: z.string(),
+  userEmail: z.string().nullable(),
+  username: z.string().nullable(),
+  cost: z.number(),
+  calls: z.number().int(),
+})
+
+export const adminAiCostsSchema = z.object({
+  // The pricing-map version the cost estimates were computed against.
+  pricingVersion: z.string(),
+  summary: adminAiCostSummarySchema,
+  byModel: z.array(adminAiCostModelSchema),
+  courses: z.array(adminAiCostCourseSchema), // course → lesson drill-down, sorted by cost desc
+  topUsers: z.array(adminAiCostUserSchema),
+})
+
+export type AdminAiCosts = z.infer<typeof adminAiCostsSchema>
+
 export type AdminStats = z.infer<typeof adminStatsSchema>
 export type AdminUserItem = z.infer<typeof adminUserItemSchema>
 export type AdminCertificateItem = z.infer<typeof adminCertificateItemSchema>

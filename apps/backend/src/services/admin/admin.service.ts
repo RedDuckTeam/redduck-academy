@@ -1,4 +1,4 @@
-import { asc, count, countDistinct, desc, eq, inArray, sql, and, ne } from 'drizzle-orm'
+import { asc, count, countDistinct, desc, eq, inArray, isNotNull, sql, and, ne } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
 import {
@@ -6,7 +6,10 @@ import {
   userCertificates,
   projectUserSubmissions,
   codingTaskSubmissions,
+  aiUsageLogs,
 } from '../../db/schema'
+import { PRICING_VERSION } from '../ai/pricing'
+import type { AdminAiCosts } from '@redduck/api-contracts'
 import { buildSearchFilter, buildWhereClause } from '../../lib/query-builder'
 import { AppError } from '../../lib/errors'
 import { payloadSchema } from '@redduck/payload-config'
@@ -81,6 +84,133 @@ export class AdminService {
       averageLessonsPerUser,
       activeLearners,
       totalCertificates,
+    }
+  }
+
+  /**
+   * AI review cost dashboard. Aggregates ai_usage_logs into: spend over time windows,
+   * per-model breakdown, per-lesson cost grouped by course (drill-down), and top spenders.
+   * Costs are estimates (see pricing map); forward-only from when capture shipped.
+   */
+  static async getAiCostDashboard(): Promise<AdminAiCosts> {
+    const n = (v: unknown): number => Number(v ?? 0)
+    const costSum = sql<string>`coalesce(sum(${aiUsageLogs.costUsd}), 0)`
+
+    const calls = sql<number>`count(*)::int`
+    const costDesc = desc(sql`sum(${aiUsageLogs.costUsd})`)
+
+    // These four aggregates are independent — run them together (matches getStats above).
+    const [[summaryRow], modelRows, lessonRows, topUsers] = await Promise.all([
+      db
+        .select({
+          today: sql<string>`coalesce(sum(${aiUsageLogs.costUsd}) filter (where ${aiUsageLogs.createdAt} >= date_trunc('day', now())), 0)`,
+          last7d: sql<string>`coalesce(sum(${aiUsageLogs.costUsd}) filter (where ${aiUsageLogs.createdAt} >= now() - interval '7 days'), 0)`,
+          last30d: sql<string>`coalesce(sum(${aiUsageLogs.costUsd}) filter (where ${aiUsageLogs.createdAt} >= now() - interval '30 days'), 0)`,
+          allTime: costSum,
+          totalCalls: calls,
+        })
+        .from(aiUsageLogs),
+      db
+        .select({
+          model: aiUsageLogs.model,
+          cost: costSum,
+          calls,
+          totalTokens: sql<string>`coalesce(sum(${aiUsageLogs.totalTokens}), 0)`,
+        })
+        .from(aiUsageLogs)
+        .groupBy(aiUsageLogs.model)
+        .orderBy(costDesc),
+      db
+        .select({ lessonId: aiUsageLogs.lessonId, cost: costSum, calls })
+        .from(aiUsageLogs)
+        .where(isNotNull(aiUsageLogs.lessonId))
+        .groupBy(aiUsageLogs.lessonId),
+      db
+        .select({
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          username: user.username,
+          cost: costSum,
+          calls,
+        })
+        .from(aiUsageLogs)
+        .innerJoin(user, eq(aiUsageLogs.userId, user.id))
+        .groupBy(user.id, user.name, user.email, user.username)
+        .orderBy(costDesc)
+        .limit(50),
+    ])
+
+    // Resolve lesson titles + course from Payload, then group lessons under their course.
+    const lessonIds = lessonRows.map((r) => r.lessonId).filter((id): id is number => id != null)
+    const payloadLessons =
+      lessonIds.length === 0
+        ? []
+        : await payloadDb.query.lessons.findMany({
+            where: inArray(lessons.id, lessonIds),
+            columns: { id: true, title: true, slug: true, type: true },
+            with: { module: { with: { course: true } } },
+          })
+    const lessonMetaById = new Map(payloadLessons.map((l) => [l.id, l]))
+
+    const UNKNOWN_KEY = 'unknown'
+    const courseMap = new Map<string, AdminAiCosts['courses'][number]>()
+    for (const row of lessonRows) {
+      const meta = row.lessonId != null ? lessonMetaById.get(row.lessonId) : undefined
+      const course = meta?.module?.course
+      const key = course?.id != null ? String(course.id) : UNKNOWN_KEY
+      const cost = n(row.cost)
+
+      let bucket = courseMap.get(key)
+      if (!bucket) {
+        bucket = {
+          courseId: course?.id ?? null,
+          courseTitle: course?.title ?? 'Unknown / deleted',
+          courseSlug: course?.slug ?? '',
+          cost: 0,
+          lessons: [],
+        }
+        courseMap.set(key, bucket)
+      }
+      bucket.cost += cost
+      bucket.lessons.push({
+        lessonId: row.lessonId ?? 0,
+        title: meta?.title ?? `Lesson #${row.lessonId ?? '?'} (deleted)`,
+        slug: meta?.slug ?? '',
+        type: meta?.type ?? 'unknown',
+        cost,
+        calls: row.calls,
+      })
+    }
+
+    const courses = [...courseMap.values()]
+      .map((c) => ({ ...c, lessons: c.lessons.sort((a, b) => b.cost - a.cost) }))
+      .sort((a, b) => b.cost - a.cost)
+
+    return {
+      pricingVersion: PRICING_VERSION,
+      summary: {
+        today: n(summaryRow?.today),
+        last7d: n(summaryRow?.last7d),
+        last30d: n(summaryRow?.last30d),
+        allTime: n(summaryRow?.allTime),
+        totalCalls: Number(summaryRow?.totalCalls ?? 0),
+      },
+      byModel: modelRows.map((m) => ({
+        model: m.model,
+        cost: n(m.cost),
+        calls: m.calls,
+        totalTokens: n(m.totalTokens),
+      })),
+      courses,
+      topUsers: topUsers.map((u) => ({
+        userId: u.userId,
+        userName: u.userName,
+        userEmail: u.userEmail,
+        username: u.username,
+        cost: n(u.cost),
+        calls: u.calls,
+      })),
     }
   }
 

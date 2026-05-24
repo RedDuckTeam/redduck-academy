@@ -12,6 +12,7 @@ import {
   validateFetchResult,
 } from './utils/review-lesson'
 import { SubmissionRateLimitService } from '../rate-limit/submission-rate-limit.service'
+import { recordAiUsage } from '../ai/usage.service'
 
 const logger = new Logger('ReviewService')
 
@@ -109,6 +110,19 @@ export class ReviewService {
 
     const { feedback } = result
     await SubmissionRepository.complete(latest.id, userLesson.id, feedback, feedback.lessonPassed)
+
+    // Forward-only cost tracking; best-effort. Batch API → isBatch true (billed at 50%).
+    await recordAiUsage({
+      userId,
+      lessonId: lesson.id,
+      userLessonId: userLesson.id,
+      submissionType: 'project',
+      submissionId: latest.id,
+      model: result.model,
+      isBatch: true,
+      usage: result.usage,
+      batchRequestId: latest.batchRequestId,
+    })
   }
 
   static async getSubmissionsForUserLesson(userLessonId: number) {

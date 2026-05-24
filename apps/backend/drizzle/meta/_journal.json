@@ -169,6 +169,13 @@
       "when": 1778752304866,
       "tag": "0023_thin_the_professor",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1779660598154,
+      "tag": "0024_flippant_sleeper",
+      "breakpoints": true
     }
   ]
 }

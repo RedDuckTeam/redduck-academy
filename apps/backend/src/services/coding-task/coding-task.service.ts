@@ -1,7 +1,8 @@
 import { LessonsService } from '../lessons/lessons.service'
-import { reviewCodingTask, secondLayerReview } from './coding-task.review'
+import { reviewCodingTask, secondLayerReview, CODING_TASK_MODEL } from './coding-task.review'
 import { CodingTaskRepository } from './coding-task.repository'
 import { CodingTaskRateLimitService } from '../rate-limit/coding-task-rate-limit.service'
+import { recordAiUsage, type AiSubmissionType, type NormalizedUsage } from '../ai/usage.service'
 import { AppError } from '../../lib/errors'
 import {
   deserializeExecutableCases,
@@ -15,6 +16,9 @@ import { packVerdictComment } from './utils/verdict-comment'
 interface VerdictResolution {
   passed: boolean
   aiComment: string
+  // Present only when an AI call was made (skipped for short-circuit fails).
+  usage?: NormalizedUsage | null
+  submissionType?: AiSubmissionType
 }
 
 export class CodingTaskService {
@@ -54,7 +58,7 @@ export class CodingTaskService {
       lesson,
     })
 
-    await CodingTaskRepository.createSubmission(
+    const { submissionId, userLessonId } = await CodingTaskRepository.createSubmission(
       userId,
       lesson.id,
       submittedCode,
@@ -63,6 +67,20 @@ export class CodingTaskService {
       verdict.aiComment,
       ipAddress,
     )
+
+    // Forward-only cost tracking; best-effort so it never blocks the verdict.
+    if (verdict.usage && verdict.submissionType) {
+      await recordAiUsage({
+        userId,
+        lessonId: lesson.id,
+        userLessonId,
+        submissionType: verdict.submissionType,
+        submissionId,
+        model: CODING_TASK_MODEL,
+        isBatch: false,
+        usage: verdict.usage,
+      })
+    }
 
     return { passed: verdict.passed }
   }
@@ -97,6 +115,8 @@ export class CodingTaskService {
     return {
       passed: result.passed,
       aiComment: packVerdictComment({ clientPassed: null, legacy: true, note: result.adminComment }),
+      usage: result.usage,
+      submissionType: 'coding_task',
     }
   }
 
@@ -130,6 +150,8 @@ export class CodingTaskService {
         aiApproved: result.approved,
         note: result.adminComment,
       }),
+      usage: result.usage,
+      submissionType: 'coding_task_recheck',
     }
   }
 
