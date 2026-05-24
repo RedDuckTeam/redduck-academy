@@ -335,7 +335,10 @@ export class AdminService {
       .select({
         lessonId: userLessons.lessonId,
         total: count(),
-        success: sql<number>`count(*) filter (where ${projectUserSubmissions.status} = 'completed')`,
+        // "Passed" = review finished AND the grader's verdict was a pass. `status = 'completed'`
+        // alone only means the review ran; it includes failing verdicts, so we must also check
+        // the authoritative `feedback.lessonPassed` flag (stored as JSONB).
+        success: sql<number>`count(*) filter (where ${projectUserSubmissions.status} = 'completed' and ${projectUserSubmissions.feedback}->>'lessonPassed' = 'true')`,
       })
       .from(projectUserSubmissions)
       .innerJoin(userLessons, eq(projectUserSubmissions.userLessonId, userLessons.id))
