@@ -129,7 +129,7 @@ function ReviewView({ lesson }: { lesson: NonNullable<ReturnType<typeof useAdmin
           {pending.length} submission{pending.length > 1 ? 's' : ''} pending review.
         </Text>
       )}
-      <SubmissionReviewTabs submissions={submissions} />
+      <SubmissionReviewTabs submissions={submissions} showRepository />
     </div>
   )
 }

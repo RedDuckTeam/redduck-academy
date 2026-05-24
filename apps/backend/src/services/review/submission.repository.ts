@@ -89,13 +89,15 @@ export const SubmissionRepository = {
       .orderBy(asc(projectUserSubmissions.submittedAt))
   },
 
-  /** Admin variant — includes `batchRequestId` for diagnostics. */
+  /** Admin variant — includes `repoUrl`/`commitSha` (submitted repository + reviewed commit) and `batchRequestId` for diagnostics. */
   async listForUserLessonAdmin(userLessonId: number) {
     return db
       .select({
         id: projectUserSubmissions.id,
         status: projectUserSubmissions.status,
         submittedAt: projectUserSubmissions.submittedAt,
+        repoUrl: projectUserSubmissions.repoUrl,
+        commitSha: projectUserSubmissions.commitSha,
         batchRequestId: projectUserSubmissions.batchRequestId,
         feedback: projectUserSubmissions.feedback,
         errorMessage: projectUserSubmissions.errorMessage,

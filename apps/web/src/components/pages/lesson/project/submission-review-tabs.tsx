@@ -5,10 +5,12 @@ import { cn } from '@/lib/utils'
 import { StatusBar } from '../status-bar'
 
 interface SubmissionReviewTabsProps {
-  submissions: LatestProjectSubmission[]
+  submissions: Array<LatestProjectSubmission & { repoUrl?: string | null; commitSha?: string | null }>
+  /** Admin-only: render the submitted repository URL + reviewed commit per attempt. Never set in the learner view. */
+  showRepository?: boolean
 }
 
-export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps) {
+export function SubmissionReviewTabs({ submissions, showRepository = false }: SubmissionReviewTabsProps) {
   if (submissions.length === 0) {
     return null
   }
@@ -45,6 +47,26 @@ export function SubmissionReviewTabs({ submissions }: SubmissionReviewTabsProps)
       </TabsList>
       {filteredSubmissions.map((submission, index) => (
         <TabsContent key={submission.id} value={`attempt-${index}`} className="mt-0 flex flex-col gap-4">
+          {showRepository && submission.repoUrl && (
+            <div className="flex flex-col gap-1">
+              <Text variant="caps-14" className="text-secondary">
+                Submitted repository
+              </Text>
+              <a
+                href={submission.repoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={cn(textVariants({ variant: 'main-16' }), 'break-all text-primary underline hover:no-underline')}
+              >
+                {submission.repoUrl}
+              </a>
+              {submission.commitSha && (
+                <Text variant="main-14" className="text-secondary">
+                  Commit <span className="font-mono break-all">{submission.commitSha}</span>
+                </Text>
+              )}
+            </div>
+          )}
           {submission.status === 'completed' && submission.feedback && (
             <div className="flex flex-col gap-4">
               <StatusBar passed={submission.feedback.lessonPassed} />

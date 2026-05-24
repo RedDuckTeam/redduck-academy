@@ -16,6 +16,10 @@ export const learnerProjectSubmissionSchema = z.object({
 })
 
 export const adminProjectSubmissionSchema = learnerProjectSubmissionSchema.extend({
+  /** Repository URL the learner submitted for review (admin-only). */
+  repoUrl: z.string(),
+  /** Resolved commit SHA that was reviewed; null until the batch is created (admin-only). */
+  commitSha: z.string().nullable(),
   batchRequestId: z.string().nullable(),
   feedback: adminReviewFeedbackSchema.nullable(),
 })
