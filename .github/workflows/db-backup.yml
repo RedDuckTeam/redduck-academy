@@ -1,0 +1,77 @@
+name: Database Backup to R2
+
+on:
+  schedule:
+    # 02:00 UTC daily. GitHub cron is best-effort and may run late.
+    - cron: '0 2 * * *'
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+# Avoid overlapping runs if a previous backup is still going.
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    name: Dump Postgres and upload to R2
+    env:
+      RETENTION_DAYS: 30
+      R2_PREFIX: db-backups
+    steps:
+      # ubuntu-latest ships an older pg client; the server is Postgres 17,
+      # and pg_dump must be >= the server version, so install the 17 client.
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGSSLMODE: require # Heroku Postgres requires SSL
+        run: |
+          set -euo pipefail
+          FILE="redduck-$(date -u +%Y-%m-%d_%H%M%S).dump"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          # -Fc = custom format (compressed, restorable with pg_restore)
+          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_URL" -Fc -f "$FILE"
+          ls -lh "$FILE"
+          # Sanity check: a valid archive lists its TOC without error.
+          /usr/lib/postgresql/17/bin/pg_restore --list "$FILE" > /dev/null
+          echo "Dump verified OK"
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }} # private bucket, NOT the public media one
+        run: |
+          set -euo pipefail
+          aws s3 cp "$FILE" "s3://$R2_BUCKET/$R2_PREFIX/$FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          echo "Uploaded s3://$R2_BUCKET/$R2_PREFIX/$FILE"
+
+      - name: Prune backups older than RETENTION_DAYS
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }} # private bucket, NOT the public media one
+        run: |
+          set -euo pipefail
+          cutoff=$(date -u -d "-${RETENTION_DAYS} days" +%s)
+          aws s3 ls "s3://$R2_BUCKET/$R2_PREFIX/" --endpoint-url "$R2_ENDPOINT" \
+            | while read -r d t size key; do
+                [ -z "${key:-}" ] && continue
+                obj_ts=$(date -u -d "$d $t" +%s)
+                if [ "$obj_ts" -lt "$cutoff" ]; then
+                  echo "Deleting old backup: $key"
+                  aws s3 rm "s3://$R2_BUCKET/$R2_PREFIX/$key" --endpoint-url "$R2_ENDPOINT"
+                fi
+              done
