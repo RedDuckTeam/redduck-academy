@@ -17,6 +17,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
+import { CALLER_ALIAS_NAMES } from '@redduck/solc-utils/src/caller-aliases'
 import { formatSlug } from './hooks/formatSlug'
 import { rootEditorFeatures } from '../editor-features'
 import { buildCodeBlock } from '../rich-text/code-block'
@@ -35,16 +36,17 @@ const testQuestionLexicalFeatures = [
   }),
 ]
 
-/**
- * Caller aliases recognised by the in-browser Solidity runner. Keep this list in
- * sync with `CALLER_ALIASES` in `apps/web/src/lib/code-runner/solidity/run-test-case.ts`.
- */
 /** Hard cap on the number of steps per test case. Mirrors the worker-side check. */
 const MAX_CASE_STEPS = 16
 
-const SOLIDITY_CALLER_ALIASES = ['deployer', 'alice', 'bob', 'carol', 'dave']
+/** Built-in caller aliases recognised by the in-browser Solidity runner. */
+const SOLIDITY_CALLER_ALIASES = CALLER_ALIAS_NAMES
+/** Reserved names a fixture alias may not reuse (built-in EOAs plus `self`). */
+const SOLIDITY_RESERVED_ALIASES = [...SOLIDITY_CALLER_ALIASES, 'self']
 const SOLIDITY_CALLER_HELP =
-  'Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @deployer, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use @deployer.'
+  'Optional msg.sender for the call. Use an @-prefixed alias ' +
+  `(${SOLIDITY_CALLER_ALIASES.map((a) => `@${a}`).join(' / ')}, a fixture alias, or @self), ` +
+  'or a raw 0x-prefixed 40-hex address. Leave blank to use @deployer.'
 const RAW_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/
 const ALIAS_REF_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*$/
 
@@ -158,9 +160,9 @@ export const Lessons: CollectionConfig = {
                 )
               }
               const aliasLower = alias.toLowerCase()
-              if (SOLIDITY_CALLER_ALIASES.includes(aliasLower) || aliasLower === 'self') {
+              if (SOLIDITY_RESERVED_ALIASES.includes(aliasLower)) {
                 throw new APIError(
-                  `${fixturePrefix}: alias "${alias}" is reserved (deployer, alice, bob, carol, dave, self).`,
+                  `${fixturePrefix}: alias "${alias}" is reserved (${SOLIDITY_RESERVED_ALIASES.join(', ')}).`,
                   400,
                 )
               }
@@ -511,7 +513,7 @@ export const Lessons: CollectionConfig = {
           admin: {
             description:
               'Identifier used to reference this fixture from tests (e.g. `mockToken` → `@mockToken`). ' +
-              'Reserved names (deployer / alice / bob / carol / dave / self) are rejected.',
+              `Reserved names (${SOLIDITY_RESERVED_ALIASES.join(' / ')}) are rejected.`,
           },
         },
         {

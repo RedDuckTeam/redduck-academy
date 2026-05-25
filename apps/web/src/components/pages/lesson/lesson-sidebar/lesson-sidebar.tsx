@@ -25,13 +25,13 @@ export const LessonSidebar = ({ courseSlug, moduleSlug, lessonSlug }: LessonSide
     >
       <div
         ref={parent as Ref<HTMLDivElement>}
-        className="flex max-h-[calc(100%-40px)] min-h-[60px] min-w-[330px] flex-col divide-y divide-border overflow-y-auto custom-scrollbar"
+        className="flex max-h-[calc(100%-40px)] min-h-[60px] min-w-[330px] flex-col divide-y divide-border overflow-y-auto overflow-x-hidden custom-scrollbar"
       >
         {isOpen ? (
-          <div className="flex w-full min-w-0 flex-col divide-y divide-border">
+          <div className="flex w-full min-w-0 flex-col divide-y divide-border ">
             <button
               type="button"
-              className="flex h-[60px] w-full shrink-0 cursor-pointer items-center gap-2 px-5 text-left"
+              className="flex h-[60px] w-full shrink-0 cursor-pointer items-center gap-2 px-5 text-left "
               onClick={() => setIsOpen(false)}
             >
               <ArrowRight className="shrink-0 rotate-180" />

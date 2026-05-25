@@ -1,5 +1,6 @@
 'use client'
 
+import { CALLER_ALIAS_NAMES } from '@redduck/solc-utils/src/caller-aliases'
 import { WidgetShell } from './widget-shell'
 
 interface AddressInputProps {
@@ -14,8 +15,9 @@ const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/
 // when the test runs. Keeping the widget lenient means admins can reference a
 // fixture they're about to define without field-order gotchas.
 const ALIAS_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*$/
-// Helpful baseline list — fixture aliases extend this at runtime.
-const KNOWN_EOA_ALIASES = ['@deployer', '@alice', '@bob', '@carol', '@dave', '@self']
+// Helpful baseline list, derived from the shared alias source of truth.
+// Fixture aliases (and @self) extend this at runtime.
+const KNOWN_EOA_ALIASES = [...CALLER_ALIAS_NAMES.map((name) => `@${name}`), '@self']
 
 /** `address` — 0x-prefixed 20-byte hex, or an @-prefixed alias. */
 export function AddressInput({ label, value, onChange }: AddressInputProps) {

@@ -340,7 +340,7 @@ export interface Lesson {
   solidityFixtures?:
     | {
         /**
-         * Identifier used to reference this fixture from tests (e.g. `mockToken` → `@mockToken`). Reserved names (deployer / alice / bob / carol / dave / self) are rejected.
+         * Identifier used to reference this fixture from tests (e.g. `mockToken` → `@mockToken`). Reserved names (deployer / alice / bob / carol / dave / eve / fred / cleo / dale / oscar / self) are rejected.
          */
         alias: string;
         /**
@@ -396,7 +396,7 @@ export interface Lesson {
            */
           valueWei?: string | null;
           /**
-           * Optional msg.sender for the call. Use an @-prefixed alias (e.g. @alice / @bob / @deployer, or a fixture alias / @self), or a raw 0x-prefixed 40-hex address. Leave blank to use @deployer.
+           * Optional msg.sender for the call. Use an @-prefixed alias (@deployer / @alice / @bob / @carol / @dave / @eve / @fred / @cleo / @dale / @oscar, a fixture alias, or @self), or a raw 0x-prefixed 40-hex address. Leave blank to use @deployer.
            */
           caller?: string | null;
           /**

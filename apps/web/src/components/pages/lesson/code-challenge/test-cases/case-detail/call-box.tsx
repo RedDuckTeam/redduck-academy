@@ -1,5 +1,6 @@
+import { aliasForAddress } from '@redduck/solc-utils/src/caller-aliases'
 import { cn } from '@/lib/utils'
-import { formatCaller, formatSolidityArg, formatTargetPrefix, formatValue, formatValueWei } from '../utils'
+import { formatCaller, formatExpected, formatGot, formatSolidityArg, formatTargetPrefix, formatValueWei } from '../utils'
 
 interface CallBoxProps {
   functionName: string
@@ -44,8 +45,16 @@ export function CallBox({
   if (valueWei && valueWei.trim() !== '' && safeBigInt(valueWei) !== 0n) {
     meta.push(`value: ${formatValueWei(valueWei)}`)
   }
-  const callerLabel = caller && caller.trim() !== '' ? formatCaller(caller, { selfLabel }) : 'deployer'
-  meta.push(`from: ${callerLabel}`)
+  // Only surface `from:` when the call uses a non-default caller. Blank, `@deployer`,
+  // or the raw deployer address all mean "the default EOA", so we omit the line.
+  const trimmedCaller = caller?.trim() ?? ''
+  const callerAlias = trimmedCaller.startsWith('@')
+    ? trimmedCaller.slice(1).toLowerCase()
+    : aliasForAddress(trimmedCaller)
+  const isDefaultCaller = trimmedCaller === '' || callerAlias === 'deployer'
+  if (!isDefaultCaller) {
+    meta.push(`from: ${formatCaller(trimmedCaller, { selfLabel })}`)
+  }
 
   const hasExpected = expected !== undefined && expected !== ''
   const hasExpectedRevert = expectedRevert !== undefined && expectedRevert !== ''
@@ -81,7 +90,7 @@ export function CallBox({
             isAssertionFail ? 'text-primary' : 'text-muted-foreground',
           )}
         >
-          <span className="opacity-70">expected:</span> {expected}
+          <span className="opacity-70">expected:</span> {formatExpected(expected ?? '', { selfLabel })}
         </div>
       )}
 
@@ -98,7 +107,7 @@ export function CallBox({
 
       {isAssertionFail && (
         <div className="text-[12px] leading-[16px] font-mono pl-3 break-all text-primary">
-          <span className="opacity-70">got:</span> {formatValue(got)}
+          <span className="opacity-70">got:</span> {formatGot(got)}
         </div>
       )}
 

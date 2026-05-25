@@ -9,22 +9,20 @@ import {
   type AbiFunction,
 } from 'viem'
 import { parseTypedValue } from '@redduck/solc-utils'
+import { CALLER_ALIAS_ADDRESSES } from '@redduck/solc-utils/src/caller-aliases'
 import { coerceArgs, normalizeReturnValue } from './abi-coerce'
 import { deepEqual } from '../compare'
 
 /**
- * Named caller addresses for test cases. Each alias maps to a fixed 20-byte
- * address whose last hex chars spell the name. Tests reference them via
- * `@-prefixed` syntax (`@alice`); raw 0x-prefixed 40-hex addresses are also
- * accepted everywhere an address is expected.
+ * Named caller addresses for test cases, built from the EVM-free alias list in
+ * `./aliases`. Each alias maps to a fixed 20-byte address whose last hex chars
+ * spell the name. Tests reference them via `@-prefixed` syntax (`@alice`); raw
+ * 0x-prefixed 40-hex addresses are also accepted everywhere an address is
+ * expected.
  */
-export const CALLER_ALIASES: Record<string, Address> = {
-  deployer: createAddressFromString('0x000000000000000000000000000000000000c0de'),
-  alice: createAddressFromString('0x00000000000000000000000000000000000a11ce'),
-  bob: createAddressFromString('0x0000000000000000000000000000000000000b0b'),
-  carol: createAddressFromString('0x00000000000000000000000000000000000ca201'),
-  dave: createAddressFromString('0x000000000000000000000000000000000000dabe'),
-}
+export const CALLER_ALIASES: Record<string, Address> = Object.fromEntries(
+  Object.entries(CALLER_ALIAS_ADDRESSES).map(([name, addr]) => [name, createAddressFromString(addr)]),
+)
 
 export const DEFAULT_CALLER: Address = CALLER_ALIASES.deployer
 

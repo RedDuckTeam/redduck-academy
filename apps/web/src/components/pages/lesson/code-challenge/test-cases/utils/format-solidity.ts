@@ -1,3 +1,6 @@
+import { aliasForAddress } from '@redduck/solc-utils/src/caller-aliases'
+import { formatValue } from './format-display'
+
 /** Shorten a 0x-prefixed hex string for display (e.g. 0xabcd…1234). */
 export function shortenHex(hex: string): string {
   if (hex.length <= 12) return hex
@@ -27,6 +30,42 @@ function formatAlias(raw: string, selfLabel: string | undefined): string {
   const alias = raw.startsWith('@') ? raw.slice(1) : raw
   if (alias.toLowerCase() === 'self') return selfLabel && selfLabel.trim() !== '' ? selfLabel : 'address(this)'
   return alias
+}
+
+/**
+ * Format a step's raw `expected` value for display. A bare `@alias` reference
+ * renders as the plain alias name (`@alice` → `alice`, `@self` → contract name)
+ * so it lines up with how the decoded `got` value is shown. Everything else
+ * (numbers, bools, JSON arrays) is shown verbatim as authored.
+ */
+export function formatExpected(raw: string, opts?: { selfLabel?: string }): string {
+  const trimmed = raw.trim()
+  if (trimmed.startsWith('@')) return formatAlias(trimmed, opts?.selfLabel)
+  return raw
+}
+
+/**
+ * Format a decoded `got` value for display. Addresses matching a known EOA
+ * alias render as the alias name (`0x…a11ce` → `alice`) so a failed assertion
+ * lines up with its `expected:` alias. Nested addresses inside arrays/objects
+ * are substituted too; other values fall back to JSON formatting.
+ */
+export function formatGot(value: unknown): string {
+  if (typeof value === 'string') {
+    const alias = aliasForAddress(value)
+    return alias ?? formatValue(value)
+  }
+  return formatValue(mapAliasAddresses(value))
+}
+
+/** Recursively replace known EOA alias addresses with their names. */
+function mapAliasAddresses(value: unknown): unknown {
+  if (typeof value === 'string') return aliasForAddress(value) ?? value
+  if (Array.isArray(value)) return value.map(mapAliasAddresses)
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, mapAliasAddresses(v)]))
+  }
+  return value
 }
 
 /** Format a wei amount string into the most readable unit (ETH / gwei / wei). */
