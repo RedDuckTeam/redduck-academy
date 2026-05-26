@@ -82,7 +82,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
 
         <div className="flex items-center gap-2">
           <TerminalIcon className="" />
-          <Text variant="main-18">Paste link to repository</Text>
+          <Text variant="main-18">Paste link to your repository</Text>
         </div>
         <div className="flex flex-col gap-2">
           <div className="relative">

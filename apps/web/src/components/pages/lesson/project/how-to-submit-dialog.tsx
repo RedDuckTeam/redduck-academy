@@ -40,10 +40,6 @@ export function HowToSubmitDialog() {
               </li>
             ))}
           </ol>
-          <Text variant="main-16" className="text-secondary">
-            No local setup? You can also use GitHub Codespaces from your fork — open it in the browser, complete the
-            task, and push from there.
-          </Text>
           <DialogClose asChild>
             <Button type="button" className="w-full mt-2">
               <Text variant="caps-20">GOT IT</Text>

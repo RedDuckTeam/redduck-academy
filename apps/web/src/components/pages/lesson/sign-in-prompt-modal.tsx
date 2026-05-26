@@ -10,14 +10,16 @@ interface SignInPromptModalProps {
   redirectTo: string
   /** Proceed to the next lesson without an account (progress isn't saved). */
   onContinue: () => void
+  /** Fired when the learner clicks "Sign in" (before navigating away). */
+  onSignIn: () => void
 }
 
-export function SignInPromptModal({ open, onClose, redirectTo, onContinue }: SignInPromptModalProps) {
+export function SignInPromptModal({ open, onClose, redirectTo, onContinue, onSignIn }: SignInPromptModalProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent showCloseButton className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Congratulations!</DialogTitle>
+          <DialogTitle className="text-[#000]">Congratulations!</DialogTitle>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-6">
           <Text variant="main-18" className="text-secondary">
@@ -25,7 +27,7 @@ export function SignInPromptModal({ open, onClose, redirectTo, onContinue }: Sig
           </Text>
           <div className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link to="/sign-up" search={{ redirect: redirectTo }}>
+              <Link to="/sign-up" search={{ redirect: redirectTo }} onClick={onSignIn}>
                 <Text variant="caps-20">Sign in</Text>
               </Link>
             </Button>

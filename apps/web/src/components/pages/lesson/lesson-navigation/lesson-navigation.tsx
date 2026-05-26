@@ -7,6 +7,7 @@ import { useCourse } from '@/hooks/api/courses/useCourse'
 import { useSession } from '@/hooks/useSession'
 import { useMarkLessonCompleted } from '@/hooks/api/lessons/useMarkLessonCompleted'
 import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
+import { dismissSignInPrompt, isSignInPromptDismissed } from '@/lib/sign-in-prompt'
 import { usePostHog } from '@posthog/react'
 
 interface LessonNavigationProps {
@@ -79,14 +80,28 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
     goToNext()
   }, [pendingNext, session, canComplete, course, completeLecture, goToNext])
 
+  // Lesson context attached to every prompt funnel event (matches `lecture_completed`).
+  const promptEventProps = { course_slug: courseSlug, lesson_slug: lesson.slug, lesson_title: lesson.title }
+
   const handleNextClick = (e: React.MouseEvent) => {
     if (!canComplete) return // non-lecture / locked: let the NavTile link navigate
-    if (!session) {
-      e.preventDefault()
-      setPromptOpen(true)
-      return
+    if (session) {
+      completeLecture()
+      return // the NavTile link navigates to the next lesson
     }
-    completeLecture()
+    // Logged out: nudge once per session, then let them continue freely. If they
+    // already dismissed it this session, don't prevent navigation.
+    if (isSignInPromptDismissed()) return
+    e.preventDefault()
+    setPromptOpen(true)
+    posthog.capture('sign_in_prompt_shown', promptEventProps)
+  }
+
+  // Any dismissal (continue or close) silences the nudge for the rest of the session.
+  const dismissPrompt = (method: 'continue' | 'close') => {
+    dismissSignInPrompt()
+    setPromptOpen(false)
+    posthog.capture('sign_in_prompt_dismissed', { ...promptEventProps, method })
   }
 
   return (
@@ -97,12 +112,13 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
       </div>
       <SignInPromptModal
         open={promptOpen}
-        onClose={() => setPromptOpen(false)}
+        onClose={() => dismissPrompt('close')}
         redirectTo={`${location.pathname}?pendingNext=1`}
         onContinue={() => {
-          setPromptOpen(false)
+          dismissPrompt('continue')
           goToNext()
         }}
+        onSignIn={() => posthog.capture('sign_in_prompt_sign_in_clicked', promptEventProps)}
       />
     </>
   )
