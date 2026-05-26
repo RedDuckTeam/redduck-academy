@@ -23,6 +23,12 @@ import { useLessonCompletionToast } from '@/hooks/useLessonCompletionToast'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
+  // `pendingNext` is set when a learner returns here from sign-in after clicking
+  // "Next" on a lecture — it tells the page to finish the lesson and advance.
+  validateSearch: (search: Record<string, unknown>): { pendingNext?: boolean } => {
+    const v = search.pendingNext
+    return v === true || v === 1 || v === '1' || v === 'true' ? { pendingNext: true } : {}
+  },
   loader: async ({ params, context: { queryClient } }) => {
     try {
       const [lesson, course] = await Promise.all([

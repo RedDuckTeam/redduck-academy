@@ -9,11 +9,14 @@ import { HeaderDrawerContent } from './header-drawer-content'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/hooks/useSession'
 import { Button } from '@/components/ui/button'
+import { sanitizeRedirect } from '@/lib/redirect'
 import avatarPlaceholder from '/pages/images/avatar.webp'
 
 export default function Header() {
   const location = useLocation()
   const isSignUpPage = location.pathname === '/sign-up'
+  // Return the learner to where they were after signing in.
+  const signInRedirect = sanitizeRedirect(location.href)
   const [isOpen, setIsOpen] = useState(false)
   const { session } = useSession()
 
@@ -80,7 +83,9 @@ export default function Header() {
             </Link>
           ) : (
             <Button variant="default" size="sm" className="shrink-0 h-10 uppercase" asChild>
-              <Link to="/sign-up">Sign in</Link>
+              <Link to="/sign-up" search={signInRedirect ? { redirect: signInRedirect } : {}}>
+                Sign in
+              </Link>
             </Button>
           )}
         </div>

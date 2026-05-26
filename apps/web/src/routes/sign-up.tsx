@@ -11,6 +11,7 @@ import { wagmiConfig } from '@/constants/wallet-config'
 import { queryKeys } from '@/lib/query-keys'
 import { useSession } from '@/hooks/useSession'
 import { createPageMeta } from '@/lib/seo'
+import { navigateAfterAuth, sanitizeRedirect } from '@/lib/redirect'
 import { useEffect } from 'react'
 
 const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
@@ -20,9 +21,16 @@ const MARQUEE_ITEMS = [...MARQUEE_LABELS, ...MARQUEE_LABELS, ...MARQUEE_LABELS] 
 
 export const Route = createFileRoute('/sign-up')({
   ssr: false,
-  beforeLoad: ({ context: { queryClient } }) => {
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const target = sanitizeRedirect(search.redirect)
+    return target ? { redirect: target } : {}
+  },
+  beforeLoad: ({ context: { queryClient }, search }) => {
     const session = queryClient.getQueryData(queryKeys.user.settings())
-    if (session) throw redirect({ to: '/dashboard' })
+    // Logged-in users skip the page. When a redirect is present we let the
+    // component mount and `navigateAfterAuth` send them on (it handles arbitrary
+    // paths); otherwise bounce straight to the dashboard.
+    if (session && !search.redirect) throw redirect({ to: '/dashboard' })
   },
   head: () =>
     createPageMeta({
@@ -37,14 +45,15 @@ export const Route = createFileRoute('/sign-up')({
 function SignUp() {
   const { session } = useSession()
   const router = useRouter()
+  const { redirect: redirectTo } = Route.useSearch()
 
-  // If a session is already in the cache when this page mounts (e.g. user revisits /sign-up
-  // while logged in), bounce them to the dashboard. The login buttons handle their own
-  // post-login navigation.
+  // If a session is already present when this page mounts (e.g. user revisits /sign-up
+  // while logged in, or a redirect kept them here), send them on. The login buttons
+  // handle their own post-login navigation.
   useEffect(() => {
     if (!session?.user) return
-    void router.navigate({ to: '/dashboard', replace: true })
-  }, [session, router])
+    navigateAfterAuth(router, redirectTo)
+  }, [session, router, redirectTo])
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -62,8 +71,8 @@ function SignUp() {
             </Text>
           </div>
           <div className="mx-auto flex h-full w-full md:max-w-[calc(100%-80px)] lg:max-w-[850px] flex-1 flex-col items-center justify-center gap-4 md:gap-5">
-            <SignUpGoogleButton />
-            <SignUpWalletButton />
+            <SignUpGoogleButton redirect={redirectTo} />
+            <SignUpWalletButton redirect={redirectTo} />
           </div>
           <SignUpStartText />
         </div>

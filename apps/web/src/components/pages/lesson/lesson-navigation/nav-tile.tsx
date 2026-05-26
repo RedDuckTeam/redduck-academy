@@ -8,7 +8,7 @@ interface NavTileProps {
   direction: 'prev' | 'next'
   target: NavTarget | null
   courseSlug: string
-  onClick?: () => void
+  onClick?: (e: React.MouseEvent) => void
 }
 
 const COURSE_PROGRAM_LABEL = 'Course program'

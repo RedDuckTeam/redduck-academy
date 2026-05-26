@@ -4,13 +4,19 @@ import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useCreateWallet, useLoginWithOAuth } from '@privy-io/react-auth'
 import { useRouter } from '@tanstack/react-router'
 import { usePostHog } from '@posthog/react'
+import { navigateAfterAuth } from '@/lib/redirect'
 
 // Privy's `onComplete` can fire more than once per login (StrictMode double-invoke in dev, and
 // re-fires on remount after the OAuth redirect). Without this guard, `createWallet()` runs twice
 // and provisions two embedded wallets for the same user. Module-level so it survives remounts.
 const walletCreationAttempted = new Set<string>()
 
-export const SignUpGoogleButton = () => {
+interface SignUpGoogleButtonProps {
+  /** Where to land after login; falls back to the dashboard. */
+  redirect?: string
+}
+
+export const SignUpGoogleButton = ({ redirect }: SignUpGoogleButtonProps) => {
   const { createWallet } = useCreateWallet()
   const router = useRouter()
   const posthog = usePostHog()
@@ -38,7 +44,7 @@ export const SignUpGoogleButton = () => {
           posthog.capture('user_logged_in', { method: 'google' })
         }
       }
-      await router.navigate({ to: '/dashboard', replace: true })
+      navigateAfterAuth(router, redirect)
     },
   })
 

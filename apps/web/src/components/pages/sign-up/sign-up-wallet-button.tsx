@@ -4,17 +4,23 @@ import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useLogin } from '@privy-io/react-auth'
 import { useRouter } from '@tanstack/react-router'
 import { usePostHog } from '@posthog/react'
+import { navigateAfterAuth } from '@/lib/redirect'
 
-export const SignUpWalletButton = () => {
+interface SignUpWalletButtonProps {
+  /** Where to land after login; falls back to the dashboard. */
+  redirect?: string
+}
+
+export const SignUpWalletButton = ({ redirect }: SignUpWalletButtonProps) => {
   const router = useRouter()
   const posthog = usePostHog()
   const { login } = useLogin({
-    onComplete: async ({ isNewUser, user }) => {
+    onComplete: ({ isNewUser, user }) => {
       if (user?.id) {
         posthog.identify(user.id)
         posthog.capture(isNewUser ? 'user_signed_up' : 'user_logged_in', { method: 'wallet' })
       }
-      await router.navigate({ to: '/dashboard', replace: true })
+      navigateAfterAuth(router, redirect)
     },
   })
 

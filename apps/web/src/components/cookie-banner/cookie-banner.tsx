@@ -32,7 +32,8 @@ export function CookieBanner() {
           COOKIES
         </Text>
         <Text variant="main-16" className="text-muted-foreground">
-          We use cookies for analytics. <br /> See our{' '}
+          We use cookies to gather anonymous data about site visits, helping us improve our website&apos;s
+          performance. To learn more, read our{' '}
           <a
             href={LINKS.PrivacyPolicy}
             target="_blank"
@@ -46,10 +47,10 @@ export function CookieBanner() {
       </div>
       <div className="grid grid-cols-2 border-t border-foreground">
         <ConsentButton variant="agree" onClick={() => respond('agree')}>
-          Agree
+          Accept
         </ConsentButton>
         <ConsentButton variant="decline" onClick={() => respond('decline')}>
-          Decline
+          Reject
         </ConsentButton>
       </div>
     </div>
