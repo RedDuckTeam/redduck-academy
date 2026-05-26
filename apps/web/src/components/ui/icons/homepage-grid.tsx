@@ -2,11 +2,18 @@ import { cn } from '@/lib/utils'
 import { IconProps } from './types'
 
 interface HomepageGridProps extends IconProps {
+  /** Grid cell fill. Defaults to a theme-reactive CSS variable (no flash on load). */
   fill?: string
+  /** Grid line color. Defaults to a theme-reactive CSS variable (no flash on load). */
   lines?: string
 }
 
-export const HomepageGrid = ({ className, fill = '#E0DEDA', lines = '#CCCCCC', ...props }: HomepageGridProps) => {
+export const HomepageGrid = ({
+  className,
+  fill = 'var(--homepage-grid-fill)',
+  lines = 'var(--homepage-grid-line)',
+  ...props
+}: HomepageGridProps) => {
   return (
     <svg
       width="1800"

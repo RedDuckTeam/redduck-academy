@@ -75,6 +75,10 @@ code {
   --accent-blue: #6b9afe;
   --accent-peach: #e0ac9f;
   --accent-cyan: #7ecdda;
+  /* Decorative homepage grid (cell fill + grid lines). Driven by CSS so the
+     theme is resolved at first paint via the `.dark` class — no JS, no flash. */
+  --homepage-grid-fill: #e0deda;
+  --homepage-grid-line: #cccccc;
   /* Same easing/duration as Tailwind `transition-colors` (used on `*` in @layer base). */
   --theme-color-transition-duration: 150ms;
   --theme-color-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
@@ -105,6 +109,8 @@ code {
   --sidebar-border: #565653;
   --gray: #1a1a1a;
   --dark-gray: #9b9b9b;
+  --homepage-grid-fill: #222222;
+  --homepage-grid-line: #333333;
 }
 
 @theme {

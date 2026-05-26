@@ -33,7 +33,7 @@ export function CookieBanner() {
         </Text>
         <Text variant="main-16" className="text-muted-foreground">
           We use cookies to gather anonymous data about site visits, helping us improve our website&apos;s
-          performance. To learn more, read our{' '}
+          performance. <br/> To learn more, read our{' '}
           <a
             href={LINKS.PrivacyPolicy}
             target="_blank"

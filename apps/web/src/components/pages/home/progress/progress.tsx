@@ -4,7 +4,6 @@ import { ProgressCards } from './progress-cards/progress-cards'
 import { Button } from '@/components/ui/button'
 import { LongArrowRight } from '@/components/ui/icons/long-arrow-right'
 import { HomepageGrid } from '@/components/ui/icons/homepage-grid'
-import { useTheme } from '@/components/providers/theme-context'
 import { AnimatedGhost } from './animated-ghost'
 import { AnimatedPacman } from './animated-pacman'
 
@@ -14,15 +13,10 @@ interface ProgressProps {
 }
 
 export const Progress = ({ nextLesson, hasProgress }: ProgressProps) => {
-  const { theme } = useTheme()
   const ctaLabel = hasProgress ? 'CONTINUE' : 'START'
   return (
     <div className="flex flex-col gap-9 px-5 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]">
-      <HomepageGrid
-        className="absolute top-0 max-sm:hidden left-[60px] w-[calc(100%-121px)] z-[-1]"
-        fill={theme === 'dark' ? '#222222' : '#E0DEDA'}
-        lines={theme === 'dark' ? '#333333' : '#CCCCCC'}
-      />
+      <HomepageGrid className="absolute top-0 max-sm:hidden left-[60px] w-[calc(100%-121px)] z-[-1]" />
       <div className="flex max-xl:w-full xl:justify-between ">
         <div></div>
         <ProgressCards />
