@@ -43,11 +43,21 @@ export class CoursesTestService {
       return true
     })
 
-    await db.insert(userLessons).values({
-      userId: userId,
-      lessonId: foundLesson.id,
-      userAnswers: userAnswers,
-      isCompleted: true,
-    })
+    // Persist the attempt: `isCompleted` only flips to true on a fully-correct
+    // submission, but we always save `userAnswers` so retakes can show a review
+    // of the last attempt. Retries hit `onConflictDoUpdate` (the early-return
+    // above guards against overwriting an already-passed row).
+    await db
+      .insert(userLessons)
+      .values({
+        userId,
+        lessonId: foundLesson.id,
+        userAnswers,
+        isCompleted: allCorrect,
+      })
+      .onConflictDoUpdate({
+        target: [userLessons.userId, userLessons.lessonId],
+        set: { userAnswers, isCompleted: allCorrect },
+      })
   }
 }

@@ -94,23 +94,13 @@ export function BlockMiningSimulator({ initialBlock = 1, initialData = '' }: Blo
           <Text variant="main-14" element="span" className="text-muted-foreground">
             Block
           </Text>
-          <Input
-            type="number"
-            min={0}
-            value={block}
-            onChange={(e) => setBlock(Number(e.target.value) || 0)}
-          />
+          <Input type="number" min={0} value={block} onChange={(e) => setBlock(Number(e.target.value) || 0)} />
         </label>
         <label className="flex flex-col gap-1.5">
           <Text variant="main-14" element="span" className="text-muted-foreground">
             Nonce
           </Text>
-          <Input
-            type="number"
-            min={0}
-            value={nonce}
-            onChange={(e) => setNonce(Number(e.target.value) || 0)}
-          />
+          <Input type="number" min={0} value={nonce} onChange={(e) => setNonce(Number(e.target.value) || 0)} />
         </label>
       </div>
 
@@ -158,18 +148,6 @@ export function BlockMiningSimulator({ initialBlock = 1, initialData = '' }: Blo
           )}
         </Button>
       </div>
-
-      <Text variant="main-14" element="span" className="text-muted-foreground">
-        Concept by{' '}
-        <a
-          href="https://andersbrownworth.com/blockchain/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline"
-        >
-          Anders Brownworth
-        </a>
-      </Text>
     </div>
   )
 }

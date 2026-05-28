@@ -43,7 +43,10 @@ export class UserService {
       .limit(1)
 
     let correctAnswers: Record<string, string[]> | null = null
-    if (lesson.type === 'test' && userLesson?.isCompleted && lesson.module?.course?.id) {
+    // Tests are retake-able and we render a review of the last attempt (right
+    // vs wrong, with a "Show correct answers" toggle), so we expose the correct
+    // answers whenever the lesson is a test — not only after it's passed.
+    if (lesson.type === 'test' && lesson.module?.course?.id) {
       const result = await CoursesService.getTestLessonWithQuestionsById(lesson.module.course.id as number, lesson.id)
       if (result) {
         correctAnswers = {}
@@ -74,9 +77,15 @@ export class UserService {
 
     return {
       ...lesson,
-      userAnswers: userLesson?.isCompleted
-        ? ((userLesson.userAnswers as Record<string, string[]> | null) ?? null)
-        : null,
+      // For tests, return the user's most recent attempt regardless of
+      // completion so the frontend can render the review view between retakes.
+      // Other lesson types keep the prior behavior (only expose on completion).
+      userAnswers:
+        lesson.type === 'test'
+          ? ((userLesson?.userAnswers as Record<string, string[]> | null) ?? null)
+          : userLesson?.isCompleted
+            ? ((userLesson.userAnswers as Record<string, string[]> | null) ?? null)
+            : null,
       isCompleted: userLesson?.isCompleted ?? false,
       correctAnswers,
       ...(lesson.type === 'review_task' ? { submissions } : {}),

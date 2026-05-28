@@ -12,7 +12,12 @@ interface LessonTestQuestionProps {
   rightAnswerIds: string[]
   selectedIds: string[]
   onSelect: (optionId: string) => void
-  isCompleted: boolean
+  /** `editing` = user is picking answers; `review` = locked, showing last attempt's result. */
+  mode: 'editing' | 'review'
+  /** Review mode: was this question answered correctly in the last submission? */
+  wasCorrect: boolean
+  /** Review mode: reveal the correct answers on wrong questions (controlled by the parent toggle). */
+  showCorrectAnswers: boolean
   showUnansweredWarning: boolean
 }
 
@@ -21,7 +26,9 @@ export const LessonTestQuestion = ({
   rightAnswerIds,
   selectedIds,
   onSelect,
-  isCompleted,
+  mode,
+  wasCorrect,
+  showCorrectAnswers,
   showUnansweredWarning,
 }: LessonTestQuestionProps) => {
   const [warningParent] = useAutoAnimate({ duration: 180, easing: 'ease-in-out' })
@@ -29,6 +36,20 @@ export const LessonTestQuestion = ({
   if (!question.options) return null
 
   const isMultiple = question.isMultipleChoices
+  const isReview = mode === 'review'
+
+  // For correctly-answered questions in review, show ONLY the correct options —
+  // the wrong distractors the user didn't pick stay hidden. Wrong questions
+  // keep the full option list so the user can see what they picked.
+  const visibleOptions =
+    isReview && wasCorrect ? question.options.filter((o) => rightAnswerIds.includes(o.id)) : question.options
+
+  // Mark correct options green: always on correctly-answered questions (their
+  // pick IS correct); on wrong questions only when the "Show correct answers"
+  // toggle is on. Never in editing mode.
+  const exposeCorrect = isReview && (wasCorrect || showCorrectAnswers)
+  // Mark the user's wrong picks red — only relevant in review on a wrong answer.
+  const exposeUserWrong = isReview && !wasCorrect
 
   return (
     <div id={`question-${question.order}`} className="flex min-w-0 w-full max-w-full flex-col scroll-mt-20">
@@ -49,7 +70,7 @@ export const LessonTestQuestion = ({
 
       {isMultiple ? (
         <div className="flex min-w-0 flex-col gap-3">
-          {question.options.map((option) => {
+          {visibleOptions.map((option) => {
             const isCorrect = rightAnswerIds.includes(option.id)
             const isSelected = selectedIds.includes(option.id)
             return (
@@ -57,23 +78,23 @@ export const LessonTestQuestion = ({
                 key={option.id}
                 className={cn(
                   'flex min-w-0 w-full max-w-full cursor-pointer items-center gap-3',
-                  isCompleted && isCorrect && 'text-success',
-                  isCompleted && isSelected && !isCorrect && 'text-primary',
+                  exposeCorrect && isCorrect && 'text-success',
+                  exposeUserWrong && isSelected && !isCorrect && 'text-primary',
                 )}
               >
                 <Checkbox
                   checked={isSelected}
                   className={cn(
                     'disabled:opacity-100',
-                    isCompleted && isCorrect && 'border-success',
-                    isCompleted &&
+                    exposeCorrect && isCorrect && 'border-success',
+                    exposeCorrect &&
                       isSelected &&
                       isCorrect &&
                       'data-[state=checked]:bg-success data-[state=checked]:dark:bg-success',
-                    isCompleted && isSelected && !isCorrect && 'data-[state=checked]:bg-primary border-primary',
+                    exposeUserWrong && isSelected && !isCorrect && 'data-[state=checked]:bg-primary border-primary',
                   )}
                   onCheckedChange={() => onSelect(option.id)}
-                  disabled={isCompleted}
+                  disabled={isReview}
                 />
                 <RichText data={option.label} className="min-w-0 flex-1 wrap-anywhere [&>div>*]:mb-0" />
               </label>
@@ -85,10 +106,10 @@ export const LessonTestQuestion = ({
           className="min-w-0"
           value={selectedIds[0] ?? ''}
           onValueChange={(value) => value && onSelect(value)}
-          disabled={isCompleted}
+          disabled={isReview}
         >
           <div className="flex min-w-0 flex-col gap-3">
-            {question.options.map((option) => {
+            {visibleOptions.map((option) => {
               const isCorrect = rightAnswerIds.includes(option.id)
               const isSelected = selectedIds.includes(option.id)
               return (
@@ -96,19 +117,19 @@ export const LessonTestQuestion = ({
                   key={option.id}
                   className={cn(
                     'flex min-w-0 w-full max-w-full cursor-pointer items-center gap-3',
-                    isCompleted && isCorrect && 'text-success',
+                    exposeCorrect && isCorrect && 'text-success',
                   )}
                 >
                   <RadioGroupItem
                     value={option.id}
                     className={cn(
                       'disabled:opacity-100',
-                      isCompleted && isCorrect && 'border-success',
-                      isCompleted &&
+                      exposeCorrect && isCorrect && 'border-success',
+                      exposeCorrect &&
                         isSelected &&
                         isCorrect &&
                         '[&_[data-slot=radio-group-indicator]_span]:bg-success!',
-                      isCompleted && //
+                      exposeUserWrong &&
                         isSelected &&
                         !isCorrect &&
                         '[&_[data-slot=radio-group-indicator]_span]:bg-primary border-primary',
