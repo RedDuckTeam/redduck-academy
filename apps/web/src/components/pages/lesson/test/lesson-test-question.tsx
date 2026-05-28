@@ -38,15 +38,9 @@ export const LessonTestQuestion = ({
   const isMultiple = question.isMultipleChoices
   const isReview = mode === 'review'
 
-  // For correctly-answered questions in review, show ONLY the correct options —
-  // the wrong distractors the user didn't pick stay hidden. Wrong questions
-  // keep the full option list so the user can see what they picked.
-  const visibleOptions =
-    isReview && wasCorrect ? question.options.filter((o) => rightAnswerIds.includes(o.id)) : question.options
-
-  // Mark correct options green: always on correctly-answered questions (their
-  // pick IS correct); on wrong questions only when the "Show correct answers"
-  // toggle is on. Never in editing mode.
+  // Mark correct options green: always on correctly-answered questions (the
+  // user's pick IS correct); on wrong questions only when the "Show correct
+  // answers" toggle is on. Never in editing mode.
   const exposeCorrect = isReview && (wasCorrect || showCorrectAnswers)
   // Mark the user's wrong picks red — only relevant in review on a wrong answer.
   const exposeUserWrong = isReview && !wasCorrect
@@ -70,7 +64,7 @@ export const LessonTestQuestion = ({
 
       {isMultiple ? (
         <div className="flex min-w-0 flex-col gap-3">
-          {visibleOptions.map((option) => {
+          {question.options.map((option) => {
             const isCorrect = rightAnswerIds.includes(option.id)
             const isSelected = selectedIds.includes(option.id)
             return (
@@ -109,7 +103,7 @@ export const LessonTestQuestion = ({
           disabled={isReview}
         >
           <div className="flex min-w-0 flex-col gap-3">
-            {visibleOptions.map((option) => {
+            {question.options.map((option) => {
               const isCorrect = rightAnswerIds.includes(option.id)
               const isSelected = selectedIds.includes(option.id)
               return (
