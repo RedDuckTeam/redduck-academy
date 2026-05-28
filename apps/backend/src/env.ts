@@ -8,7 +8,7 @@ const envSchema = z.object({
   GITHUB_TOKEN: z.string().min(1),
   BETTER_AUTH_SECRET: z.string().min(1),
   BETTER_AUTH_URL: z.string().min(1),
-  /** Comma-separated allowed origins for CORS and Better-Auth trusted origins. */
+  /** Comma-separated allowed origins for CORS and Better-Auth trusted origins */
   ALLOWED_ORIGINS: z.string().min(1),
   /** Domain used in SIWE messages — MUST match the frontend host users sign on. */
   SIWE_DOMAIN: z.string().min(1),
