@@ -112,6 +112,7 @@ export const LessonTestQuestion = ({
                   className={cn(
                     'flex min-w-0 w-full max-w-full cursor-pointer items-center gap-3',
                     exposeCorrect && isCorrect && 'text-success',
+                    exposeUserWrong && isSelected && !isCorrect && 'text-primary',
                   )}
                 >
                   <RadioGroupItem
