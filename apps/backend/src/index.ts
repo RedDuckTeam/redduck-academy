@@ -1,7 +1,10 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { openAPIRouteHandler } from 'hono-openapi'
+import { bodyLimit } from 'hono/body-limit'
+import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
+import { rateLimit } from './lib/rate-limit'
 import authApp from './services/auth/auth.routes'
 import coursesApp from './services/courses/courses.routes'
 import lessonsApp from './services/lessons/lessons.routes'
@@ -40,6 +43,33 @@ app.use(
     exposeHeaders: ['Content-Length'],
     maxAge: 600,
     credentials: true,
+  }),
+)
+
+app.use('/api/*', compress())
+
+// TEMP: log what CF presents as client IP so we can verify SSR keying. Remove after testing.
+app.use('/api/*', async (c, next) => {
+  console.log('[ip-check]', {
+    path: c.req.path,
+    cfConnectingIp: c.req.header('cf-connecting-ip'),
+    xForwardedFor: c.req.header('x-forwarded-for'),
+    xRealIp: c.req.header('x-real-ip'),
+    cfRay: c.req.header('cf-ray'),
+    hasAuth: Boolean(c.req.header('authorization')),
+  })
+  await next()
+})
+
+// 12000 req/min per key per dyno (temporary high cap for testing).
+app.use('/api/*', rateLimit({ windowMs: 60_000, max: 12000 }))
+
+// 5MB request body cap.
+app.use(
+  '/api/*',
+  bodyLimit({
+    maxSize: 5 * 1024 * 1024,
+    onError: (c) => c.json({ error: 'Request body too large' }, 413),
   }),
 )
 
