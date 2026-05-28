@@ -45,9 +45,7 @@ export const Route = createFileRoute('/profile/$username')({
 
 function ProfilePage() {
   const { username } = Route.useParams()
-  const { session, isPending: sessionPending } = useSession()
-
-  if (sessionPending) return null
+  const { session } = useSession()
 
   const isOwn = !!session?.user && (session.user as { username?: string }).username === username
 
