@@ -95,7 +95,7 @@ Payload uses a dedicated `payload` Postgres schema. The first migration creates 
 
 Migrations run automatically on deploy:
 
-- **Backend** (Heroku): `release: yarn workspace backend db:migrate` in `Procfile`.
+- **Backend** (Heroku): `release: node apps/backend/dist/migrate.js` in `Procfile`. This is a bundled migration runner (`apps/backend/src/migrate.ts`) that applies the SQL in `apps/backend/drizzle/` — it needs no `node_modules` or `drizzle-kit` at runtime (the deploy slug ships without them; see §4). It uses the same `drizzle.__drizzle_migrations` tracking table as `drizzle-kit migrate`, so it picks up exactly where local runs leave off.
 - **Admin** (Vercel): `vercel.json` runs `yarn admin:db:migrate` before `next build`.
 
 To run migrations manually:
@@ -117,6 +117,8 @@ yarn admin:db:generate
 # Drizzle (backend)
 yarn backend:db:generate
 ```
+
+> **Backend migrations workflow is unchanged.** `yarn backend:db:generate` writes the new SQL + `meta/_journal.json` entry into `apps/backend/drizzle/`. **Commit that folder** — it is shipped in the deploy slug and read by the bundled migrator on `release`. No other change is needed for new migrations.
 
 After editing `packages/payload-config/src/collections/`, regenerate types:
 
@@ -141,7 +143,11 @@ Deployment is push-to-deploy via `.github/workflows/deploy-backend.yml`.
 
 All variables from the `apps/backend` env section above. `PORT` is set automatically by Heroku — don't override it.
 
-The `Procfile` runs migrations on `release` and starts the server with `node apps/backend/dist/index.js`. Build is performed by the buildpack (Node).
+| Config var | Value | Why |
+|---|---|---|
+| `YARN2_SKIP_PRUNING` | `true` | **Required.** `heroku-postbuild` bundles the backend and then `rm -rf`s all `node_modules` (the bundle is self-contained, so the slug drops from ~700 MB to ~8 MB). Without this var, the Node buildpack's post-build devDependency prune (`yarn workspaces focus --production --all`) reinstalls everything *after* the delete, re-bloating the slug back to ~700 MB. This flag skips that step. Note: this is a **buildpack setting**, not an app runtime variable — it is intentionally not in `apps/backend/src/env.ts`. |
+
+**Build & slug:** `git push heroku main` runs the Node buildpack: full `yarn install` → `heroku-postbuild` (esbuild bundles `apps/backend/src/index.ts` and `src/migrate.ts` into self-contained `dist/*.js`, then deletes all `node_modules`). The `Procfile` runs migrations on `release` (`node apps/backend/dist/migrate.js`) and starts the server with `node apps/backend/dist/index.js` — neither needs `node_modules`.
 
 After your first deploy, update production URLs in source:
 

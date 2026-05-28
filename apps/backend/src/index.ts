@@ -48,21 +48,8 @@ app.use(
 
 app.use('/api/*', compress())
 
-// TEMP: log what CF presents as client IP so we can verify SSR keying. Remove after testing.
-app.use('/api/*', async (c, next) => {
-  console.log('[ip-check]', {
-    path: c.req.path,
-    cfConnectingIp: c.req.header('cf-connecting-ip'),
-    xForwardedFor: c.req.header('x-forwarded-for'),
-    xRealIp: c.req.header('x-real-ip'),
-    cfRay: c.req.header('cf-ray'),
-    hasAuth: Boolean(c.req.header('authorization')),
-  })
-  await next()
-})
-
-// 12000 req/min per key per dyno (temporary high cap for testing).
-app.use('/api/*', rateLimit({ windowMs: 60_000, max: 12000 }))
+// 1000 req/min per key per dyno.
+app.use('/api/*', rateLimit({ windowMs: 60_000, max: 1000 }))
 
 // 5MB request body cap.
 app.use(
