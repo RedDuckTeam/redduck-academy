@@ -5,6 +5,7 @@ import { InfoModal } from '@/components/ui/info-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog'
 import { useCertificateNft } from '@/hooks/api/certificates/useCertificateNft'
 import { shortAddress } from '@/lib/utils'
+import { activeChain } from '@/constants/chain'
 import type { PublicCertificate } from '@/lib/api/certificates'
 
 interface CertificateNftSectionProps {
@@ -27,17 +28,28 @@ export function CertificateNftSection({ certificate }: CertificateNftSectionProp
 
   const hasMultipleWallets = wallets.length > 1
 
+  const explorerBase = activeChain.blockExplorers?.default.url
+  const explorerUrl = certificate.txHash && explorerBase ? `${explorerBase}/tx/${certificate.txHash}` : null
+
   return (
     <>
-      <Button
-        type="button"
-        variant="default"
-        className="h-[60px] min-h-[60px] w-full"
-        onClick={() => setShowConfirm(true)}
-        disabled={status !== 'created' || isPending || wallets.length === 0}
-      >
-        {buttonLabel}
-      </Button>
+      {explorerUrl ? (
+        <Button asChild variant="default" className="h-[60px] min-h-[60px] w-full">
+          <a href={explorerUrl} target="_blank" rel="noopener noreferrer">
+            View on NFT
+          </a>
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="default"
+          className="h-[60px] min-h-[60px] w-full"
+          onClick={() => setShowConfirm(true)}
+          disabled={status !== 'created' || isPending || wallets.length === 0}
+        >
+          {buttonLabel}
+        </Button>
+      )}
 
       <Dialog open={showConfirm} onOpenChange={(o) => !o && setShowConfirm(false)}>
         <DialogContent showCloseButton={false} className="max-w-md">
