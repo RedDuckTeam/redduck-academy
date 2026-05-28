@@ -36,7 +36,7 @@ export function CertificateNftSection({ certificate }: CertificateNftSectionProp
       {explorerUrl ? (
         <Button asChild variant="default" className="h-[60px] min-h-[60px] w-full">
           <a href={explorerUrl} target="_blank" rel="noopener noreferrer">
-            View on NFT
+            View NFT
           </a>
         </Button>
       ) : (
