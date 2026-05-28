@@ -67,7 +67,7 @@ function OwnProfile() {
       <PageGridBackground>
         <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-2">
           <div className="flex sm:gap-5 gap-3">
-            <div className="pt-2.5">
+            <div className="pt-2.5 flex">
               <ChangeAvatar imageUrl={session?.user.image?.trim() || undefined} editable={!isBanned} />
             </div>
             <PageAvatarText message={<ChangeName editable={!isBanned} />} />
@@ -114,7 +114,7 @@ function OtherProfile() {
       <PageGridBackground>
         <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-2">
           <div className="flex sm:gap-5 gap-3">
-            <div className="pt-2.5">
+            <div className="pt-2.5 flex">
               <ChangeAvatar
                 imageUrl={isPrivate ? undefined : publicProfile!.image?.trim() || undefined}
                 editable={false}
