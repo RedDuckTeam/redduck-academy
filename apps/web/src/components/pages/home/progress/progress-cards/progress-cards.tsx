@@ -1,18 +1,12 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { PageStatsCards } from '@/components/page-section/page-stats-cards'
 import { useProgressCards } from '@/hooks/api/user/useProgressCards'
 import { ordinalSuffix } from '@/lib/format-ordinal'
-import { getCourses } from '@/lib/api/courses'
-import { queryKeys } from '@/lib/query-keys'
+import { useCourses } from '@/hooks/api/courses/useCourses'
 
 export const ProgressCards = () => {
   const { data } = useProgressCards()
-  const { data: coursesRes } = useQuery({
-    queryKey: queryKeys.courses.all(),
-    queryFn: getCourses,
-    staleTime: 30 * 60 * 1000,
-  })
+  const { data: coursesRes } = useCourses()
 
   const { totalCourses, totalLessons } = useMemo(() => {
     const courses = coursesRes?.data ?? []

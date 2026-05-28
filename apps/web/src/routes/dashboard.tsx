@@ -8,7 +8,7 @@ import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
 import { useCourseProgress } from '@/hooks/api/user/useCourseProgress'
 import { getCommunityEvents } from '@/lib/api/community'
-import { getCourses } from '@/lib/api/courses'
+import { coursesQueryOptions } from '@/hooks/api/courses/useCourses'
 import { queryKeys } from '@/lib/query-keys'
 
 export const Route = createFileRoute('/dashboard')({
@@ -20,11 +20,7 @@ export const Route = createFileRoute('/dashboard')({
         queryFn: getCommunityEvents,
         staleTime: 10 * 60 * 1000,
       }),
-      queryClient.ensureQueryData({
-        queryKey: queryKeys.courses.all(),
-        queryFn: getCourses,
-        staleTime: 30 * 60 * 1000,
-      }),
+      queryClient.ensureQueryData(coursesQueryOptions()),
     ])
     return {
       communityEvents: communityRes?.data ?? [],

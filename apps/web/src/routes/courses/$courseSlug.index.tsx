@@ -1,23 +1,18 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import { CoursesList } from '@/components/pages/courses/courses-list/courses-list'
-import { getCourses } from '@/lib/api/courses'
+import { coursesQueryOptions } from '@/hooks/api/courses/useCourses'
 import { CourseProgramSidebar } from '@/components/pages/courses/course-program-sidebar/course-program-sidebar'
 import { CourseProgramHeader } from '@/components/pages/courses/course-program-header/course-program-header'
 import { createCoursesMeta } from '@/lib/seo'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
 import { resolveFocusedCourse } from '@/lib/routes/courses-index-search'
-import { queryKeys } from '@/lib/query-keys'
 
 export const Route = createFileRoute('/courses/$courseSlug/')({
   ssr: true,
   loader: async ({ params, context: { queryClient } }) => {
-    const res = await queryClient.ensureQueryData({
-      queryKey: queryKeys.courses.all(),
-      queryFn: getCourses,
-      staleTime: 30 * 60 * 1000,
-    })
+    const res = await queryClient.ensureQueryData(coursesQueryOptions())
     const courses = res?.data ?? []
 
     if (!courses.some((c) => c.slug === params.courseSlug)) {

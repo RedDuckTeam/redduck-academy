@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getAdminUsers } from '@/lib/api/admin'
+import { queryKeys } from '@/lib/query-keys'
 
 const PAGE_SIZE = 50
 
@@ -12,7 +13,7 @@ export type AdminUsersParams = {
 
 export const useAdminUsers = (params: AdminUsersParams) => {
   return useQuery({
-    queryKey: ['admin', 'users', params],
+    queryKey: queryKeys.admin.users(params),
     queryFn: () => getAdminUsers({ ...params, pageSize: PAGE_SIZE }),
     staleTime: 30 * 1000,
   })

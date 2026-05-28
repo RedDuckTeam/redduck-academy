@@ -1,13 +1,13 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { getCourses } from '@/lib/api/courses'
+import { coursesQueryOptions } from '@/hooks/api/courses/useCourses'
 import { createCoursesMeta } from '@/lib/seo'
 
 export const coursesRoute = '/courses/' as const
 
 export const Route = createFileRoute('/courses/')({
   ssr: true,
-  loader: async () => {
-    const res = await getCourses()
+  loader: async ({ context: { queryClient } }) => {
+    const res = await queryClient.ensureQueryData(coursesQueryOptions())
     const courses = res?.data ?? []
     if (courses.length > 0) {
       throw redirect({
