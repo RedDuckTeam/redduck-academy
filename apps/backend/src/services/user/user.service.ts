@@ -1,4 +1,4 @@
-import { eq, and, count, inArray, desc, ne } from 'drizzle-orm'
+import { eq, and, count, inArray, desc } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { user } from '../../db/auth-schema'
 import { userLessons, userCertificates } from '../../db/schema'
@@ -109,22 +109,42 @@ export class UserService {
   }
 
   static async getProgressCards(userId: string) {
-    const [completedLessonRows, [userRow], [certCountRow]] = await Promise.all([
+    const [completedLessonRows, [userRow], courseLessonTree] = await Promise.all([
       db
         .select({ lessonId: userLessons.lessonId, updatedAt: userLessons.updatedAt })
         .from(userLessons)
         .where(and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true))),
       db.select({ isPrivate: user.isPrivate }).from(user).where(eq(user.id, userId)).limit(1),
-      db.select({ c: count() }).from(userCertificates).where(eq(userCertificates.userId, userId)),
+      // Non-hidden courses with their non-hidden lesson ids — used both to count
+      // courses the user has fully completed and as the total course count.
+      payloadDb.query.courses.findMany({
+        where: (c, { ne }) => ne(c.isHidden, true),
+        columns: { id: true },
+        with: {
+          modules: {
+            where: (m, { ne }) => ne(m.isHidden, true),
+            columns: { id: true },
+            with: {
+              lessons: { where: (l, { ne }) => ne(l.isHidden, true), columns: { id: true } },
+            },
+          },
+        },
+      }),
     ])
     if (!userRow) throw new AppError(404, 'User not found')
 
     const completedLessonsCount = completedLessonRows.length
-    const completedCoursesCount = Number(certCountRow?.c ?? 0)
 
-    const totalCoursesCount = await payloadDb.query.courses
-      .findMany({ where: (c) => ne(c.isHidden, true), columns: { id: true } })
-      .then((r) => r.length)
+    // A course counts as completed once the user has completed every one of its
+    // (non-hidden) lessons. Lesson-based, not certificate-based: the card
+    // increments as soon as the lessons are done, without claiming a certificate.
+    const completedLessonIds = new Set(completedLessonRows.map((r) => r.lessonId))
+    const completedCoursesCount = courseLessonTree.filter((course) => {
+      const lessonIds = (course.modules ?? []).flatMap((m) => m.lessons ?? []).map((l) => l.id)
+      return lessonIds.length > 0 && lessonIds.every((id) => completedLessonIds.has(id))
+    }).length
+
+    const totalCoursesCount = courseLessonTree.length
 
     const uniqueDateStrings = new Set(completedLessonRows.map((l) => new Date(l.updatedAt).toISOString().split('T')[0]))
     const sortedDates = [...uniqueDateStrings].sort().reverse()

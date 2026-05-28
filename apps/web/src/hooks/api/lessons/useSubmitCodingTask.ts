@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { submitCodingTask, type SubmitCodingTaskPayload, type SubmitCodingTaskResponse } from '@/lib/api/coding-task'
 import { queryKeys } from '@/lib/query-keys'
+import { invalidateProgressQueries } from '@/lib/invalidate-progress'
 import { RateLimitError } from '@/lib/api/rate-limit'
 import type { Lesson, UserSettings } from '@/types/lesson'
 import type { RunnerReport } from '@/lib/code-runner'
@@ -48,7 +49,7 @@ export const useSubmitCodingTask = (courseSlug: string, lessonSlug: string) => {
     onSuccess: (data) => {
       if (!data.passed) return
       queryClient.invalidateQueries({ queryKey: queryKeys.user.lesson(courseSlug, lessonSlug) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons() })
+      invalidateProgressQueries(queryClient)
     },
     onError: (error) => {
       if (error instanceof RateLimitError) {

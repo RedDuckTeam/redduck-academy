@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import type { RunnerResult, RunnerTestCase } from '@/lib/code-runner'
 import { getDisplayArgs, getDisplayExpected } from '../utils'
 import { Section } from './section'
@@ -15,22 +14,6 @@ interface CaseDetailProps {
 
 export function CaseDetail({ testCase, argNames, result, selfLabel }: CaseDetailProps) {
   const isSolidity = 'kind' in testCase
-
-  useEffect(() => {
-    if (!result) return
-    if (result.error || !result.passed) {
-      // eslint-disable-next-line no-console
-      console.log('[runner result]', {
-        caseId: result.id,
-        passed: result.passed,
-        failedStepIndex: result.failedStepIndex,
-        expected: result.expected,
-        got: result.got,
-        error: result.error,
-        testCase,
-      })
-    }
-  }, [result, testCase])
 
   if (isSolidity) {
     // Solidity cases render assertions inline per step (expected / got / revert),

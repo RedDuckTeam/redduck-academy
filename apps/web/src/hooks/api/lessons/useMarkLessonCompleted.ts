@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { markLessonAsCompleted } from '@/lib/api/lessons'
 import { queryKeys } from '@/lib/query-keys'
+import { invalidateProgressQueries } from '@/lib/invalidate-progress'
 import type { UserSettings } from '@/types/lesson'
 import type { CompletedLesson } from '@/lib/api/user'
 
@@ -30,8 +31,7 @@ export const useMarkLessonCompleted = () => {
       return { wasAlreadyCompleted }
     },
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.completedLessons(), refetchType: 'all' })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.progressCards(), refetchType: 'all' })
+      invalidateProgressQueries(queryClient)
 
       if (!result.wasAlreadyCompleted && variables.lessonTitle) {
         toast.success('Lesson completed', { description: `Lesson ${variables.lessonTitle} completed` })
