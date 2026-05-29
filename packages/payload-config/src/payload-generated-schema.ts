@@ -415,6 +415,7 @@ export const lessons = db_schema.table(
     solidityContractName: varchar('solidity_contract_name'),
     aiTaskSummary: varchar('ai_task_summary'),
     templateRepoUrl: varchar('template_repo_url'),
+    taskName: varchar('task_name'),
     isHidden: boolean('is_hidden').default(false),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),

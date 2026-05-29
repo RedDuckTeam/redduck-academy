@@ -73,7 +73,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
                 {lesson.templateRepoUrl}
               </a>
             </Text>
-            <HowToSubmitDialog />
+            <HowToSubmitDialog taskName={lesson.taskName ?? lesson.slug} />
           </div>
         )}
         <Text variant="caps-24" element="h2" id="submit" className="font-medium scroll-mt-20">
@@ -117,7 +117,7 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
           </Button>
         ) : (
           <Button disabled={!isGithubLink || isPending || !!rateLimitError} onClick={handleSubmit} className="w-full">
-            <Text variant="caps-20">SEND TO REVIEW</Text>
+            <Text variant="caps-20">Submit for review</Text>
           </Button>
         )}
 

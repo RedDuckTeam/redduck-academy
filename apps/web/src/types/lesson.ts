@@ -132,6 +132,8 @@ export interface Lesson {
   createdAt: string
   questions?: TestQuestion[]
   templateRepoUrl?: string
+  /** Folder name in the starter repo containing this task's TASK.md. Falls back to slug when blank. */
+  taskName?: string | null
   next: string | null
   /** Review-task rubric rows (learner-safe; hidden rows have criteriaHidden and no criteria). */
   reviewGradingTasks?: PublicReviewGradingTask[]

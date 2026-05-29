@@ -34,8 +34,8 @@ export function InProgressDialog({ courseSlug, lessonSlug, moduleSlug, lesson }:
         <Loader className="w-[100px] h-[100px]" />
         <div className="flex flex-col gap-4">
           <Text variant="main-16" className="text-secondary">
-            It will take a few minutes, please wait for your submission result. You can explore other lessons while you
-            wait.
+            Your submission is queued for review. Results usually arrive within a few minutes, but can take up to a day.
+            We&apos;ll keep the status updated here, so feel free to explore other lessons in the meantime.
           </Text>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="button" disabled={isSyncing} onClick={handleCheckStatus} className="w-full">

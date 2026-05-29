@@ -731,6 +731,15 @@ export const Lessons: CollectionConfig = {
       },
     },
     {
+      name: 'taskName',
+      type: 'text',
+      admin: {
+        condition: (data) => data?.type === 'review_task',
+        description:
+          'Folder name in the starter repo that holds this task\'s TASK.md. For example, "erc20" maps to erc20/TASK.md. Shown to learners in the "How to submit" dialog. Falls back to the lesson slug if blank.',
+      },
+    },
+    {
       name: 'reviewPaths',
       type: 'array',
       admin: {
