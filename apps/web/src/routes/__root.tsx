@@ -2,6 +2,7 @@ import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/reac
 import { PostHogProvider } from '@posthog/react'
 import { NotFoundPage } from '@/components/pages/not-found/not-found-page'
 import { ErrorPage } from '@/components/pages/error/error-page'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
@@ -76,52 +77,54 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <CookieConsentProvider>
-          <PostHogProvider
-            apiKey={env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}
-            options={{
-              api_host: 'https://eu.i.posthog.com',
-              capture_pageleave: false,
-              ui_host: env.VITE_PUBLIC_POSTHOG_HOST,
-              defaults: '2025-05-24',
-              capture_exceptions: true,
-              debug: import.meta.env.DEV,
-              opt_out_capturing_by_default: true,
-              opt_out_persistence_by_default: true,
-              autocapture: false,
-              disable_session_recording: false,
-              session_recording: {
-                maskAllInputs: true,
-              },
-            }}
-          >
-            <PostHogConsentBridge />
-            <Providers queryClient={queryClient}>
-              <ScrollToTop />
-              <Header />
-              {children}
-              <Footer />
-              {import.meta.env.DEV && (
-                <TanStackDevtools
-                  config={{
-                    position: 'bottom-right',
-                  }}
-                  plugins={[
-                    {
-                      name: 'Tanstack Router',
-                      render: <TanStackRouterDevtoolsPanel />,
-                    },
-                    TanStackQueryDevtools,
-                  ]}
-                />
-              )}
-              <Toaster />
-              <CookieBanner />
+        <ErrorBoundary fallback={<ErrorPage />}>
+          <CookieConsentProvider>
+            <PostHogProvider
+              apiKey={env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}
+              options={{
+                api_host: 'https://eu.i.posthog.com',
+                capture_pageleave: false,
+                ui_host: env.VITE_PUBLIC_POSTHOG_HOST,
+                defaults: '2025-05-24',
+                capture_exceptions: true,
+                debug: import.meta.env.DEV,
+                opt_out_capturing_by_default: true,
+                opt_out_persistence_by_default: true,
+                autocapture: false,
+                disable_session_recording: false,
+                session_recording: {
+                  maskAllInputs: true,
+                },
+              }}
+            >
+              <PostHogConsentBridge />
+              <Providers queryClient={queryClient}>
+                <ScrollToTop />
+                <Header />
+                {children}
+                <Footer />
+                {import.meta.env.DEV && (
+                  <TanStackDevtools
+                    config={{
+                      position: 'bottom-right',
+                    }}
+                    plugins={[
+                      {
+                        name: 'Tanstack Router',
+                        render: <TanStackRouterDevtoolsPanel />,
+                      },
+                      TanStackQueryDevtools,
+                    ]}
+                  />
+                )}
+                <Toaster />
+                <CookieBanner />
 
-              <Scripts />
-            </Providers>
-          </PostHogProvider>
-        </CookieConsentProvider>
+                <Scripts />
+              </Providers>
+            </PostHogProvider>
+          </CookieConsentProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

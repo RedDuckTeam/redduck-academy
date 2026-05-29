@@ -3,6 +3,7 @@ import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificate
 import { Certificate } from '@/components/ui/certificate'
 import { Text } from '@/components/ui/text'
 import type { Certificate as CertificateType } from '@/lib/api/certificates'
+import { formatMediumDate } from '@/lib/format-date'
 import { env } from '@/env'
 
 interface ProfileCertificatesProps {
@@ -41,7 +42,7 @@ export function ProfileCertificates({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
       {certificates.map((cert) => {
-        const completionDate = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(cert.issuedAt))
+        const completionDate = formatMediumDate(cert.issuedAt)
         return (
           <Link
             key={cert.id}

@@ -82,7 +82,7 @@ export function SubmissionReviewTabs({ submissions, showRepository = false, init
                 {submission.feedback.summary}
               </Text>
               <div className="flex flex-col gap-8">
-                {submission.feedback.criteria.map((c, i) => (
+                {(submission.feedback.criteria ?? []).map((c, i) => (
                   <div key={c.taskId} className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <Text variant="caps-20" className={cn(c.passed ? 'text-success' : 'text-primary')}>

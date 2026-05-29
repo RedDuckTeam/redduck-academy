@@ -21,7 +21,7 @@ export const CoursesList = ({ courses, courseSlug, completedLessons, lockedCours
   const course = courses.find((c) => c.slug === courseSlug) ?? courses[0]
   return (
     <div className="flex flex-col border border-border divide-y divide-border">
-      {course.modules.map((module, index) => (
+      {(course.modules ?? []).map((module, index) => (
         <Fragment key={module.slug}>
           <div className="p-5">
             <Text variant="caps-20" className="text-black">

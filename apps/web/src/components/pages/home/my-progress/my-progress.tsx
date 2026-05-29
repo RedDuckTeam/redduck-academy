@@ -47,8 +47,8 @@ export const MyProgress = ({ courses, completedLessons, courseAccess }: MyProgre
       isLocked={courseAccess.lockedSlugs.has(course.slug)}
       prerequisiteCourseTitle={courseAccess.prerequisiteTitleByCourseSlug.get(course.slug)}
       prerequisiteCourseSlug={courseAccess.prerequisiteSlugByCourseSlug.get(course.slug)}
-      nextLesson={courseProgress[index].nextLesson}
-      status={courseProgress[index].status}
+      nextLesson={courseProgress[index]?.nextLesson ?? null}
+      status={courseProgress[index]?.status ?? 'start'}
       hasCertificate={certifiedSlugs.has(course.slug)}
     />
   )

@@ -6,6 +6,7 @@ import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
 import { EmbedFrame } from '@/components/ui/embed-frame'
 import { BlockMiningSimulator } from '@/components/ui/block-mining-simulator'
 import { extractText, slugify } from '@/components/pages/lesson/toc/build-toc-items'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 type EnrichedLessonDoc = {
   href?: string
@@ -88,8 +89,9 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   )
 
   return (
-    <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className, 'w-full')}>
-      <PayloadRichText
+    <ErrorBoundary>
+      <div className={cn(blockquoteStyles, anchorStyles, codeStyles, className, 'w-full')}>
+        <PayloadRichText
         className="*:mb-6"
         data={data as any}
         converters={({ defaultConverters }) => ({
@@ -208,15 +210,15 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
           },
           link: ({ node, nodesToJSX }) => {
             const children = nodesToJSX({ nodes: node.children })
-            const rel = node.fields.newTab ? 'noopener noreferrer' : undefined
-            const target = node.fields.newTab ? '_blank' : undefined
-            const doc = node.fields.doc as EnrichedLessonDoc | null | undefined
+            const rel = node.fields?.newTab ? 'noopener noreferrer' : undefined
+            const target = node.fields?.newTab ? '_blank' : undefined
+            const doc = node.fields?.doc as EnrichedLessonDoc | null | undefined
 
-            if (node.fields.linkType === 'internal' && doc?.navigation) {
+            if (node.fields?.linkType === 'internal' && doc?.navigation) {
               const href =
                 doc.href ??
                 `/courses/${doc.navigation.courseSlug}/${doc.navigation.moduleSlug}/${doc.navigation.lessonSlug}`
-              if (node.fields.newTab) {
+              if (node.fields?.newTab) {
                 return (
                   <a href={href} rel={rel} target={target} className="text-primary underline">
                     {children}
@@ -238,8 +240,8 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               )
             }
 
-            let href = node.fields.url ?? ''
-            if (node.fields.linkType === 'internal') {
+            let href = node.fields?.url ?? ''
+            if (node.fields?.linkType === 'internal') {
               href = typeof doc?.href === 'string' ? doc.href : '#'
             }
             return (
@@ -303,7 +305,8 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
             },
           },
         })}
-      />
-    </div>
+        />
+      </div>
+    </ErrorBoundary>
   )
 }

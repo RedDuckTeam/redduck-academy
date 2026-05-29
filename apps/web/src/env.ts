@@ -1,16 +1,9 @@
 import { createEnv } from '@t3-oss/env-core'
-import { z } from 'zod'
+import { clientEnvSchema, clientPrefix } from './env-schema'
 
 export const env = createEnv({
-  clientPrefix: 'VITE_',
-  client: {
-    VITE_API_URL: z.string().min(1),
-    VITE_APP_URL: z.string().min(1),
-    VITE_CHAIN_ENV: z.enum(['development', 'production']).default('development'),
-    VITE_PRIVY_APP_ID: z.string().min(1),
-    VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().min(1),
-    VITE_PUBLIC_POSTHOG_HOST: z.string().url().default('https://eu.posthog.com'),
-  },
+  clientPrefix,
+  client: clientEnvSchema,
 
   // @ts-expect-error - import.meta.env is not typed
   runtimeEnvStrict: import.meta.env,
