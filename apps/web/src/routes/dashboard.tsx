@@ -48,7 +48,7 @@ function Dashboard() {
       const course = courses[i]
       if (courseAccess.lockedSlugs.has(course.slug)) continue
       const next = courseProgress[i]?.nextLesson
-      if (next) return { courseSlug: course.slug, ...next }
+      if (next) return { courseSlug: course.slug, courseTitle: course.title, ...next }
     }
     return null
   }, [courses, courseProgress, courseAccess.lockedSlugs])

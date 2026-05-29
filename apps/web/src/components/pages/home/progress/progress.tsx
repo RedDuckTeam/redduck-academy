@@ -8,12 +8,13 @@ import { AnimatedGhost } from './animated-ghost'
 import { AnimatedPacman } from './animated-pacman'
 
 interface ProgressProps {
-  nextLesson: { courseSlug: string; moduleSlug: string; lessonSlug: string } | null
+  nextLesson: { courseSlug: string; courseTitle: string; moduleSlug: string; lessonSlug: string } | null
   hasProgress: boolean
 }
 
 export const Progress = ({ nextLesson, hasProgress }: ProgressProps) => {
   const ctaLabel = hasProgress ? 'CONTINUE' : 'START'
+  const ctaAriaLabel = nextLesson ? `${ctaLabel} ${nextLesson.courseTitle}` : ctaLabel
   return (
     <div className="flex flex-col gap-9 px-5 pb-14 md:px-10 md:pb-[60px] xl:px-[60px]">
       <HomepageGrid className="absolute top-0 max-sm:hidden left-[60px] w-[calc(100%-121px)] z-[-1]" />
@@ -39,7 +40,12 @@ export const Progress = ({ nextLesson, hasProgress }: ProgressProps) => {
         {nextLesson ? (
           <Link
             to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
-            params={nextLesson}
+            params={{
+              courseSlug: nextLesson.courseSlug,
+              moduleSlug: nextLesson.moduleSlug,
+              lessonSlug: nextLesson.lessonSlug,
+            }}
+            aria-label={ctaAriaLabel}
             className="flex items-center px-10 !h-[108px] gap-5 max-xl:w-full max-lg:w-screen bg-header"
           >
             <Text variant="caps-20" className="text-header-foreground">

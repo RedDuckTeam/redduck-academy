@@ -10,7 +10,8 @@ const OG_IMAGE_URL = 'https://redduck.io/thumbnail.png'
 const META_DESCRIPTION_MAX_LENGTH = 160
 
 function getBaseUrl(): string {
-  return env.VITE_APP_URL.replace(/\/$/, '')
+  const url = env.VITE_APP_URL.replace(/\/$/, '')
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`
 }
 
 /**

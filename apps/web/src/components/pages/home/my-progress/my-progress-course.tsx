@@ -88,6 +88,7 @@ export const MyProgressCourse = ({
             moduleSlug: action.lesson.moduleSlug,
             lessonSlug: action.lesson.lessonSlug,
           }}
+          aria-label={`${action.label} ${course.title}`}
           className={containerClass}
         >
           <Text variant={'caps-20'}>{action.label}</Text>
@@ -97,7 +98,12 @@ export const MyProgressCourse = ({
       break
     case 'claim':
       actionElement = (
-        <Link to="/courses/$courseSlug" params={{ courseSlug: course.slug }} className={containerClass}>
+        <Link
+          to="/courses/$courseSlug"
+          params={{ courseSlug: course.slug }}
+          aria-label={`Claim certificate for ${course.title}`}
+          className={containerClass}
+        >
           <Text variant={'caps-20'}>Claim Certificate</Text>
           <ArrowRight />
         </Link>
