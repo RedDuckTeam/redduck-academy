@@ -1,9 +1,9 @@
 import { Link, useLocation } from '@tanstack/react-router'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { RedDuckIcon } from '../ui/icons/redduck'
 import { HeaderLinks } from './header-links'
-import { Drawer, DrawerContent } from '../ui/drawer-menu'
+import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
 import { HeaderMenuIcon } from '../ui/icons/header-menu'
 import { HeaderDrawerContent } from './header-drawer-content'
 import { cn } from '@/lib/utils'
@@ -20,23 +20,11 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const { session } = useSession()
 
-  useEffect(() => {
-    if (!isOpen) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [isOpen])
-
   if (isSignUpPage) {
     return null
   }
 
-  const handleOpenChange = () => {
-    if (isOpen) return
-    setIsOpen(true)
-  }
+  const handleOpenChange = () => setIsOpen((prev) => !prev)
 
   return (
     <>
@@ -52,10 +40,7 @@ export default function Header() {
           onClick={handleOpenChange}
           aria-label={isOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isOpen}
-          className={cn(
-            'rounded-full md:hidden w-10 h-10 border border-white flex items-center justify-center',
-            isOpen && 'pointer-events-none',
-          )}
+          className="rounded-full md:hidden w-10 h-10 border border-white flex items-center justify-center"
         >
           <HeaderMenuIcon isOpen={isOpen} />
         </button>
@@ -92,11 +77,16 @@ export default function Header() {
       </header>
       <div className={cn('md:hidden', isOpen && 'h-[60px] mb-5 w-full')}></div>
 
-      <Drawer direction="left" open={isOpen} onOpenChange={setIsOpen}>
-        <DrawerContent>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          className="w-full max-w-none border-r-0 border-t-2 border-[#E0DEDA] bg-[#000] p-0 top-[60px] inset-y-auto bottom-0 h-[calc(100dvh-60px)] gap-0 shadow-none"
+        >
+          <SheetTitle className="sr-only">Navigation menu</SheetTitle>
           <HeaderDrawerContent open={isOpen} onSelect={() => setIsOpen(false)} />
-        </DrawerContent>
-      </Drawer>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }
