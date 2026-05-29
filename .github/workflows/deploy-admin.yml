@@ -27,6 +27,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Update Corepack
+        run: npm install -g corepack@latest
+
       - name: Enable corepack
         run: corepack enable
 
