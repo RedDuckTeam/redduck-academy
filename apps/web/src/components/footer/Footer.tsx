@@ -108,9 +108,14 @@ export default function Footer() {
             </div>
           </address>
 
-          <div className="flex items-end justify-end p-10 max-lg:h-[250px] max-sm:h-[180px] 2xl:col-span-2">
+          <a
+            href="https://redduck.io"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-end justify-end p-10 max-lg:h-[250px] max-sm:h-[180px] 2xl:col-span-2"
+          >
             <DuckIcon className="-scale-x-100 h-auto w-[60px] [&_path]:fill-[#F22C1A]" />
-          </div>
+          </a>
         </div>
 
         <FooterSeparator className="h-[180px] max-sm:border-x sm:h-[80px] lg:h-[120px]" />
