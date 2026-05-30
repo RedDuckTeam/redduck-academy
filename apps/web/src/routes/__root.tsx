@@ -35,12 +35,14 @@ interface MyRouterContext {
 // Tests for private class methods (Safari 15.4+, the floor of our bundle).
 // If the parser can't handle it, replace the document with a plain upgrade
 // prompt. The script itself uses only ES5, so it parses on every browser.
-// NOTE: every `<` in the embedded HTML is written as `\x3C` (not a literal `<`).
-// A literal `</head>`/`<body>` inside this inline script gets misread as the real
-// end-of-head by the SSR HTML serializer, which splits the document there and leaks
-// the script's tail as visible text at the top of the page. `\x3C` keeps the source
-// free of tag-open characters; JS turns it back into `<` at runtime.
-const browserGateScript = `(function(){try{Function('"use strict";class _C{#m(){return 1}}');}catch(e){document.documentElement.innerHTML='\x3Chead>\x3Cmeta charset="utf-8">\x3Cmeta name="viewport" content="width=device-width,initial-scale=1">\x3Ctitle>Browser update required\x3C/title>\x3C/head>\x3Cbody style="margin:0;padding:24px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#000;color:#e0deda;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">\x3Ch1 style="font-size:28px;margin:0 0 16px;font-weight:600">Your browser is out of date\x3C/h1>\x3Cp style="font-size:16px;line-height:1.5;max-width:480px;margin:0">Redduck Academy needs a modern browser to run. On iPhone or iPad, update through Settings &rarr; General &rarr; Software Update. On desktop, please upgrade to the latest Chrome, Safari, Firefox, or Edge.\x3C/p>\x3C/body>';throw e;}})();`
+//
+// The fallback page is built with DOM APIs (createElement/textContent), NOT an
+// innerHTML string — so this script contains ZERO `<` characters. An embedded
+// `</head>`/`<body>` would otherwise be misread by the SSR HTML serializer as the
+// real end-of-head, splitting the document and leaking the script's tail as visible
+// text. (Escaping `<` as `\x3C` does NOT help: JS decodes it back to `<` at parse
+// time, so the injected string is unchanged.)
+const browserGateScript = `(function(){try{Function('"use strict";class _C{#m(){return 1}}');}catch(e){var d=document,r=d.documentElement;while(r.firstChild)r.removeChild(r.firstChild);var b=d.createElement('body');b.setAttribute('style','margin:0;padding:24px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#000;color:#e0deda;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center');var h=d.createElement('h1');h.setAttribute('style','font-size:28px;margin:0 0 16px;font-weight:600');h.textContent='Your browser is out of date';var p=d.createElement('p');p.setAttribute('style','font-size:16px;line-height:1.5;max-width:480px;margin:0');p.textContent='Redduck Academy needs a modern browser to run. On iPhone or iPad, update through Settings → General → Software Update. On desktop, please upgrade to the latest Chrome, Safari, Firefox, or Edge.';b.appendChild(h);b.appendChild(p);r.appendChild(b);throw e;}})();`
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem('redduck-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`
 
