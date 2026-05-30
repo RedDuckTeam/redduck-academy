@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import { CoursesList } from '@/components/pages/courses/courses-list/courses-list'
 import { coursesQueryOptions } from '@/hooks/api/courses/useCourses'
@@ -14,6 +14,8 @@ export const Route = createFileRoute('/courses/$courseSlug/')({
   loader: async ({ params, context: { queryClient } }) => {
     const res = await queryClient.ensureQueryData(coursesQueryOptions())
     const courses = res?.data ?? []
+
+    if (courses.length === 0) throw notFound()
 
     if (!courses.some((c) => c.slug === params.courseSlug)) {
       throw redirect({

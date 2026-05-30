@@ -35,8 +35,8 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
   const [promptOpen, setPromptOpen] = useState(false)
 
   const flat: NavTarget[] =
-    course?.data.modules.flatMap((m) =>
-      m.lessons.map((l) => ({ moduleSlug: m.slug, lessonSlug: l.slug, title: l.title })),
+    course?.data?.modules?.flatMap((m) =>
+      (m.lessons ?? []).map((l) => ({ moduleSlug: m.slug, lessonSlug: l.slug, title: l.title })),
     ) ?? []
   const currentIndex = flat.findIndex((entry) => entry.lessonSlug === lesson.slug)
   const prev = currentIndex > 0 ? flat[currentIndex - 1] : null

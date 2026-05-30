@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -6,10 +6,35 @@ import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import { requiredClientEnv } from './src/env-schema'
+
+// Required client env vars come straight from the env schema (src/env-schema.ts):
+// `requiredClientEnv` is every var with no default. If any is empty the `createEnv`
+// validation throws at runtime — bundled into both the client and SSR output, so every
+// request 500s and the client white-screens. CI sources these from GitHub repo Variables
+// (`${{ vars.* }}`), which resolve to empty strings when unset, so a missing var ships
+// silently. Assert them at build time to fail CI fast with a clear message.
+function assertRequiredEnv(): Plugin {
+  return {
+    name: 'assert-required-env',
+    enforce: 'pre',
+    config(_, { command, mode }) {
+      if (command !== 'build') return
+      const env = loadEnv(mode, process.cwd(), 'VITE_')
+      const missing = requiredClientEnv.filter((key) => !env[key] && !process.env[key])
+      if (missing.length > 0) {
+        throw new Error(
+          `[build] Missing required env var(s): ${missing.join(', ')}. ` +
+            `Set them before building (CI: GitHub repo Variables → Settings → Secrets and variables → Actions → Variables).`,
+        )
+      }
+    },
+  }
+}
 
 // @privy-io/react-auth uses browser-only APIs (localStorage, window, etc.) that
 // crash in the Cloudflare Workers SSR environment. Replace it with no-ops on the
-// server; the real SDK loads client-side via React.lazy in privy-provider.tsx.
+// server (see privySsrStub below); the real SDK only loads in the client bundle.
 function privySsrStub(): Plugin {
   const VIRTUAL = '\0privy-ssr-stub'
   return {
@@ -77,6 +102,7 @@ const config = defineConfig({
     ],
   },
   plugins: [
+    assertRequiredEnv(),
     privySsrStub(),
     posthogSsrStub(),
     nodePolyfills({ include: ['buffer', 'process'], globals: { Buffer: true, process: true } }),

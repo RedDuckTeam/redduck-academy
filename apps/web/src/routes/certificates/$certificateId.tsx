@@ -6,6 +6,7 @@ import { useSession } from '@/hooks/useSession'
 import { CertificateHeader } from '@/components/pages/certificate/certificate-header'
 import { CertificateActions } from '@/components/pages/certificate/certificate-actions'
 import { createPageMeta } from '@/lib/seo'
+import { formatMediumDate } from '@/lib/format-date'
 import { env } from '@/env'
 
 export const Route = createFileRoute('/certificates/$certificateId')({
@@ -35,9 +36,7 @@ function CertificateRoute() {
   const isAuthenticated = !!session
   const isOwner = session?.user.id === certificate.userId
 
-  const completionDate = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(
-    new Date(certificate.issuedAt),
-  )
+  const completionDate = formatMediumDate(certificate.issuedAt)
   const courseLine = `${certificate.courseTitle} by RedDuck`
 
   return (

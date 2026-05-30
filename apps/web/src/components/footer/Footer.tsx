@@ -77,9 +77,9 @@ export default function Footer() {
             </a>
           </div>
 
-          <div
+          <address
             className={cn(
-              'space-y-5 text-[16px] font-normal 2xl:text-[20px]',
+              'text-[16px] font-normal not-italic 2xl:text-[20px]',
               'border-white/20 max-2xl:border-r max-lg:border-b max-lg:border-r-0',
               'px-5 py-[40px] sm:py-[66px] lg:px-10',
             )}
@@ -87,13 +87,35 @@ export default function Footer() {
             <a href={`mailto:${LINKS.Email}`} className="hover:border-b hover:border-white/40">
               {LINKS.Email}
             </a>
-            <p>+380502147263</p>
-            <p>Saperne pole 12, Kyiv, Ukraine</p>
-          </div>
 
-          <div className="flex items-end justify-end p-10 max-lg:h-[250px] max-sm:h-[180px] 2xl:col-span-2">
+            <div className="mt-5 flex flex-col gap-[28px] 2xl:gap-[32px]">
+              <div className="flex flex-col gap-[4px]">
+                <p>Cyprus Office:</p>
+                <p className="font-medium">Redduck Limited</p>
+                <a href="tel:+35796333210" className="w-fit">
+                  +357 96 333 210
+                </a>
+                <p className="text-white/80">2 Grigori Afxentiou, Akamia Center, office 15 Larnaca 6023</p>
+              </div>
+
+              <div className="flex flex-col gap-[4px]">
+                <p>Ukraine Office:</p>
+                <a href="tel:+380502147263" className="w-fit">
+                  +380 50 214 72 63
+                </a>
+                <p className="text-white/80">Saperne pole 12, Kyiv 01042</p>
+              </div>
+            </div>
+          </address>
+
+          <a
+            href="https://redduck.io"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-end justify-end p-10 max-lg:h-[250px] max-sm:h-[180px] 2xl:col-span-2"
+          >
             <DuckIcon className="-scale-x-100 h-auto w-[60px] [&_path]:fill-[#F22C1A]" />
-          </div>
+          </a>
         </div>
 
         <FooterSeparator className="h-[180px] max-sm:border-x sm:h-[80px] lg:h-[120px]" />

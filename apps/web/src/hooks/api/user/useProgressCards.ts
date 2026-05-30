@@ -12,5 +12,8 @@ export const useProgressCards = () => {
     staleTime: 60 * 1000,
     enabled: !!session?.user,
     retry: false,
+    // Overrides the global `refetchOnMount: false` so the dashboard cards pick up
+    // invalidations queued while the user was off-route (e.g. completing a lecture).
+    refetchOnMount: true,
   })
 }

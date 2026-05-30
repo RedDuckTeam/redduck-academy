@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { BaseTooltip } from '@/components/ui/base-tooltip'
+import { useSession } from '@/hooks/useSession'
 
 type LockedCourseStatusTooltipProps = {
   prerequisiteCourseTitle?: string
@@ -13,6 +14,8 @@ export function LockedCourseStatusTooltip({
   prerequisiteCourseSlug,
   icon,
 }: LockedCourseStatusTooltipProps) {
+  const { session } = useSession()
+  const username = (session?.user as { username?: string } | undefined)?.username
   return (
     <BaseTooltip
       triggerLabel="Why can't I start this course?"
@@ -43,9 +46,13 @@ export function LockedCourseStatusTooltip({
         </p>
         <p>
           You can turn prerequisite requirements on or off in{' '}
-          <Link to="/profile" className="underline underline-offset-2">
-            Profile settings
-          </Link>
+          {username ? (
+            <Link to="/profile/$username" params={{ username }} className="underline underline-offset-2">
+              Profile settings
+            </Link>
+          ) : (
+            <span className="font-medium">Profile settings</span>
+          )}
           .
         </p>
       </div>

@@ -4,7 +4,7 @@ import { headerLinks } from '@/hooks/ui/useHeaderLinks'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { LessonSidebarList } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar-list'
-import { DrawerClose } from '@/components/ui/drawer-menu'
+import { SheetClose } from '@/components/ui/sheet'
 import { HeaderMenuCoursesList } from '@/components/header/header-menu/header-menu-courses-list'
 import { parseCoursesPathname } from '@/lib/routes/courses-pathname'
 
@@ -22,13 +22,13 @@ export function HeaderDrawerContent({ open, onSelect }: HeaderDrawerContentProps
       <nav className="flex shrink-0 flex-col divide-y divide-border border-b border-border">
         {headerLinks.map((link) => {
           return (
-            <DrawerClose key={link.to} asChild>
+            <SheetClose key={link.to} asChild>
               <Link to={link.to} className="block px-5 py-5">
                 <Text variant="main-16" className={cn('font-ibm-plex-mono text-[#e0deda] uppercase tracking-normal')}>
                   {link.text}
                 </Text>
               </Link>
-            </DrawerClose>
+            </SheetClose>
           )
         })}
       </nav>
