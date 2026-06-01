@@ -81,6 +81,8 @@ export const SubmissionRepository = {
         id: projectUserSubmissions.id,
         status: projectUserSubmissions.status,
         submittedAt: projectUserSubmissions.submittedAt,
+        // The learner's own submitted repo — surfaced so the submit form can pre-fill it on retries.
+        repoUrl: projectUserSubmissions.repoUrl,
         feedback: projectUserSubmissions.feedback,
         errorMessage: projectUserSubmissions.errorMessage,
       })

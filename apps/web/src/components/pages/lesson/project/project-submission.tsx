@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { useRouter } from '@tanstack/react-router'
@@ -35,6 +35,19 @@ export function ProjectSubmission({ lesson, courseSlug, lessonSlug, moduleSlug }
   const { mutate: submitProject, isPending, error: submitError } = useSubmitProject(courseSlug, lessonSlug)
   const submissions = (userLesson?.submissions ?? []) as LatestProjectSubmission[]
   const latest = submissions.at(-1)
+
+  // Pre-fill the input with the user's most recently submitted repo (their own data),
+  // so retries don't require re-pasting. Runs once when submissions load, and never
+  // overwrites something the user has already typed.
+  const prefilledRef = useRef(false)
+  useEffect(() => {
+    const lastRepo = latest?.repoUrl
+    if (!prefilledRef.current && lastRepo) {
+      prefilledRef.current = true
+      setLink((current) => current || lastRepo)
+    }
+  }, [latest?.repoUrl])
+
   const rateLimitError = submitError instanceof RateLimitError ? submitError : null
   const trimmedLink = link.trim()
   const isGithubLink = /^https?:\/\/github\.com\/[^/]+\/[^/]+/i.test(trimmedLink)

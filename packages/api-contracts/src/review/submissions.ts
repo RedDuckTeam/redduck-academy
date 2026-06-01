@@ -4,20 +4,21 @@ import { adminReviewFeedbackSchema, learnerReviewFeedbackSchema } from './feedba
 export const projectSubmissionStatusSchema = z.enum(['pending', 'completed', 'failed'])
 
 /**
- * Project review submission shown to the learner.
- * Excluded vs admin shape: `batchRequestId` (internal OpenAI batch id, no UI consumer).
+ * Project review submission shown to the learner. Includes `repoUrl` — it's the
+ * learner's own submitted repository, surfaced so the submit form can pre-fill it
+ * on retries.
+ * Excluded vs admin shape: `commitSha`, `batchRequestId` (review internals, no UI consumer).
  */
 export const learnerProjectSubmissionSchema = z.object({
   id: z.number().int(),
   status: projectSubmissionStatusSchema,
   submittedAt: z.string(),
+  repoUrl: z.string(),
   feedback: learnerReviewFeedbackSchema.nullable(),
   errorMessage: z.string().nullable(),
 })
 
 export const adminProjectSubmissionSchema = learnerProjectSubmissionSchema.extend({
-  /** Repository URL the learner submitted for review (admin-only). */
-  repoUrl: z.string(),
   /** Resolved commit SHA that was reviewed; null until the batch is created (admin-only). */
   commitSha: z.string().nullable(),
   batchRequestId: z.string().nullable(),
