@@ -8,7 +8,13 @@ import { AnimatedGhost } from './animated-ghost'
 import { AnimatedPacman } from './animated-pacman'
 
 interface ProgressProps {
-  nextLesson: { courseSlug: string; courseTitle: string; moduleSlug: string; lessonSlug: string } | null
+  nextLesson: {
+    courseSlug: string
+    courseTitle: string
+    moduleSlug: string
+    lessonSlug: string
+    lessonTitle: string
+  } | null
   hasProgress: boolean
 }
 
@@ -48,10 +54,17 @@ export const Progress = ({ nextLesson, hasProgress }: ProgressProps) => {
             aria-label={ctaAriaLabel}
             className="flex items-center px-10 !h-[108px] gap-5 max-xl:w-full max-lg:w-screen bg-header"
           >
-            <Text variant="caps-20" className="text-header-foreground">
-              {ctaLabel}
-            </Text>
-            <LongArrowRight className="max-md:h-6" />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-5">
+                <Text variant="caps-20" className="text-header-foreground">
+                  {ctaLabel}
+                </Text>
+                <LongArrowRight className="max-md:h-6" />
+              </div>
+              <Text variant="caps-14" className="text-header-foreground/60 max-w-[230px] line-clamp-2">
+                {nextLesson.lessonTitle}
+              </Text>
+            </div>
           </Link>
         ) : (
           <Button

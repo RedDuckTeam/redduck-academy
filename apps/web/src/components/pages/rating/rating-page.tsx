@@ -30,20 +30,23 @@ export const RatingPage = () => {
       <PageGridBackground>
         <div className="flex max-xl:flex-col xl:flex-row xl:items-start xl:justify-between gap-6 pt-9 xl:gap-10">
           <PageAvatar message={headline} />
-          <PageStatsCards
-            items={[
-              {
-                firstNum: placeInRanking ? placeInRanking.toString() : '-',
-                secondNum: placeInRanking ? ordinalSuffix(placeInRanking) : undefined,
-                text: 'PLACE IN RANKING',
-                className: 'border-r border-border',
-              },
-              {
-                firstNum: completedLessonsCount ? completedLessonsCount.toString() : '-',
-                text: 'LESSONS COMPLETED',
-              },
-            ]}
-          />
+          {/* Personal ranking stats are meaningless for anon (they'd render as "-"), so hide them. */}
+          {isLoggedIn && (
+            <PageStatsCards
+              items={[
+                {
+                  firstNum: placeInRanking ? placeInRanking.toString() : '-',
+                  secondNum: placeInRanking ? ordinalSuffix(placeInRanking) : undefined,
+                  text: 'PLACE IN RANKING',
+                  className: 'border-r border-border',
+                },
+                {
+                  firstNum: completedLessonsCount ? completedLessonsCount.toString() : '-',
+                  text: 'LESSONS COMPLETED',
+                },
+              ]}
+            />
+          )}
         </div>
       </PageGridBackground>
 

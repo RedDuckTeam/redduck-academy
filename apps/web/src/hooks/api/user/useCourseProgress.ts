@@ -4,7 +4,7 @@ import type { Course, CourseStatus } from '@/types/lesson'
 import { CourseStatusEnum } from '@/types/lesson'
 
 export interface CourseProgressItem {
-  nextLesson: { moduleSlug: string; lessonSlug: string } | null
+  nextLesson: { moduleSlug: string; lessonSlug: string; lessonTitle: string } | null
   status: CourseStatus
 }
 
@@ -21,12 +21,21 @@ export function useCourseProgress(courses: Course[], completedLessons: Completed
         .flatMap((module) =>
           [...module.lessons]
             .sort((a, b) => a.order - b.order)
-            .map((lesson) => ({ lessonId: lesson.id, lessonSlug: lesson.slug, moduleSlug: module.slug })),
+            .map((lesson) => ({
+              lessonId: lesson.id,
+              lessonSlug: lesson.slug,
+              lessonTitle: lesson.title,
+              moduleSlug: module.slug,
+            })),
         )
 
       const nextLessonData = orderedLessons.find((item) => !completedLessonIds.has(item.lessonId))
       const nextLesson = nextLessonData
-        ? { moduleSlug: nextLessonData.moduleSlug, lessonSlug: nextLessonData.lessonSlug }
+        ? {
+            moduleSlug: nextLessonData.moduleSlug,
+            lessonSlug: nextLessonData.lessonSlug,
+            lessonTitle: nextLessonData.lessonTitle,
+          }
         : null
 
       const hasAnyCompleted = orderedLessons.some((item) => completedLessonIds.has(item.lessonId))
