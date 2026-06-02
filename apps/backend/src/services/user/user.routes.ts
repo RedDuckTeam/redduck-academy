@@ -168,17 +168,16 @@ userApp.patch('/bio', requireAuth, requireNotBanned, updateUserBioDesc, validato
   return c.json({ data })
 })
 
-// NOT cached: the profile reflects user-editable fields (name, bio, username, avatar) and
-// live progress. With route caching there's no invalidation, so an edit wouldn't show until
-// TTL expiry — unacceptable for "I just changed it." Low-traffic endpoint, so left uncached.
+// TODO: CACHE post-deploy — public profile, route-cacheable (key = username, bounded by user count). Keep TTL short
+// since profile/progress updates won't be invalidated here. cacheHandler(cache, { prefix: 'profile', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
 userApp.get('/profile/:username', getPublicProfileDesc, validator('param', usernameParamSchema), async (c) => {
   const { username } = c.req.valid('param')
   const data = await UserService.getPublicProfile(username)
   return c.json({ data })
 })
 
-// NOT cached: kept consistent with the live "Place in Ranking" stat card (from /progress-cards).
-// Caching the leaderboard but not the card would let the two disagree on the ranking page.
+// TODO: CACHE post-deploy — global leaderboard, single key, expensive to compute, tolerates slight staleness.
+// cacheHandler(cache, { prefix: 'rating', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
 userApp.get('/rating', getRatingDesc, async (c) => {
   const data = await UserService.getRating()
   return c.json({ data })

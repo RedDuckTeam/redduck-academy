@@ -119,18 +119,9 @@ export function cacheHandler(
           }
         }
 
-        // Start from the cached headers (content-type, etc.), then overlay the per-request
-        // headers already set on `c.res` by upstream middleware — notably CORS, which `cors()`
-        // sets BEFORE `next()`. Returning a bare `new Response` would drop those, so cross-origin
-        // (browser) requests would fail CORS on every cache hit while SSR (no Origin) still worked.
-        // Overlaying also corrects a stale `Access-Control-Allow-Origin` baked into the cached
-        // entry (it reflects whoever first populated the cache), since the live `c.res` value wins.
-        const headers = new Headers(response.headers)
-        c.res.headers.forEach((value, key) => headers.set(key, value))
-
         return new Response(response.body, {
           status: response.status,
-          headers,
+          headers: new Headers(response.headers),
         })
       }
     } catch (err: unknown) {
