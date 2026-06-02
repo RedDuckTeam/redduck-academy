@@ -57,9 +57,8 @@ certificatesApp.post(
   },
 )
 
-// NOT cached: the response carries owner-mutable state (`status` created→requested→claimed,
-// `walletAddress`) that changes the moment the owner requests/claims the NFT. Route caching has
-// no invalidation, so the owner would see stale status for up to the TTL right after acting.
+// TODO: CACHE post-deploy — public certificate by human id, mostly immutable once issued (status created→requested→claimed
+// changes rarely). Key = id (bounded by cert count). cacheHandler(cache, { prefix: 'cert', ttl: 300, staleTtl: 120 }) → cache 5m / staleWhileRevalidate 2m.
 certificatesApp.get('/:id', getCertificateByIdDesc, validator('param', certificateHumanIdParamSchema), async (c) => {
   const { id } = c.req.valid('param')
   const data = await CertificatesService.getCertificateByHumanId(id)
