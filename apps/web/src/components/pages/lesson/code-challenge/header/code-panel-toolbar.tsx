@@ -46,17 +46,15 @@ export function CodePanelToolbar(props: CodePanelToolbarProps) {
         <IconButton Icon={WrapText} tooltip="Format code" onClick={onFormat} />
         <IconButton Icon={RotateCcw} tooltip="Reset code to starter template" onClick={onReset} />
 
-        {!isAuthenticated ? (
+        {onRun && hasExecutableTests && (
+          <RunButton onRun={onRun} isRunning={isRunning} disabled={isPending || !hasCode} />
+        )}
+        {isAuthenticated ? (
+          <SubmitButton onSubmit={onSubmit} isPending={isPending} disabled={!canSubmit} />
+        ) : (
           <Button size="sm" variant="default" onClick={onSignIn}>
             <Text variant="caps-14">Sign in</Text>
           </Button>
-        ) : (
-          <>
-            {onRun && hasExecutableTests && (
-              <RunButton onRun={onRun} isRunning={isRunning} disabled={isPending || !hasCode} />
-            )}
-            <SubmitButton onSubmit={onSubmit} isPending={isPending} disabled={!canSubmit} />
-          </>
         )}
       </div>
     </div>
