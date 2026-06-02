@@ -77,7 +77,7 @@ function SignUp() {
           <SignUpStartText />
         </div>
         <div className="overflow-hidden bg-foreground py-3">
-          <Marquee autoFill speed={45} gradient={false} pauseOnHover>
+          <Marquee autoFill speed={45} gradient={false}>
             {MARQUEE_ITEMS.map((label, index) => (
               <span key={`${label}-${index}`} className="mx-6 inline-flex md:mx-10">
                 <Text variant="caps-20" className="text-nowrap text-background">
