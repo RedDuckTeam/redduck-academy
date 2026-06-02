@@ -23,6 +23,8 @@ import {
 import { parsePaginationQuery } from '../../lib/pagination'
 import { requireAdmin } from '../../lib/middleware'
 import type { AuthVariables } from '../../lib/types'
+import { cache } from '../../lib/cache'
+import { cacheHandler } from '../../lib/cache/middleware'
 import { AdminService } from './admin.service'
 
 const adminApp = new Hono<{ Variables: AuthVariables }>()
@@ -32,12 +34,16 @@ adminApp.get('/', requireAdmin, adminHealthDesc, async (c) => {
   return c.json({ ok: true })
 })
 
-// TODO: CACHE post-deploy — expensive global aggregation, single key, admin dashboard tolerates slight staleness.
-// cacheHandler(cache, { prefix: 'admin-stats', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
-adminApp.get('/stats', requireAdmin, adminStatsDesc, async (c) => {
-  const data = await AdminService.getStats()
-  return c.json({ data })
-})
+// Expensive global aggregation, single key, admin dashboard tolerates slight staleness.
+adminApp.get(
+  '/stats',
+  requireAdmin,
+  adminStatsDesc,
+  cacheHandler(cache, { prefix: 'admin-stats', ttl: 120, staleTtl: 60 }, async (c) => {
+    const data = await AdminService.getStats()
+    return c.json({ data })
+  }),
+)
 
 // TODO: NO CACHE — page/pageSize/sortBy/sortDir/search query params explode cache-key cardinality (esp. free-text
 // search) → RAM bloat for little hit-rate gain. Leave uncached. If ever needed, cache only the default unfiltered first page.
@@ -87,19 +93,27 @@ adminApp.get(
   },
 )
 
-// TODO: CACHE post-deploy — heavy aggregation (per-lesson submission counts across all courses), single global key.
-// cacheHandler(cache, { prefix: 'admin-lessons-tree', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
-adminApp.get('/lessons/tree', requireAdmin, adminLessonsTreeDesc, async (c) => {
-  const data = await AdminService.getLessonsTree()
-  return c.json({ data })
-})
+// Heavy aggregation (per-lesson submission counts across all courses), single global key.
+adminApp.get(
+  '/lessons/tree',
+  requireAdmin,
+  adminLessonsTreeDesc,
+  cacheHandler(cache, { prefix: 'admin-lessons-tree', ttl: 120, staleTtl: 60 }, async (c) => {
+    const data = await AdminService.getLessonsTree()
+    return c.json({ data })
+  }),
+)
 
-// TODO: CACHE post-deploy — heavy AI cost aggregation, single global key. Result is a now()-based snapshot, so keep TTL
-// short and let SWR refresh it. cacheHandler(cache, { prefix: 'admin-ai-costs', ttl: 120, staleTtl: 60 }) → cache 2m / staleWhileRevalidate 1m.
-adminApp.get('/ai-costs', requireAdmin, adminAiCostsDesc, async (c) => {
-  const data = await AdminService.getAiCostDashboard()
-  return c.json({ data })
-})
+// Heavy AI cost aggregation, single global key. Result is a now()-based snapshot, so TTL is short and SWR refreshes it.
+adminApp.get(
+  '/ai-costs',
+  requireAdmin,
+  adminAiCostsDesc,
+  cacheHandler(cache, { prefix: 'admin-ai-costs', ttl: 120, staleTtl: 60 }, async (c) => {
+    const data = await AdminService.getAiCostDashboard()
+    return c.json({ data })
+  }),
+)
 
 // TODO: NO CACHE — paginated + free-text search (page/pageSize/search) over a course×lesson path → key cardinality
 // explodes → RAM bloat. Leave uncached.
@@ -135,18 +149,18 @@ adminApp.get(
   },
 )
 
-// TODO: CACHE post-deploy (optional, short) — keyed by userId (safe, no leak: userId is in the URL), but cardinality
-// grows with user count and this is low-traffic admin-only. cacheHandler(cache, { prefix: 'admin-user-completed', ttl: 60, staleTtl: 30 }) → cache 1m / staleWhileRevalidate 30s. Skip if RAM is tight.
+// Keyed by userId (safe — userId is in the URL, so no cross-user leak). Short TTL; low-traffic admin-only.
 adminApp.get(
   '/users/:userId/completed-lessons',
   requireAdmin,
   adminUserCompletedLessonsDesc,
   validator('param', adminUserIdParamSchema),
-  async (c) => {
-    const { userId } = c.req.valid('param')
+  cacheHandler(cache, { prefix: 'admin-user-completed', ttl: 60, staleTtl: 30 }, async (c) => {
+    // validator('param') above already ran; read the raw param (cacheHandler's Context loses the typed valid()).
+    const userId = c.req.param('userId')!
     const data = await AdminService.getUserCompletedLessons(userId)
     return c.json({ data })
-  },
+  }),
 )
 
 // TODO: NO CACHE — key cardinality is users × lessons, and it's low-traffic admin-only inspection (poor hit rate).
