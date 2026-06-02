@@ -10,6 +10,7 @@ import {
   adminUsersListSchema,
   banUserResponseDataSchema,
   completedLessonSchema,
+  setUserPrivacyResponseDataSchema,
 } from '@redduck/api-contracts'
 import { errorSchema } from './schemas'
 
@@ -156,6 +157,20 @@ export const adminBanUserDesc = describeRoute({
     200: {
       description: 'Updated ban status',
       content: { 'application/json': { schema: resolver(z.object({ data: banUserResponseDataSchema })) } },
+    },
+    401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
+    403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },
+    404: { description: 'User not found', content: { 'application/json': { schema: errorSchema } } },
+  },
+})
+
+export const adminSetUserPrivacyDesc = describeRoute({
+  summary: 'Admin: toggle a user\'s profile privacy',
+  tags: ['Admin'],
+  responses: {
+    200: {
+      description: 'Updated privacy flag',
+      content: { 'application/json': { schema: resolver(z.object({ data: setUserPrivacyResponseDataSchema })) } },
     },
     401: { description: 'Unauthorized', content: { 'application/json': { schema: errorSchema } } },
     403: { description: 'Forbidden', content: { 'application/json': { schema: errorSchema } } },

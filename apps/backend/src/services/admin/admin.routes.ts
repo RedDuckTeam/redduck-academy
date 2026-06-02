@@ -8,6 +8,7 @@ import {
   adminUserLessonParamSchema,
   adminUsersQuerySchema,
   banUserBodySchema,
+  setUserPrivacyBodySchema,
 } from '@redduck/api-contracts'
 import {
   adminAiCostsDesc,
@@ -172,6 +173,19 @@ adminApp.patch(
     const { userId } = c.req.valid('param')
     const { ban } = c.req.valid('json')
     const data = await AdminService.banUser(userId, ban)
+    return c.json({ data })
+  },
+)
+
+adminApp.patch(
+  '/users/:userId/privacy',
+  requireAdmin,
+  validator('param', adminUserIdParamSchema),
+  validator('json', setUserPrivacyBodySchema),
+  async (c) => {
+    const { userId } = c.req.valid('param')
+    const { isPrivate } = c.req.valid('json')
+    const data = await AdminService.setUserPrivacy(userId, isPrivate)
     return c.json({ data })
   },
 )

@@ -88,6 +88,35 @@ function posthogSsrStub(): Plugin {
   }
 }
 
+// Sentry's server build still adds a couple hundred KB to the Worker bundle even
+// though we only ever call init/captureException on the client (router.tsx gates
+// with `!router.isServer`, client.tsx is browser-only). Stub it on SSR — no calls
+// fire there, so no behaviour changes.
+function sentrySsrStub(): Plugin {
+  const VIRTUAL = '\0sentry-ssr-stub'
+  return {
+    name: 'sentry-ssr-stub',
+    enforce: 'pre',
+    resolveId(id, _, opts) {
+      if (opts?.ssr && id === '@sentry/tanstackstart-react') return VIRTUAL
+    },
+    load(id) {
+      if (id === VIRTUAL) {
+        return `
+          export const init = () => {};
+          export const captureException = () => {};
+          export const captureMessage = () => {};
+          export const replayIntegration = () => ({});
+          export const withErrorBoundary = (c) => c;
+          export const wrapFetchWithSentry = (h) => h;
+          export const sentryGlobalRequestMiddleware = (_, next) => next();
+          export const sentryGlobalFunctionMiddleware = (_, next) => next();
+        `
+      }
+    },
+  }
+}
+
 const config = defineConfig({
   optimizeDeps: {
     // Pre-bundle browser-only PDF/image libs so dev-server dynamic imports resolve cleanly.
@@ -106,6 +135,7 @@ const config = defineConfig({
     assertRequiredEnv(),
     privySsrStub(),
     posthogSsrStub(),
+    sentrySsrStub(),
     nodePolyfills({ include: ['buffer', 'process'], globals: { Buffer: true, process: true } }),
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),

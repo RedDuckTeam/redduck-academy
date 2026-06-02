@@ -21,6 +21,13 @@ export function AdminPage() {
         <Text variant="title-80" element="h1">
           Admin Panel
         </Text>
+        <button
+          onClick={() => {
+            throw new Error('Test error 22')
+          }}
+        >
+          Test error
+        </button>
 
         <Tabs
           value={tab}

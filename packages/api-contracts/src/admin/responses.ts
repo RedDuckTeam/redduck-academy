@@ -61,6 +61,8 @@ export const adminLessonProgressOverlaySchema = z.object({
 
 export const banUserResponseDataSchema = z.object({ blacklisted: z.boolean() })
 
+export const setUserPrivacyResponseDataSchema = z.object({ isPrivate: z.boolean() })
+
 export const adminLessonTreeLessonSchema = z.object({
   id: z.number().int(),
   title: z.string(),

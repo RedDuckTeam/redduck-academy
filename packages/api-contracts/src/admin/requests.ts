@@ -38,6 +38,7 @@ export const adminLessonSubmissionsQuerySchema = z.object({
 })
 
 export const banUserBodySchema = z.object({ ban: z.boolean() })
+export const setUserPrivacyBodySchema = z.object({ isPrivate: z.boolean() })
 
 export type AdminUsersQuery = z.infer<typeof adminUsersQuerySchema>
 export type AdminCertificatesQuery = z.infer<typeof adminCertificatesQuerySchema>
@@ -46,3 +47,4 @@ export type AdminUserLessonParam = z.infer<typeof adminUserLessonParamSchema>
 export type AdminLessonParam = z.infer<typeof adminLessonParamSchema>
 export type AdminLessonSubmissionsQuery = z.infer<typeof adminLessonSubmissionsQuerySchema>
 export type BanUserBody = z.infer<typeof banUserBodySchema>
+export type SetUserPrivacyBody = z.infer<typeof setUserPrivacyBodySchema>

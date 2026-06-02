@@ -8,15 +8,18 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { AdminUserRow } from '@/lib/api/admin'
 import { formatDate } from '../shared/table-utils'
 import { useBanUser } from '@/hooks/api/admin/useBanUser'
+import { useSetUserPrivacy } from '@/hooks/api/admin/useSetUserPrivacy'
 
 const avatarPlaceholder = '/pages/images/avatar.webp'
 
 function UserActionsCell({ row }: { row: { original: AdminUserRow } }) {
-  const { mutate, isPending } = useBanUser()
-  const { id, name, blacklisted } = row.original
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const { mutate: banMutate, isPending: isBanPending } = useBanUser()
+  const { mutate: privacyMutate, isPending: isPrivacyPending } = useSetUserPrivacy()
+  const { id, name, blacklisted, isPrivate } = row.original
+  const [isBanConfirmOpen, setIsBanConfirmOpen] = useState(false)
+  const [isPrivacyConfirmOpen, setIsPrivacyConfirmOpen] = useState(false)
 
-  const action = blacklisted ? 'unban' : 'ban'
+  const isPending = isBanPending || isPrivacyPending
   const displayName = name || 'this user'
 
   return (
@@ -35,26 +38,32 @@ function UserActionsCell({ row }: { row: { original: AdminUserRow } }) {
           <DropdownMenu.Content
             align="end"
             sideOffset={4}
-            className="z-50 min-w-[140px] bg-background border border-border shadow-md p-1 animate-in fade-in-0 zoom-in-95"
+            className="z-50 min-w-[160px] bg-background border border-border shadow-md p-1 animate-in fade-in-0 zoom-in-95"
           >
             <DropdownMenu.Item
-              onSelect={() => setIsConfirmOpen(true)}
+              onSelect={() => setIsBanConfirmOpen(true)}
               className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none hover:bg-muted transition-colors data-[highlighted]:bg-muted"
             >
               <Text variant="caps-14" className={blacklisted ? undefined : 'text-destructive'}>
                 {blacklisted ? 'UNBAN USER' : 'BAN USER'}
               </Text>
             </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={() => setIsPrivacyConfirmOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none hover:bg-muted transition-colors data-[highlighted]:bg-muted"
+            >
+              <Text variant="caps-14">{isPrivate ? 'MAKE PROFILE PUBLIC' : 'MAKE PROFILE PRIVATE'}</Text>
+            </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
       <ConfirmDialog
-        open={isConfirmOpen}
-        onOpenChange={setIsConfirmOpen}
+        open={isBanConfirmOpen}
+        onOpenChange={setIsBanConfirmOpen}
         onConfirm={() => {
-          mutate(
+          banMutate(
             { userId: id, ban: !blacklisted },
-            { onSettled: () => setIsConfirmOpen(false) },
+            { onSettled: () => setIsBanConfirmOpen(false) },
           )
         }}
         title={blacklisted ? 'Unban user?' : 'Ban user?'}
@@ -63,8 +72,26 @@ function UserActionsCell({ row }: { row: { original: AdminUserRow } }) {
             ? `${displayName} will regain access to the platform.`
             : `${displayName} will lose access to the platform.`
         }
-        confirmLabel={action === 'ban' ? 'Ban' : 'Unban'}
-        isLoading={isPending}
+        confirmLabel={blacklisted ? 'Unban' : 'Ban'}
+        isLoading={isBanPending}
+      />
+      <ConfirmDialog
+        open={isPrivacyConfirmOpen}
+        onOpenChange={setIsPrivacyConfirmOpen}
+        onConfirm={() => {
+          privacyMutate(
+            { userId: id, isPrivate: !isPrivate },
+            { onSettled: () => setIsPrivacyConfirmOpen(false) },
+          )
+        }}
+        title={isPrivate ? 'Make profile public?' : 'Make profile private?'}
+        description={
+          isPrivate
+            ? `${displayName}'s profile will be visible to everyone again.`
+            : `${displayName}'s profile will be hidden from other users.`
+        }
+        confirmLabel={isPrivate ? 'Make public' : 'Make private'}
+        isLoading={isPrivacyPending}
       />
     </>
   )

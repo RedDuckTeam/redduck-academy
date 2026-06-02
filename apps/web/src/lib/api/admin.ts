@@ -157,6 +157,14 @@ export const banAdminUser = async (userId: string, ban: boolean): Promise<{ blac
   return response.data
 }
 
+export const setAdminUserPrivacy = async (userId: string, isPrivate: boolean): Promise<{ isPrivate: boolean }> => {
+  const response = await api().patch<{ data: { isPrivate: boolean } }>(
+    `/api/admin/users/${userId}/privacy`,
+    { isPrivate },
+  )
+  return response.data
+}
+
 export type AdminLessonTreeLesson = {
   id: number
   title: string

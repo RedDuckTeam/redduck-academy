@@ -392,6 +392,16 @@ export class AdminService {
     return { blacklisted: updated.blacklisted }
   }
 
+  static async setUserPrivacy(userId: string, isPrivate: boolean): Promise<{ isPrivate: boolean }> {
+    const [updated] = await db
+      .update(user)
+      .set({ isPrivate })
+      .where(eq(user.id, userId))
+      .returning({ isPrivate: user.isPrivate })
+    if (!updated) throw new AppError(404, 'User not found')
+    return { isPrivate: updated.isPrivate }
+  }
+
   static async getUserCompletedLessons(userId: string): Promise<CompletedLesson[]> {
     const completedLessons = await db.query.userLessons.findMany({
       where: and(eq(userLessons.userId, userId), eq(userLessons.isCompleted, true)),
