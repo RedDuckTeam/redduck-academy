@@ -8,12 +8,11 @@ export function PostHogConsentBridge() {
 
   useEffect(() => {
     if (!posthog) return
-    if (consent === 'agree') {
-      posthog.opt_in_capturing()
-    } else {
-      // 'decline' or null (reset via "Cookie settings") — stop capturing.
-      posthog.opt_out_capturing()
-    }
+    // TEMP(debug): capturing forced ON for ALL users to trace an error — this BYPASSES cookie
+    // consent. REVERT after debugging by restoring the consent-gated block:
+    //   if (consent === 'agree') posthog.opt_in_capturing()
+    //   else posthog.opt_out_capturing() // 'decline' or null → stop capturing
+    posthog.opt_in_capturing()
   }, [consent, posthog])
 
   return null
