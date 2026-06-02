@@ -75,8 +75,6 @@ export default function Header() {
           )}
         </div>
       </header>
-      <div className={cn('md:hidden', isOpen && 'h-[60px] mb-5 w-full')}></div>
-
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
           side="left"
