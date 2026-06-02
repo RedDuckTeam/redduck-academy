@@ -29,11 +29,21 @@ contract CourseCertificate is
     // student => courseId => tokenIds
     mapping(address => mapping(uint256 => uint256[])) private _studentCourseTokens;
 
+    /// @dev Reserved storage so future versions can append state without colliding
+    ///      with anything declared below this contract. Decrement when adding vars.
+    uint256[50] private __gap;
+
     event CertificateMinted(
         uint256 indexed tokenId,
         address indexed recipient,
         uint256 indexed courseId,
         bytes32 metadataHash
+    );
+
+    event CertificateRevoked(
+        uint256 indexed tokenId,
+        address indexed owner,
+        uint256 indexed courseId
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -125,6 +135,40 @@ contract CourseCertificate is
     }
 
     /**
+     * @notice Permanently revoke (burn) a certificate issued in error. Admin-only
+     *         and irreversible. Clears the on-chain bookkeeping so verifyCertificate
+     *         and getStudentCertificates no longer reference the burned token.
+     * @param tokenId The certificate to revoke.
+     */
+    function revokeCertificate(uint256 tokenId) external onlyRole(ADMIN_ROLE) {
+        address owner = ownerOf(tokenId); // reverts if the token doesn't exist
+        uint256 courseId = certificates[tokenId].courseId;
+
+        _removeStudentCourseToken(owner, courseId, tokenId);
+        delete certificates[tokenId];
+
+        _burn(tokenId);
+
+        emit CertificateRevoked(tokenId, owner, courseId);
+    }
+
+    /// @dev Swap-and-pop removal of a tokenId from a student's per-course list.
+    function _removeStudentCourseToken(address student, uint256 courseId, uint256 tokenId) private {
+        uint256[] storage tokens = _studentCourseTokens[student][courseId];
+        uint256 len = tokens.length;
+        for (uint256 i = 0; i < len; ) {
+            if (tokens[i] == tokenId) {
+                tokens[i] = tokens[len - 1];
+                tokens.pop();
+                return;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /**
      * @notice Returns all certificate token IDs a student holds for a course.
      */
     function getStudentCertificates(address student, uint256 courseId)
@@ -149,7 +193,8 @@ contract CourseCertificate is
         uint256[] storage tokens = _studentCourseTokens[student][courseId];
         if (tokens.length == 0) return (false, 0, bytes32(0));
         tokenId = tokens[tokens.length - 1];
-        valid = ownerOf(tokenId) == student;
+        // _ownerOf (not ownerOf) so a burned token resolves to false rather than reverting.
+        valid = _ownerOf(tokenId) == student;
         metadataHash = certificates[tokenId].metadataHash;
     }
 
