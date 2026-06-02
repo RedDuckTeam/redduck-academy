@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite'
 import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
@@ -118,6 +119,17 @@ const config = defineConfig({
       },
     }),
     viteReact(),
+    // Source map upload to Sentry — only active when SENTRY_AUTH_TOKEN is present
+    // (CI prod build). Without the token the plugin no-ops, so local dev is unaffected.
+    ...(process.env.SENTRY_AUTH_TOKEN
+      ? [
+          sentryTanstackStart({
+            org: 'jeleika',
+            project: 'javascript-tanstackstart-react',
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+          }),
+        ]
+      : []),
   ],
 })
 

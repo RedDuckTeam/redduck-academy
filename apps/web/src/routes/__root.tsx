@@ -93,15 +93,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 capture_pageleave: false,
                 ui_host: env.VITE_PUBLIC_POSTHOG_HOST,
                 defaults: '2025-05-24',
-                capture_exceptions: true,
+                // Errors and session replay are owned by Sentry — don't double-instrument.
+                capture_exceptions: false,
                 debug: import.meta.env.DEV,
                 opt_out_capturing_by_default: true,
                 opt_out_persistence_by_default: true,
                 autocapture: false,
-                disable_session_recording: false,
-                session_recording: {
-                  maskAllInputs: true,
-                },
+                disable_session_recording: true,
               }}
             >
               <PostHogConsentBridge />

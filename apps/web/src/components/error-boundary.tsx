@@ -18,7 +18,7 @@ interface ErrorBoundaryState {
  * the whole app.
  *
  * Note: React still reports caught errors to the root `onCaughtError` hook (see
- * `src/client.tsx`), so PostHog capture is preserved — this only controls the UI.
+ * `src/client.tsx`), which forwards them to Sentry — this only controls the UI.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false }

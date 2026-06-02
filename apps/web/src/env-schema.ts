@@ -13,6 +13,8 @@ export const clientEnvSchema = {
   VITE_PRIVY_APP_ID: z.string().min(1),
   VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().min(1),
   VITE_PUBLIC_POSTHOG_HOST: z.string().url().default('https://eu.posthog.com'),
+  // Optional — when empty, Sentry init is skipped (e.g. local dev without a project).
+  VITE_SENTRY_DSN: z.string().default(''),
 }
 
 // Keys that must be provided (no default / not optional) — derived from the schema

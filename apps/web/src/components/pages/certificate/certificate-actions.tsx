@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import * as Sentry from '@sentry/tanstackstart-react'
 import { Button } from '@/components/ui/button'
 import { usePostHog } from '@posthog/react'
 import { CertificateNftSection } from './certificate-nft-section'
@@ -38,7 +39,7 @@ export function CertificateActions({ certificate, courseLine: _courseLine, compl
       await downloadCertificatePdf(element, filename)
     } catch (error) {
       console.error(error)
-      posthog.captureException(error)
+      Sentry.captureException(error)
       toast.error('Could not generate PDF')
     } finally {
       setIsDownloading(false)
