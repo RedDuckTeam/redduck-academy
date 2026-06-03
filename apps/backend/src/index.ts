@@ -16,6 +16,7 @@ import adminApp from './services/admin/admin.routes'
 import { AppError, GENERIC_ERROR_MESSAGE } from './lib/errors'
 import { Logger } from './lib/logger'
 import { env } from './env'
+import { installProcessLifecycle } from './lib/process-lifecycle'
 
 const port = Number(process.env.PORT) || 3001
 const backendOrigin = `http://localhost:${port}`
@@ -23,6 +24,11 @@ const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filte
 
 const app = new Hono({ strict: false })
 const rootLogger = new Logger('HonoApp')
+
+// Process-level safety net + graceful shutdown (see lib/process-lifecycle.ts).
+// Registered before the server binds so stray async errors can't crash the
+// single web process. See RESILIENCE-AUDIT.md → C1.
+const lifecycle = installProcessLifecycle(rootLogger)
 
 app.onError((err, c) => {
   if (err instanceof AppError) {
@@ -115,10 +121,12 @@ if (env.NODE_ENV !== 'production') {
 
 console.log(`Server is running on ${backendOrigin}`)
 
-serve({
+const server = serve({
   fetch: app.fetch,
   port,
   hostname: '0.0.0.0',
 })
+
+lifecycle.setServer(server)
 
 export default app

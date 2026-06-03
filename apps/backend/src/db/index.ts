@@ -9,7 +9,7 @@ import { payloadSchema } from '@redduck/payload-config'
 const usingPooler = Boolean(env.DATABASE_CONNECTION_POOL_URL)
 const connectionString = env.DATABASE_CONNECTION_POOL_URL ?? env.DATABASE_URL
 
-const client = postgres(connectionString, {
+export const client = postgres(connectionString, {
   ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   // Kept low: this DB has a ~20-connection ceiling shared with the admin pool,
   // and Heroku deploys briefly run old + new dynos at once (doubling the count).
