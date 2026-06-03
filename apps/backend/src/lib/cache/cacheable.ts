@@ -21,6 +21,10 @@ function isSWREntry(value: unknown): value is SWRCacheEntry {
 
 const refreshingKeys = new Set<string>()
 
+// Single-flight: in-progress blocking loads keyed by cache key. Concurrent misses
+// for the same key await the SAME promise instead of each hitting the DB (stampede).
+const inFlight = new Map<string, Promise<unknown>>()
+
 function safeStringify(value: unknown): string {
   try {
     return JSON.stringify(value)
@@ -107,23 +111,31 @@ export function cacheable<TArgs extends unknown[], TResult>(
       logger.error('Cache get failed', err, { cacheKey })
     }
 
-    const result = await fn(...args)
+    // Single-flight the blocking miss: if another call is already loading this key,
+    // await its promise instead of issuing a second DB query.
+    const existing = inFlight.get(cacheKey)
+    if (existing) return existing as Promise<TResult>
 
-    try {
-      if (swrEnabled) {
-        const entry: SWRCacheEntry<TResult> = {
-          __swr: true,
-          data: result,
-          cachedAt: Date.now(),
+    const promise = (async (): Promise<TResult> => {
+      const result = await fn(...args)
+      try {
+        if (swrEnabled) {
+          const entry: SWRCacheEntry<TResult> = {
+            __swr: true,
+            data: result,
+            cachedAt: Date.now(),
+          }
+          await cache.set(cacheKey, entry, hardTtlSeconds)
+        } else {
+          await cache.set(cacheKey, result, hardTtlSeconds)
         }
-        await cache.set(cacheKey, entry, hardTtlSeconds)
-      } else {
-        await cache.set(cacheKey, result, hardTtlSeconds)
+      } catch (err) {
+        logger.error('Cache set failed', err, { cacheKey })
       }
-    } catch (err) {
-      logger.error('Cache set failed', err, { cacheKey })
-    }
+      return result
+    })().finally(() => inFlight.delete(cacheKey))
 
-    return result
+    inFlight.set(cacheKey, promise)
+    return promise
   }
 }

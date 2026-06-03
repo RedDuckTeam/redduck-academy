@@ -15,6 +15,14 @@ import { ReviewService } from '../review/review.service'
 import { CodingTaskService } from '../coding-task/coding-task.service'
 import { LessonsService } from './lessons.service'
 import { CoursePrerequisitesService } from '../courses/course-prerequisites.service'
+import { cache } from '../../lib/cache'
+import { cacheable } from '../../lib/cache/cacheable'
+import { cacheControl } from '../../lib/cache/cache-control'
+
+// RAM data cache (single-flighted) for public lesson content — no user data here.
+const getLessonCached = cacheable(cache, 'lesson', { ttl: 600, staleTtl: 300 }, (courseSlug: string, lessonSlug: string) =>
+  LessonsService.getLesson(courseSlug, lessonSlug),
+)
 
 const lessonsApp = new Hono<{ Variables: AuthVariables }>()
 
@@ -61,13 +69,18 @@ lessonsApp.post(
   },
 )
 
-// TODO: CACHE post-deploy — public lesson content, NO user data here (user answers/progress live on /api/user/lessons/*).
-// Key cardinality bounded by lesson count (safe for RAM). cacheHandler(cache, { prefix: 'lesson', ttl: 600, staleTtl: 300 }) → cache 10m / staleWhileRevalidate 5m.
-lessonsApp.get('/:courseSlug/:lessonSlug', getLessonDesc, validator('param', courseLessonParamSchema), async (c) => {
-  const { courseSlug, lessonSlug } = c.req.valid('param')
-  const data = await LessonsService.getLesson(courseSlug, lessonSlug)
-  return c.json({ data })
-})
+// Public lesson content, NO user data here (user answers/progress live on /api/user/lessons/*).
+lessonsApp.get(
+  '/:courseSlug/:lessonSlug',
+  getLessonDesc,
+  validator('param', courseLessonParamSchema),
+  cacheControl(600, 300),
+  async (c) => {
+    const { courseSlug, lessonSlug } = c.req.valid('param')
+    const data = await getLessonCached(courseSlug, lessonSlug)
+    return c.json({ data })
+  },
+)
 
 lessonsApp.post(
   '/:courseSlug/:lessonSlug/mark-completed',

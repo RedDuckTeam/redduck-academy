@@ -3,27 +3,39 @@ import { validator } from 'hono-openapi'
 import { listCoursesDesc, getCourseDesc, listCoursesInfoDesc } from '../../descriptions/courses'
 import { slugParamSchema } from '../../lib/schemas'
 import type { AuthVariables } from '../../lib/types'
+import { cache } from '../../lib/cache'
+import { cacheable } from '../../lib/cache/cacheable'
+import { cacheControl } from '../../lib/cache/cache-control'
 import { CoursesService } from './courses.service'
 
 const coursesApp = new Hono<{ Variables: AuthVariables }>()
 
-// TODO: CACHE post-deploy — static course catalog, no per-user data, no query params (single global key).
-// cacheHandler(cache, { prefix: 'courses', ttl: 600, staleTtl: 300 }) → cache 10m / staleWhileRevalidate 5m.
-coursesApp.get('/', listCoursesDesc, async (c) => {
-  const data = await CoursesService.listCourses()
+// RAM data cache (single-flighted) — caches the service RESULT, not the HTTP response,
+// so the handler always builds a fresh c.json() and CORS/headers are never touched.
+const listCoursesCached = cacheable(cache, 'courses', { ttl: 600, staleTtl: 300 }, () =>
+  CoursesService.listCourses(),
+)
+const listCoursesInfoCached = cacheable(cache, 'courses-info', { ttl: 600, staleTtl: 300 }, () =>
+  CoursesService.listCoursesInfo(),
+)
+const getCourseCached = cacheable(cache, 'course', { ttl: 600, staleTtl: 300 }, (slug: string) =>
+  CoursesService.getCourseBySlug(slug),
+)
+
+// Static course catalog, no per-user data. cacheControl → browser/CDN cache.
+coursesApp.get('/', listCoursesDesc, cacheControl(600, 300), async (c) => {
+  const data = await listCoursesCached()
   return c.json({ data })
 })
 
-// TODO: CACHE post-deploy — static catalog metadata, single global key. cache 10m / staleWhileRevalidate 5m.
-coursesApp.get('/info', listCoursesInfoDesc, async (c) => {
-  const data = await CoursesService.listCoursesInfo()
+coursesApp.get('/info', listCoursesInfoDesc, cacheControl(600, 300), async (c) => {
+  const data = await listCoursesInfoCached()
   return c.json({ data })
 })
 
-// TODO: CACHE post-deploy — one course by slug; key cardinality bounded by course count (safe for RAM). cache 10m / staleWhileRevalidate 5m.
-coursesApp.get('/:slug', getCourseDesc, validator('param', slugParamSchema), async (c) => {
+coursesApp.get('/:slug', getCourseDesc, validator('param', slugParamSchema), cacheControl(600, 300), async (c) => {
   const { slug } = c.req.valid('param')
-  const data = await CoursesService.getCourseBySlug(slug)
+  const data = await getCourseCached(slug)
   return c.json({ data })
 })
 
