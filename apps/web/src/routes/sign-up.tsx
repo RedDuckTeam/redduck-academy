@@ -3,6 +3,7 @@ import Marquee from 'react-fast-marquee'
 import { WagmiProvider } from 'wagmi'
 import { ThemeToggle } from '@/components/header/theme-toggle'
 import { SignUpGoogleButton } from '@/components/pages/sign-up/sign-up-google-button'
+import { SignUpOptionButton } from '@/components/pages/sign-up/sign-up-option-button'
 import { SignUpStartText } from '@/components/pages/sign-up/sign-up-start-text'
 import { SignUpWalletButton } from '@/components/pages/sign-up/sign-up-wallet-button'
 import { DuckIcon } from '@/components/ui/icons/duck'
@@ -10,6 +11,7 @@ import { Text } from '@/components/ui/text'
 import { wagmiConfig } from '@/constants/wallet-config'
 import { queryKeys } from '@/lib/query-keys'
 import { useSession } from '@/hooks/useSession'
+import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 import { createPageMeta } from '@/lib/seo'
 import { navigateAfterAuth, sanitizeRedirect } from '@/lib/redirect'
 import { useEffect } from 'react'
@@ -44,8 +46,17 @@ export const Route = createFileRoute('/sign-up')({
 
 function SignUp() {
   const { session } = useSession()
+  const { enabled, ready, requestPrivy } = usePrivyAuth()
   const router = useRouter()
   const { redirect: redirectTo } = Route.useSearch()
+
+  // Privy is no longer mounted globally — this is the login entry point, so ask
+  // for it here. The login buttons call Privy hooks directly, so they can only
+  // render once the SDK is mounted (`enabled`) and initialised (`ready`).
+  useEffect(() => {
+    requestPrivy()
+  }, [requestPrivy])
+  const privyReady = enabled && ready
 
   // If a session is already present when this page mounts (e.g. user revisits /sign-up
   // while logged in, or a redirect kept them here), send them on. The login buttons
@@ -71,8 +82,17 @@ function SignUp() {
             </Text>
           </div>
           <div className="mx-auto flex h-full w-full md:max-w-[calc(100%-80px)] lg:max-w-[850px] flex-1 flex-col items-center justify-center gap-4 md:gap-5">
-            <SignUpGoogleButton redirect={redirectTo} />
-            <SignUpWalletButton redirect={redirectTo} />
+            {privyReady ? (
+              <>
+                <SignUpGoogleButton redirect={redirectTo} />
+                <SignUpWalletButton redirect={redirectTo} />
+              </>
+            ) : (
+              <>
+                <SignUpOptionButton number="01" label="Google" className="md:-translate-x-20" disabled />
+                <SignUpOptionButton number="02" label="WEB3 WALLET" className="md:translate-x-20" disabled />
+              </>
+            )}
           </div>
           <SignUpStartText />
         </div>

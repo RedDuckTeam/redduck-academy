@@ -1,10 +1,8 @@
-import { cn } from '@/lib/utils'
-import { Text } from '../../ui/text'
-import { LongArrowRight } from '../../ui/icons/long-arrow-right'
 import { useLogin } from '@privy-io/react-auth'
 import { useRouter } from '@tanstack/react-router'
 import { usePostHog } from '@posthog/react'
 import { navigateAfterAuth } from '@/lib/redirect'
+import { SignUpOptionButton } from './sign-up-option-button'
 
 interface SignUpWalletButtonProps {
   /** Where to land after login; falls back to the dashboard. */
@@ -25,19 +23,11 @@ export const SignUpWalletButton = ({ redirect }: SignUpWalletButtonProps) => {
   })
 
   return (
-    <button
-      className={cn(
-        'flex w-full max-w-[850px] min-h-[100px] cursor-pointer items-center justify-between rounded-[80px] bg-foreground px-10 py-[18px] md:translate-x-20 md:min-h-0 md:px-[70px]',
-      )}
+    <SignUpOptionButton
+      number="02"
+      label="WEB3 WALLET"
+      className="md:translate-x-20"
       onClick={() => login({ loginMethods: ['wallet'] })}
-    >
-      <Text variant="title-80" className="min-h-0 text-background max-md:text-[32px] max-md:leading-none">
-        02
-      </Text>
-      <Text variant="subtitle-45" className="text-background max-md:text-[20px] max-md:leading-normal max-md:min-h-0">
-        WEB3 WALLET
-      </Text>
-      <LongArrowRight className="[&_path]:fill-background" />
-    </button>
+    />
   )
 }
