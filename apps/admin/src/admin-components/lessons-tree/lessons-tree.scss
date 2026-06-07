@@ -2,6 +2,31 @@
   padding-block: var(--base);
 }
 
+.lessons-tree-error {
+  padding: var(--base);
+  border: 1px solid var(--theme-error-300, #f0b4b4);
+  border-radius: var(--style-radius-m, 4px);
+  background: var(--theme-error-50, #fbeaea);
+
+  h3 {
+    margin: 0 0 calc(var(--base) * 0.25);
+  }
+
+  p {
+    margin: 0;
+    color: var(--theme-elevation-600);
+  }
+}
+
+.lessons-tree-warning {
+  margin-bottom: var(--base);
+  padding: calc(var(--base) * 0.5) var(--base);
+  border: 1px solid var(--theme-warning-300, #e6c66a);
+  border-radius: var(--style-radius-m, 4px);
+  background: var(--theme-warning-50, #fdf6e3);
+  color: var(--theme-elevation-700);
+}
+
 .lessons-tree {
   display: flex;
   flex-direction: column;
