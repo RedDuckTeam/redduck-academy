@@ -81,12 +81,27 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   // and emit the full SVG when </svg> is reached; continuation paragraphs render nothing.
   let svgBuffer: string | null = null
 
-  const renderSvg = (markup: string) => (
-    <div
-      className="my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full"
-      dangerouslySetInnerHTML={{ __html: markup }}
-    />
-  )
+  const renderSvg = (markup: string) => {
+    let ariaLabel: string | undefined
+    try {
+      const textNodes = typeof markup === 'string'
+        ? [...markup.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
+            .map((m) => m[1]?.replace(/<[^>]+>/g, '').trim() ?? '')
+            .filter(Boolean)
+        : []
+      ariaLabel = textNodes.join(', ') || undefined
+    } catch {
+      ariaLabel = undefined
+    }
+    return (
+      <div
+        role="img"
+        aria-label={ariaLabel}
+        className="my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full"
+        dangerouslySetInnerHTML={{ __html: markup ?? '' }}
+      />
+    )
+  }
 
   return (
     <ErrorBoundary>
