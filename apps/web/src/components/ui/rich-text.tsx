@@ -316,7 +316,14 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
             ...defaultConverters.blocks,
             code: ({ node }: { node: { fields?: { code?: string; language?: string } } }) => {
               const { code, language } = node.fields ?? {}
-              return <HighlightedCodeBlock code={code ?? ''} language={language} />
+              // Plain code blocks created in the admin sometimes get the literal word
+              // "undefined" prepended (upstream Lexical code-block converter bug). Strip it.
+              const isPlain = !language || language === 'plain'
+              let safeCode = code ?? ''
+              if (isPlain && safeCode.startsWith('undefined')) {
+                safeCode = safeCode.slice('undefined'.length)
+              }
+              return <HighlightedCodeBlock code={safeCode} language={language} />
             },
           },
         })}
