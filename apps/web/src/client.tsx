@@ -24,7 +24,7 @@ startTransition(() => {
     {
       onCaughtError: (error, errorInfo) => {
         Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo?.componentStack } } })
-        // Preserve React's default behaviour (providing onCaughtError otherwise silences it).
+        // Preserve React's default behaviour (providing onCaughtError otherwise silences it)
         console.error(error)
       },
     },

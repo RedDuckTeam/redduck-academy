@@ -154,7 +154,7 @@ const config = defineConfig({
     ...(process.env.SENTRY_AUTH_TOKEN
       ? [
           sentryTanstackStart({
-            org: 'jeleika',
+            org: 'mrjeleikaorg',
             project: 'javascript-tanstackstart-react',
             authToken: process.env.SENTRY_AUTH_TOKEN,
           }),
