@@ -155,7 +155,7 @@ const config = defineConfig({
       ? [
           sentryTanstackStart({
             org: 'mrjeleikaorg',
-            project: 'javascript-tanstackstart-react',
+            project: 'redduck-academy',
             authToken: process.env.SENTRY_AUTH_TOKEN,
           }),
         ]
