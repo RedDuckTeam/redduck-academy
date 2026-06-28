@@ -4,7 +4,8 @@ import { CoursesList } from '@/components/pages/courses/courses-list/courses-lis
 import { coursesQueryOptions } from '@/hooks/api/courses/useCourses'
 import { CourseProgramSidebar } from '@/components/pages/courses/course-program-sidebar/course-program-sidebar'
 import { CourseProgramHeader } from '@/components/pages/courses/course-program-header/course-program-header'
-import { createCoursesMeta } from '@/lib/seo'
+import { buildCourseLd, createCoursesMeta } from '@/lib/seo'
+import { JsonLd } from '@/components/seo/json-ld'
 import { useCompletedLessons } from '@/hooks/api/user/useCompletedLessons'
 import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
 import { resolveFocusedCourse } from '@/lib/routes/courses-index-search'
@@ -53,6 +54,7 @@ function CourseProgramHubPage() {
 
   return (
     <main className="flex min-h-screen gap-10  lg:mx-[60px] mx-5 items-start">
+      {focusedCourse && <JsonLd data={buildCourseLd({ course: focusedCourse })} />}
       <CourseProgramSidebar
         courses={courses}
         selectedCourseSlug={courseSlug}

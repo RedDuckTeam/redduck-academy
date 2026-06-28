@@ -5,7 +5,7 @@ interface LessonTitleProps {
 }
 export const LessonTitle = ({ title }: LessonTitleProps) => {
   return (
-    <Text variant="subtitle-32" className="text-black">
+    <Text element="h1" variant="subtitle-32" className="text-black">
       {title}
     </Text>
   )

@@ -13,7 +13,8 @@ import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
 import { LessonNavigation } from '@/components/pages/lesson/lesson-navigation/lesson-navigation'
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
-import { createDefaultMeta, createLessonMeta } from '@/lib/seo'
+import { absoluteUrl, buildBreadcrumbLd, buildLessonLd, createDefaultMeta, createLessonMeta } from '@/lib/seo'
+import { JsonLd } from '@/components/seo/json-ld'
 import { RichText } from '@/components/ui/rich-text'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
@@ -87,6 +88,15 @@ function LessonPage() {
     <main
       className={cn('mx-5 flex min-w-0 flex-col gap-3.5 lg:mx-[60px] mb-[60px]', !isCodingChallenge && 'min-h-screen')}
     >
+      <JsonLd
+        data={[
+          buildLessonLd({ lesson, courseTitle, courseSlug, moduleSlug, lessonSlug }),
+          buildBreadcrumbLd([
+            { name: courseTitle, url: absoluteUrl(`/courses/${courseSlug}`) },
+            { name: lesson.title, url: absoluteUrl(`/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`) },
+          ]),
+        ]}
+      />
       {!isCodingChallenge && <MobileToc lesson={lesson} />}
       <PageBreadcrumbs
         variant="lesson"

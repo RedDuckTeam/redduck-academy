@@ -26,7 +26,8 @@ import inter500 from '@fontsource/inter/files/inter-latin-500-normal.woff2?url'
 import type { QueryClient } from '@tanstack/react-query'
 import { Providers } from '@/components/providers/providers'
 import { Toaster } from '@/components/ui/sonner'
-import { createDefaultMeta } from '@/lib/seo'
+import { buildOrganizationLd, buildWebSiteLd, createDefaultMeta } from '@/lib/seo'
+import { JsonLd } from '@/components/seo/json-ld'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -105,6 +106,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <PostHogConsentBridge />
               <Providers queryClient={queryClient}>
                 <ScrollToTop />
+                <JsonLd data={[buildOrganizationLd(), buildWebSiteLd()]} />
                 <Header />
                 {children}
                 <Footer />

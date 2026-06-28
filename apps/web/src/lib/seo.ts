@@ -14,6 +14,11 @@ function getBaseUrl(): string {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`
 }
 
+/** Resolve a site-relative path to an absolute URL. */
+export function absoluteUrl(path: string): string {
+  return `${getBaseUrl()}${path.startsWith('/') ? path : `/${path}`}`
+}
+
 /**
  * Extracts plain text from rich content (Markdoc, Lexical, etc.) for meta descriptions.
  */
@@ -243,4 +248,108 @@ export function createCoursesMeta({
     description,
     path: '/courses',
   })
+}
+
+// ---- Structured data (schema.org JSON-LD) ----------------------------------
+// Emitted via the <JsonLd> component on SSR'd pages so Google and AI crawlers
+// get an explicit, machine-readable description of the site and its content.
+
+type JsonLdObject = Record<string, unknown>
+
+/** A reusable reference to the publishing organization. */
+function organizationRef(): JsonLdObject {
+  return { '@type': 'Organization', name: SITE_NAME, url: getBaseUrl() }
+}
+
+/** Sitewide publisher identity. Rendered once in the root route. */
+export function buildOrganizationLd(): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: getBaseUrl(),
+    logo: OG_IMAGE_URL,
+    description: SITE_DESCRIPTION,
+  }
+}
+
+/** Sitewide website node. Rendered once in the root route. */
+export function buildWebSiteLd(): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: getBaseUrl(),
+    description: SITE_DESCRIPTION,
+    inLanguage: 'en',
+    publisher: organizationRef(),
+  }
+}
+
+/** schema.org/Course for a course hub page. */
+export function buildCourseLd({ course }: { course: Course }): JsonLdObject {
+  const url = `${getBaseUrl()}/courses/${course.slug}`
+  const description = course.description?.trim()
+    ? truncateDescription(course.description, 500)
+    : `Learn ${course.title} — blockchain development course at ${SITE_NAME}.`
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: course.title,
+    description,
+    url,
+    inLanguage: 'en',
+    provider: organizationRef(),
+    dateModified: course.updatedAt,
+  }
+}
+
+/** schema.org/Article for a lesson, linked to its parent course. */
+export function buildLessonLd({
+  lesson,
+  courseTitle,
+  courseSlug,
+  moduleSlug,
+  lessonSlug,
+}: {
+  lesson: Lesson
+  courseTitle: string
+  courseSlug: string
+  moduleSlug: string
+  lessonSlug: string
+}): JsonLdObject {
+  const base = getBaseUrl()
+  const url = `${base}/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`
+  const courseUrl = `${base}/courses/${courseSlug}`
+  const raw = lesson.content ? extractPlainText(lesson.content) : ''
+  const description = raw ? truncateDescription(raw, 500) : lesson.title
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: lesson.title,
+    description,
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    inLanguage: 'en',
+    datePublished: lesson.createdAt,
+    dateModified: lesson.updatedAt,
+    author: organizationRef(),
+    publisher: organizationRef(),
+    image: OG_IMAGE_URL,
+    isPartOf: { '@type': 'Course', name: courseTitle, url: courseUrl },
+  }
+}
+
+/** schema.org/BreadcrumbList mirroring the on-page breadcrumb trail. */
+export function buildBreadcrumbLd(items: { name: string; url?: string }[]): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      ...(item.url ? { item: item.url } : {}),
+    })),
+  }
 }
