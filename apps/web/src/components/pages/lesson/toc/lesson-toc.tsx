@@ -51,7 +51,7 @@ export function LessonToc({ lesson }: LessonTocProps) {
   }
 
   return (
-    <aside className="hidden xl:flex w-[300px] shrink-0 self-start sticky top-5 max-h-[calc(100vh-40px)] flex-col bg-sidebar overflow-hidden">
+    <nav aria-label="On this page" className="hidden xl:flex w-[300px] shrink-0 self-start sticky top-5 max-h-[calc(100vh-40px)] flex-col bg-sidebar overflow-hidden">
       <div className="flex h-[60px] shrink-0 items-center gap-5 border-b border-border px-5">
         <TableOfContentsIcon className="size-5 shrink-0 text-[#e0deda]" />
         <Text variant="caps-20" className="truncate text-[#e0deda]">
@@ -96,6 +96,6 @@ export function LessonToc({ lesson }: LessonTocProps) {
           })}
         </ul>
       </div>
-    </aside>
+    </nav>
   )
 }
