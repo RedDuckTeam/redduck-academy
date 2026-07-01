@@ -82,23 +82,38 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   let svgBuffer: string | null = null
 
   const renderSvg = (markup: string) => {
-    let ariaLabel: string | undefined
+    let label: string | undefined
     try {
       const textNodes = typeof markup === 'string'
         ? [...markup.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
             .map((m) => m[1]?.replace(/<[^>]+>/g, '').trim() ?? '')
             .filter(Boolean)
         : []
-      ariaLabel = textNodes.join(', ') || undefined
+      label = textNodes.join(', ') || undefined
     } catch {
-      ariaLabel = undefined
+      label = undefined
     }
+
+    // Make the diagram machine-readable. Instead of only labelling a wrapper
+    // <div>, inject a <title> (the accessible name crawlers and screen readers
+    // read from *inside* the SVG) and role="img" onto the <svg> element itself.
+    // A raw SVG scraped without this reads as concatenated <text> gibberish.
+    let html = markup ?? ''
+    if (label) {
+      const esc = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      const openTag = html.match(/<svg\b[^>]*>/i)?.[0]
+      if (openTag) {
+        const withRole = /\brole=/.test(openTag) ? openTag : openTag.replace(/<svg\b/i, '<svg role="img"')
+        html = html.replace(openTag, `${withRole}<title>${esc}</title>`)
+      }
+    }
+
     return (
       <div
-        role="img"
-        aria-label={ariaLabel}
+        // When the SVG has no <text> to name it, fall back to a labelled wrapper.
+        {...(label ? {} : { role: 'img', 'aria-label': 'Diagram' })}
         className="my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full"
-        dangerouslySetInnerHTML={{ __html: markup ?? '' }}
+        dangerouslySetInnerHTML={{ __html: html }}
       />
     )
   }
