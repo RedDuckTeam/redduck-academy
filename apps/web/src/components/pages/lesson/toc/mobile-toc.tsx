@@ -16,7 +16,7 @@ const SCROLL_OFFSET = 160
 export function MobileToc({ lesson }: MobileTocProps) {
   const { items, activeId, activeItem } = useToc(lesson)
   const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -45,7 +45,7 @@ export function MobileToc({ lesson }: MobileTocProps) {
   }
 
   return (
-    <div ref={containerRef} className="md:hidden sticky top-[60px] z-30 -mx-5">
+    <nav aria-label="On this page" ref={containerRef} className="md:hidden sticky top-[60px] z-30 -mx-5">
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
@@ -99,6 +99,6 @@ export function MobileToc({ lesson }: MobileTocProps) {
           </ul>
         </div>
       )}
-    </div>
+    </nav>
   )
 }

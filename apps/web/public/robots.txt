@@ -3,4 +3,17 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
+# AI assistants and their crawlers are explicitly welcome to read and cite
+# RedDuck Academy. Same access as any other crawler: everything but /admin/.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+
+# LLM-friendly index of the site: https://academy.redduck.io/llms.txt
 Sitemap: https://academy.redduck.io/sitemap.xml
