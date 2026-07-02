@@ -31,6 +31,8 @@ async function buildLlmsTxt(): Promise<string> {
     '',
     '> Free, hands-on Web3 and Solidity education: interactive courses, in-browser coding tasks, on-chain projects, and certificates.',
     '',
+    '> Any lesson page also serves clean Markdown — request its URL with the `Accept: text/markdown` header.',
+    '',
     '## Key pages',
     '',
     link('Home', `${site}/`, 'Platform overview'),
