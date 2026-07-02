@@ -33,7 +33,6 @@ export const Route = createFileRoute('/certificates/$certificateId')({
 function CertificateRoute() {
   const certificate = Route.useLoaderData()
   const { session } = useSession()
-  const isAuthenticated = !!session
   const isOwner = session?.user.id === certificate.userId
 
   const completionDate = formatMediumDate(certificate.issuedAt)
