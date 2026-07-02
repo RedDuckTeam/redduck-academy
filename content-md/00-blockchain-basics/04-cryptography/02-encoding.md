@@ -4,7 +4,7 @@ _type: lecture_
 
 ## Encoding is not encryption
 
-These two words sound similar and developers confuse them constantly. They are completely different things.
+Encoding and encryption are completely different things, even though the words sound similar.
 
 **Encryption** scrambles data so only someone with the right key can read it. The output is supposed to be unreadable to everyone else. The next lesson covers encryption properly.
 
@@ -40,7 +40,7 @@ Each byte becomes two characters drawn from `0–9` and `a–f`. The hash output
 - Output is exactly twice the length of the input. 32 bytes of hash become 64 hex characters.
 - Case-insensitive by default. Some systems use mixed case to encode a checksum without changing what the address means, but lowercase the same string and it still resolves to the same data.
 
-Hex is the workhorse representation for anything that's "raw bytes shown as text." If you're staring at a long string of `0-9a-f` characters, you're looking at hex.
+Hex is the standard representation for anything that's "raw bytes shown as text." If you're staring at a long string of `0-9a-f` characters, you're looking at hex.
 
 ### Base58
 
@@ -81,12 +81,12 @@ The same 5-byte input (`hello`) encoded four ways:
 
 Same 5 bytes. Four different visual representations. Each one is reversible to the exact same binary input.
 
-The playground below lets you try this yourself. Type any input and watch hex, Base58, and Base64 produced from the same underlying bytes. Switching between encodings doesn't change the data, it changes the costume.
+The playground below lets you try this yourself. Type any input and watch hex, Base58, and Base64 produced from the same underlying bytes.
 
 [interactive playground](https://plgrnd.io/#flow=N4IgbiBcDMA0IDsD2ATApgZygbVASxShAAYAmAM1IDYB2ATgFYG6BGADgBY1z2OUBjAIZUqDNiwBGgtBIkcQ8AC4BPAA5oiAZQAqAJQCSAOQDiAfQCihgMIB5ACLmFIVUgx5FeJAiigAHlBYWKgA6UmJoDg5iSJoWDjY6NnhlKABaMWCWaGgWGlIchmJmNlIAX3gUQUVBHxA0BH5UPAQAcyIpDDQqeSU0X0UiQWMANQwJYzYAXhBykABbNEEMAFcAJzRCSFAAdwJFAAsoUij4fbQ8Fv2ByG7ZzoAbNH5FDahyQXvOitXBFpbmtqQd6fNDlfCbEAScj8BJoYhsFB0aCcQQUNjQfjEOIMTEsBj5eEMJwqdREbTmAAa2icLjcHi8tX8kFSpCCwRo0A5LGi8VIdBESRAKWZDGgwQYHCyHGyYWYVDoHFmlWqtRe-SIZ3u9yQM3gCyWa1eWxAuxQByg0GIxFO50u1wYLDuaEezyNwK+IBQPz+ALeH06pQAuvANi1MDhQBgkGt+BpIJDobD4YjkRxUeR0biODisfjLWwifAozG0AAJQQIFCPdqJuhwhFIlFojFY7O4vOE1JqxSpVYXK7EwSrMPXEgUaj0JisTjcXgCYSicRSGRyQfDtCKcuV6vxsiUWiMZi8WececiMSSaSyDipZqqZY9x7kAbwAhEXzKVKhtCmUxQmF1smjZps2WY5niBIFv+SYNqm6aZq24EdgWXZ9D2fZ2qke4Toe05cDwp5COeS5XnI2EHlOx4EXwRGLpeK43neD6pE+AxgiAxarLGRDkZOR4ztRZ50cu15OJxsZblWcZjvufF4SeNELheIlyKh-S9v2L4gNU66jiw-ASHQdCkDQCJSCgMTytkVAsGgbBsPw0CCCwKA0PwpBriOkk7iA+mGcZpkoOZllItANl2Q5TkuW5pC3gg96PtwWlvvGH5figYa-rxuFUXOtHKaRUTjhR-H4XlSkkQxanoZpqR+UZJlmYIFkcDQVlhbZ9mOc5rnufVAVNS1bWheFXVRb1sVMYlz4zMG4B4Gg2wuKs1x+FA9AhOI9mcLE4TECIyRQFEIStuEjB0Fa2YcPAABeSBIHMATBNATB4gWETQPkyK0KUpRAA?view=true)
 
 ## A practical note for later in the course
 
-Hex and Base58 will trip you up in one specific way: when you start meeting addresses on different systems, some will look like long lowercase-hex strings and others will look like mixed-case Base58 strings. They look so different that it's tempting to assume they represent fundamentally different kinds of data. They don't. Underneath, both formats are usually wrapping the same kind of fixed-size byte sequence that comes out of a cryptographic process. The encoding is the wrapper, the data inside is the same kind of thing.
+Hex and Base58 cause confusion in one specific way: when you start meeting addresses on different systems, some will look like long lowercase-hex strings and others will look like mixed-case Base58 strings. They look so different that it's tempting to assume they represent fundamentally different kinds of data. They don't. Underneath, both formats are usually wrapping the same kind of fixed-size byte sequence that comes out of a cryptographic process. The encoding is the wrapper, the data inside is the same kind of thing.
 
-This will matter again in the wallet-creation lesson, where the same starting secret produces "different" addresses across different systems. Different is mostly the encoding wrapper, not the underlying cryptographic substance.
+This will matter again in the wallet-creation lesson, where the same starting secret produces addresses that look very different across different systems. Part of that difference is just the encoding wrapper, and the lesson will show how much.

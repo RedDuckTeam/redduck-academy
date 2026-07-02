@@ -18,7 +18,7 @@ Think of a Mint as a currency itself. The U.S. dollar has rules about who can pr
 
 A TokenAccount is one person's bank account holding that currency. It references the mint, names an owner, and tracks a balance. Alice's USDC account holds 100 USDC, Bob's USDC account holds 50 USDC, and a protocol's vault PDA holds 1,000 USDC. Three accounts, three balances, all denominated in the same Mint.
 
-<svg viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>USDC mint with Alice, Bob, and Vault PDA token accounts</title><desc>One USDC Mint holds the supply, decimals, and authorities for the currency. Three separate token accounts point to that same mint: Alice holds 100 USDC, Bob holds 50 USDC, and the Vault PDA holds 1,000 USDC, each stored as raw integer amounts.</desc>
   <defs>
     <marker id="arrS43aG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -70,21 +70,21 @@ A TokenAccount is one person's bank account holding that currency. It references
 
 The relationship is one-to-many. One mint, many token accounts referencing it. The mint is created once, by whoever issues the token. The token accounts are created on demand, one per wallet per mint, as users come to hold the token for the first time. Most wallets you'd recognize hold dozens of token accounts: one for each different token in the wallet.
 
-A common new-developer confusion is conflating these two layers. People will say "transfer 50 USDC from Alice to Bob" and assume Alice's wallet directly holds tokens. It doesn't. Alice's wallet owns a token account, and that token account holds the balance. To transfer, the Token Program updates two token accounts. The mint, and Alice's wallet, are unchanged. Keep this split clear from the start and the rest of the lecture lands easily.
+A common new-developer confusion is conflating these two layers. People will say "transfer 50 USDC from Alice to Bob" and assume Alice's wallet directly holds tokens. It doesn't. Alice's wallet owns a token account, and that token account holds the balance. To transfer, the Token Program updates two token accounts. The mint, and Alice's wallet, are unchanged. Keep this split clear from the start and the rest of the lesson will follow.
 
-## Decimals: the gotcha that bites first
+## Decimals: raw amounts versus display values
 
 A balance stored in a token account is not a display value. It's a raw integer scaled by ten to the power of the mint's decimal precision. USDC has 6 decimals, which means a stored balance of `100,000,000` represents `100.000000` USDC when displayed. To take a user-friendly input like "I want to send 100 USDC" and turn it into the right transfer amount, you multiply by `10^6` to get `100,000,000`. To display a balance from the chain, you divide by `10^6`.
 
 The decimals are stored on the mint rather than on the token account. So to convert correctly between raw and display values, you need to know which mint a balance belongs to. SOL uses 9 decimals, so 1 SOL displays as a balance of 1,000,000,000 lamports under the hood. Most fungible tokens use 6 or 9. NFTs typically use 0 decimals, since you can't have half of one.
 
-This is the single most common source of off-by-a-million bugs in early Solana code. A new developer reads a balance, treats it as a display value, multiplies it by some factor in their handler, and ends up moving the wrong amount of tokens. The fix is discipline: every amount that touches the Token Program is a raw integer. Conversion to and from display values happens only at the edges, in your frontend or in your test setup, never inside program logic.
+This is the most common source of scale errors in early Solana programs. A new developer reads a balance, treats it as a display value, multiplies it by some factor in their handler, and ends up moving the wrong amount of tokens. The fix is discipline: every amount that touches the Token Program is a raw integer. Conversion to and from display values happens only at the edges, in your frontend or in your test setup, never inside program logic.
 
 ## The four instructions you'll use
 
 The Token Program has dozens of instructions, but for everyday work you'll reach for four of them constantly: Transfer, MintTo, Burn, and CloseAccount.
 
-<svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transfer, MintTo, Burn, and CloseAccount: the four SPL Token instructions</title><desc>Four boxes show the SPL Token instructions Transfer, MintTo, Burn, and CloseAccount, each listing its accounts and which one must sign. A note below says every instruction needs one signer plus a few accounts, and Anchor's anchor_spl wraps each one.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The four instructions you'll reach for</text>
   <rect x="40" y="90" width="310" height="200" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
@@ -134,7 +134,7 @@ The Token Program has dozens of instructions, but for everyday work you'll reach
   <text x="360" y="540" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Every instruction is one signer plus a few accounts. Anchor's anchor_spl wraps each one.</text>
 </svg>
 
-`Transfer` is what you call to move tokens. Pass the source and destination token accounts, plus the authority that's allowed to spend from the source. The authority must sign. In simple cases the authority is the user's wallet, the same wallet that owns the source token account. In program-controlled cases the authority is a PDA, and your program signs for it using `invoke_signed`. Both work the same way to the Token Program.
+`Transfer` is what you call to move tokens. Pass the source and destination token accounts, plus the authority that's allowed to spend from the source. The authority must sign. In simple cases the authority is the user's wallet, the same wallet that owns the source token account. In program-controlled cases the authority is a PDA, and your program signs for it using `invoke_signed`. The Token Program treats both the same way.
 
 `MintTo` creates new tokens. Pass the mint, the destination token account that will receive them, and the mint authority. The mint authority must sign. The mint's `supply` field increases. This is how new tokens enter circulation. A protocol that issues its own token uses MintTo, gated by a PDA mint authority, to distribute initial supply or ongoing rewards.
 
@@ -148,7 +148,7 @@ There are initialization instructions too. `InitializeMint` creates a new mint w
 
 Tokens involve three distinct authority concepts, and developers who blur them tend to write incorrect access control. Each one gates a different action, lives on a different account, and has a different scope.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three SPL token authorities: mint, freeze, and account owner</title><desc>Three columns compare mint authority, freeze authority, and token account owner, showing where each is stored, what it controls, and its scope. Two authorities live on the mint, one per currency, while the token account owner is set separately on each token account.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Three authorities, three different jobs</text>
   <rect x="40" y="90" width="205" height="380" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
@@ -247,7 +247,7 @@ pub struct Deposit<'info> {
 }
 ```
 
-Notice the `token::mint = ...` and `token::authority = ...` constraints. These are Anchor checks that the token account in question is for the right mint and owned by the right authority. Adding them means a malicious caller can't slip in a token account for the wrong token or one they don't own. The Token Program would eventually catch most such mistakes, but Anchor catches them earlier with cleaner error messages.
+Notice the `token::mint = ...` and `token::authority = ...` constraints. These are Anchor checks that the token account in question is for the right mint and owned by the right authority. Adding them means a malicious caller cannot substitute a token account for the wrong token or one they do not own. The Token Program would eventually catch most such mistakes, but Anchor catches them earlier with cleaner error messages.
 
 A final note on Token-2022. There's a newer version of the Token Program with the same conceptual model but extra features: transfer fees, transfer hooks, interest-bearing accounts, metadata pointers, and more. Adoption is growing but classic SPL Token still dominates by a wide margin, and most ecosystem tooling assumes it. The conceptual split into Mints and TokenAccounts, and the four core instructions, work identically in both. Token-2022 is its own topic worth its own treatment when you get there.
 

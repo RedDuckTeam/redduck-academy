@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Bitcoin is the first chain you'll meet in detail and the chain every other chain measures itself against, for the simple reason that it came first and proved the model worked. To understand any later chain, you start by understanding what Bitcoin chose and why. The design choices look strange in isolation. Ten-minute blocks. A scripting language that can't loop. A money supply hardcoded to stop at twenty-one million. None of these are arbitrary. Each one falls out of a tight chain of reasoning that starts with a single question and ends with a working system. This lesson walks that reasoning end to end.
+> Bitcoin is the first chain you'll meet in detail, and the one every later chain measures itself against, because it came first and proved the model worked. To understand any later chain, you start by understanding what Bitcoin chose and why. The design choices look strange in isolation. Ten-minute blocks. A scripting language that can't loop. A money supply hardcoded to stop at twenty-one million. None of these are arbitrary. Each one falls out of a tight chain of reasoning that starts with a single question and ends with a working system. This lesson walks that reasoning end to end.
 
 ## The question
 
@@ -14,7 +14,7 @@ The title contains the whole question. Each word matters.
 
 Putting it together: a way for any two parties anywhere in the world to exchange digital value, directly, without permission from any third party, in a system that runs itself.
 
-This had been an open problem in computer science for over twenty years before 2008. Several serious attempts had been made. All of them had failed at the same point: how do you prevent the same digital coin from being spent twice in two different places, when there's no central server keeping the books? This is called the **double-spend problem**, and it is the core obstacle that every previous digital-cash design crashed into.
+This had been an open problem in computer science for over twenty years before 2008. Several serious attempts had been made. All of them had failed at the same point: how do you prevent the same digital coin from being spent twice in two different places, when there's no central server keeping the books? This is called the **double-spend problem**, and it is the core obstacle that stopped every previous digital-cash design.
 
 Bitcoin's contribution was an answer to this question that nobody had thought of before. The rest of the design follows from how that answer worked.
 
@@ -24,7 +24,7 @@ Once you commit to "no central operator," a whole cascade of constraints follows
 
 That meta-constraint produces five operational ones.
 
-**Sybil resistance without identity.** In any open system, the obvious attack is to spin up a million fake participants and outvote the honest ones. If the system uses identity to prevent this, it needs a way to identify people, which requires a central authority. So the system can't use identity. It needs some other way to make participation costly enough that creating a million fake participants is not economically feasible.
+**Sybil resistance without identity.** In any open system, the obvious attack is to create a million fake participants and outvote the honest ones. If the system uses identity to prevent this, it needs a way to identify people, which requires a central authority. So the system can't use identity. It needs some other way to make participation costly enough that creating a million fake participants is not economically feasible.
 
 **Public verifiability.** Without a trusted operator to vouch for transactions, every participant has to be able to verify every transaction themselves. This means the rules must be simple enough to compute, the data must be available to everyone, and the verification must produce the same answer on every honest node. No "trust me, I'm the bank."
 
@@ -42,7 +42,7 @@ What's left, after killing every design that fails any constraint, is a very nar
 
 Now the constraints are the input and Bitcoin's design is the output. Each major choice in Bitcoin's design is a direct response to a specific constraint.
 
-<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin's five constraints mapped to their design choices</title><desc>A table lists five constraints on trustless peer-to-peer cash next to the Bitcoin design choice that answers each one, with arrows connecting each pair. Permanence leads to an append-only hash-linked log, Sybil resistance without identity leads to proof of work, public verifiability leads to simple deterministic validation, convergence under network delay leads to slow block times, and censorship resistance leads to an open permissionless network.</desc>
   <defs>
     <marker id="arr41" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -122,9 +122,9 @@ Now the constraints are the input and Bitcoin's design is the output. Each major
 
 **Validation is deterministic and simple.** Every transaction can be checked by running a small piece of code against the chain's state. The code is intentionally not Turing-complete. There are no loops. There is no recursion. There is no external state. This is the answer to public verifiability: every node, anywhere, running honest software, reaches the same answer on the same input.
 
-**Block times are slow on purpose.** Ten minutes between blocks is not a performance choice. It's a margin of safety for the network. A new block has to propagate to most of the planet before the next one is produced, so that everyone is working on the same tip. Faster block times mean more chain forks and more wasted work. Ten minutes is conservative on purpose. This is the answer to convergence under delay.
+**Block times are slow on purpose.** Ten minutes between blocks is not a performance choice. It's a margin of safety for the network. A new block has to propagate to most of the planet before the next one is produced, so that everyone is building on the same most recent block — the tip of the chain. Faster block times mean more chain forks and more wasted work. This is the answer to convergence under delay.
 
-**The money supply is capped.** Twenty-one million bitcoins, ever. Block rewards halve every 210,000 blocks, which is about every four years, so the rate of new issuance slows over time and eventually stops. This is not a technical constraint of the underlying machinery. It's a deliberate economic choice, intended to make Bitcoin a credible store of value in a world where every other currency has been inflated. Whether that choice was right is a debate for another time. That the choice is deliberate, and built into the protocol so that no one can change it, is what matters here.
+**The money supply is capped.** Twenty-one million bitcoins, ever. Block rewards halve every 210,000 blocks, which is about every four years, so the rate of new issuance slows over time and eventually stops. This is not a technical constraint of the underlying machinery. It's a deliberate economic choice, intended to make Bitcoin a credible store of value in a world where every other currency can be inflated by whoever issues it. Whether that choice was right is a debate for another time. That the choice is deliberate, and built into the protocol so that no one can change it, is what matters here.
 
 **The system changes slowly.** No central party can update the rules. Any change has to be accepted by the people who run nodes. They have strong reasons to be conservative. The system is intentionally hard to upgrade, and developers have a strong deference to backwards compatibility because anything else risks breaking the trustlessness that's the whole point.
 
@@ -134,6 +134,6 @@ Every later lesson in this module is going to keep coming back to this list. Why
 
 The design has costs. They're worth naming up front because the rest of the module will not pretend they don't exist.
 
-Bitcoin is slow. Settlement takes minutes for a payment and hours for high-value transactions. Bitcoin is expensive at scale, because every node has to validate every transaction and there's a hard limit on how many can fit in a block. Bitcoin is inflexible. The intentional restrictions on Script mean it can't be used to build the complex applications that later chains support. Bitcoin is conservative. Changes that other chains ship in months take Bitcoin years, sometimes decades.
+Bitcoin is slow. Settlement takes minutes for a payment and hours for high-value transactions. Bitcoin is expensive at scale, because every node has to validate every transaction and there's a hard limit on how many can fit in a block. Bitcoin is inflexible. The intentional restrictions on Script mean it can't be used to build the complex applications that later chains support. Bitcoin is conservative. Changes that other chains release in months take Bitcoin years, sometimes decades.
 
 These are not bugs. They are the cost of the trustlessness the whole system is built around. Other chains made different trades, and the rest of this course visits some of them. For the rest of this module, the question is how the specific Bitcoin design works, top to bottom.

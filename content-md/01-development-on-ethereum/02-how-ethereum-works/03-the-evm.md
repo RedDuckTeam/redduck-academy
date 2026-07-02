@@ -2,17 +2,17 @@
 
 _type: lecture_
 
-> Every Ethereum contract you'll ever write runs on the same virtual machine, the Ethereum Virtual Machine, or EVM. It's a deterministic, stack-based computer that exists only as a specification. Every Ethereum node implements it, and every node implementation must produce the same output on the same input, or the network would fall apart. Understanding the shape of this machine, even at a high level, makes everything else in Solidity easier to reason about.
+> Every Ethereum contract you'll ever write runs on the same virtual machine, the Ethereum Virtual Machine, or EVM. It's a deterministic, stack-based computer that exists only as a specification. Every Ethereum node implements it, and every node implementation must produce the same output on the same input, or the network would split into incompatible chains. Understanding the shape of this machine, even at a high level, makes everything else in Solidity easier to reason about.
 
 ## What "virtual machine" means here
 
 The EVM is not a physical chip. It's a specification of how a particular kind of computer behaves. Every Ethereum client includes its own implementation of the EVM in its source code. The major clients are Geth, Reth, Erigon, Besu, and Nethermind. When a transaction arrives, the client feeds the transaction's input and the relevant contract's bytecode into its EVM implementation, runs the execution, and produces a result. That result must be identical to what every other client produces for the same inputs. If two clients disagree about the output of an EVM execution, one of them has a bug, and that bug will cause a chain split.
 
-This is the core property that everything else hangs off: **the EVM is deterministic**. Same code, same input, same state, same result. Every time. On every machine.
+This is the core property that everything else depends on: **the EVM is deterministic**. Same code, same input, same state, same result. Every time. On every machine.
 
 A consequence: the EVM cannot do things that would produce non-deterministic results. It can't make HTTP requests. It can't read the system clock. It can't generate true randomness. It can't read files. It has access only to data the protocol explicitly provides: the transaction's input, the contract's storage, the current block's metadata (`block.timestamp`, `block.number`, `block.coinbase`, etc.), and the chain's state at the time the block is being executed. Everything else is off-limits, by design.
 
-The EVM is also not unique to Ethereum. The specification is open and has been adopted by dozens of other chains. Polygon, BNB Chain, Avalanche's C-Chain, Arbitrum, Optimism, Base, zkSync Era's later versions, and many more all run EVM implementations. When people say a chain is "EVM-compatible," this is what they mean: the same bytecode you deploy on Ethereum will run on these other chains, sometimes with small differences in opcode behavior or gas pricing. The skills you build for Ethereum carry directly to most of the smart contract chains that matter.
+The EVM is also not unique to Ethereum. The specification is open and has been adopted by dozens of other chains. Polygon, BNB Chain, Avalanche's C-Chain, Arbitrum, Optimism, Base, zkSync Era's later versions, and many more all run EVM implementations. When people say a chain is "EVM-compatible," this is what they mean: the same bytecode you deploy on Ethereum will run on these other chains, sometimes with small differences in opcode behavior or gas pricing. The skills you build for Ethereum carry directly to most major smart contract chains.
 
 ## How it runs code
 
@@ -45,7 +45,7 @@ Every opcode has a gas cost, and the EVM itself increments a running counter as 
 
 During execution, data lives in one of four places. Each has different cost, lifetime, and access rules.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EVM data locations: Stack, Memory, Storage, Calldata compared</title><desc>Four columns show where data lives during EVM execution: Stack, Memory, Storage, and Calldata. Each column lists its cost, size, word size, and lifetime, showing that Storage is expensive and lasts forever while the other three are cheap and last only one call.</desc>
   <text x="360" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Where data lives during EVM execution</text>
 
 <rect x="40" y="55" width="150" height="290" fill="#e0deda" stroke="#000000" stroke-width="2"/>

@@ -220,13 +220,13 @@ Emitted event:    "Recorded by Main, 2 ether"            "Recorded by Alice, 2 e
                   fired by Helper                        fired by Main
 ```
 
-That last point matters. The event is emitted by Main rather than Helper. If you're watching Main's events, you see `Recorded` events from Main even though Main has no `Recorded` event declared. The EMIT instruction ran in Main's context, so Main is the one that records the log.
+That last point matters. The event is emitted by Main rather than Helper. If you're watching Main's events, you see `Recorded` events from Main even though Main has no `Recorded` event declared. The event was emitted in Main's context, so Main is the one that records the log.
 
 `msg.sender` being preserved as Alice is the key property. It's why proxies work. When you call a proxy, the proxy delegatecalls to the implementation. The implementation's code runs, but to that code, the original caller still looks like the original caller. The user can't tell the proxy is there.
 
 ## Storage and the layout problem
 
-`delegatecall` runs code in YOUR storage. This is powerful, but also where the danger lives.
+`delegatecall` runs code in YOUR storage. This is powerful, but it is also the main source of danger.
 
 Solidity stores state variables in numbered slots, starting at 0:
 
@@ -268,7 +268,7 @@ contract Storage {
 }
 ```
 
-When `Storage.callIncrement()` runs, it delegatecalls into `Logic.increment()`. The `increment` function says "add 1 to `counter`," but Logic thinks `counter` is in slot 0. So it adds 1 to slot 0, which in Storage is `owner`. The owner field gets corrupted into a tiny number.
+When `Storage.callIncrement()` runs, it delegatecalls into `Logic.increment()`. The `increment` function says "add 1 to `counter`," but Logic thinks `counter` is in slot 0. So it adds 1 to slot 0, which in Storage is `owner`. The `owner` field gets corrupted: adding 1 changes the stored address, so `owner` no longer points to the real owner.
 
 The two contracts have to agree on storage layout. If Logic expects `counter` at slot 0, then Storage must put its `counter` at slot 0 too. If Logic expects `owner` at slot 1, then Storage's `owner` must be at slot 1.
 

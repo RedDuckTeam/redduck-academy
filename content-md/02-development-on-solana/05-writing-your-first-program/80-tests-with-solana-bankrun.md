@@ -4,13 +4,13 @@ _type: lecture_
 
 When you say "I finished this program," that should mean "I covered every behavior with tests." Not "it compiles." Not "it works on the happy path I tried in the browser." Tests are the part where you go through every instruction your program exposes, every error it can return, every guard it enforces, every edge case the spec describes, and you write code that proves the program behaves the way you said it does. If you didn't test it, you didn't finish it. You wrote the first draft.
 
-The reason this matters more on chain than in normal software is that mistakes cost real money, and there is no undo. A web2 service ships a bug, an engineer pages in, the team patches it, the lost users get refunds from a support ticket. A Solana program ships a bug, an attacker drains the vault, and the funds are gone. There's no rollback. There's no patching the on-chain state. The only fix is to write a better program next time, which assumes you and your protocol survive the first one. Tests are how you make sure the contract you ship is the one you meant to ship, before it's too late to find out otherwise.
+The reason this matters more on chain than in normal software is that mistakes cost real money, and there is no undo. A web2 service deploys a bug, an on-call engineer is alerted, the team patches it, and the affected users get refunds from a support ticket. A Solana program deploys a bug, an attacker drains the vault, and the funds are gone. There's no rollback. There's no patching the on-chain state. The only fix is to write a better program next time, which assumes you and your protocol survive the first one. Tests are how you make sure the program you deploy is the one you intended to deploy, before it is too late to find out otherwise.
 
 ## The test stack landscape
 
 There are four meaningfully different ways to test a Solana program. Each one is the right tool for a different situation.
 
-<svg viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Solana test stack landscape (2026): solana-test-validator, bankrun, LiteSVM, Mollusk</title><desc>The diagram lists four Solana testing tools in rows: solana-test-validator, solana-bankrun, LiteSVM, and Mollusk. Each row gives what the tool is, its speed, and when to use it, with solana-bankrun marked as the default since most Anchor projects use it.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The Solana test stack landscape (2026)</text>
   <rect x="40" y="85" width="640" height="115" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -56,7 +56,7 @@ There are four meaningfully different ways to test a Solana program. Each one is
   <text x="360" y="605" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">For an Anchor course with TypeScript tests, bankrun is the default. The others are tools you may meet later.</text>
 </svg>
 
-A quick tour through the four options. `solana-test-validator` is the heavy hammer: a real validator running in a subprocess, communicating over a real RPC port. Startup is slow, ten to thirty seconds, and every transaction goes through real slot timing of around 400ms. The realism is the point. You're testing your code against an actual validator the same way it'll run in production. Useful right before a release, when you want to verify the full integration including your client-side RPC code. Painful as an inner-loop tool because the suite takes minutes to run.
+A quick tour through the four options. `solana-test-validator` is the high-overhead option: a real validator running in a subprocess, communicating over a real RPC port. Startup is slow, ten to thirty seconds, and every transaction goes through real slot timing of around 400ms. The realism is the point. You're testing your code against an actual validator the same way it'll run in production. Useful right before a release, when you want to verify the full integration including your client-side RPC code. Painful as an inner-loop tool because the suite takes minutes to run.
 
 `solana-bankrun` is the inner-loop tool. It wraps `solana-program-test`, the Rust framework that runs your program's compiled BPF bytecode in-process against an in-memory Bank. The TypeScript bindings make it work with the Anchor SDK without any setup beyond installing a package. Tests run in milliseconds. You can warp time to any future slot, set account state directly, and inspect outcomes through the same Anchor client SDK production code uses. This is what most Anchor projects use, and it's the default for this course.
 
@@ -227,7 +227,7 @@ There's a lot in this file, so it's worth walking through what each piece does.
 
 The `before` block at the top runs once before all the tests. `startAnchor("./", [], [])` finds your `Anchor.toml`, builds your program, and loads it into an in-process Bank. The two empty arrays are for additional programs to deploy and additional accounts to pre-populate, neither of which you need here. The result is a `context` object that owns the simulated chain, plus a `provider` that wraps it for the Anchor SDK.
 
-`context.setAccount` is the god-mode call. You give it a pubkey and the account data you want at that address, and the simulated chain stores it. Here you're funding the admin keypair with 10 SOL so it can pay transaction fees. No airdrops, no faucets, no waiting for a network. The account exists because you wrote it into existence.
+`context.setAccount` is the direct state-write call. You give it a pubkey and the account data you want at that address, and the simulated chain stores it. Here you're funding the admin keypair with 10 SOL so it can pay transaction fees. No airdrops, no faucets, no waiting for a network. The account exists because you wrote it into existence.
 
 The actual tests use `program.methods.X(...).accounts({...}).signers([...]).rpc()`, which is the standard Anchor client SDK call. The same code would work against a real validator without modification. The only difference is the provider underneath, which routes the call through the in-process Bank instead of an RPC connection. That's the whole point of bankrun: production-shaped client code, against an in-memory runtime.
 
@@ -237,7 +237,7 @@ Run this with `anchor test --skip-build` after you've built your program once, a
 
 ## Time-warping for time-dependent logic
 
-The single feature that bankrun has and `solana-test-validator` doesn't is control over the chain's clock. You can fast-forward to any future slot. The `Clock` sysvar inside your program reflects the warped time. Logic gated on a future timestamp can be tested without actually waiting.
+The most important feature that bankrun has and `solana-test-validator` doesn't is control over the chain's clock. You can fast-forward to any future slot. The `Clock` sysvar inside your program reflects the warped time. Logic gated on a future timestamp can be tested without actually waiting.
 
 Imagine the counter has a lockup feature: once the value hits `max`, it locks for 24 hours before the admin can reset it. Testing this on a real validator would mean waiting 24 hours. With bankrun:
 

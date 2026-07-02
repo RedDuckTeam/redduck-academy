@@ -55,7 +55,7 @@ The split between these two functions is the whole idea, and it mirrors the off-
 
 `performUpkeep` does the actual work. When `checkUpkeep` returns true, a node packages a real transaction that calls `performUpkeep` on-chain, pays the gas, and the work happens. This is the only part that touches the chain and the only part you pay for.
 
-<svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Chainlink Automation cycle: off-chain checkUpkeep to on-chain performUpkeep</title><desc>The Automation node network calls checkUpkeep() on your contract off-chain, for free, on every block. When it returns true, the Registry and Forwarder send a real transaction that calls performUpkeep(), paid from the LINK balance.</desc>
   <defs>
     <marker id="arrK1R" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -223,7 +223,7 @@ Look at `performUpkeep` again. It does not assume the sale should happen just be
 
 This re-check is not defensive padding. It is required for correctness, and the reason is timing. `checkUpkeep` runs off-chain at block N. By the time a node builds the transaction, broadcasts it, and it lands in a block, two or three blocks have passed. The state the node observed when it decided to act is no longer the current state. Prices move, balances change, other transactions execute in between.
 
-<svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>checkUpkeep vs performUpkeep timeline: price moves $1,790 to $1,815</title><desc>A timeline shows checkUpkeep running off-chain at block N, where the price is $1,790 and below $1,800, so it returns true. By the time performUpkeep runs on-chain at block N+2, the price has moved to $1,815, back above $1,800: trusting the stale true value sells at the wrong price (a bug), while re-reading the price reverts safely because the condition is now false.</desc>
   <defs>
     <marker id="arrK2R" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -309,7 +309,7 @@ Do not hardcode the forwarder in the constructor. You do not know its address un
 
 An upkeep is paid in LINK. You register it at the Automation app or programmatically against the registry, deposit a LINK balance, and the network deducts from that balance each time it runs `performUpkeep`, covering the gas plus a premium that pays the node.
 
-When the LINK balance runs dry, the upkeep stops. It does not warn you in the contract, it does not revert, it simply stops being executed, and your liquidations or releases quietly fail to happen. Monitoring the balance and topping it up is operational work you own. Several teams have shipped a contract that worked perfectly in testing and then watched a critical upkeep go silent weeks later because nobody refilled the LINK.
+When the LINK balance is depleted, the upkeep stops. It does not warn you in the contract, it does not revert, it simply stops being executed, and your liquidations or releases quietly fail to happen. Monitoring the balance and topping it up is operational work you own. Several teams have deployed a contract that worked perfectly in testing and then watched a critical upkeep go silent weeks later because nobody refilled the LINK.
 
 The other limit to plan for is gas. Each upkeep has a configured gas limit for `performUpkeep`. If your execution exceeds it, the transaction reverts and the work does not get done. This makes unbounded loops especially dangerous here, because the loop might fit under the limit in a test with three items and blow past it in production with three thousand.
 
@@ -319,7 +319,7 @@ The other limit to plan for is gas. Each upkeep has a configured gas limit for `
 
 **Leaving performUpkeep open.** Forgetting the forwarder guard exposes the function to anyone. Depending on what the upkeep does, that ranges from harmless to exploitable. Lock it to the forwarder unless you have a specific reason the function is safe to call by anyone.
 
-**Fearing an expensive checkUpkeep.** Developers sometimes cram complex logic into `performUpkeep` to keep `checkUpkeep` cheap, which is backwards. `checkUpkeep` runs off-chain and costs nothing to simulate, within the node's generous limits, so it is the right place for heavy reads and iteration. `performUpkeep` is the part that costs real gas and runs under a hard limit, so keep it lean and let the check do the looking.
+**Fearing an expensive checkUpkeep.** Developers sometimes cram complex logic into `performUpkeep` to keep `checkUpkeep` cheap. This is the wrong approach. `checkUpkeep` runs off-chain and costs nothing to simulate, within the node's generous limits, so it is the right place for heavy reads and iteration. `performUpkeep` is the part that costs real gas and runs under a hard limit, so keep it lean and let the check do the looking.
 
 **Unbounded loops in performUpkeep.** A loop over all positions or all users passes in a small test and reverts in production once the set grows past the gas limit. Cap the work per execution, or use `performData` to tell `performUpkeep` exactly which items to process, computed during the free off-chain check.
 

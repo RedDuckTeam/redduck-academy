@@ -10,7 +10,7 @@ Bitcoin's consensus you already know. Miners burn electricity hashing block head
 
 Ethereum used the same model until September 2022. Then, in an upgrade called the Merge, it switched to proof of stake. The block producers stopped being miners with hardware and started being **validators** with staked ETH. The protocol's security argument changed from "attacking the chain costs more electricity than it could possibly earn" to "attacking the chain forfeits more staked ETH than it could possibly earn."
 
-Three things drove the change. The first was energy. PoW Ethereum was using roughly the same electricity as Switzerland, and PoS dropped that by about 99.95% overnight. The second was issuance. PoW required generous block rewards to keep miners buying hardware and burning power, so the network minted a lot of new ETH each year. PoS can secure the network on a much smaller subsidy. The third was scalability. The protocol's roadmap for rollups and data availability sampling depends on finality properties that PoW cannot deliver.
+Three things drove the change. The first was energy. PoW Ethereum was using roughly the same electricity as Switzerland, and PoS dropped that by about 99.95% overnight. The second was issuance. PoW required generous block rewards to keep miners buying hardware and burning power, so the network minted a lot of new ETH each year. PoS can secure the network on a much smaller subsidy. The third was scalability. Ethereum's roadmap for scaling, including rollups, depends on finality properties that PoW cannot deliver.
 
 ## Who runs Ethereum now
 
@@ -26,13 +26,13 @@ A validator that does its job correctly earns small rewards on roughly every slo
 
 ## How time works on Ethereum
 
-Bitcoin's block timing is loose, an average of a random process driven by mining luck. Ethereum's PoS clock is rigid. The chain divides time into fixed units.
+Bitcoin's block timing is loose, because mining is a random process. Ethereum's PoS clock is rigid. The chain divides time into fixed units.
 
-A **slot** is 12 seconds. Every 12 seconds, the protocol expects a new block. One validator is selected as the proposer for that slot. If they propose a valid block on time, the chain advances. If they miss their slot, that slot is skipped, the chain moves on to the next slot's proposer, and the missing validator earns no reward and pays a small penalty. Missed slots happen for boring reasons: an offline validator, a flaky internet connection, a software bug. At the time of writing, the missed-slot rate hovers around 1%.
+A **slot** is 12 seconds. Every 12 seconds, the protocol expects a new block. One validator is selected as the proposer for that slot. If they propose a valid block on time, the chain advances. If they miss their slot, that slot is skipped, the chain moves on to the next slot's proposer, and the missing validator earns no reward and pays a small penalty. Missed slots happen for ordinary reasons: an offline validator, an unreliable internet connection, a software bug. At the time of writing, the missed-slot rate hovers around 1%.
 
 An **epoch** is 32 slots. So one epoch is 32 × 12 = 384 seconds, about 6.4 minutes. Epochs are where higher-level consensus events happen. At the end of each epoch, validators vote on a **checkpoint**: a specific block at an epoch boundary that they agree should be locked in.
 
-<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Ethereum epochs of 32 slots, checkpoints, and finalization</title><desc>Each epoch has 32 slots of 12 seconds, about 6.4 minutes, and ends with a checkpoint block, shown for epochs N, N+1, and N+2. When two epochs in a row have justified checkpoints, the chain finalizes, roughly 12.8 minutes after the block was first proposed.</desc>
   <defs>
     <marker id="arr24" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -101,7 +101,7 @@ An **epoch** is 32 slots. So one epoch is 32 × 12 = 384 seconds, about 6.4 minu
 <text x="360" y="305" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Every 12 seconds, one validator proposes a block. Every 6.4 minutes, the network finalizes a checkpoint.</text>
 </svg>
 
-This regular rhythm is one of the biggest practical differences from Bitcoin. In Bitcoin you can't predict exactly when the next block will arrive. It might be 30 seconds, it might be 30 minutes. In Ethereum the schedule is fixed. Wallets, applications, indexers, and bridges all rely on this predictability.
+This regular rhythm is one of the biggest practical differences from Bitcoin. A Bitcoin block might arrive in 30 seconds or in 30 minutes, while an Ethereum slot is always 12 seconds. Wallets, applications, indexers, and bridges all rely on this predictability.
 
 ## How a block becomes final
 
@@ -111,7 +111,7 @@ The first stage is **justification**. At the end of each epoch, the validator se
 
 The second stage is **finalization**. A justified checkpoint becomes finalized when the *next* checkpoint after it is also justified. So two consecutive justified epochs lock the earlier one in. A block proposed at the start of epoch N becomes finalized at the end of epoch N+1, about 12.8 minutes later.
 
-The two-thirds threshold is load-bearing. It means an attacker needs to control more than one-third of the total stake to prevent finalization, by withholding their attestations. The same one-third threshold also makes finalized blocks essentially permanent: reverting a finalized block requires at least one-third of all staked ETH to attest to a conflicting checkpoint, which the protocol detects as a slashable offense. Slashing one-third of all stake is tens of billions of dollars at current stake levels. So in practice, finalized blocks are as close to permanent as any computer system gets.
+This two-thirds threshold is what makes the whole security model work. It means an attacker needs to control more than one-third of the total stake to prevent finalization, by withholding their attestations. The same one-third threshold also makes finalized blocks essentially permanent: reverting a finalized block requires at least one-third of all staked ETH to attest to a conflicting checkpoint, which the protocol detects as a slashable offense. Slashing one-third of all stake is tens of billions of dollars at current stake levels. So in practice, finalized blocks are as close to permanent as any computer system gets.
 
 This is genuinely different from Bitcoin. Bitcoin has **probabilistic finality**. The probability that a block gets reverted decreases as more blocks are built on top of it, but it never reaches zero. Ethereum has **economic finality**. After about 12.8 minutes, the protocol mathematically guarantees the block stays unless attackers willingly destroy a third of all staked ETH. The first kind of finality is statistical. The second kind is contractual.
 
@@ -125,9 +125,9 @@ This is similar in spirit to Bitcoin's "longest chain wins" rule, but the unit o
 
 ## Who actually builds the block
 
-One real-world wrinkle worth knowing: in current Ethereum, the validator selected as proposer almost never builds the block themselves. The block-building process is split between two actors through a system called **proposer-builder separation**, or PBS. Specialized **builders** assemble blocks, typically optimizing them to extract maximum value from the transactions they include. The proposer, when their slot arrives, picks the highest-paying block from the builders and signs it. The proposer earns the priority fees plus a payment from the chosen builder.
+In current Ethereum, the validator selected as proposer almost never builds the block themselves. The block-building process is split between two actors through a system called **proposer-builder separation**, or PBS. Specialized **builders** assemble blocks, typically optimizing them to extract maximum value from the transactions they include. The proposer, when their slot arrives, picks the highest-paying block from the builders and signs it. The proposer earns the priority fees plus a payment from the chosen builder.
 
-This split exists because building an optimal block is a hard optimization problem involving simulating thousands of transactions, accounting for MEV opportunities, and beating other builders on price. Hobbyist validators can't compete with professional builder operations. Rather than let block-building centralize into a few large validators, the protocol effectively lets validators stay decentralized while specialized builders handle the optimization. The mechanism that makes this work in practice is software called **MEV-Boost**, run by most validators, which relays builder blocks to the proposer for selection.
+This split exists because building an optimal block is a hard problem: it means simulating thousands of transactions, finding the most profitable ordering of them — known as MEV, or maximal extractable value — and offering a higher price than other builders. Hobbyist validators can't compete with professional builder operations. Rather than let block-building centralize into a few large validators, the protocol effectively lets validators stay decentralized while specialized builders handle the optimization. The mechanism that makes this work in practice is software called **MEV-Boost**, run by most validators, which relays builder blocks to the proposer for selection.
 
 ## What this means in practice
 

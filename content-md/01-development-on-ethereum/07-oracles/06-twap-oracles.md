@@ -14,7 +14,7 @@ A flash loan removes even the capital constraint. The attacker borrows enough to
 
 Take the average price over a window of time instead of the instantaneous price. If the window is 30 minutes, then to manipulate what the oracle reports, the attacker has to keep the pool's price away from the true market price for roughly 30 minutes. That's not something a flash loan can do.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flash-loan spot-price spike versus 30-minute TWAP oracle response</title><desc>A chart shows the pool's spot price spiking to $7,000 for one block during a flash-loan attack, while the 30-minute TWAP line stays near $3,510. Below it, the spot oracle reports Alice as under-collateralized and liquidates her, but the TWAP oracle sees the spike averaged out and takes no action.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">TWAP smooths out the manipulation spike that a spot oracle would believe</text>
   <text x="60" y="180" text-anchor="middle" font-family="monospace" font-size="11" transform="rotate(-90, 60, 180)">price ($)</text>
@@ -49,7 +49,7 @@ Take the average price over a window of time instead of the instantaneous price.
   <text x="390" y="438" font-family="monospace" font-size="10" font-weight="bold">-> no action</text>
 </svg>
 
-The price spike a flash loan creates lasts one block. Averaged over a 30-minute window (roughly 150 blocks on Ethereum), the contribution of that single block to the average is about 0.7%. Even a 100% price spike for one block barely shifts the average. The protocol reading the TWAP sees a number very close to the real market price, and the attack doesn't fire.
+The price spike a flash loan creates lasts one block. Averaged over a 30-minute window (roughly 150 blocks on Ethereum), the contribution of that single block to the average is about 0.7%. Even a 100% price spike for one block barely shifts the average. The protocol reading the TWAP sees a number very close to the real market price, and the attack fails.
 
 ## How the math works without storing every price
 
@@ -57,7 +57,7 @@ The naive way to compute an average price over time is to store every observatio
 
 This is unworkable on chain. Each observation is a storage write. Active pools change price many times per block. Storing every observation would make every swap dramatically more expensive, and the contract would have to keep paying for unbounded storage.
 
-There's a better approach. Instead of storing each individual price, store a single running total: the integral of price over time. Call this `priceCumulative`. Every time the pool's price changes, do one update: add `oldPrice × (now − lastUpdate)` to the accumulator, then set `lastUpdate = now`. That's one storage slot, one read, one write per change.
+There's a better approach. Instead of storing each individual price, store a single running total: the integral of price over time — `priceCumulative`. Every time the pool's price changes, do one update: add `oldPrice × (now − lastUpdate)` to the accumulator, then set `lastUpdate = now`. That's one storage slot, one read, one write per change.
 
 To compute the average price between two times T₁ and T₂, you don't need to know any of the prices in between. You only need the value of `priceCumulative` at those two times. The average is:
 
@@ -65,7 +65,7 @@ To compute the average price between two times T₁ and T₂, you don't need to 
 TWAP[T₁, T₂] = (priceCumulative(T₂) - priceCumulative(T₁)) / (T₂ - T₁)
 ```
 
-<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>priceCumulative curve showing TWAP as the slope between two readings</title><desc>A line chart plots priceCumulative rising over time as price moves from low to high. A dashed line connects two sample points, T1 and T2, and its slope equals TWAP, calculated as (cum2 minus cum1) divided by (T2 minus T1) from just two stored readings.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">priceCumulative grows by (price × time). TWAP is the slope between two readings.</text>
   <text x="50" y="240" text-anchor="middle" font-family="monospace" font-size="11" transform="rotate(-90, 50, 240)">priceCumulative</text>
@@ -109,7 +109,7 @@ Step 1 is sometimes called "taking an observation." It's the only thing you stor
 
 ## Uniswap V2's implementation
 
-Uniswap V2 was the first AMM to ship this design. The relevant additions to the `Pair` contract are two storage slots:
+Uniswap V2 was the first AMM to introduce this design. The relevant additions to the `Pair` contract are two storage slots:
 
 ```solidity
 uint256 public price0CumulativeLast;
@@ -135,7 +135,7 @@ Two cumulatives exist because each token in the pair can be priced in the other.
 
 Second, this update only happens when `_update()` runs, which only happens when someone trades or modifies liquidity. If nobody touches the pair for ten minutes, the cumulative doesn't move during those ten minutes, but the price during those ten minutes is still the *last* price the pair recorded, and that price should have contributed to the cumulative as time passed.
 
-There's a workaround. Anyone reading TWAP can compute what the cumulative *would* be if it were updated *now*, by taking the stored cumulative and adding `lastPrice × (block.timestamp - blockTimestampLast)`. Uniswap's `UniswapV2OracleLibrary.currentCumulativePrices()` helper does exactly this. So reading current TWAP doesn't require triggering a trade to refresh the pair. You read the storage and do the on-the-fly extension yourself.
+There's a workaround. Anyone reading TWAP can compute what the cumulative *would* be if it were updated *now*, by taking the stored cumulative and adding `lastPrice × (block.timestamp - blockTimestampLast)`. Uniswap's `UniswapV2OracleLibrary.currentCumulativePrices()` helper does exactly this. So reading current TWAP doesn't require triggering a trade to refresh the pair. You read the storage and compute the extension yourself.
 
 ## A reader contract
 
@@ -187,7 +187,7 @@ Anyone calls `update()` at most once per period. `consult()` then returns the mo
 
 Spot price manipulation works because the cost of the manipulation is bounded by the size of one swap and recovered when the swap reverses. TWAP changes the economics by forcing the attacker to keep the pool's price away from the true market price for the duration of the window.
 
-<svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Spot oracle attack vs 30-min TWAP attack: one block vs ~150 blocks</title><desc>Two side-by-side panels compare a spot oracle attack, done in one block with free flash-loan capital and ending in a bad loan plus huge profit, against a 30-minute TWAP attack, which needs about 150 blocks of locked-up real capital while arbitrageurs repeatedly extract value. Each panel walks through the block-by-block steps, the cost incurred, and the net result, showing the TWAP attack is often unprofitable.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Why a 30-minute TWAP forces the attacker to bleed real money</text>
   <rect x="40" y="80" width="310" height="450" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -242,19 +242,19 @@ The longer the TWAP window, the more blocks of manipulation the attacker has to 
 
 ## What TWAP doesn't solve
 
-TWAP changes the economics of manipulation, but it does not eliminate manipulation. Several specific gotchas.
+TWAP changes the economics of manipulation, but it does not eliminate manipulation. Several specific limitations remain.
 
-**A TWAP is only as deep as its underlying pool.** If you're TWAPing a low-liquidity pool, the cost of moving the price for a few blocks can be small enough that even a 30-minute window is affordable to attack. TWAP shifts the manipulation budget upward, but it doesn't make a thinly traded pool safe to read.
+**A TWAP is only as deep as its underlying pool.** If the pool has low liquidity, the cost of moving the price for a few blocks can be small enough that even a 30-minute window is affordable to attack. TWAP shifts the manipulation budget upward, but it doesn't make a thinly traded pool safe to read.
 
 **TWAP lags the real price.** That's the entire point. The smoothing is the defense. But if you need to know the actual current price, TWAP isn't the right oracle. Use it for collateral valuation, liquidation thresholds, fee calculations, anything that benefits from stability and can tolerate latency. Don't use it for "what price do I quote this swap at" because the answer will be wrong by minutes.
 
-**Stale TWAPs across inactive periods.** The cumulative only advances when someone interacts with the pair. A pool that goes hours without a trade has a cumulative that hasn't moved, and the on-the-fly extension uses whatever the last trade's price was. That last price might already be far from the true market.
+**Stale TWAPs across inactive periods.** The cumulative only advances when someone interacts with the pair. A pool that goes hours without a trade has a cumulative that hasn't moved, and the computed extension uses whatever the last trade's price was. That last price might already be far from the true market.
 
 **Choosing the right window is a tradeoff.** Shorter windows track price changes more quickly but are cheaper to manipulate. Longer windows are harder to attack but lag farther behind the real market. There is no universally right answer. Lending protocols using TWAP typically pick 10 minutes to 1 hour depending on volume and risk tolerance.
 
 **Two-token denomination.** A V2 TWAP gives you the price of one token in the pair, denominated in the other. ETH/USDC tells you the ETH price in USDC. To get "ETH/USD" you have to either trust that USDC equals USD (usually fine, sometimes not) or chain multiple TWAPs together. Chainlink feeds give you USD directly because they aggregate across markets.
 
-## When to reach for TWAP
+## When to use TWAP
 
 Chainlink price feeds are the right answer when they're available, because they aggregate across exchanges and don't depend on any single pool's liquidity. TWAP fills three specific gaps.
 
@@ -262,4 +262,4 @@ The first is long-tail assets without Chainlink coverage. If you're building a p
 
 The second is internal protocol pricing of derived assets. Pricing LP tokens, liquid staking tokens, or any token whose value is *defined* by an on-chain protocol is something TWAP can do that off-chain oracles can't. The canonical source of truth is the on-chain math, and TWAP just gives you a smoothed read of it.
 
-The third is cross-checks. Production protocols sometimes consume both a Chainlink price and a TWAP, and revert if they diverge significantly. The TWAP catches the rare case where a Chainlink feed is misconfigured, suspended, or otherwise wrong, while Chainlink catches the case where the TWAPed pool is thin or being attacked.
+The third is cross-checks. Production protocols sometimes consume both a Chainlink price and a TWAP, and revert if they diverge significantly. The TWAP catches the rare case where a Chainlink feed is misconfigured, suspended, or otherwise wrong, while Chainlink catches the case where the pool is thinly traded or under attack.

@@ -8,11 +8,11 @@ _type: lecture_
 
 The Solana runtime expects a program to be a single entry point. You pass it a buffer of bytes for instruction data, a list of accounts, and the program's address, and it returns a success or failure code. Everything else, including which function the bytes are meant to call, whether the right accounts are present, whether they have the right ownership, whether the data inside them matches the type you expect, is your responsibility.
 
-You can write programs at that level. The Solana SDK gives you the tools. But almost no production team does, because the resulting code is mostly plumbing. Reading bytes, validating accounts, deserializing structs, serializing them again, returning numeric error codes. The actual business logic is buried under five layers of mechanical work, and any mistake in the mechanical work is a security bug.
+You can write programs at that level. The Solana SDK gives you the tools. But almost no production team does, because the resulting code is mostly plumbing. Reading bytes, validating accounts, deserializing structs, serializing them again, returning numeric error codes. The actual business logic is buried under six layers of mechanical work, and any mistake in the mechanical work is a security bug.
 
 Anchor is the Rust framework that handles all of that for you. You declare what each instruction takes, what accounts it touches, and what it does. Anchor's procedural macros expand at compile time into the same boilerplate you'd write by hand, except correct by construction. The framework that web developers know best as Express or FastAPI plays a similar role for Solana programs: declarative routing and typed handlers on top of an underlying protocol you don't want to write directly.
 
-<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What Anchor handles for you: manual steps vs Anchor macros</title><desc>Two columns compare handling a Solana instruction without a framework and with Anchor, across seven steps from reading raw instruction bytes to returning errors. The left column shows the manual code each step needs; the right column shows Anchor macros like #[program], #[derive(Accounts)], Account&lt;T&gt;, and #[error_code] doing that work, leaving only step 5, running your own logic, for you to write.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">What Anchor handles for you</text>
   <rect x="40" y="90" width="310" height="330" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -65,7 +65,7 @@ The first is `declare_id!`. Every program has an address, and the address is har
 
 The second is the `#[program]` module. This is where the instruction handlers live. Each handler is a public function that takes a `Context` parameter plus whatever arguments the instruction passed. The function body is your logic, and the return type is `Result<()>`, which is Anchor's wrapper around Solana's result type.
 
-The third is one `#[derive(Accounts)]` struct for each instruction. The struct lists every account the handler needs, in order, with type annotations describing what each one must be. These structs are how you declare the access pattern from the lecture on instructions. They are also how you tell Anchor what validation to perform before your handler runs.
+The third is one `#[derive(Accounts)]` struct for each instruction. The struct lists every account the handler needs, in order, with type annotations describing what each one must be. These structs are how you tell Anchor which accounts the instruction reads or writes, and what it requires of each one. They are also how you tell Anchor what validation to perform before your handler runs.
 
 ```rust
 use anchor_lang::prelude::*;
@@ -134,9 +134,9 @@ pub struct Deposit<'info> {
 }
 ```
 
-The Accounts struct declares which accounts the instruction touches and how. Before your handler runs, Anchor validates every account against the struct's rules. Inside the handler, `ctx.accounts.vault` is already a typed `Vault`. You write business logic. Anchor handles the plumbing on either side.
+The Accounts struct declares which accounts the instruction touches and how. Before your handler runs, Anchor validates every account against the struct's rules. Inside the handler, `ctx.accounts.vault` is already a typed `Vault`. You write business logic. Anchor handles the validation and serialization on either side.
 
-The accounts struct is the function signature. It declares what the instruction needs, in the same way a normal function declaration says what arguments it takes. The handler is the function body. It says what to do with what was passed in. Anchor wires the two together so cleanly that after a few hours of writing programs you stop thinking of them as separate pieces. Each instruction is one logical unit with two halves.
+The accounts struct is the function signature. It declares what the instruction needs, in the same way a normal function declaration says what arguments it takes. The handler is the function body. It says what to do with what was passed in. Each instruction is one logical unit with two halves. Each instruction is one logical unit with two halves.
 
 The struct fields can be more than just account references. They can be types that carry validation rules. `Signer<'info>` means "this account must have signed the transaction." `Account<'info, Vault>` means "this account must be owned by the program, and its data must deserialize cleanly into the `Vault` struct." `Program<'info, System>` means "this account must be the System Program." These types are checked by Anchor before your handler runs, and any failure produces a clear error rather than a runtime panic in the middle of your logic.
 

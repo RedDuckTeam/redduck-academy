@@ -8,7 +8,7 @@ _type: lecture_
 
 The BPF runtime charges compute units for every operation. A simple arithmetic step costs a few CU. A SHA-256 hash costs about 85 CU per byte hashed. An account read is essentially free once the account is loaded into the runtime's memory. A loop iteration costs whatever the body costs, multiplied by the number of iterations.
 
-The compute budget per instruction is capped. By default, an instruction gets 200,000 CU. With an explicit budget extension, you can push that to a per-instruction maximum of 1.4 million, and a per-transaction maximum of 48 million across all instructions. These limits are tighter than you might expect, which makes the pattern in this lesson more important on Solana than on most other chains.
+The compute budget per instruction is capped. By default, an instruction gets 200,000 CU. With an explicit budget extension, you can push that to a maximum of 1.4 million CU per transaction. These limits are tighter than you might expect, which makes the pattern in this lesson more important on Solana than on most other chains.
 
 This pricing is fine for short, deterministic computation. It becomes a problem in three situations.
 
@@ -104,13 +104,13 @@ pub enum AirdropError {
 
 The Config stores one 32-byte root. The user submits their address implicitly (as the Signer), the amount they're claiming, and a proof vector of around `log2(10000) ≈ 14` sibling hashes. The program reconstructs the root from the leaf and the proof, then checks it matches the stored root.
 
-Two things deserve attention. The Merkle verification itself is straightforward, the same idea as the Ethereum version, translated into Rust syscalls. The interesting Solana detail is the ClaimRecord PDA. We use `init` on a PDA whose seeds derive from the claimer's address. The PDA's existence IS the "already claimed" flag. If the user has already claimed, the PDA exists, and the second `claim` call fails because `init` errors when the account already exists. No `mapping(address => bool)` is needed, no boolean flag, no explicit storage. The account's existence carries the bit of information.
+Two things deserve attention. The Merkle verification itself is straightforward: hash each sibling with the running value as you walk up the tree, and compare the result to the stored root. The interesting Solana detail is the ClaimRecord PDA. We use `init` on a PDA whose seeds derive from the claimer's address. The PDA's existence IS the "already claimed" flag. If the user has already claimed, the PDA exists, and the second `claim` call fails because `init` errors when the account already exists. No `mapping(address => bool)` is needed, no boolean flag, no explicit storage. The account's existence carries the bit of information.
 
 If the user is in the tree, they can produce a valid proof. The program recomputes the root, sees it matches, and lets them claim. If the user is not in the tree, no proof exists that would lead back to the root. Whatever they submit will produce a hash that doesn't match, and the program reverts.
 
 The user did the hard work of building the tree off-chain. The program did 14 hashes of verification work. The information needed to support 10,000 eligible users fits in a single 32-byte field on a single account.
 
-This is the pattern at its purest. The same construction is how every modern Solana airdrop works, how Metaplex's compressed NFTs scale to millions of mints, and how state compression operates as a general technique. Once you can verify a Merkle proof, you can talk about set membership cheaply forever.
+This is the pattern at its purest. The same construction is how every modern Solana airdrop works, how Metaplex's compressed NFTs scale to millions of mints, and how state compression operates as a general technique. Once you can verify a Merkle proof, you can prove set membership cheaply, no matter how large the set.
 
 ## Worked example 2: square root verification
 
@@ -118,7 +118,7 @@ Some Solana programs need to compute square roots. AMMs use them for invariant c
 
 Computing `sqrt(n)` for a `u64` requires an iterative algorithm, typically Newton's method or a binary search. A good implementation takes around 20-30 iterations and costs a few thousand CU. Not catastrophic, but not free either.
 
-The off-chain trick: the user computes `sqrt(n)` themselves with infinite precision and submits the answer. The program verifies the answer with two multiplications, costing about 50 CU total.
+The off-chain trick: the user computes `sqrt(n)` themselves, without any compute unit constraint, and submits the answer. The program verifies the answer with two multiplications, costing about 50 CU total.
 
 ```rust
 pub fn consume_sqrt(_ctx: Context<NoAccounts>, n: u64, claimed_root: u64) -> Result<u64> {
@@ -158,7 +158,7 @@ Look at both examples. The structural similarity is obvious once you see it:
 - If verification succeeds, the program trusts the value and uses it.
 - If verification fails, the program reverts. The user's lie has cost them priority fees but accomplished nothing else.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Off-chain user submits value and proof to on-chain program for verification</title><desc>The off-chain user does the expensive work and submits a value with a proof. The on-chain program runs cheap verification: if it passes, the program uses the value and changes state; if it fails, the program reverts and the attacker pays the fees.</desc>
   <rect x="40" y="30" width="280" height="100" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="180" y="55" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">USER (off-chain)</text>
   <text x="180" y="80" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000">does the expensive work,</text>
@@ -199,7 +199,7 @@ Reverting is harmless to the program. State doesn't change. Other users aren't a
 
 The security model only works if the verification is correct. A buggy Merkle verification that accepts invalid proofs is a disaster. A buggy sqrt verification that accepts wrong roots silently corrupts whatever consumes the root. The verification step is the security boundary, and it has to be airtight.
 
-This is why production protocols often use battle-tested verification libraries. Writing your own verification is a higher bar than writing application logic, because every edge case in the verifier is a potential exploit. When you can use a well-known verifier, do.
+This is why production protocols often use verification libraries that have been reviewed and proven in production. Writing your own verification is a higher bar than writing application logic, because every edge case in the verifier is a potential exploit. When you can use a well-known verifier, do.
 
 ## Where else this pattern appears
 
@@ -221,7 +221,7 @@ In every case, the structure is the same: heavy computation off-chain, cheap ver
 
 Not every problem fits. Three situations where you can't or shouldn't reach for this pattern:
 
-**When verification is as expensive as computation.** If checking the answer takes the same work as computing it, there's no savings. Sorting is usually like this: verifying an array is sorted takes O(n) reads, the same as sorting it from a known starting state. The pattern shines when verification is asymptotically cheaper than computation, like the difference between O(log n) Merkle verification and O(n) iteration.
+**When verification is as expensive as computation.** If checking the answer takes the same work as computing it, there's no savings. Sorting is usually like this: verifying an array is sorted takes O(n) reads — cheaper than O(n log n) sorting, but still too expensive on-chain for large arrays. The pattern shines when verification is asymptotically cheaper than computation, like the difference between O(log n) Merkle verification and O(n) iteration.
 
 **When the user can't be expected to do the work.** If your program is a black box that users interact with through a wallet, asking them to "compute a Merkle proof of inclusion" requires the wallet or the dApp frontend to do it for them. That's usually fine in practice. Every airdrop dApp does this. But it shifts complexity into the frontend, which may not be where you want it.
 

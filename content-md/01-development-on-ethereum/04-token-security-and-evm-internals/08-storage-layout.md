@@ -21,7 +21,7 @@ contract Sample {
 
 The compiler walks the variables in order. `a` is 32 bytes wide, so it takes a full slot. It gets slot 0. Next is `b`, which is 16 bytes wide. It can't fit in slot 0 because slot 0 is already taken in full by `a`, so `b` starts at slot 1 in the low 16 bytes. Next is `c`, also 16 bytes wide. The high 16 bytes of slot 1 are still free, so `c` fits there. `b` and `c` share slot 1.
 
-<svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Storage layout: uint256 a fills slot 0; uint128 c and b share slot 1</title><desc>Slot 0 holds the 32-byte uint256 a. Slot 1 packs two 16-byte values, c in the high bytes and b in the low bytes, into one uint256, while slot 2 stays empty.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Storage slots after compiling the example</text>
   <text x="70" y="96" text-anchor="end" font-family="monospace" font-size="11" fill="#000000">slot 0</text>
@@ -46,7 +46,7 @@ The compiler walks the variables in order. `a` is 32 bytes wide, so it takes a f
 
 The packing rule: adjacent state variables get packed into the same slot if their combined size fits in 32 bytes. The first variable in declaration order occupies the LOW bytes. Each subsequent packed variable occupies the next higher bytes upward.
 
-This matters for gas. Every storage slot you write costs gas. A slot that holds two 128-bit values costs the same gas to update as one that holds a single 256-bit value. Pack your state correctly and you save real money. The order of declaration controls this. If you write `uint128 b; uint256 a; uint128 c;` instead, the compiler can't pack `b` and `c` together because `a` sits between them. You end up using three slots instead of two. Declare same-size and small variables next to each other so the compiler has a chance to pack them.
+This matters for gas. Every storage slot you write costs gas. A slot that holds two 128-bit values costs the same gas to update as one that holds a single 256-bit value. Pack your state correctly and you save gas. The order of declaration controls this. If you write `uint128 b; uint256 a; uint128 c;` instead, the compiler can't pack `b` and `c` together because `a` sits between them. You end up using three slots instead of two. Declare same-size and small variables next to each other so the compiler has a chance to pack them.
 
 ## Reading storage from outside
 
@@ -104,7 +104,7 @@ contract Sample {
 
 For a dynamic array at main slot `p`, the elements are stored starting at slot `keccak256(p)`. The first element is at `keccak256(p)`, the second at `keccak256(p) + 1`, the i-th at `keccak256(p) + i`. The keccak256 output is a 256-bit number, so the elements land at some unpredictable position in the slot array, typically nowhere near the other state variables.
 
-<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Dynamic array storage: main slot holds length, elements at keccak256(p) + i</title><desc>For array arr at main slot 1, the slot only stores length = 2. Its elements sit far away in slot space, starting at keccak256(1) for arr[0] and keccak256(1) + 1 for arr[1], following the general rule that element i lives at keccak256(p) + i.</desc>
   <defs>
     <marker id="arrSL2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -190,7 +190,7 @@ contract Sample {
 
 The mapping `balances` is the third state variable, so it gets slot 2 as its main slot. But the main slot stays at zero forever. Mappings don't track length, since every possible key already conceptually "exists" with the default value 0.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Mapping storage layout: main slot 2 empty, values at keccak256(key . slot)</title><desc>The mapping balances is declared at main slot 2, but that slot always stays 0 since mappings track no length. Each value, like balances[keyA], lives at its own slot computed as keccak256(key . slot), so any key never set just reads back as 0.</desc>
   <defs>
     <marker id="arrSL3" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -262,9 +262,9 @@ Each level of dynamic indirection is one more `keccak256` step. The chain is det
 
 ## "Private" doesn't mean private
 
-The `private` keyword in Solidity controls who can reference the variable in source code. A `private uint256 secret` cannot be referenced by name from another contract that imports yours. The Solidity compiler enforces this at compile time.
+The `private` keyword in Solidity controls who can reference the variable in source code. A `private uint256 secret` cannot be referenced by name from a contract that inherits yours. The Solidity compiler enforces this at compile time.
 
-Storage doesn't know any of that. Storage is a flat array of bytes that the EVM persists between transactions. There is no access control at the storage level, and there couldn't be. Every full node holds a copy of every slot of every contract, and any client can ask any node for any slot via `eth_getStorageAt`. The `private` keyword is a Solidity visibility modifier. It is not a security feature.
+Storage doesn't know any of that. Storage is a flat array of bytes that the EVM persists between transactions. There is no access control at the storage level, and there couldn't be. As the earlier section showed, every node stores every slot, and any client can read any of them via `eth_getStorageAt`. The `private` keyword is a Solidity visibility modifier. It is not a security feature.
 
 The common mistake looks like this:
 

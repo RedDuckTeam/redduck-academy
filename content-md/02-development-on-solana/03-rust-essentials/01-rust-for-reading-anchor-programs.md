@@ -22,7 +22,7 @@ total = 10;           // OK
 count = 6;            // compile error
 ```
 
-You'll see `let mut` constantly in handler bodies because most state updates need to reassign or modify something. Outside of `let mut`, the default is immutable, meaning you can read a value but not change it.
+You'll see `let mut` constantly in handler bodies because most state updates need to reassign or modify something.
 
 There's also a third form, `const`, for compile-time constants. Anchor programs use these for fixed values like seed strings:
 
@@ -55,7 +55,7 @@ let s: String = String::from("hello"); // growable UTF-8 string
 let p: Pubkey = ctx.accounts.user.key(); // a Solana public key
 ```
 
-`Vec<T>` is the heap-allocated growable list. `String` is its text-typed cousin. Both are owned, sized at runtime, and stored on the heap.
+`Vec<T>` is the heap-allocated growable list. `String` is the same, but for UTF-8 text. Both are owned, sized at runtime, and stored on the heap.
 
 You'll also see `&str` (string slice) and `&[u8]` (byte slice) in function signatures. These are borrowed views into someone else's data, which is covered in the next lecture.
 
@@ -268,7 +268,7 @@ The `*` glob, as in `use anchor_lang::prelude::*;`, imports everything from a mo
 
 ## Reading a real handler
 
-Putting it all together, here's a typical Anchor instruction handler. You should now be able to read every line:
+Here is a typical Anchor instruction handler. You should now be able to read every line:
 
 ```rust
 use anchor_lang::prelude::*;
@@ -328,4 +328,4 @@ Walking through:
 - `checked_add(1).ok_or(...)?` does a checked addition, converting a `None`, which signals overflow, into an error, then unwrapping the result.
 - `Ok(())` signals success.
 
-If that reads cleanly now, you have the Rust you need to start writing Anchor handlers. The one thing still in the way is the borrow checker, which is the next lecture.
+If that reads cleanly now, you have the Rust you need to start writing Anchor handlers. The only remaining concept you need is the borrow checker, which is the next lecture.

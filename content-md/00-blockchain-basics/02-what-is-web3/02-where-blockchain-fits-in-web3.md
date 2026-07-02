@@ -6,9 +6,9 @@ The last lesson described web3 as the version of the internet where users actual
 
 ## The stack
 
-A picture is worth more than three paragraphs here.
+The diagram below shows the stack.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Web3 stack: Users, Applications, Smart contracts &amp; wallets, Blockchain</title><desc>Four stacked layers from top to bottom: Users, Applications, Smart contracts &amp; wallets, and Blockchain. The bottom Blockchain layer is highlighted as the trust layer, shared and tamper-evident with no central operator, that everything above depends on.</desc>
   <!-- Users at top -->
   <rect x="60" y="20" width="600" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="360" y="50" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Users</text>
@@ -49,13 +49,13 @@ The blockchain isn't doing anything magical. It's doing a small number of very s
 
 **Permanent ownership.** When you hold something on the chain, a coin, a token, an NFT, a username, any kind of digital asset, it's recorded in a way that no single party can revoke. The platform doesn't store it for you. Your bank doesn't hold it. Your government, even the one whose passport you carry, can't reach into the chain and remove it. The asset exists for as long as the chain exists, and only you (with your keys) can move it. This is the thing web2 cannot offer.
 
-**Programmable money.** Money in web2 is database entries at a bank, governed by software you can't read, run by people you can't audit, and movable only during business hours according to rules that change every few years. Money on a public blockchain is a number in a shared ledger, transferable in seconds at any hour, controlled by smart-contract code anyone can read. A trade that would take a bank settlement system three working days happens in seconds or minutes. A loan that would take a credit check, a meeting, and a signature can be issued by a smart contract in one transaction. None of this is hypothetical. It's the everyday substrate of an industry that already moves trillions of dollars a year in on-chain settlement volume.
+**Programmable money.** Money in web2 is database entries at a bank, governed by software you can't read, run by people you can't audit, and bound by banking hours, settlement windows, and rules that change every few years. Money on a public blockchain is a number in a shared ledger, transferable in seconds at any hour, controlled by smart-contract code anyone can read. A trade that would take a bank settlement system three working days happens in seconds or minutes. A loan that would take a credit check, a meeting, and a signature can be issued by a smart contract in one transaction. None of this is hypothetical. It's the everyday substrate of an industry that already moves trillions of dollars a year in on-chain settlement volume.
 
 **No deplatforming.** A YouTuber can be demonetised. A Twitter account can be banned. A merchant can be cut off by their payment processor. A protest can be debanked. The web2 version of every one of these systems has a central operator who decides who is allowed to participate. The web3 version doesn't have an operator at all. The protocol runs itself, and your access to it comes from holding the right keys, not from being on a list someone curates.
 
 **Global by default.** A new app on a public blockchain is reachable on day one by a teenager in Lagos, a developer in Buenos Aires, a small business in Manila, and a fund manager in Singapore. There is no rollout, no per-country negotiation, no banking partner per region, no compliance manager flying around closing deals to make the app legal. The chain doesn't ask where you are. Everyone with an internet connection gets the same product.
 
-Taken individually, each of these properties is incremental. Taken together, and built into the substrate where apps live rather than promised by an app and revocable at any moment, they enable categories of products that simply could not exist before.
+Taken individually, each of these properties is incremental. Taken together — and built into the layer where apps live, rather than promised by an app that can take them away at any moment — they enable categories of products that could not exist before.
 
 ## Why this layer is the right thing to learn first
 

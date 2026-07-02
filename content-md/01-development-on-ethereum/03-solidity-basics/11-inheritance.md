@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Solidity contracts can extend other contracts the same way classes extend in object-oriented languages. A child contract gets all the state variables, modifiers, functions, and events declared in its parents. Properly used, inheritance lets you write small, focused contracts that compose into larger ones. Improperly used, it produces multi-level hierarchies that nobody can audit. This lesson covers the mechanics of inheritance, the rules around overriding, and the patterns most often seen in production code.
+> Solidity contracts can extend other contracts the same way classes extend in object-oriented languages. A child contract gets all the state variables, modifiers, functions, and events declared in its parents. Properly used, inheritance lets you write small, focused contracts that compose into larger ones. Improperly used, it produces multi-level hierarchies that are hard to follow and audit. This lesson covers the mechanics of inheritance, the rules around overriding, and the patterns most often seen in production code.
 
 The classic motivation is repetition. A handful of state variables and modifiers appear in nearly every nontrivial contract: an owner address, an `onlyOwner` modifier, a constructor that captures `msg.sender` as the owner, a `withdraw` function that the owner alone can call. Writing these out by hand in every contract is wasteful and error-prone. Extracting them into a base contract and inheriting from it lets you share the implementation across many contracts.
 
@@ -36,7 +36,7 @@ contract Vault is Ownable {
 
 The four visibility levels from the functions lesson interact with inheritance directly. `public` and `internal` members are accessible from child contracts. `private` members are not. `external` functions can be called by child contracts, but only via `this.functionName()`. That's the same restriction as calling them from the same contract.
 
-A subtle but important rule: a child contract cannot declare a state variable with the same name as one in a parent. This is a compile error, not silent shadowing. If `Ownable` declares `address public owner`, then `Vault` cannot also declare `address public owner` even if it intends to. The variable exists in the inheritance chain exactly once.
+A child contract cannot declare a state variable with the same name as one in a parent. This is a compile error, not silent shadowing. If `Ownable` declares `address public owner`, then `Vault` cannot also declare `address public owner` even if it intends to. The variable exists in the inheritance chain exactly once.
 
 ## Passing arguments to a parent constructor
 
@@ -174,9 +174,9 @@ contract Vault is Ownable, Balances { ... }   // correct order
 contract Bad is Balances, Ownable { ... }     // compile error
 ```
 
-The reverse order produces an error about "linearization" that looks scary on first read. The compiler is using a specific algorithm called C3 linearization to compute a single ordering of all ancestor contracts. C3 needs the inheritance lists to be consistent with the topology of the inheritance graph. If you list a more-derived parent before a more-base one, the algorithm fails because the order you wrote contradicts the order implied by the rest of the graph.
+The reverse order produces an error about "linearization" that is hard to interpret at first. The compiler is using a specific algorithm called C3 linearization to compute a single ordering of all ancestor contracts. C3 needs the inheritance lists to be consistent with the topology of the inheritance graph. If you list a more-derived parent before a more-base one, the algorithm fails because the order you wrote contradicts the order implied by the rest of the graph.
 
-The simple rule that avoids this: when listing parents, work from broadest to narrowest. Library contracts first, then progressively specialized ones, with the most specific behavior last.
+In practice: list the most general library contracts first, then progressively specialized ones, with the most specific behavior last.
 
 When a function exists in multiple parents and a child needs to override it, the override must name every parent that declares the function:
 
@@ -251,7 +251,7 @@ contract D is B, C {
 
 When `D.f()` runs, `super.f()` calls `C.f()` because `C` comes after `D` in the linearization. `C.f()`'s `super.f()` then calls `B.f()`. `B.f()`'s `super.f()` finally calls `A.f()`. The call chain is `D → C → B → A`, not the visually-suggested `D → B → A` followed by `D → C → A`. The C3 linearization guarantees each ancestor runs at most once.
 
-This is the pattern behind composable extensions: each layer adds its behavior, calls `super.f()` to chain to the next, and the linearization ensures all layers run in a well-defined order. ERC-20 and ERC-721 implementations in OpenZeppelin use this heavily for hooks like `_beforeTokenTransfer`.
+This is the pattern behind composable extensions: each layer adds its behavior, calls `super.f()` to chain to the next, and the linearization ensures all layers run in a well-defined order. OpenZeppelin's ERC-20 and ERC-721 implementations rely on this pattern so each extension module can add behavior to the same function.
 
 If you want the immediate-parent semantics, use the named form. If you want the "next layer in the chain" semantics, use `super`. They're different operations, even though in single-inheritance code they look identical.
 

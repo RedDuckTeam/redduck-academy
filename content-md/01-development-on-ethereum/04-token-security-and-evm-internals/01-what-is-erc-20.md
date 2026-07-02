@@ -6,7 +6,7 @@ _type: lecture_
 
 ## What a token actually is
 
-Before Ethereum existed, tokens were already a thing. Casino chips. Arcade tokens you bought at the door to spend on machines. Loyalty points on a coffee shop card. Concert tickets. Theater tickets. Gift certificates. All of these are tokens. They represent value, they can be exchanged, and they're issued by some entity that defines what they're good for.
+Tokens existed long before Ethereum. Casino chips. Arcade tokens you bought at the door to spend on machines. Loyalty points on a coffee shop card. Concert tickets. Theater tickets. Gift certificates. All of these are tokens. They represent value, they can be exchanged, and they're issued by some entity that defines what they're good for.
 
 A token is not quite money. Its value depends on what someone is willing to accept it for. Casino chips have value because the casino will exchange them for currency. Arcade tokens have value because the machines accept them. Fan tokens for a sports club have value because the club uses them for voting on minor decisions, or because other fans want them.
 
@@ -28,7 +28,7 @@ The non-fungible counterpart is ERC-721. ERC-721 is what NFTs use: each token ha
 
 Imagine Ethereum without ERC-20. Someone deploys a token contract. It has functions to track balances and transfer tokens, but the function names and parameter orders are whatever the developer chose. Maybe their `transfer` function takes the amount before the recipient address. Maybe their balance lookup is called `getBalance` instead of `balanceOf`. Maybe they don't emit events at all.
 
-Now you want to build a wallet that displays token balances. Every token contract works differently, so your wallet needs custom code for each one. Every time a new token launches, your wallet needs an update to support it. A new exchange listing a new token needs new integration work for every wallet that wants to display it. Building anything on top of tokens is brutal because there's no shared vocabulary.
+Now you want to build a wallet that displays token balances. Every token contract works differently, so your wallet needs custom code for each one. Every time a new token launches, your wallet needs an update to support it. A new exchange listing a new token needs new integration work for every wallet that wants to display it. Building anything on top of tokens is very hard because there's no shared vocabulary.
 
 ERC-20 fixes this by defining an interface. Any contract that implements these six functions and emits these two events is an ERC-20 token. Any wallet that knows ERC-20 can interact with any ERC-20 token without further work. Any exchange that knows ERC-20 can list any ERC-20 token without writing token-specific code. The standard turned tokens from custom integrations into a commodity, which is exactly what made Ethereum's token ecosystem possible.
 
@@ -63,7 +63,7 @@ First, every state-mutating function returns `bool`. The spec inherits this from
 
 Second, `transferFrom` exists because contracts can't initiate transactions, only respond to them. If a DEX wants to swap your tokens for ETH, it can't reach into your wallet and take them. Instead, you call `approve` to authorize the DEX, the DEX then calls `transferFrom` during the swap. The two-step process is the only way to let one contract move tokens that belong to another address.
 
-Third, the `Transfer` event from `address(0)` represents minting. By convention, when a token contract creates new tokens, it emits a transfer from the zero address. Block explorers and indexers use this to display the initial supply distribution. This is the part most students forget in their first implementation.
+Third, the `Transfer` event from `address(0)` represents minting. By convention, when a token contract creates new tokens, it emits a transfer from the zero address. Block explorers and indexers use this to display the initial supply distribution. Forget this transfer when minting, and block explorers will show no initial supply at all.
 
 ## Decimals and the integer-only world
 
@@ -95,11 +95,11 @@ A few things, and they're worth understanding even if you never use OpenZeppelin
 
 **Defensive checks against zero addresses.** OpenZeppelin reverts on transfers to or from `address(0)` in places the bare standard doesn't strictly require. This prevents accidental token burns and helps users avoid losing tokens to typos.
 
-None of this is required by EIP-20. Your bare implementation is conformant. But these additions are what production token contracts ship with, and they're the reason most projects inherit from OpenZeppelin rather than rolling their own.
+None of this is required by EIP-20. Your bare implementation is conformant. But these additions are what production token contracts include, and they're the reason most projects inherit from OpenZeppelin rather than writing their own.
 
 ## The approval race condition
 
-ERC-20 has one well-known design flaw, and it's worth understanding before you ship anything.
+ERC-20 has one well-known design flaw, and it's worth understanding before you deploy anything.
 
 Suppose Alice has approved Bob to spend 100 ACAD. She changes her mind and wants to reduce his allowance to 50. She calls `approve(bob, 50)`. The transaction enters the mempool.
 
@@ -117,11 +117,11 @@ For now: be aware that increasing an allowance is safe, decreasing it is not, an
 
 ERC-20 is the foundation of Ethereum's token economy, but it's not the only standard. A brief preview of what builds on or around it.
 
-**ERC-721** is the non-fungible token standard. Used for NFTs. Each token has a unique ID and a single owner at any time. The interface shape is different from ERC-20: instead of `balanceOf(owner)` returning a token count, you have `ownerOf(tokenId)` returning the address that owns a specific ID. The spirit is the same as ERC-20, though, in that the standardization is what lets wallets and marketplaces integrate any compliant token.
+**ERC-721**, the non-fungible standard introduced earlier, has a different interface shape: instead of `balanceOf(owner)` returning a token count, you have `ownerOf(tokenId)` returning the address that owns a specific ID. The spirit is the same as ERC-20, though, in that the standardization is what lets wallets and marketplaces integrate any compliant token.
 
 **ERC-1155** is a hybrid standard that supports both fungible and non-fungible tokens in a single contract. Game economies use it heavily: gold pieces are fungible, but each rare sword has its own ID. ERC-1155 is more gas-efficient for these mixed cases than running separate ERC-20 and ERC-721 contracts.
 
-**EIP-2612 (****`permit`****)** adds a function to ERC-20 tokens that lets users approve spending via a signed message instead of an on-chain transaction. This eliminates the approval race condition and the gas cost of the approve step. Newer tokens implement it. USDC, DAI, and most modern tokens have it. Older tokens like WETH do not.
+**EIP-2612 (****`permit`****)** adds a function to ERC-20 tokens that lets users approve spending via a signed message instead of an on-chain transaction. USDC, DAI, and most modern tokens implement it; older tokens like WETH do not.
 
 **ERC-4626** is the standard for tokenized vaults. A vault that takes ERC-20 deposits and issues shares as ERC-20 tokens itself, used by DeFi protocols like Aave, Yearn, and Morpho. Built on top of ERC-20 rather than replacing it.
 

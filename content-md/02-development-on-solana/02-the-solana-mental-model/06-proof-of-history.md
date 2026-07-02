@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Most blockchains spend a lot of their throughput on the question "what time is it?" Validators have to agree on the order of events, and figuring that out usually means a lot of back-and-forth voting before any real work can land. Solana's answer is a clock that everyone can verify after the fact, without trusting anyone in particular. That clock is called Proof of History. Understanding what it is and what it is not is the last conceptual piece before code.
+> Most blockchains spend a lot of their throughput on the question "what time is it?" Validators have to agree on the order of events, and figuring that out usually means a lot of back-and-forth voting before any real work can begin. Solana's answer is a clock that everyone can verify after the fact, without trusting anyone in particular. That clock is called Proof of History. Understanding what it is and what it is not is the last conceptual piece before code.
 
 ## A tamper-proof stopwatch
 
@@ -12,7 +12,7 @@ Proof of History is the digital version of that. There is no actual notary, only
 
 This is what people mean when they call PoH a "cryptographic clock." The chain is the clock. Producing it costs measurable effort. Verifying that the effort happened costs almost nothing.
 
-<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Proof of History hash chain from a seed through tick 0 to tick 3</title><desc>A row of boxes labeled tick 0 through tick 3 are linked by arrows labeled hash, showing a chain that starts from a seed where each tick's hash output feeds into the next tick. A box below titled 'Why this is a clock' explains that each tick is one SHA-256 of the previous tick, a single CPU can do about 10,000 per millisecond, and reaching tick N requires computing every step from 0 to N in order.</desc>
   <defs>
     <marker id="arrS26aG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -62,7 +62,7 @@ This is what people mean when they call PoH a "cryptographic clock." The chain i
 
 The hash function used is SHA-256, the same one Bitcoin uses for mining. The key property is that it has no known shortcut. Given an input, there is no way to compute the result faster than just running the function. And given a result, there is no way to compute an input that would produce it without trying inputs one at a time. To produce the chain, you must do the work. To reach tick a thousand from tick zero, you must compute every tick between them in order.
 
-That property is what makes the chain a clock. A single computer running this loop will produce tick N after a measurable amount of time, and nobody, however well-funded, can cheat their way to tick N+1 ahead of schedule.
+That property is what makes the chain a clock. A single computer running this loop will produce tick N after a measurable amount of time, and nobody, however well-funded, can skip ahead to tick N+1 without doing every step first.
 
 ## Slow to produce, fast to verify
 
@@ -72,7 +72,7 @@ Producing the chain is strictly sequential. The leader who is responsible for ad
 
 Verifying the chain is the opposite. To check that the chain is valid, you just need to confirm that each tick really is the hash of the previous one. That check is independent for every link. You can give a thousand different cores a different section of the chain, and they can all verify their slices at the same time. The whole chain gets verified in the time it takes the slowest core to finish its slice.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Leader produces the hash chain sequentially; validators verify it in parallel</title><desc>The top box shows the leader producing the chain as a repeating sequence of hashes on one CPU core, one tick at a time, which cannot be parallelized since each tick depends on the previous one. The bottom box shows validators A and B checking different tick ranges on separate cores at the same time, so a large network of validators can verify the whole chain far faster than one CPU produced it.</desc>
   <defs>
     <marker id="arrS26bG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -104,7 +104,7 @@ Verifying the chain is the opposite. To check that the chain is valid, you just 
   <text x="360" y="430" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">This is the asymmetry the network depends on. One CPU labors. Thousands verify cheaply.</text>
 </svg>
 
-This is the whole engineering bet behind Solana's throughput. The leader doing the hard work of running the clock is a single machine. The rest of the network, hundreds or thousands of validators, can keep up with that machine because their job is cheaper than the leader's by orders of magnitude. The chain produces fast, the network verifies faster, and nobody has to vote on "what time is it" before any real work can happen.
+This is the whole engineering bet behind Solana's throughput. The leader doing the hard work of running the clock is a single machine. The rest of the network, hundreds or thousands of validators, can keep up with that machine because their job is cheaper than the leader's by orders of magnitude. The chain advances fast, the network verifies faster, and nobody has to vote on "what time is it" before any real work can happen.
 
 ## Where transactions enter the picture
 
@@ -112,7 +112,7 @@ The clock by itself is just a sequence of hashes. To turn it into something usef
 
 This is what the `recent_blockhash` field on every transaction refers to. The blockhash is a snapshot of a recent point on the PoH chain. Including it in the transaction proves the transaction was built after that point, which is what keeps old transactions from being replayed indefinitely. Once enough time has passed and the blockhash falls outside the validity window of about 150 slots, roughly a minute, the network rejects any transaction still referencing it.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Four steps from PoH ticks to slots to validator consensus in Solana block production</title><desc>A vertical flow of four boxes connected by arrows, titled "Where PoH sits in Solana's block production." It shows the leader's hash chain ticking roughly every 6.25 microseconds, transactions getting stamped into ticks, ticks grouping into slots every 64 ticks (about 400 ms), and finally Tower BFT validators voting to finalize slots into the canonical chain.</desc>
   <defs>
     <marker id="arrS26cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>

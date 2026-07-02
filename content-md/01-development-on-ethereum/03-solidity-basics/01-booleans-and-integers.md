@@ -28,7 +28,7 @@ One Solidity file can also import others. `import "./Token.sol";` brings in ever
 
 ## How bool works
 
-The `bool` type holds one of two values: `true` or `false`. Nothing else. No `null`, no `undefined`, no truthy-falsy gymnastics from JavaScript. A variable typed `bool` has exactly two possible runtime states.
+The `bool` type holds one of two values: `true` or `false`. Nothing else. No `null`, no `undefined`, and no treating other values as true or false the way JavaScript does. A variable typed `bool` has exactly two possible runtime states.
 
 There are two ways to declare one. As a state variable, stored on chain and persisting across transactions:
 
@@ -50,7 +50,7 @@ function process() external {
 
 The naming convention is `mixedCase`: first word lowercase, subsequent words capitalized, no underscores. The compiler does not enforce this. Every Solidity codebase you read will follow it anyway.
 
-The operators on `bool` are what you'd expect. Logical AND is `&&`, logical OR is `||`, negation is `!`. Equality is `==` and inequality is `!=`. Both `&&` and `||` **short-circuit**: if the left operand of `&&` is `false`, the right operand is never evaluated. This matters when the right operand has side effects or could revert.
+Boolean values support the standard logical operators. Logical AND is `&&`, logical OR is `||`, negation is `!`. Equality is `==` and inequality is `!=`. Both `&&` and `||` **short-circuit**: if the left operand of `&&` is `false`, the right operand is never evaluated. This matters when the right operand has side effects or could revert.
 
 ```solidity
 function safeWithdraw() external {
@@ -98,7 +98,7 @@ The motivation for unsigned types is straightforward. Many on-chain quantities c
 
 ## Signed integers and the two's-complement asymmetry
 
-Signed integers sacrifice one bit of value range to remember the sign. So an `int8`, instead of holding 0 to 255, holds `-128` to `127`. Of the 8 bits, one bit encodes the sign, leaving 7 bits for the magnitude. That gives 128 distinct positive magnitudes from 0 to 127, and 128 distinct negative magnitudes from -1 to -128.
+Signed integers sacrifice one bit of value range to remember the sign. So an `int8`, instead of holding 0 to 255, holds `-128` to `127`. The top bit separates negative values from non-negative ones. That gives 128 non-negative values (0 to 127) and 128 negative values (-1 to -128).
 
 ```solidity
 int256 minInt256 = type(int256).min; // -2^255
@@ -107,7 +107,7 @@ int256 maxInt256 = type(int256).max; //  2^255 - 1
 
 Notice the asymmetry: the negative side reaches one further from zero than the positive side. That is two's-complement representation, which is what every general-purpose CPU on Earth uses. You don't need to internalize the bit patterns, but you should remember that `type(intN).min` is `-2^(N-1)` and `type(intN).max` is `2^(N-1) - 1`.
 
-When do you need signed integers? Less often than you might guess. In typical contract logic, everything is expressed as a non-negative balance plus a direction. Deposits and withdrawals both work in `uint256`, with the operation deciding whether to add or subtract. Signed math creeps in only for things like price deltas, fixed-point arithmetic, or tick math in concentrated-liquidity AMMs. If you're writing a token, an escrow, a vault, or a registry, you almost certainly want unsigned.
+When do you need signed integers? Rarely. In typical contract logic, everything is expressed as a non-negative balance plus a direction. Deposits and withdrawals both work in `uint256`, with the operation deciding whether to add or subtract. Signed math creeps in only for things like price deltas, fixed-point arithmetic, or tick math in concentrated-liquidity AMMs. If you're writing a token, an escrow, a vault, or a registry, you almost certainly want unsigned.
 
 ## Arithmetic and the truncating division rule
 
@@ -135,7 +135,7 @@ Division by zero reverts the transaction. So does modulo by zero.
 
 ## What happens on overflow
 
-Before Solidity 0.8.0, integer overflow wrapped silently. If you incremented a `uint8` past 255, it became 0 with no warning and no revert. This caused real exploits in production contracts. The BatchOverflow incident in 2018 drained millions of tokens from multiple ERC-20s by exploiting unchecked multiplication. That incident was the canonical case study that pushed the language toward fixing this by default.
+Before Solidity 0.8.0, integer overflow wrapped silently. If you incremented a `uint8` past 255, it became 0 with no warning and no revert. This caused real exploits in production contracts. The BatchOverflow incident in 2018 created vast token balances out of nothing in multiple ERC-20 contracts by exploiting unchecked multiplication. That incident was the canonical case study that pushed the language toward fixing this by default.
 
 From Solidity 0.8.0 onward, arithmetic that would overflow or underflow **reverts the transaction by default**. No silent wraparound. The transaction is rolled back as if it never happened, any ETH sent with it is returned to the sender, and the contract state is unchanged. Here is the canonical demonstration:
 
@@ -170,7 +170,7 @@ function unsafeIncrement(uint256 x) external pure returns (uint256) {
 }
 ```
 
-Inside `unchecked`, an overflow wraps around to the bottom of the type's range, and an underflow wraps to the top. Subtracting 1 from a `uint8` whose value is 0 produces 255. This is two's-complement arithmetic, the same behavior every CPU performs at the silicon level. Solidity 0.8 just stopped letting you see it by accident.
+Inside `unchecked`, an overflow wraps around to the bottom of the type's range, and an underflow wraps to the top. Subtracting 1 from a `uint8` whose value is 0 produces 255. Solidity 0.8 just stopped letting you see this by accident.
 
 A practical rule for your first year of Solidity: **do not use ****`unchecked`**** unless you can write down, in one sentence, why the bounds it bypasses cannot be exceeded**. The gas savings are real but small, around 30 to 40 gas per arithmetic op. The cost of being wrong is a security bug auditors will absolutely find.
 

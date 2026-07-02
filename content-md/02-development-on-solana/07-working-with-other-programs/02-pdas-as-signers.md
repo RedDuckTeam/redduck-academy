@@ -14,9 +14,9 @@ What the runtime accepts instead is a re-derivation. When a program calls `invok
 
 The key property: the calling program's ID is mixed into the derivation. A different program calling with the same seeds would derive a different PDA. So only the program whose ID was used at PDA creation can produce the right address by replaying the seeds. The seeds aren't a secret. The program ID is what makes the seeds work for one specific program and nobody else.
 
-The mental model lines up with a corporate stamp. Anyone can describe what the stamp says. The seeds are public. But only an Acme employee can apply the Acme stamp, because they're the only ones who run under the Acme identity. The program ID is the identity. The seeds are the description of which stamp.
+A corporate stamp shows the same idea. Anyone can describe what the stamp says. The seeds are public. But only an Acme employee can apply the Acme stamp, because they are the only ones who run under the Acme identity. The program ID is the identity. The seeds are the description of which stamp.
 
-<svg viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Four steps of invoke_signed: seeds, PDA re-derivation, match, signer check</title><desc>Four connected boxes show what invoke_signed does: your program calls invoke_signed with seeds, the runtime re-derives the PDA from the seeds and program ID, the derived PDA is matched against the accounts passed in, and the called program then sees the PDA as a signer. A caption below states that the seeds are the signature, and only your program can produce them under its program ID.</desc>
   <defs>
     <marker id="arrS42aR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -51,7 +51,7 @@ The mental model lines up with a corporate stamp. Anyone can describe what the s
   <text x="360" y="585" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The seeds are the signature. Only your program can produce them under your program's ID.</text>
 </svg>
 
-The whole mechanism comes down to those four steps. Your program promises "I am these seeds." The runtime checks the math, accepts the promise, and the inner program gets a signer it can verify like any other.
+The whole mechanism is those four steps. Your program promises "I am these seeds." The runtime checks the math, accepts the promise, and the inner program gets a signer it can verify like any other.
 
 ## The signing pattern in Anchor
 
@@ -59,7 +59,7 @@ The raw `invoke_signed` syscall is workable but verbose. In practice you use Anc
 
 The full pattern for signing as a Vault PDA fits into six small pieces.
 
-<svg viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Signing as a PDA in Anchor, line by line</title><desc>A six-step code block shows a Solana handler reading the vault's stored bump, building seeds with the bump last, wrapping them in signer_seeds, and using CpiContext::new_with_signer to call token::transfer. Side callouts flag why each step matters: bump stored on state at init, Rust needing a binding for temporaries, always putting bump last, and the double-reference signer form that is the one change versus a plain CPI.</desc>
   <defs>
     <marker id="arrS42bG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -123,17 +123,17 @@ The full pattern for signing as a Vault PDA fits into six small pieces.
 
 Three details in this code earn special attention.
 
-The bump goes last in the seeds array, always. When `find_program_address` originally derived the canonical PDA, the algorithm appended the bump byte after the rest of the seeds and ran the hash. To re-derive that same address, you must replay the exact same input, in the exact same order. Move the bump to the front, or leave it out, and you'll derive a different address. The runtime will tell you so by rejecting the CPI, but the error message isn't always clear about which seed was wrong. Make a habit of putting the bump last and you save yourself the debugging.
+The bump goes last in the seeds array, always. When `find_program_address` originally derived the canonical PDA, the algorithm appended the bump byte after the rest of the seeds and ran the hash. To re-derive that same address, you must replay the exact same input, in the exact same order. Move the bump to the front, or leave it out, and you'll derive a different address. The runtime will tell you so by rejecting the CPI, but the error message isn't always clear about which seed was wrong. Always put the bump last to avoid this error.
 
 The double-reference shape `&[&[&[u8]]]` is unusual enough that it's worth saying out loud. The outer slice contains one entry per PDA you're signing for. Each entry is itself a slice, and that inner slice is a list of byte slices, the actual seeds. Almost every program signs for exactly one PDA at a time, so the outer slice contains exactly one entry. The shape supports multiple PDAs because a single instruction can act on behalf of more than one program-derived account, but it's rare.
 
-The lifetime gymnastics on `mint_key` are a Rust-specific gotcha. Writing `ctx.accounts.mint.key().as_ref()` inline creates a `Pubkey` temporary and immediately calls `as_ref` on it. The resulting `&[u8]` borrows from a value that's already going out of scope by the time you try to use it. Bind the `Pubkey` to a local variable first, and the slice can borrow from the local. The error you'll see if you forget is "temporary value dropped while borrowed."
+The lifetime handling for `mint_key` is a Rust-specific issue. Writing `ctx.accounts.mint.key().as_ref()` inline creates a `Pubkey` temporary and immediately calls `as_ref` on it. The resulting `&[u8]` borrows from a value that's already going out of scope by the time you try to use it. Bind the `Pubkey` to a local variable first, and the slice can borrow from the local. The error you'll see if you forget is "temporary value dropped while borrowed."
 
 ## A worked example: the Vault transfer
 
 The canonical use case for PDA signing is a vault that holds tokens on behalf of a program. The setup is: a Vault PDA is derived from some seeds. A token account is created with the Vault PDA as its owner. To move tokens out of that account, the Token Program needs the owner to sign. The owner is a PDA, with no key. The program signs on its behalf via `invoke_signed`.
 
-<svg viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Vault PDA transfer flow: signing via invoke_signed and balance changes</title><desc>A Vault PDA owns a Vault Token Account holding 1,000 USDC, while the User Token Account starts at 0 USDC. To transfer 300 USDC, the program calls invoke_signed with the vault's seeds so the Token Program accepts the PDA as signer, leaving the vault with 700 USDC and the user with 300 USDC.</desc>
   <defs>
     <marker id="arrS42cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -201,7 +201,7 @@ Seeds matching the wrong PDA. If your program manages many PDAs of the same kind
 
 Wrong program ID at derivation. If a PDA was derived under one program but you try to sign for it from a different program, the derivation produces a different address. This usually only happens during program upgrades where the program ID changed, but it's worth being aware of.
 
-When PDA signing fails, the error is usually `Cross-program invocation with unauthorized signer or writable account`. The runtime is telling you that an account in the inner call needed to be a signer but wasn't, or needed to be writable but wasn't. For PDA signing failures, signer is almost always the missing flag. Walk back through the seeds, confirm the bump is right and last, and check that the PDA address you're trying to sign for is actually in your accounts list.
+When PDA signing fails, the error is usually `Cross-program invocation with unauthorized signer or writable account`. The runtime is telling you that an account in the inner call needed to be a signer but wasn't, or needed to be writable but wasn't. For PDA signing failures, signer is almost always the missing flag. Review the seeds, confirm the bump is correct and last, and check that the PDA address you are trying to sign for is in your accounts list.
 
 ## Why this design is the whole point
 

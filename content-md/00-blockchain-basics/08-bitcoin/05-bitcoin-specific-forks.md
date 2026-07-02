@@ -14,7 +14,7 @@ A **hard fork** is a change that the old rules don't accept. Blocks valid under 
 
 The next three stories are: two successful soft forks, SegWit and Taproot, and one hard fork, Bitcoin Cash, that split the network in two.
 
-<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin timeline: SegWit and Taproot soft forks, Bitcoin Cash hard fork</title><desc>A timeline runs from Bitcoin's launch in 2009 to 2021. Soft forks, SegWit (2017) and Taproot (2021), sit above the line, while the Bitcoin Cash hard fork (2017) sits below, showing where the chain split.</desc>
   <text x="360" y="30" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Three real Bitcoin upgrades</text>
 
 <text x="180" y="80" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">soft forks (everyone stays on one chain) sit above</text>
@@ -48,13 +48,13 @@ By 2016, Bitcoin had a known bug. Anyone watching the network could grab a signe
 
 The fix was an upgrade called **SegWit**. It restructured how signatures were stored so that they no longer affected the transaction ID. It also made room for more transactions per block as a side benefit. The change was technically a soft fork, meaning old nodes would keep working without trouble.
 
-There was just one problem. Some of the biggest mining operations didn't want SegWit to ship, for reasons that had more to do with politics than technology. The activation mechanism required a supermajority of miners to signal support, and they refused. For most of 2017, SegWit sat ready to go and miners blocked it.
+There was just one problem. Some of the biggest mining operations didn't want SegWit to activate, for reasons that had more to do with politics than technology. The activation mechanism required a supermajority of miners to signal support, and they refused. For most of 2017, SegWit was ready to activate and miners blocked it.
 
-Then a movement of regular users took matters into their own hands. They started running modified software that promised to reject any block that didn't signal support for SegWit, starting on a specific date. If miners kept blocking SegWit past that date, those miners' blocks would be ignored by a chunk of the network, including most exchanges and big businesses. Their freshly mined bitcoin would be worth nothing to the people they wanted to sell to.
+Then a movement of regular users acted on their own. They started running modified software that promised to reject any block that didn't signal support for SegWit, starting on a specific date. If miners kept blocking SegWit past that date, those miners' blocks would be ignored by a large part of the network, including most exchanges and big businesses. Their freshly mined bitcoin would be worth nothing to the people they wanted to sell to.
 
 Within weeks of the deadline being announced, miner signaling jumped from a fraction to nearly all of them, and SegWit activated in August 2017.
 
-The lesson from this story is the one most people miss when they think about Bitcoin. Miners produce blocks, but they don't decide what counts as a valid block. That's decided by the people running nodes, especially the ones connected to exchanges, custodians, and big merchants. When miners and nodes disagree, miners eventually have to give in, because they need someone to buy their bitcoin.
+Here is the lesson that matters most in this story. Miners produce blocks, but they don't decide what counts as a valid block. That's decided by the people running nodes, especially the ones connected to exchanges, custodians, and big merchants. When miners and nodes disagree, miners eventually have to give in, because they need someone to buy their bitcoin.
 
 ## Bitcoin Cash (2017): when consensus breaks
 
@@ -64,7 +64,7 @@ That disagreement was deep enough that no compromise emerged. So on the same day
 
 This is what a hard fork looks like in practice.
 
-<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin hard fork splitting into Bitcoin (BTC) and Bitcoin Cash (BCH)</title><desc>A shared history box leads to a last shared point, which then splits into two paths: Bitcoin (BTC), where old rules continue, and Bitcoin Cash (BCH), a new chain with new rules. Notes explain that both chains share the same history up to the split and diverge forever after, and anyone holding 1 BTC at the split also held 1 BCH on the new chain.</desc>
   <defs>
     <marker id="arr45" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -114,7 +114,7 @@ Taproot is a technical upgrade that improved Bitcoin's privacy and made certain 
 
 What Taproot shows is that Bitcoin's upgrade process is slow, but it works. When a change is well-designed and the community broadly agrees, the protocol can still evolve. The slow pace doesn't mean Bitcoin is frozen, just that it doesn't change unless there's strong agreement.
 
-That slowness, though, is real. The ideas behind Taproot were proposed years before activation. From the first proposal to deployment took roughly four years. Other software platforms ship comparable features in months. Bitcoin's slowness is a deliberate trade. The protocol settles hundreds of billions of dollars of value. If it could be changed quickly, it could be broken quickly too.
+That slowness, though, is real. The ideas behind Taproot were proposed years before activation. From the first proposal to deployment took roughly four years. Other software platforms release comparable features in months. Bitcoin's slowness is a deliberate trade. The protocol settles hundreds of billions of dollars of value. If it could be changed quickly, it could be broken quickly too.
 
 ## Three takeaways
 

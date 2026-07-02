@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-The previous lesson explained what miners do. This one explains why they do it, and what their doing it gets the rest of the network. Both questions have economic answers. Mining is a competitive market where participants spend real electricity in the hope of winning block rewards, and the security of every transaction that has ever happened on Bitcoin rests on the fact that overwriting history is much more expensive than the alternative. By the end of this lesson, you should understand where Bitcoin's security guarantee actually comes from, what a 51% attack can and cannot do, and why "Bitcoin is secured by energy" is a literal statement, not a metaphor.
+The previous lesson explained what miners do. This one explains why they do it, and what their work gets the rest of the network. Both questions have economic answers. Mining is a competitive market where participants spend real electricity in the hope of winning block rewards, and the security of every transaction that has ever happened on Bitcoin rests on the fact that overwriting history is much more expensive than the alternative. By the end of this lesson, you should understand where Bitcoin's security guarantee actually comes from, what a 51% attack can and cannot do, and why "Bitcoin is secured by energy" is a literal statement, not a metaphor.
 
 ## Mining is a market
 
@@ -10,17 +10,17 @@ A miner is in the business of turning electricity into bitcoin. There are two co
 
 Mining is competitive in two ways that matter for everything that follows.
 
-First, every miner is fighting every other miner for the same fixed prize. The network produces one block every ten minutes, no matter how many people are mining. If you control 1% of the global hashing power, you'll win about 1% of the blocks over time. Doubling your hashing power doubles your expected revenue. But you're not creating new reward by doing this. You're taking a bigger slice of someone else's pie.
+First, every miner is fighting every other miner for the same fixed prize. The network produces one block every ten minutes, no matter how many people are mining. If you control 1% of the global hashing power, you'll win about 1% of the blocks over time. Doubling your hashing power doubles your expected revenue. But you're not creating new reward by doing this. You're taking a bigger share of the same fixed prize, leaving less for everyone else.
 
 Second, electricity is the biggest cost, and electricity prices vary a lot. A miner running in a region with cheap hydroelectric power pays a fraction of what a miner running on retail grid power pays. So the miners who survive long-term are the ones with cheap electricity. Everyone else gets squeezed out when the bitcoin price dips.
 
-Over time, this competition produces a predictable pattern. When the bitcoin price goes up or transaction fees rise, mining becomes more profitable, and more miners turn on their machines. Hashrate grows. The difficulty adjustment from the previous lesson kicks in every two weeks and tightens the puzzle so blocks still take ten minutes. When the price falls or fees shrink, less-efficient miners switch off, hashrate falls, and the difficulty loosens again. Block times stay at ten minutes through it all.
+Over time, this competition produces a predictable pattern. When the bitcoin price goes up or transaction fees rise, mining becomes more profitable, and more miners turn on their machines. Hashrate grows. The difficulty adjustment from the previous lesson happens every two weeks and tightens the puzzle so blocks still take ten minutes. When the price falls or fees shrink, less-efficient miners switch off, hashrate falls, and the difficulty loosens again. Block times stay at ten minutes through it all.
 
-There's one consequence of this market structure that matters for the rest of the lesson. The miner who's just barely breaking even, the one who would shut down tomorrow if their electricity bill went up by 5%, exists at every point in time. There are always miners right at that edge. So the total amount of electricity being spent on mining is always close to the total reward being paid out, because anyone whose costs were much lower than their reward would attract competitors until prices equalised again.
+There's one consequence of this market structure that matters for the rest of the lesson. At every point in time, there is a miner just barely breaking even — one who would shut down tomorrow if their electricity bill went up by 5%. So the total amount of electricity being spent on mining is always close to the total reward being paid out, because anyone whose costs were much lower than their reward would attract competitors until prices equalised again.
 
 In plain terms: the network spends roughly as much on mining as mining pays out. That sounds boring but it's the setup for the entire security argument.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Mining as a market: a miner's costs and revenue, and network hashrate vs difficulty</title><desc>For one miner, hardware and electricity costs feed a mining loop that pays out block subsidy plus fees. Across all miners, total hashrate expands and contracts with miner economics, and difficulty retargets every 2,016 blocks to hold about a 10 minute block time.</desc>
   <defs>
     <marker id="arr44" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -75,7 +75,7 @@ When a transaction is included in block N, its security against being reversed d
 
 This means two things have to happen at once. The attacker has to redo all the proof-of-work from the fork point forward. And while they're doing that, the honest network is still extending the current chain. So the attacker has to outpace the honest network's ongoing work while also catching up to it.
 
-<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Honest chain N to N+k versus attacker's alternative chain racing to catch up</title><desc>The diagram shows the honest chain growing block by block from N through N+1, N+2, N+3, up to N+k. Below it, an attacker's alternative chain from N' onward must reach N+k+1' before the honest chain reaches N+k+1, since each extra block adds another full network's worth of work to redo, so cost grows linearly with depth while the attacker's chance of success drops exponentially.</desc>
   <defs>
     <marker id="arr44b" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -141,7 +141,7 @@ The textbook attack on a proof-of-work chain is the **51% attack**. The name com
 
 What this enables is narrower than the name suggests.
 
-<svg viewBox="0 0 720 405" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 405" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two-column list of what a 51% attacker can and cannot do</title><desc>The left column lists three things a 51% attacker can do: double-spend their own recent coins, censor transactions, and reorganise the recent chain. The right column lists four things it cannot do: steal coins from other addresses, create new BTC, cheaply rewrite ancient history, or change the protocol rules, each with a short reason.</desc>
   <text x="360" y="25" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">What a 51% attacker can and cannot do</text>
 
 <rect x="40" y="60" width="320" height="305" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -183,9 +183,9 @@ What this enables is narrower than the name suggests.
   <text x="395" y="338" font-family="monospace" font-size="10" fill="#565653">block size, halving, etc. enforced by nodes</text>
 </svg>
 
-The "can do" side is real and worth taking seriously. An attacker who pulls off a 51% attack can double-spend, which is to say: deposit BTC at an exchange, wait for the deposit to be credited, withdraw value out the other side, then quietly rewrite history so the deposit transaction never happened. This is the most lucrative thing a 51% attacker can do, and it has happened on smaller proof-of-work chains where the cost of acquiring majority hashrate is low. It has not happened against Bitcoin itself, because the cost of acquiring majority Bitcoin hashrate is, depending on the moment, several billion dollars of hardware procurement. A procurement that would immediately drive hardware prices up and tip off the entire industry that something was happening.
+The "can do" side is real and worth taking seriously. An attacker who succeeds at a 51% attack can double-spend: deposit BTC at an exchange, wait for the deposit to be credited, withdraw that value, then rewrite history so the deposit transaction never happened. This is the most lucrative thing a 51% attacker can do, and it has happened on smaller proof-of-work chains where the cost of acquiring majority hashrate is low. It has not happened against Bitcoin itself, because acquiring majority Bitcoin hashrate would cost, depending on the moment, several billion dollars of hardware. Buying that much hardware would immediately drive prices up and signal to the entire industry that something was happening.
 
-The "cannot do" side is what tends to surprise people. A 51% attack does not let the attacker steal coins from accounts they don't control, because moving coins requires a valid signature from the coin's owner. The attacker still has to satisfy the cryptographic locks on every output they want to spend. A 51% attack also doesn't change the protocol's economic rules. If the attacker mines a block with a coinbase reward of 100 BTC instead of the current 3.125, every other node on the network rejects that block as invalid. Hashrate doesn't override protocol rules. It just decides which valid blocks make it into the canonical chain.
+The "cannot do" side is what tends to surprise people. A 51% attack does not let the attacker steal coins from addresses they don't control, because moving coins requires a valid signature from the coin's owner. The attacker still has to satisfy the cryptographic locks on every output they want to spend. A 51% attack also doesn't change the protocol's economic rules. If the attacker mines a block with a coinbase reward of 100 BTC instead of the current 3.125, every other node on the network rejects that block as invalid. Hashrate doesn't override protocol rules. It just decides which valid blocks make it into the canonical chain.
 
 The deepest reason 51% attacks against Bitcoin are rare is economic. An attacker who actually acquires majority Bitcoin hashrate has now invested billions in specialized hardware whose value depends entirely on Bitcoin's continued credibility. Successfully attacking Bitcoin would crash its price, devaluing the attacker's own hardware below scrap value. The attacker would have spent more on the attack than they could plausibly extract from it. This is the same dynamic that explains why the largest miners are typically the *most* invested in Bitcoin's health: they are the ones with the most to lose if the system fails.
 

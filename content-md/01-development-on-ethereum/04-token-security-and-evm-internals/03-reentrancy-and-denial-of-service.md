@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> You just spent time wrestling with two bugs in a Vault contract. Eva drained the vault by doing something clever during withdraw. John blocked the admin's emergency refund just by sitting in the depositors list. This lesson explains what those attacks actually are, why they work, and why your fixes worked. The patterns are old, well-known, and still cause real losses in production every year. Every smart contract developer needs to recognize them by sight.
+> You just fixed two bugs in a Vault contract. Eva drained the vault by doing something clever during withdraw. John blocked the admin's emergency refund just by sitting in the depositors list. This lesson explains what those attacks actually are, why they work, and why your fixes worked. The patterns are old, well-known, and still cause real losses in production every year. Every smart contract developer needs to recognize them immediately.
 
 ## What reentrancy is
 
@@ -103,7 +103,7 @@ This pattern has a name: **checks-effects-interactions**. The order of operation
 2. **Effects.** Update the contract's own state. All storage writes happen here.
 3. **Interactions.** Call out to other contracts or send ETH.
 
-If you follow this order religiously, reentrancy through your own state becomes impossible. By the time an external call happens, all the state relevant to the callback has already been updated to reflect the operation as complete.
+If you follow this order strictly, reentrancy through your own state becomes impossible. By the time an external call happens, all the state relevant to the callback has already been updated to reflect the operation as complete.
 
 This is the cheapest defense and should be the default. Use it everywhere you make external calls.
 
@@ -143,7 +143,7 @@ If your fix added a modifier like `nonReentrant`, this is what you did. The firs
 
 OpenZeppelin's `ReentrancyGuard` is the production-quality version of this. It uses a `uint256` instead of a `bool` for gas efficiency, since the storage slot transitions are cheaper, and exposes the modifier as `nonReentrant`. Most production contracts that hold value inherit from it.
 
-**Use both defenses, not just one.** Reentrancy guards catch cases where checks-effects-interactions slipped, and the ordering discipline keeps the guards from being load-bearing. Defense in depth is the right approach when funds are on the line.
+**Use both defenses, not just one.** Reentrancy guards catch cases where checks-effects-interactions was missed, and the ordering discipline means you never have to depend on the guards alone. Defense in depth is the right approach when funds are at risk.
 
 ## Cross-function and read-only reentrancy
 
@@ -204,7 +204,7 @@ contract John {
 
 John deposits a small amount through his contract. The vault now has John's address in its `depositors` array. When the admin calls `emergencyRefundAll`, the loop eventually reaches John, tries to send him ETH, John's `receive` reverts, the `if (!ok)` check triggers, and the entire transaction is rolled back.
 
-No matter how many times the admin calls `emergencyRefundAll`, it always reverts when it reaches John. The vault is bricked. Honest depositors can never get their refunds via the emergency path.
+No matter how many times the admin calls `emergencyRefundAll`, it always reverts when it reaches John. The emergency refund function is permanently unusable. Honest depositors can never get their refunds via the emergency path.
 
 John doesn't gain anything financially. He just denies everyone else the use of the function. This is enough of an attack on its own in many real situations: blocking refunds, blocking auction settlement, blocking distribution of rewards.
 
@@ -290,6 +290,6 @@ This prevents the simple attack patterns shown in this lesson. Eva and John both
 
 The mitigation is partial, however. It blocks the naive attack class but creates new problems. Legitimate users who want to interact with your contract through a multisig or a smart wallet are also blocked, because multisigs and smart wallets are contracts. Account abstraction (ERC-4337) makes this restriction much more user-hostile: more and more wallets are themselves contracts, and many users have no EOA at all.
 
-The check is also bypassable by attackers who use account-abstraction wallets or by sophisticated MEV-style attacks where the contract isn't the direct attacker.
+The check is also bypassable, either by attackers using account-abstraction wallets or by more sophisticated attacks where the contract is not the direct attacker.
 
 The honest position: `tx.origin == msg.sender` is a small defensive measure that catches the most obvious attacks at the cost of blocking some legitimate users. Use it only when the threat model genuinely calls for it. Defense should rely on checks-effects-interactions and reentrancy guards as the primary protection.

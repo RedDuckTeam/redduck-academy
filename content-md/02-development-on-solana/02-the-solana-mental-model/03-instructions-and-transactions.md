@@ -10,11 +10,11 @@ The easiest way to picture an instruction is as a single function call on the bl
 
 The **program_id** says which program you want to run. It's the address of the program account that holds the code. Calling the Token Program's transfer function means setting program_id to the Token Program's address.
 
-The **accounts list** is the set of accounts the program will need to do its job. The reason this list has to be supplied up front rather than discovered during execution is the parallel-execution argument from the previous lectures. The runtime has to know, before scheduling, which state the instruction will touch. Each entry in the list carries two flags: writable, meaning the program may modify this account, and signer, meaning this account's owner signed the transaction.
+The **accounts list** is the set of accounts the program will need to do its job. The reason this list has to be supplied up front rather than discovered during execution is parallel execution, covered in the previous lesson. The runtime has to know, before scheduling, which state the instruction will touch. Each entry in the list carries two flags: writable, meaning the program may modify this account, and signer, meaning this account's owner signed the transaction.
 
 The **data** field is the raw arguments to the call, packed into bytes. The first byte usually identifies which function inside the program you want, since one program typically exposes many functions: transfer, mint, burn, and so on. The rest of the bytes are the argument values.
 
-<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Anatomy of an instruction: program_id, accounts, and data</title><desc>An instruction has three parts: program_id (which program to call, e.g. the Token Program address), accounts (the accounts it touches, like alice_usdc, bob_usdc, and alice_wallet), and data (the arguments as bytes, such as a transfer of 100 USDC). Side labels compare these to a function call, where program_id is the function name, accounts are the argument handles, and data holds the argument values.</desc>
   <defs>
     <marker id="arrS23aG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -59,7 +59,7 @@ The header has two important pieces. The **signatures** field is a list of signa
 
 The instructions inside the transaction execute in order, top to bottom, and they execute atomically. Either every instruction succeeds and the chain commits all of their state changes, or one of them fails and none of the changes happen. There is no partial state. This is the same atomicity you get from a database transaction. The fee is charged either way, since the validators did the work to try.
 
-<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction structure: signatures, recent_blockhash, and three ordered instructions</title><desc>One transaction holds signatures, a recent_blockhash, and a list of three instructions: a Token Program transfer of 100 USDC, a Memo Program note, and a Compute Budget priority fee. The instructions run in order and are atomic, so either all three succeed or none do, though the fee is charged either way.</desc>
   <defs>
     <marker id="arrS23bR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -101,13 +101,13 @@ This is why batching multiple instructions in one transaction is useful. A swap 
 
 ## The access list is the access-control layer
 
-The accounts list is doing more work than it looks like at first. Every account a transaction touches has to appear on this list, marked as read-only or writable, and marked as a signer or not. The runtime uses this list for three things, all of them before any program code runs.
+The accounts list has more responsibilities than it appears. Every account a transaction touches has to appear on this list, marked as read-only or writable, and marked as a signer or not. The runtime uses this list for three things, all of them before any program code runs.
 
 First, **parallel scheduling**. Two transactions whose writable account sets do not overlap can run side by side on different threads. The runtime can sort the incoming traffic into batches just by reading these lists. If the lists were not declared up front, the runtime would have to actually run each transaction to find out what it touched, which would defeat the whole parallel-execution goal.
 
 Second, **signer enforcement**. If an instruction expects an account to be a signer, say a transfer expecting the sender to have signed, the runtime checks that the corresponding signature is present in the transaction's signatures list. If not, the transaction fails before the program even loads. Your program code can rely on the fact that any account marked as a signer was actually signed for.
 
-Third, **owner enforcement**. Before letting a program write to a writable account, the runtime checks that the account's owner field matches the program being invoked. A program cannot scribble on accounts it does not own. This is the security model from the accounts lecture, made operational on every transaction.
+Third, **owner enforcement**. Before letting a program write to a writable account, the runtime checks that the account's owner field matches the program being invoked. A program cannot write to accounts it does not own. This is the security model from the accounts lecture, made operational on every transaction.
 
 The cost of all this is that the client building the transaction has to know in advance which accounts the program will need and how each of them should be marked. The benefit is that every transaction arrives with its security and parallelism contract on the outside, fully readable by the runtime without executing a single line of code.
 
@@ -115,7 +115,7 @@ The cost of all this is that the client building the transaction has to know in 
 
 Alice wants to send Bob 100 USDC. Here is what her transaction actually looks like.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice's transaction sending 100 USDC to Bob, step by step</title><desc>The diagram shows the transaction Alice signs: it calls the Token Program with data transfer(100_000_000), using accounts alice_usdc (writable, balance down), bob_usdc (writable, balance up), and alice_wallet (signer). Before running, the runtime checks that alice_wallet signed, that both balances are owned by the Token Program, and that the recent_blockhash is valid, then the program executes and the result is alice_usdc.amount -= 100 and bob_usdc.amount += 100.</desc>
   <defs>
     <marker id="arrS23cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -161,4 +161,4 @@ Alice wants to send Bob 100 USDC. Here is what her transaction actually looks li
 
 Three accounts on the list. Two of them are the actual balances, marked writable because their data is going to change. The third is Alice's wallet, marked as a signer because the Token Program will check that whoever owns alice_usdc authorized the transfer. Alice's wallet does not need to be writable. The Token Program does not modify the wallet itself, only the balance accounts.
 
-When this transaction lands on the network, the runtime does its checks, then loads the Token Program's code from its data field and runs it. The program reads the data field of alice_usdc, subtracts 100 from the amount, writes the new value back. Does the same for bob_usdc in reverse. Returns success. The transaction commits, the new state is included in the next block, and the network keeps going.
+When this transaction lands on the network, the runtime does its checks, then loads the Token Program's code from the Token Program account and runs it. The program reads the data field of alice_usdc, subtracts 100 from the amount, writes the new value back. Does the same for bob_usdc in reverse. Returns success. The transaction commits, the new state is included in the next block, and the network keeps going.

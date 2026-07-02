@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Smart contracts can't generate random numbers on their own. The reasons are structural, not solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to wire a consumer contract to receive verified random numbers in production.
+> Smart contracts can't generate random numbers on their own. The reasons are structural, not solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.
 
 ## Why a blockchain can't roll dice
 
@@ -10,7 +10,7 @@ A blockchain is a deterministic state machine. Every node must execute every tra
 
 The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain. Block timestamp, block hash, previous block's randao value, the sender's address, transaction hashes. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the entity proposing the block.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>On-chain lottery seed: block.timestamp, block.prevrandao, and tx ordering, all proposer-controlled</title><desc>A lottery contract seeds a keccak256 hash with block.timestamp and block.prevrandao, and three boxes explain that timestamp, prevrandao, and transaction ordering are all chosen or seen by the block proposer. A four-step attack box shows a validator simulating the lottery locally, publishing the block only if it wins, and rerolling by skipping the block or changing transactions or the timestamp otherwise.</desc>
   <defs>
     <marker id="arrV1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -64,13 +64,13 @@ The setup involves a key pair. The party generating randomness (the VRF oracle s
 
 The third point is the load-bearing one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
 
-For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle has nowhere to hide. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
+For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle cannot deviate. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
 
 ## The request-and-receive cycle
 
 VRF cannot be a single function call. The proof must be generated off chain by an entity holding the private key, and that work cannot happen inside a normal contract call. The pattern is asynchronous: your contract submits a request in one transaction, and receives the result in a second transaction some blocks later.
 
-<svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>VRF request cycle: contract, VRF Coordinator, and VRF Service over two transactions</title><desc>Three lanes show your contract, the on-chain VRF Coordinator, and the off-chain VRF Service exchanging messages over time. In transaction 1 your contract calls requestRandomWords() and the coordinator emits an event with a seed; the service signs the seed, waits N block confirmations, and submits the number and proof in transaction 2, which the coordinator verifies before calling fulfillRandomWords() so your contract stores the result.</desc>
   <defs>
     <marker id="arrV2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -117,13 +117,13 @@ VRF cannot be a single function call. The proof must be generated off chain by a
 
 The implication for your contract design is that you cannot use a random number in the same transaction that requests it. The number does not exist yet. Your `requestRandomWords` call returns a request ID. The number arrives in a separate transaction via the callback function. Anything the contract needs to do with the number (pick a winner, reveal an NFT, settle a bet) happens inside that callback, not the original user transaction. This async shape is the biggest design constraint in working with VRF and it shapes every contract you'll build with it.
 
-The number of block confirmations the service waits before responding is configurable per request. The current minimum on Sepolia is 3. Higher values give you better protection against shallow reorgs, at the cost of waiting longer for the result. The longer the node waits, the more secure the random value is.
+The number of block confirmations the service waits before responding is configurable per request. The current minimum on Sepolia is 3. Higher values give you better protection against shallow reorgs, at the cost of waiting longer for the result.
 
 ## The subscription model
 
 VRF requests cost gas. Someone has to pay for both the request transaction and the response transaction, plus a premium that compensates the oracle service. The current production version uses a [subscription account model](https://docs.chain.link/vrf/v2-5/overview/subscription) where you pre-fund a balance once and consumer contracts draw from it for each request.
 
-<svg viewBox="0 0 720 450" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 450" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>VRF subscription balance funding Lottery.sol, NFTReveal.sol, and Raffle.sol</title><desc>An owner wallet manages and funds one subscription, ID 42, holding a balance of 10 LINK and 0.5 ETH. Three consumer contracts, Lottery.sol, NFTReveal.sol, and Raffle.sol, draw from this shared balance to pay for their VRF requests.</desc>
   <defs>
     <marker id="arrV3" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -196,7 +196,7 @@ constructor(
 }
 ```
 
-The `keyHash` identifies which off-chain VRF job runs for your request. Different gas lanes (lower gas tolerance vs higher) have different key hashes. The gas lane key hash value is the maximum gas price you are willing to pay for a request in wei. The supported networks page lists the valid key hashes for each chain.
+The `keyHash` identifies which off-chain VRF job runs for your request. Different gas lanes (lower gas tolerance vs higher) have different key hashes. Each gas lane has an associated maximum gas price ceiling; the key hash is its identifier. Choose the key hash for the gas price ceiling that fits your target network. The supported networks page lists the valid key hashes for each chain.
 
 The request function builds a struct and calls the coordinator:
 

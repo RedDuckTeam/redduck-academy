@@ -28,7 +28,7 @@ An epoch on Solana mainnet is 432,000 slots, which at 400ms per slot is about 2 
 
 The diagram shows the next piece: the schedule doesn't assign individual slots to individual validators. It assigns 4-slot windows.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Leader schedule: 16 slots split into 4-slot windows for validators A-D</title><desc>A timeline of slots 100 to 115 is grouped into four consecutive windows of 4 slots each, one window per validator: A, B, C, and D. A second panel shows a skipped slot, where validator B misses slot 104 but the schedule still hands off to validator C on time.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The leader schedule: slots, windows, and stake-weighted assignment</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">A 16-slot stretch of the schedule. Each slot is 400ms. Validators get 4 consecutive slots at a time.</text>
@@ -99,7 +99,7 @@ A leader window is 4 consecutive slots. The validator chosen for that window is 
 
 Why 4 slots and not 1? Two practical reasons.
 
-First, vote propagation latency. When a validator produces a block, other validators need time to receive it, verify it, and broadcast their vote. That round trip takes some milliseconds, and if leadership were changing every 400ms, the new leader's first block would have to start before the previous leader's last block had finished gathering votes. Bundling slots into 4-slot windows means a validator can build on their own previous block from the same window without waiting for external confirmations. The pipelining works.
+First, vote propagation latency. When a validator produces a block, other validators need time to receive it, verify it, and broadcast their vote. That round trip takes some milliseconds, and if leadership were changing every 400ms, the new leader's first block would have to start before the previous leader's last block had finished gathering votes. Bundling slots into 4-slot windows means a validator can build on their own previous block from the same window without waiting for external confirmations.
 
 Second, propagation amortization. When a validator becomes leader, the other validators have to start sending transactions to them via Gulf Stream, and the new leader has to set up their pipeline. There's a small startup cost. Having a new leader every slot rather than every four would amplify that startup cost by 4x.
 
@@ -131,13 +131,13 @@ For your transaction, a skipped slot means the leader didn't include it in the b
 
 ## Why the schedule matters for priority fees
 
-Now the part that connects directly to programmer-visible mechanics. The leader chooses which transactions to include in their block and in what order. The protocol gives them flexibility on this: they're not required to take transactions in any particular order. The default ordering implementation in the standard validator client ranks transactions by priority fee per compute unit, but a leader running custom software could pick differently.
+The leader chooses which transactions to include in their block and in what order. The protocol gives them flexibility on this: they're not required to take transactions in any particular order. The default ordering implementation in the standard validator client ranks transactions by priority fee per compute unit, but a leader running custom software could pick differently.
 
 This is why priority fees work the way they do. When you attach a high priority fee to your transaction, you're paying the leader to prioritize your transaction over others. The leader's incentive is to maximize the fees they earn during their window, so transactions with higher per-CU bids get included first.
 
 The 4-slot window also explains why priority fees vary on second-to-second timescales. When a transaction-fee-rich validator is the leader for their window, the going rate for inclusion in those four slots is what they're willing to accept. When a different validator takes over, the going rate can shift. Sophisticated transaction submitters track the leader schedule and adjust their bids based on who's about to lead.
 
-Beyond priority fees, leaders can earn additional revenue from MEV, or maximal extractable value. Because they have full control over transaction ordering within their slots, they can sandwich, arbitrage, or otherwise extract value from the transactions in their queue. Specialized validator software like Jito's client lets leaders accept private order-flow bundles with explicit tips, paid by searchers in exchange for guaranteed ordering. A significant chunk of validator revenue on Solana today comes from this kind of MEV tipping rather than from priority fees alone.
+Beyond priority fees, leaders can earn additional revenue from MEV, or maximal extractable value. Because they have full control over transaction ordering within their slots, they can reorder transactions to extract profit — for example by surrounding a user's trade with their own orders (called a sandwich attack), or by arbitraging price differences. Specialized validator software like Jito's client lets leaders accept private order-flow bundles with explicit tips, paid by searchers — bots that identify and exploit profitable transaction orderings — in exchange for guaranteed ordering. A large share of validator revenue on Solana today comes from this kind of MEV tipping rather than from priority fees alone.
 
 The combined leader revenue picture is:
 

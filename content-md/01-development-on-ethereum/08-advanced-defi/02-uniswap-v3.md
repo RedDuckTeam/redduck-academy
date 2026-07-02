@@ -14,7 +14,7 @@ Empirically, in a V2 ETH/USDC pool, an LP's capital that's "active" within any r
 
 V3 lets an LP say: "I think ETH will trade between $3,000 and $4,000. Concentrate all my capital in that range." The LP picks a lower price `Pl` and an upper price `Pu`. Their capital provides depth only in `[Pl, Pu]`. If trades happen inside that range, they earn fees. If price moves outside their range, their position earns nothing until either the price comes back or the LP repositions.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Uniswap V2 liquidity spread across all prices vs V3 concentrated in $3,000–$4,000</title><desc>Two bar charts compare a $10,000 deposit: in Uniswap V2 it spreads evenly across every price from $0 to infinity, while in Uniswap V3 the same $10,000 concentrates only between $3,000 and $4,000. A boxed note states the tradeoff: if price leaves the V3 range, the position earns zero fees until it re-enters or the LP repositions.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">V2 spreads your capital across every price. V3 lets you concentrate it.</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">Uniswap V2: same $10,000 deposit spread across all prices</text>
@@ -89,11 +89,11 @@ A tick is just a price level on a predefined grid. The formula is:
 price(tick) = 1.0001 ^ tick
 ```
 
-Each tick is 0.0001 of a price multiplier from the next, which is 0.01% (one basis point). Tick 0 corresponds to price 1.0. Tick 1 corresponds to price 1.0001. Tick -1 to price 0.9999. And so on.
+Moving from one tick to the next multiplies the price by 1.0001, a change of 0.01% (one basis point). Tick 0 corresponds to price 1.0. Tick 1 corresponds to price 1.0001. Tick -1 to price 0.9999. And so on.
 
 For an ETH/USDC pool with ETH around $3,500, the corresponding tick is around 81,800. The integer is large because the price ratio is far from 1, but the math handles it cleanly. Frontends and SDKs convert between tick numbers and human-readable prices for you. You almost never compute ticks by hand.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Uniswap V3 ticks 81797-81806 mapped to ETH/USDC prices, formula, and fee-tier spacing</title><desc>A number line shows ticks 81797 to 81806, each 0.01% apart, next to the matching ETH/USDC prices from 3565.07 to 3568.28. Below it, the formula price(tick) = 1.0001^tick appears, along with a table of fee tiers (0.01% to 1.00%) and their tick spacing (1, 10, 60, 200).</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">A tick is just a discrete price level. Each step is 0.01% from the next.</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">Possible price levels:</text>
@@ -175,11 +175,11 @@ LPs choose a fee tier based on the volatility they expect. Higher volatility mea
 
 ## Three position types: where single-sided liquidity comes from
 
-Now to the part where V3 starts to feel different from V2.
+(Remove this sentence. The section heading already names the topic, and the following paragraph opens the explanation directly.)
 
 In V2, you always deposit both tokens, in the ratio set by the current pool price. There's no other option. In V3, the ratio depends on where your chosen range sits relative to the current price. Sometimes you deposit both tokens. Sometimes only one. And it's not up to you which case applies. The range you pick forces the composition.
 
-<svg viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three Uniswap V3 position types by price range: below, straddling, above</title><desc>Shows three Uniswap V3 price ranges compared to a current price of $3,500. A range below current price needs only USDC, a range straddling it needs both USDC and ETH, and a range above it needs only ETH, because the chosen range forces the deposit ratio.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Three position types. The range you pick decides which token(s) you deposit.</text>
   <text x="40" y="82" font-family="monospace" font-size="11" font-weight="bold">Range BELOW current price  ->  deposit only USDC</text>
@@ -261,7 +261,7 @@ You've effectively placed a sell order that fills around $4,000. Same logic in r
 
 The fill price isn't exactly the target. There's some spread between Pl and Pu, so the actual execution price is an average within the range. Tighter ranges mean closer-to-exact fills but smaller fee earnings while filling. This is the difference between a true limit order and a V3 range order: the V3 version still earns fees during the fill, in exchange for some slippage.
 
-This was a real user-facing feature when V3 launched. It pushed several limit-order frontends to build on top of V3 positions.
+This was a real user-facing feature when V3 launched. It led several limit-order protocols to build on top of V3 positions.
 
 ## NFT positions
 
@@ -275,7 +275,7 @@ This is one of the things that makes building on V3 more complex than V2. Every 
 
 ## A better TWAP
 
-V2 oracles use a single cumulative price counter, sampled at whatever times consumers care about. V3 ships a more refined version.
+V2 oracles use a single cumulative price counter, sampled at whatever times consumers care about. V3 introduces a more refined version.
 
 Each V3 pool keeps an **observations array**, a circular buffer of past `(timestamp, tick cumulative)` entries. Pools default to 1 slot but can be extended up to 65,535 slots. The slots get filled on every state-changing interaction (swap, mint, burn). A consumer reading a TWAP for the last 30 minutes asks the pool to find observations bracketing the start and end of the window, and computes the average from those two readings.
 
@@ -285,7 +285,7 @@ The advantages over V2's design:
 - Multiple consumers reading the same window share the cost.
 - Pools with extended observation arrays cover hours or days of history.
 
-V3 also uses the geometric mean of tick (the log of price) rather than the arithmetic mean of raw price. This matters when prices can swing in large ratios. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric version is symmetric around the true price, which is more useful for risk-bearing applications.
+V3 uses the geometric mean of prices (computed by averaging ticks, which are log-scale price values) rather than the arithmetic mean of raw prices. This matters when prices can swing in large ratios. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric version is symmetric around the true price, which is more useful for risk-bearing applications.
 
 The [V3 oracle documentation](https://docs.uniswap.org/concepts/protocol/oracle) covers the specifics of how to read observations and compute windows.
 

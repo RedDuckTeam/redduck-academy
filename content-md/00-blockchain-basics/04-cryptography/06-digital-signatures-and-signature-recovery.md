@@ -8,7 +8,7 @@ _type: lecture_
 
 You hold a private key. You want to tell the network "move some value from my account to this other account." The network has never met you. It will never meet you. It cannot ask for your password because there is no password and no one to receive it.
 
-What you can send is a **transaction** plus a **signature** on that transaction. Anyone with your public key can then check whether the signature is valid for that exact transaction. If it is, the network accepts that the transaction came from whoever holds the private key that pairs with the public key in question. If it isn't, the transaction is rejected and the network doesn't ask twice.
+What you can send is a **transaction** plus a **signature** on that transaction. Anyone with your public key can then check whether the signature is valid for that exact transaction. If it is, the network accepts that the transaction came from whoever holds the private key that pairs with the public key in question. If it isn't, the transaction is rejected.
 
 For this to work, the signature scheme must guarantee three things:
 
@@ -26,7 +26,7 @@ A signature scheme has two operations.
 
 **Verify** takes the public key, the message, and the signature, and returns either "valid" or "invalid."
 
-<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Sign combines private key and message into a signature; Verify checks it</title><desc>On top, a private key and a message go into the sign step, producing a 64 or 65 byte signature. Below, the public key, message, and signature go into the verify step, which returns valid or invalid.</desc>
   <text x="360" y="20" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Sign</text>
 
 <rect x="40" y="35" width="160" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -84,7 +84,7 @@ A signature scheme has two operations.
 
 Verifying does not require the private key. This is the entire point. The wallet that sent the transaction holds the private key; every node in the world that validates the transaction has only the public key, the message, and the signature; the protocol works because verification with just those three values is enough.
 
-The most common signature scheme on the chains you'll meet is **ECDSA**, the Elliptic Curve Digital Signature Algorithm, used with the same secp256k1 curve that produces the key pairs. ECDSA is the workhorse: every transaction on the largest chain families produces one. **Ed25519** has its own integrated signing scheme (technically called EdDSA) and is used by some newer chains.
+The most common signature scheme on the chains you'll meet is **ECDSA**, the Elliptic Curve Digital Signature Algorithm, used with the same secp256k1 curve that produces the key pairs. ECDSA does most of the signing work: every transaction on the largest chain families produces one. **Ed25519** has its own integrated signing scheme (technically called EdDSA) and is used by some newer chains.
 
 For both schemes the operational properties are the same: sign with the private key, verify with the public key, signatures are ~64 bytes, signing is fast, verification is fast, and forgery without the private key is computationally infeasible.
 
@@ -96,13 +96,13 @@ The fix is a standard called **RFC 6979**, which makes the nonce a deterministic
 
 ## Signature recovery: the operational pay-off
 
-The verify operation above takes the public key as an input. For a blockchain to use this, every transaction would need to carry the sender's public key, which would bloat every transaction and require the network to look up which public keys belong to which accounts.
+The verify operation above takes the public key as an input. For a blockchain to use this, every transaction would need to carry the sender's public key, which would make every transaction larger and require the network to look up which public keys belong to which accounts.
 
 There is a better trick.
 
-ECDSA has a property called **public-key recovery**. Given a signature and the message, you can directly recover the public key that signed it, with no other input. The public key falls out of the signature itself.
+ECDSA has a property called **public-key recovery**. Given a signature and the message, you can directly recover the public key that signed it, with no other input. The public key can be computed from the signature itself.
 
-<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Message and signature recover the signer's public key</title><desc>The message (the transaction) and the signature (65 bytes with recovery id) both feed into a recover step. That step outputs the public key, which reveals the signer's identity.</desc>
   <rect x="40" y="50" width="180" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="130" y="75" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">message</text>
   <text x="130" y="95" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">the transaction</text>
@@ -129,7 +129,7 @@ ECDSA has a property called **public-key recovery**. Given a signature and the m
 
 The extra byte in the signature is a **recovery id** that disambiguates between the two mathematically valid public keys that any ECDSA signature could in principle map to. With that extra byte, recovery is unambiguous.
 
-This is why blockchain transactions don't carry the sender's public key. The network derives it on the fly from the signature itself. The recovered public key, hashed in a chain-specific way, becomes the sender address. If the chain's state shows that this address has the funds being moved, the transaction is accepted. If not, rejected.
+This is why blockchain transactions don't carry the sender's public key. The network derives it from the signature itself as each transaction arrives. The recovered public key, hashed in a chain-specific way, becomes the sender address. If the chain's state shows that this address has the funds being moved, the transaction is accepted. If not, rejected.
 
 On many chains the recovery operation is exposed to smart-contract code as a built-in primitive (most famously named `ecrecover`) and is one of the most-called functions in the whole system. Every transaction triggers it. Every "did this user sign this message?" check uses it.
 
@@ -145,4 +145,4 @@ Three properties are now real to you instead of abstract.
 
 ## Where this goes next
 
-You've now seen the four cryptographic primitives the rest of the course will keep returning to: hash functions, encoding schemes, public-key cryptography, and digital signatures with recovery. The remaining lessons in this module wire these together into the practical structures real wallets and chains use: derivation paths, Merkle trees, and a brief note on the quantum threat to all of the above.
+You've now seen the four building blocks the rest of the course will keep returning to: hash functions, encoding schemes, public-key cryptography, and digital signatures with recovery. The remaining lessons in this module combine these into the practical structures real wallets and chains use: derivation paths, Merkle trees, and a brief note on the quantum threat to all of the above.

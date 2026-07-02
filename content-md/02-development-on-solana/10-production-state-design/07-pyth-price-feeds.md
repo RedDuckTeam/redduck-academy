@@ -37,9 +37,9 @@ Any one of these is enough to lose the entire treasury. Real protocols cannot us
 
 ## How Pyth solves it
 
-Pyth attacks the problem with a different architecture from most oracles. Where Chainlink and similar systems use third-party nodes that pull data from public APIs, Pyth has the data sources themselves as publishers. Jane Street, Wintermute, Binance, OKX, Cboe Global Markets, and dozens of others run publisher software that posts their internal prices directly to Pyth. These are first-party publishers writing their own books to the oracle, rather than third-party nodes scraping a public API.
+Pyth uses a different architecture from most oracles. Where Chainlink and similar systems use third-party nodes that pull data from public APIs, Pyth has the data sources themselves as publishers. Jane Street, Wintermute, Binance, OKX, Cboe Global Markets, and dozens of others run publisher software that posts their internal prices directly to Pyth. These are first-party publishers posting their own prices to the oracle, rather than third-party nodes scraping a public API.
 
-<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pyth data flow: publishers to Pythnet to Solana price account to consumer</title><desc>The diagram shows first-party publishers like Jane Street, Wintermute, Binance, OKX, and Cboe (80+ for major feeds) sending prices off chain to Pythnet, which aggregates them every 400ms slot into a price and confidence value written to a Pyth price account on Solana, which a consumer program then reads via SDK. Below, a box lists three layers of decentralization that protect against bad data: many publishers per feed, outlier-rejecting aggregation on Pythnet, and one paid update per slot on Solana.</desc>
   <defs>
     <marker id="arrP1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -96,7 +96,7 @@ Pyth attacks the problem with a different architecture from most oracles. Where 
 
 The aggregation happens on **Pythnet**, a Solana-fork appchain dedicated to oracle data. Each publisher writes their price observation as a transaction on Pythnet. Pythnet validators aggregate the observations into a single price plus a confidence interval, and the aggregate is propagated to Solana mainnet every slot. By the time your program reads a Pyth price account, the data has been through deduplication, outlier rejection, and confidence-weighted averaging across many publishers.
 
-The Pythnet layer is the cost-saving move equivalent to Chainlink's OCR. Without it, every publisher would have to write their own price to Solana mainnet, paying fees, and the aggregation would happen on-chain at enormous compute cost. Pythnet lets the publishers do their work on a separate chain and lets only the final aggregate touch Solana.
+The Pythnet layer serves the same cost-saving purpose as Chainlink's Off-Chain Reporting protocol. Without it, every publisher would have to write their own price to Solana mainnet, paying fees, and the aggregation would happen on-chain at enormous compute cost. Pythnet lets the publishers do their work on a separate chain and lets only the final aggregate touch Solana.
 
 The on-chain side on Solana is a set of accounts owned by the Pyth program. Each price feed has its own account at a stable address. Your program reads from that account just like any other Anchor account read.
 
@@ -209,7 +209,7 @@ Setting the threshold is application-specific. A lending protocol with conservat
 
 A Pyth feed publishes continuously. Every Solana slot, the aggregator on Pythnet emits a new price, and the updated value lands on Solana mainnet shortly after. The on-chain price tracks the real-world price within a few hundred milliseconds under normal conditions.
 
-<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pyth staleness check vs confidence check, with fresh/stale and tight/wide examples</title><desc>The left panel shows the staleness check: publish_time versus the current time, with a fresh example (20 sec gap under the 60 sec threshold) and a stale example (70 sec gap over it), guarding against network outages, publisher dropout, and Solana congestion. The right panel shows the confidence check: price versus conf, with a tight example (0.003% ratio under the 1% threshold) and a wide example (1.20% ratio over it), guarding against flash crashes, exchange outages, and publisher disagreement.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Two checks a Pyth consumer must make</text>
   <rect x="40" y="80" width="310" height="320" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -254,7 +254,7 @@ A Pyth feed publishes continuously. Every Solana slot, the aggregator on Pythnet
 
 That said, updates can stop. Solana network congestion can delay them. Publishers can lag during market stress. The Pyth program itself does not enforce a minimum update frequency on its readers. The price account just sits at whatever value was last written. Your program is responsible for checking the data is recent enough.
 
-This is what `get_price_no_older_than(&Clock::get()?, 60)` in the consumer code does. It accepts the price if `publish_time` is within the last 60 seconds, and returns `None` if not. A threshold of 60 seconds is appropriate for most active DeFi use cases on Solana, since updates are sub-second under normal conditions. Setting it tighter, say 10 seconds, gives you fresher data at the cost of more frequent false rejections during minor network hiccups. Setting it looser, say 300 seconds, lets your protocol act on data that may no longer reflect reality.
+This is what `get_price_no_older_than(&Clock::get()?, 60)` in the consumer code does. It accepts the price if `publish_time` is within the last 60 seconds, and returns `None` if not. A threshold of 60 seconds is appropriate for most active DeFi use cases on Solana, since updates are sub-second under normal conditions. Setting it tighter, say 10 seconds, gives you fresher data at the cost of more frequent false rejections during brief network delays. Setting it looser, say 300 seconds, lets your protocol act on data that may no longer reflect reality.
 
 The exact threshold depends on your protocol's tolerance. A liquidation engine running every block needs tight freshness. A daily settlement program that runs once a day can accept far older data.
 

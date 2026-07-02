@@ -39,7 +39,7 @@ Any one of these is enough to lose the entire treasury. Real protocols cannot us
 
 Chainlink price feeds attack the problem at three independent levels.
 
-<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Chainlink price feed: data sources, oracle nodes, aggregator, consumer contract</title><desc>Exchanges like Binance, Coinbase, Kraken, and Bitstamp send prices to many independent oracle nodes, which aggregate them off-chain via OCR. The aggregator contract then stores the median price and round metadata on-chain, and the consumer contract reads it through an interface.</desc>
   <defs>
     <marker id="arrO1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -142,7 +142,7 @@ The [`latestRoundData()`](https://docs.chain.link/data-feeds/api-reference) func
 
 Most consumers only need `answer` and `updatedAt`. The example above ignores everything else for clarity, but production code should always read `updatedAt` (see the staleness section below).
 
-The price comes back as `int256`, not `uint256`. The signed type exists because some feeds report values that can legitimately be negative (interest rate differentials, for example). Price feeds for assets like ETH/USD will never actually return a negative number, but the interface uses the wider type to accommodate the full range of possible feed types.
+The price comes back as `int256`, not `uint256`. The signed type exists because some feeds report values that can legitimately be negative (interest rate differentials, for example). Price feeds for assets like ETH/USD will never return a negative number, but the interface uses the signed type so it can also serve feeds whose values can be negative.
 
 ## Decimals normalization
 
@@ -158,15 +158,15 @@ function getEthPriceIn18Decimals() public view returns (uint256) {
 }
 ```
 
-The `require(answer > 0)` check serves two purposes: it converts the safe range into `uint256`, and it catches the edge case where a misconfigured feed reports zero or negative (which for a USD price feed should never happen). Doing this once at the read site is much cheaper than verifying everywhere downstream.
+The `require(answer > 0)` check serves two purposes: it guarantees the value is positive so converting to `uint256` is safe, and it catches the edge case where a misconfigured feed reports zero or negative (which for a USD price feed should never happen). Doing this once at the read site is much cheaper than verifying everywhere downstream.
 
 If you call `decimals()` once at construction and store it, you avoid one external call on every price read. Decimals do not change for a given feed.
 
 ## Staleness checks
 
-A feed updates when either the price moves enough OR enough time has passed. Either condition alone is sufficient.
+A feed updates when either the price moves enough or enough time has passed. It does not need both.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ETH/USD feed update triggers: 0.5% deviation or 1-hour heartbeat</title><desc>A chart plots ETH price against time, comparing the real-world price line to the on-chain feed, which updates in steps. Two boxes explain the triggers: a deviation threshold (price moves more than 0.5% for ETH/USD on mainnet) and a heartbeat interval (maximum 1 hour between updates), and the feed publishes when either one fires first.</desc>
   <defs>
     <marker id="arrO2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -222,4 +222,4 @@ function getValidatedPrice() public view returns (uint256) {
 }
 ```
 
-The exact staleness threshold depends on the feed's heartbeat and your protocol's tolerance. A lending protocol that liquidates on small price moves needs fresher data than a settlement contract that runs once a day. The constant `3600` (one hour) is appropriate for ETH/USD with a one-hour heartbeat plus some buffer. Setting it too low causes false reverts during normal operation. Setting it too high lets your protocol act on data that may no longer reflect reality.
+The exact staleness threshold depends on the feed's heartbeat and your protocol's tolerance. A lending protocol that liquidates on small price moves needs fresher data than a settlement contract that runs once a day. The constant `3600` (one hour) equals the ETH/USD heartbeat. Because an update can arrive slightly after the heartbeat under normal operation, production code usually sets the threshold a little above the heartbeat so a late-but-healthy update is not rejected as stale. Setting it too low causes false reverts during normal operation. Setting it too high lets your protocol act on data that may no longer reflect reality.

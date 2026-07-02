@@ -55,7 +55,7 @@ function withdraw(address to, uint256 amount) external {
 }
 ```
 
-This is functionally identical to `require(msg.sender == owner, "not owner")`. The `revert` form reads better when the condition for reverting is complex enough that flipping it for `require` would mangle readability:
+This is functionally identical to `require(msg.sender == owner, "not owner")`. The `revert` form reads better when the condition for reverting is complex enough that rewriting it as a positive `require` would make it hard to read:
 
 ```solidity
 function settle(uint256 amount) external {
@@ -138,7 +138,7 @@ When you do reach for it, the use case is an arithmetic invariant the compiler c
 
 ## Modifiers: reusing a check across many functions
 
-Look at the Vault again. Almost every state-mutating function in a real contract starts with the same line: `require(msg.sender == owner, "not owner")`. Across ten functions, that's ten copies of the same check. If the check ever needs to change, you have to remember to update all ten.
+Look at the Vault again. In an owner-controlled contract, many state-mutating functions start with the same line: `require(msg.sender == owner, "not owner")`. Across ten functions, that's ten copies of the same check. If the check ever needs to change, you have to remember to update all ten.
 
 Solidity has a feature for exactly this: **modifiers**. A modifier is a named, reusable block of code that wraps a function. You write the check once, give it a name, and apply it to as many functions as you want.
 
@@ -265,7 +265,7 @@ contract Bank {
 
 An `event` declaration looks like a function signature with no body. To fire one, you write `emit EventName(args)`. The event and its arguments get appended to the transaction's log entries. Once the transaction is mined, anyone who knows the contract's address and the event signature can find and decode the log entry.
 
-This is the primary way state-mutating functions report results to off-chain code. A `deposit()` function can't return its result to a wallet caller, since the return value of a state-mutating transaction isn't observable off-chain, so it emits an event instead. A frontend listens for `Deposited(address,uint256,uint256)` events from the contract and updates its UI when one arrives.
+This is the primary way state-mutating functions report results to off-chain code. A state-mutating function like `deposit()` can't return a value to its caller off-chain, so it emits an event instead. A frontend listens for `Deposited(address,uint256,uint256)` events from the contract and updates its UI when one arrives.
 
 ## Indexed parameters and the topic limit
 
@@ -301,4 +301,4 @@ event Approval(address indexed owner, address indexed spender, uint256 value); /
 event Transfer(address indexed from, address indexed to, uint256 indexed tokenId); // ERC-721
 ```
 
-The ERC-20 `Transfer` event fires on every token movement. Wallets read it to display balance changes. Indexers like The Graph, Dune, and Etherscan read it to build token databases. ERC-721 reuses the same name but indexes `tokenId` instead of value, since NFTs are unique. Recognizing these signatures lets you read most ERC standards in a single pass.
+The ERC-20 `Transfer` event fires on every token movement. Wallets read it to display balance changes. Indexers like The Graph, Dune, and Etherscan read it to build token databases. ERC-721 reuses the same name but indexes `tokenId` instead of value, since NFTs are unique. Recognizing these signatures lets you understand most token contracts quickly.

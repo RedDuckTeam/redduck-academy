@@ -16,7 +16,7 @@ The standard does not say what the vault does internally. It does not say how th
 
 The clearest way to think about ERC-4626 is as a bank account that issues transferable receipts.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-4626 vault swapping user assets for shares and back</title><desc>A user holding assets like USDC sits next to a vault that tracks totalAssets and totalSupply, where share price equals totalAssets divided by totalSupply. Arrows show the user depositing assets to receive minted shares, and burning shares to get assets back, while a note explains that shares are a transferable ERC-20 token whose value rises as the vault earns yield.</desc>
   <defs>
     <marker id="arrV1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -62,7 +62,7 @@ The ratio between these two values is the share price. If the vault holds 1,000 
 
 A user might want to specify the deposit two different ways: "I have exactly 100 USDC, take it and give me whatever shares that's worth" or "I want exactly 10 shares of this vault, take whatever USDC that costs from me." The standard supports both. Same for withdrawals.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-4626 vault operations: deposit, mint, withdraw, redeem</title><desc>Four boxes show the vault functions deposit, mint, withdraw, and redeem, each with an example request and the formula the vault uses to convert between assets and shares. Deposit and withdraw start from an asset amount, while mint and redeem start from a share amount, so deposits go in as assets to shares and withdrawals go out as shares to assets.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Four operations, paired by "which side you specify"</text>
   <rect x="40" y="80" width="320" height="170" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -146,7 +146,7 @@ OpenZeppelin's reference implementation uses a `Math.mulDiv` helper with an expl
 
 The math above has a problem when the vault is freshly deployed and nearly empty. The very first depositor sets the initial share price by being the first one to mint. If they're malicious, they can rig the price so that the second depositor gets cheated.
 
-<svg viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-4626 inflation attack: attacker drains the second vault depositor</title><desc>A sequence diagram shows three lanes, Attacker, Vault, and Victim, over four numbered steps. The attacker deposits 1 wei then directly transfers 10,000 USDC to inflate the share price, so the victim's 5,000 USDC deposit rounds down to 0 shares while the attacker redeems 1 share for 15,001 USDC, a 5,000 USDC profit.</desc>
   <defs>
     <marker id="arrV3" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -224,7 +224,7 @@ To see why, redo the attack with the virtual amounts using offset = 0:
 
 So offset = 0 isn't quite enough. Setting offset to 6 (a common choice) means the virtual share supply is `10^6 = 1,000,000`. The victim's calculation becomes 5,000 × 1,000,001 / 10,002 ≈ 499,950 shares. Now they actually receive shares, and the attacker can't drain them by donating.
 
-The offset is a parameter the vault implementer chooses. Higher values give stronger protection against the attack, at the cost of producing very small share amounts that may look strange in user interfaces. OpenZeppelin's default `_decimalsOffset()` returns 0, which the standard recommends increasing for any vault that holds value.
+The offset is a parameter the vault implementer chooses. Higher values give stronger protection against the attack, at the cost of producing very small share amounts that may look strange in user interfaces. OpenZeppelin's default `_decimalsOffset()` returns 0, which OpenZeppelin's documentation recommends increasing for any vault that holds value.
 
 A simpler alternative that also defends against this attack: have the deployer make an initial deposit during construction, large enough that the inflation math doesn't work out economically. This is called "burning the first share" because the shares are usually sent to address(0). It's less robust than virtual shares but is sometimes the right choice for permissioned vaults where you control the deployment.
 
@@ -260,7 +260,7 @@ The use of `staticcall` here is intentional. The vault is asking another contrac
 A protocol should expose an ERC-4626 interface when it manages an ERC-20 on behalf of users and tracks their share of the pool. That covers:
 
 - Yield aggregators (Yearn-style strategies that rotate between protocols)
-- Lending markets where deposits earn interest (Aave's aTokens, Compound's cTokens are spiritually ERC-4626)
+- Lending markets where deposits earn interest (Aave's aTokens and Compound's cTokens follow the same pattern but predate the standard)
 - Staking pools that issue derivative tokens
 - Liquid staking and restaking protocols (Lido's stETH is not formally ERC-4626 but plays the same role)
 - Single-asset vaults around any productive on-chain strategy

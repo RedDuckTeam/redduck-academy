@@ -24,7 +24,7 @@ An **executable** flag, true or false. If true, the data is compiled program cod
 
 That's the entire structure. There is nothing else.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Anatomy of a Solana account: address, lamports, data, owner, executable</title><desc>A box shows a Solana account with its address (public key) at the top and four fields below: lamports (how much SOL it holds), data (a blob of bytes the owner defines), owner (the one program that can write to the data), and executable (true if the data is code, false if it is just bytes). Side notes compare the account to a file on the chain's file system, opened by its address, and note that wallets, tokens, and programs all share this same structure.</desc>
   <defs>
     <marker id="arrS22aG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -69,13 +69,13 @@ The strength of this design shows up when you see how many different things fit 
 
 **Alice's wallet.** When someone "has a Solana address," what they actually have is an account owned by the System Program, the built-in program that handles SOL transfers. The data field is empty. The lamports field is Alice's SOL balance. The executable flag is false. That's a wallet.
 
-**Alice's USDC balance.** Token balances do not live inside the user's wallet. They live in their own separate accounts, owned by the Token Program. The data field contains 165 bytes laying out the mint that issued the token, the user who owns the balance, and the current amount. The lamports field holds just enough to cover the storage cost. The executable flag is false. Alice does not own this account in the runtime sense, the Token Program does. Alice is recorded inside the data as the authorized user, and the Token Program enforces that nobody else can move the balance.
+**Alice's USDC balance.** Token balances do not live inside the user's wallet. They live in their own separate accounts, owned by the Token Program. The data field contains 165 bytes: the mint that issued the token, the user who owns the balance, and the current amount. The lamports field holds just enough to cover the storage cost. The executable flag is false. Alice does not own this account in the runtime sense, the Token Program does. Alice is recorded inside the data as the authorized user, and the Token Program enforces that nobody else can move the balance.
 
 **A deployed program.** When you build and deploy a program to Solana, the deployment produces an account at a fresh address. The data field contains the compiled bytecode, often a few hundred kilobytes of it. The owner is a system-level program called the BPF Loader, which is the only thing allowed to modify program code. The executable flag is true. That flag is how the runtime knows to treat this account's data as code rather than as plain bytes.
 
 Same five fields, three completely different roles.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice's wallet, USDC balance, and deployed program account fields compared</title><desc>Three cards show the same five fields (address, lamports, data, owner, executable) for a wallet, a token balance, and a deployed program. Only the deployed program has executable set to true, owned by the BPF Loader, while the wallet and token account are owned by the System Program and Token Program and are not executable.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Three accounts you'll meet on day one</text>
   <rect x="40" y="90" width="200" height="320" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -146,7 +146,7 @@ The single most important field on any account is the owner. Reads on Solana are
 
 This is what keeps your token balance safe. The Token Program owns your USDC balance account. When you sign a transaction asking the Token Program to move 50 USDC from your balance to Bob's, the Token Program runs, checks that you authorized the move, and updates both balance accounts. If a different program tries to write to your balance account directly, the runtime stops it before the program runs.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Who can read and write Alice's USDC balance account</title><desc>Alice's USDC balance account is owned by the Token Program, which is the only one allowed to write to it. Other programs and outside users querying the chain can read the account's data, but writing without going through the owner program is blocked.</desc>
   <defs>
     <marker id="arrS22cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -191,12 +191,12 @@ When you write a program of your own, the same rules apply to you. The accounts 
 
 ## Programs are accounts too
 
-The thing that takes the longest to internalize is that programs themselves are just accounts. When you deploy a program, you produce an account. The account's address becomes the program's identifier, the one you reference whenever you want to call into it. The data field holds the compiled bytecode. The executable flag is true.
+Programs themselves are just accounts. When you deploy a program, you produce an account. The account's address becomes the program's identifier, the one you reference whenever you want to call into it. The data field holds the compiled bytecode. The executable flag is true.
 
 Calling a program is the act of submitting a transaction that points at the program's address and provides the accounts the program needs to work with. The runtime sees the executable flag, loads the bytecode from the data field, and runs it with the listed accounts as inputs.
 
-This is why there is no separate "contract address space" the way some other chains have. There is one address space, with one kind of account. Some of them happen to hold code instead of data.
+This is why Solana has no separate "contract address space". There is one address space, with one kind of account. Some of them happen to hold code instead of data.
 
 ## What you'll be doing with accounts
 
-When you write your first program, you will be creating accounts, reading from them, and writing to them. You will set up each account at a deterministic address by deriving it from a seed, decide how many bytes its data field should hold, and pay the lamports needed to keep it on chain. The runtime will check the ownership and the access lists on every call. Most of the bugs new Solana developers hit come from getting one of these wrong, which is why every piece of the model is worth understanding clearly before you write code that depends on it.
+When you write your first program, you will be creating accounts, reading from them, and writing to them. You will set up each account at a deterministic address, decide how many bytes its data field should hold, and pay the lamports needed to keep it on chain. The runtime will check the ownership and the access lists on every call. Most of the bugs new Solana developers hit come from getting one of these wrong, which is why every piece of the model is worth understanding clearly before you write code that depends on it.

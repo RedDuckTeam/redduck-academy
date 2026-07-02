@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-Welcome. This is a hands-on course in blockchain development. You'll read, check your understanding, write real code, and build projects. Before you start, here's the lay of the land. One minute, then we begin.
+Welcome. This is a hands-on course in blockchain development. You'll read, check your understanding, write real code, and build projects. Before you start, here is a quick overview of how the course works. One minute, then we begin.
 
 ### What you'll do here
 
@@ -13,7 +13,7 @@ Each course is a sequence of short lessons. You'll meet four kinds:
 - **Coding tasks** ask you to write real code in the editor. It's checked automatically.
 - **Projects** are larger builds in your own GitHub repo that you submit as a link. They get reviewed automatically, with detailed feedback.
 
-So it's not just quizzes. You'll be writing and shipping code.
+So it's not just quizzes. You'll be writing and submitting real code.
 
 ### How progress works
 
@@ -22,7 +22,7 @@ So it's not just quizzes. You'll be writing and shipping code.
 - Some courses have prerequisites and unlock once you finish the course they build on.
 - Your rank on the leaderboard reflects how many lessons you've completed overall.
 
-Pick up where you left off anytime with the Continue button on the home page, and jump around using the course outline on the left.
+Pick up where you left off anytime with the Continue button on the home page, and navigate between lessons using the course outline on the left.
 
 ### A few tips
 

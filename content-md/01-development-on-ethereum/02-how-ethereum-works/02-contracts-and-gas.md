@@ -8,7 +8,7 @@ _type: lecture_
 
 A contract is a kind of account. Like any account on Ethereum, it has a balance of ETH and a nonce. Unlike an EOA, it also has code and storage. The code was deployed once when the contract was created, and from that point onward it lives at the contract's address. The storage is a mapping from 256-bit keys to 256-bit values that the contract's code reads and writes as it runs.
 
-A contract is created by sending a special transaction whose `to` field is empty and whose `data` field contains creation code. When the transaction is mined, the EVM runs that creation code, which returns the contract's runtime bytecode. The protocol places that bytecode at an address computed as `keccak256(sender, sender_nonce)`, takes the lowest 20 bytes, and from then on the contract exists. There's a second deployment opcode called `CREATE2` that lets you choose a salt instead of using the sender's nonce, which is how you compute a contract's address in advance for things like factory patterns.
+A contract is created by sending a special transaction whose `to` field is empty and whose `data` field contains creation code. When the transaction is mined, the EVM runs that creation code, which returns the contract's runtime bytecode. The protocol computes the contract's address as the lowest 20 bytes of `keccak256(sender, sender_nonce)`, places the bytecode there, and from then on the contract exists. There's a second deployment opcode called `CREATE2` that lets you choose a salt instead of using the sender's nonce, which is how you compute a contract's address in advance for things like factory patterns.
 
 **A contract does nothing on its own.** It has no scheduler, no listener, no background process. It only runs when called, either by a transaction from an EOA or by another contract that decides to call it mid-execution. Between calls it sits dormant in the chain's state.
 
@@ -16,7 +16,7 @@ A contract is created by sending a special transaction whose `to` field is empty
 
 **A contract can call other contracts.** Each nested call has its own arguments, its own gas budget allocated from the caller's remaining gas, and its own opportunity to revert. This property is called **composability**, and it's why a token contract you write today can be called next year by a lending protocol you've never heard of. The interface lives on chain. Any contract can use it.
 
-<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice calls Exchange contract, which calls Token A contract</title><desc>Alice signs a transaction that calls Exchange's swap function, which reads pool reserves and calls Token A's transferFrom to subtract from Alice and add to Exchange, then updates reserves and returns. All these nested calls share one transaction's atomic scope, so a revert anywhere rolls back every state change.</desc>
   <defs>
     <marker id="arr22" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -71,7 +71,7 @@ This composition is the source of nearly all the interesting applications on Eth
 
 Every operation a contract performs costs **gas**. Adding two numbers costs 3 gas. Multiplying them costs 5. Reading a word from a contract's storage costs 100 or 2,100 depending on whether the slot has been touched recently in the transaction. Writing a new word to storage costs 22,100. The exact numbers don't matter yet. What matters is the shape: cheap operations cost a few gas, expensive ones cost thousands or tens of thousands.
 
-Notice that storage operations dominate. Writing one word to storage costs 22,100 gas. Adding two numbers costs 3. That ratio isn't arbitrary. Storage has to be held by every full node on the network, forever, until something explicitly overwrites it. Adding two numbers is a one-time computation that disappears as soon as the transaction ends. The protocol prices storage to reflect that asymmetry. A side effect of this is that clearing a storage slot, setting it from non-zero back to zero, gives the sender a partial gas refund, because the network no longer has to hold that value.
+Notice that storage operations dominate the numbers above. That gap between writing a word and adding two numbers isn't arbitrary. Storage has to be held by every full node on the network, forever, until something explicitly overwrites it. Adding two numbers is a one-time computation that disappears as soon as the transaction ends. The protocol prices storage to reflect that asymmetry. A side effect of this is that clearing a storage slot, setting it from non-zero back to zero, gives the sender a partial gas refund, because the network no longer has to hold that value.
 
 Gas exists for two reasons.
 
@@ -79,11 +79,11 @@ Gas exists for two reasons.
 
 **Execution has to be bounded.** Without a limit, a contract could run forever. The protocol can't ask each node to detect infinite loops, because deciding whether a program halts is undecidable in general. The solution is blunt. Every transaction declares the maximum amount of gas it's willing to spend, called the **gas limit**. Execution halts when that limit is reached. If the transaction was going to complete legitimately within the limit, it completes. If it was going to loop forever, it gets cut off and its state changes are reverted.
 
-Pricing keeps the economics sane, and limits keep the protocol unstuck. Together they're what makes Ethereum work as a general-purpose execution platform.
+Pricing keeps the cost of computation fair, and limits stop execution from running forever. Together they're what makes Ethereum work as a general-purpose execution platform.
 
 ## What you actually pay
 
-Every transaction includes two numbers related to gas. The first is the **gas limit**, the maximum the sender is willing to pay for. The second is the **gas price**, how much they're willing to pay per unit. The actual fee is `gas used × gas price`, paid in ETH.
+Every transaction includes two numbers related to gas. The first is the gas limit you already met — the maximum amount of gas the transaction may use. The second is the **gas price**, how much they're willing to pay per unit. The actual fee is `gas used × gas price`, paid in ETH.
 
 Gas prices are usually denominated in **gwei**, where one gwei is `10^-9` ETH, or one billionth of an ETH. A typical mainnet transaction in 2025 might pay something like 10 to 50 gwei per unit of gas. At current ETH prices, that translates to a fraction of a cent per gas unit. A simple transfer costs about 21,000 gas, so the total fee is small. A complex DeFi interaction might use 200,000 to 500,000 gas, which is where transaction costs start being something the user notices.
 
@@ -119,4 +119,4 @@ When contract A calls contract B, A passes some of its remaining gas to B. If B 
 
 The first is that **storage is precious**. The most expensive opcode by a wide margin is the one that writes to a new storage slot. Every byte you store on Ethereum costs gas at deployment, and every subsequent change costs gas again. This shapes how Solidity code is written. Variables get packed into structs. State that doesn't need to be on chain stays off chain. Patterns like emitting events instead of storing values get used everywhere. You will spend a measurable share of your development time thinking about storage layout.
 
-The second is that **transactions cost users money**. A user calling your contract is paying for every operation it performs. If your contract does too much work per call, your contract becomes too expensive to use. The cheaper your contract is to interact with, the wider the audience that can afford to use it. This is the single biggest constraint on Ethereum application design, and it's why so much of advanced Solidity is about gas optimization.
+The second is that **transactions cost users money**. A user calling your contract is paying for every operation it performs. If your contract does too much work per call, it becomes too expensive to use. The cheaper your contract is to interact with, the wider the audience that can afford to use it. This is the single biggest constraint on Ethereum application design, and it's why so much of advanced Solidity is about gas optimization.

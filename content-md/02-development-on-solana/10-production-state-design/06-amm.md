@@ -16,7 +16,7 @@ A pool on Solana is not a contract that holds tokens, the way Uniswap V2's pool 
 x * y = k
 ```
 
-`x` is how much of token A the pool holds. `y` is how much of token B the pool holds. `k` is the product, and the pool keeps `k` constant across every swap.
+`x` is how much of token B the pool holds. `y` is how much of token A the pool holds. `k` is the product, and the pool keeps `k` constant across every swap.
 
 Suppose the pool currently holds 100 of token A and 100 of token B. Then `x = 100`, `y = 100`, and `k = 10,000`. After any swap, the product of the two reserves must still equal 10,000. That is all the rule says.
 
@@ -58,7 +58,7 @@ In plain words, the new reserve of token A must equal `k` divided by the new res
 
 That is the swap formula. It is the invariant `x * y = k` rearranged to solve for the output.
 
-<svg viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>AMM swap curve x · y = k with before and after reserve points</title><desc>A curve chart plots reserve of token A (y-axis) against reserve of token B (x-axis), following x · y = k. It marks a before point (X, Y) and an after point (X + Δx, Y − Δy) on the curve, linked by an arrow labeled Δx in and Δy out.</desc>
   <defs>
     <marker id="arrU1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -126,7 +126,7 @@ third trader receives = 83.33 - 76.92 = 6.41 of token A
 
 This is the price discovery mechanism. The pool does not ask anyone what the price should be. It just defends the invariant, and the invariant produces prices that respond to supply and demand. If token A is in high demand, with lots of traders putting B in to get A out, the reserve of A shrinks fast, and the price of A in B rises fast. If demand fades, no swaps happen, and the price stays put.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>AMM curve x·y=k: three equal trades of token B give shrinking token A output</title><desc>A curve plots reserve of token A against reserve of token B, following x·y=k. Three traders each swap the same 30 of token B: pool 100/100 gives 23.08 A, pool 130/76.92 gives 14.42 A, and pool 160/62.50 gives only 9.87 A.</desc>
   <defs>
     <marker id="arrU2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -222,7 +222,7 @@ That is the same formula as before, with `Δx` replaced by `Δx * 997 / 1000`, t
 
 Now here is the part that matters. The fee adds to the reserves but no new LP tokens are minted to cover it. So the total LP supply stays the same while the reserves grow. That means each LP token now claims a slightly bigger slice of the pool. LPs do not have to claim anything, do not have to call any instruction. Their LP tokens just become more valuable as fees accrue.
 
-<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three-stage AMM diagram: fees grow pool reserves while LP token supply stays fixed</title><desc>It shows three stages: Alice deposits 200 USDC and 1 SOL for 14.14 LP tokens, swap fees grow the reserves to 216 USDC and 1.08 SOL while the LP supply stays at 14.14, and Alice burns her LP tokens to withdraw 216 USDC and 1.08 SOL. A side panel explains that each LP token's value equals reserves divided by total LP supply, since fees are never minted as new LP tokens.</desc>
   <defs>
     <marker id="arrU3" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -270,7 +270,7 @@ There is no separate fee accounting in the program. No per-LP fee tracker. No cl
 
 ## Impermanent loss: the cost LPs actually pay
 
-Earlier the lecture mentioned impermanent loss as the LP's risk and skipped the details. Time to fill them in. Fees are the reward side, impermanent loss is the cost side, and the LP picture only makes sense with both on the table.
+The fee section described the LP's real risk: as traders swap, the pool rebalances, and the LP ends up holding proportionally more of whichever token fell in value. That effect has a name: impermanent loss. Here is how it works. Fees are the reward side, impermanent loss is the cost side, and the LP picture only makes sense with both on the table.
 
 The mechanism is simple. The constant-product invariant rebalances the pool every time price changes. If SOL appreciates, swappers buy SOL from the pool, so the pool loses SOL and gains USDC. By the time price has doubled, the pool holds less SOL than at entry. An LP who owns a fixed share of the pool holds proportionally less SOL too. They missed part of the SOL appreciation.
 
@@ -284,7 +284,7 @@ The size of the loss is a clean function of the price ratio `r` between exit and
 IL = 2 * sqrt(r) / (1 + r) - 1
 ```
 
-<svg viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Impermanent loss curve by price ratio, with SOL $200 to $400 example</title><desc>A curve chart plots LP loss versus HODL loss from 0% loss at the 1x entry price ratio to 20% loss at 0.25x or 4x the entry price, with points marked at 2x (-5.7%), 0.5x (-5.7%), 3x (-13.4%), 4x (-20%), and 0.25x (-20%). A worked example below shows Alice's $400 in SOL and USDC growing to $600 if she HODLs but only $566 if she provides liquidity when SOL doubles from $200 to $400, a $34 loss matching the -5.7% point on the curve.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Impermanent loss: any price move makes the LP worse off than HODLing</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">LP value vs HODL value, as a function of price change</text>
@@ -371,11 +371,11 @@ The central LP question. Do earned fees exceed IL?
 
 For stablecoin pairs the price ratio barely moves, so IL stays negligible and small fee income wins. For volatile pairs the math is closer. SOL/USDC on a 0.3 percent pool needs enough trading volume to pay back the IL accumulated from price movement. Pools with high volume-to-TVL ratios earn back IL and then some. Quiet pools do not.
 
-The cleanest mental model. LP'ing in a constant-product AMM is selling volatility insurance. You collect premiums in fees and pay claims in IL when the underlying moves. Some books are profitable, some are not.
+The cleanest mental model: being an LP in a constant-product AMM is like selling volatility insurance. You collect premiums in fees and pay claims in impermanent loss when price moves. Some positions earn more in fees than they lose to impermanent loss; others do not.
 
 ## Two structural choices worth knowing
 
-The first one is the biggest architectural difference between Uniswap V2 on Ethereum and any constant-product AMM on Solana, and it is worth slowing down for.
+The first one is the biggest architectural difference between Uniswap V2 on Ethereum and any constant-product AMM on Solana, and it is worth examining carefully.
 
 **One program, many pools.** On Solana, no new program gets deployed for each pool. The same AMM program serves every market on the network. USDC/SOL, USDC/JUP, BONK/SOL, and every other pair run on the same deployed code.
 

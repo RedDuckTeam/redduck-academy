@@ -8,7 +8,7 @@ If you've used Go, Rust, TypeScript, or C, the basic model is the same. Two thin
 
 A struct is a named bundle of fields. Two things to internalize before any syntax.
 
-First, field access is by name, not by position. This is the main difference from arrays, which use positions, and from mappings, which use keys. When you have a `Payment` struct with an `amount` field, you read it as `payment.amount`. The compiler resolves the name to a storage offset. You don't deal with the offset directly. Structs are the right choice when the things you're bundling are different in kind, not different in position.
+First, field access is by name, not by position. This is the main difference from arrays, which use positions, and from mappings, which use keys. When you have a `Payment` struct with an `amount` field, you read it as `payment.amount`. The compiler maps the name to the field's location and reads it for you. You never work with positions directly. Structs are the right choice when the things you're bundling are different in kind, not different in position.
 
 Second, structs are templates, not values until instantiated. Declaring `struct Payment { ... }` only defines the shape. To actually have a payment, you need to create an instance, either as a state variable, a local variable, or as a value sitting inside a mapping or array. The instance is where the data lives. The struct definition is just the recipe.
 
@@ -77,7 +77,7 @@ struct Good {
 }
 ```
 
-The `Good` version uses one less storage slot per instance, which translates into thousands of gas saved on every fresh write and every cold read. The rule of thumb: declare larger fields together, and group smaller fields so they can share a slot. This becomes a real optimization for contracts that create many struct instances, like NFT contracts, vaults, and order books.
+The `Good` version uses one less storage slot per instance, which translates into thousands of gas saved on every fresh write and every cold read. A simple guideline: declare larger fields together, and group smaller fields so they can share a slot. This becomes a real optimization for contracts that create many struct instances, like NFT contracts, vaults, and order books.
 
 The full rules of storage layout have more depth than this section covers, but knowing that field order matters is enough to write reasonable structs today.
 
@@ -110,7 +110,7 @@ In both cases, the storage location keyword is required when declaring a local s
 
 ## The reference vs copy distinction
 
-This is the single biggest source of bugs when developers first use Solidity structs. A struct retrieved from a storage location with the `storage` keyword is a reference. With `memory`, it's a copy.
+A struct retrieved from a storage location with the `storage` keyword is a reference. With `memory`, it's a copy.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -161,7 +161,7 @@ lastOrder.amount = 200;    // SSTORE: writes directly to storage
 lastOrder.fulfilled = true; // another SSTORE
 ```
 
-Each field write to a storage struct is a separate SSTORE, which is one of the most expensive EVM operations. If you're updating multiple fields, the gas adds up. There are micro-optimizations to batch writes, but the general advice is to design your structs so the common write paths only modify a small number of fields.
+Each field write to a storage struct is a separate SSTORE, which is one of the most expensive EVM operations. If you're updating multiple fields, the gas adds up. To keep this cost down, design your structs so the common write paths modify only a small number of fields.
 
 The `delete` keyword clears a struct back to all-zero values:
 
@@ -203,7 +203,7 @@ contract Registry {
 
 The `register` function builds a fresh `Profile` in memory using the named-args form, then assigns it into the mapping. The assignment copies all fields into storage. The `verify` function takes a storage reference to the existing profile and modifies it in place, which is the only way the change persists.
 
-If `verify` had used `Profile memory p = profiles[user]; p.verified = true;`, it would have read a copy, set the copy's `verified` to true, and exited the function with that copy thrown away. The actual stored profile would have remained unverified. This is the most common bug pattern in Solidity for beginners.
+If `verify` had used `Profile memory p = profiles[user]; p.verified = true;`, it would have read a copy, set the copy's `verified` to true, and exited the function with that copy thrown away. The actual stored profile would have remained unverified.
 
 ## Capstone: a payments ledger pattern
 
@@ -244,9 +244,9 @@ contract PaymentsLedger {
 }
 ```
 
-Three things to read into this.
+Three things to notice here.
 
-The `Account` struct holds a counter and a nested mapping. Mappings inside structs are allowed, but the struct can only ever live in storage. There is no such thing as a memory mapping, so a memory `Account` would be incoherent. This is why `accounts` is `internal` rather than `public`: the auto-generated public getter would need to return an `Account`, which the compiler refuses to do because of the embedded mapping.
+The `Account` struct holds a counter and a nested mapping. Mappings inside structs are allowed, but the struct can only ever live in storage. There is no such thing as a memory mapping, so the compiler will not let you declare a memory `Account`. This is why `accounts` is `internal` rather than `public`: the auto-generated public getter would need to return an `Account`, which the compiler refuses to do because of the embedded mapping.
 
 The `pay` function takes a `storage` reference to the caller's account. Every subsequent write goes to the actual storage location. If `Account memory acc = accounts[msg.sender]` had been used, the counter increment would have happened on a local copy that gets discarded, and the payment would have been written to slot 0 every time.
 

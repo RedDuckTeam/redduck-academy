@@ -6,9 +6,9 @@ _type: lecture_
 
 ## The problem ATAs solve
 
-A wallet that holds USDC also has the option to hold USDT, SOL, BONK, and any of the thousands of other tokens minted on Solana. Each of those holdings lives in a separate token account, because the SPL Token Program keeps one balance per wallet per mint in one TokenAccount struct. So Alice's wallet doesn't directly hold tokens. It owns dozens of token accounts, each holding the balance of a different token.
+A wallet that holds USDC also has the option to hold USDT, BONK, and any of the thousands of other tokens minted on Solana. Each of those holdings lives in a separate token account, because the SPL Token Program keeps one balance per wallet per mint in one TokenAccount struct. So Alice's wallet doesn't directly hold tokens. It owns dozens of token accounts, each holding the balance of a different token.
 
-This creates an annoying lookup problem. If you want to send Bob 50 USDC, you need to know the address of Bob's USDC token account. There's nothing in Bob's wallet pubkey that tells you. You could ask Bob, but that defeats the point of self-custodial transfer. You could let Bob create a token account at any address he likes, but then every sender would need a directory mapping Bob to his token account, and every token Bob holds would need its own entry.
+This creates an annoying lookup problem. If you want to send Bob 50 USDC, you need to know the address of Bob's USDC token account. There's nothing in Bob's wallet pubkey that tells you. You could ask Bob, but that requires out-of-band coordination and does not scale to a public, permissionless system. You could let Bob create a token account at any address he likes, but then every sender would need a directory mapping Bob to his token account, and every token Bob holds would need its own entry.
 
 The standard answer everyone uses is to make the token account's address a deterministic function of the wallet and the mint. Given Bob's wallet pubkey and the USDC mint pubkey, anyone can compute exactly one address where Bob's USDC token account lives, if he has one. That address is the Associated Token Account.
 
@@ -16,7 +16,7 @@ The standard answer everyone uses is to make the token account's address a deter
 
 The ATA address is a Program-Derived Address computed under the Associated Token Program. The seeds are the wallet pubkey, the Token Program's ID, and the mint pubkey, in that order. The derivation runs `find_program_address` exactly as you'd compute any other PDA.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Computing an Associated Token Account address from wallet, mint, and program seeds</title><desc>Three public inputs — Bob's wallet pubkey, the USDC mint pubkey, and the SPL Token Program ID — feed into find_program_address under the Associated Token Program. The result is Bob's USDC ATA address, which anyone can compute even before the account exists.</desc>
   <defs>
     <marker id="arrS44aR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -54,15 +54,15 @@ The ATA address is a Program-Derived Address computed under the Associated Token
 
 The whole protocol is built on this one fact: the address is a function of two public values and the well-known program IDs. There's no per-user state to look up, no registry to maintain, no recipient to interrogate. Given Bob's wallet and the USDC mint, the ATA derivation gives you exactly one address every time, computable offline, before any account at that address even exists.
 
-This is the same idea as content-addressed storage or DNS. The address is the answer to a lookup rather than just a label for one. Bob never registers his USDC ATA anywhere. The convention is "the canonical address is computed this way" and the entire ecosystem follows it.
+This is the same idea as content-addressed storage: the address is computed from the content itself, not assigned and stored somewhere. The address is the answer to a lookup rather than just a label for one. Bob never registers his USDC ATA anywhere. The convention is "the canonical address is computed this way" and the entire ecosystem follows it.
 
 ## The Associated Token Program
 
-The Associated Token Program is the small piece of infrastructure that owns the ATA addresses and creates token accounts at them. It's deployed at `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL` and has a single instruction worth caring about: Create.
+The Associated Token Program is the small piece of infrastructure that derives the canonical ATA addresses and creates token accounts at them. It's deployed at `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL` and has a single instruction worth caring about: Create.
 
 When you call Create, the ATA Program does four things. It derives the canonical address from the wallet and mint you provided. It verifies the account you're asking to create lives at that derived address. It CPIs into the System Program to allocate the account and transfer rent from a payer. It CPIs into the Token Program to initialize the freshly allocated account as a proper TokenAccount with the right owner and mint.
 
-<svg viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Associated Token Program Create flow: address derivation to token account init</title><desc>A vertical flowchart shows four steps that run when Create is called with a payer, wallet, and mint. The ATA Program derives the canonical address, then CPIs into the System Program to allocate the account and into the Token Program to initialize it, ending with a valid ATA ready to receive tokens.</desc>
   <defs>
     <marker id="arrS44bR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -104,9 +104,9 @@ This is the value of standardization. If every project defined its own scheme fo
 
 Anchor provides a constraint called `init_if_needed` that creates an account when it doesn't exist and uses the existing account otherwise. For ATAs this looks ideal: a handler that needs the user to have an ATA can guarantee that condition without forcing the client to make a separate Create call beforehand.
 
-The constraint is real but it earns its name. It's disabled by default in Anchor, behind a feature flag, because for most account types it opens a class of security bugs called reinitialization attacks.
+The constraint works as described, but it comes with genuine risk. It's disabled by default in Anchor, behind a feature flag, because for most account types it opens a class of security bugs called reinitialization attacks.
 
-<svg viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>init_if_needed: safe on ATAs, dangerous on other accounts</title><desc>Two side-by-side panels compare using init_if_needed on Associated Token Accounts versus on other program accounts. The left panel lists why the risk is low on ATAs, and the right panel walks through the steps of a reinitialization attack and its consequences, ending with advice to never use init_if_needed on your own PDAs.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">init_if_needed: when it's fine, when it bites</text>
   <rect x="40" y="90" width="310" height="430" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -161,9 +161,9 @@ The constraint is real but it earns its name. It's disabled by default in Anchor
 
 The attack against generic PDAs goes like this. Your program declares an account with predictable seeds, like `seeds = [b"user_state", user.key().as_ref()]`. An attacker computes that address ahead of time, then crafts a transaction that creates an account at exactly that address through some other means, populating it with adversarial data. When the victim later calls your handler, the constraint sees the account exists and proceeds, treating the attacker-controlled bytes as your program's state.
 
-For ATAs, this attack path closes. The ATA's address is a PDA owned by the Associated Token Program. The only way to create an account at that address is through the Associated Token Program's Create instruction, which always initializes the account as a proper TokenAccount with the correct mint and owner. An attacker cannot pre-create one with bad data, because there's no path to put bad data into an ATA. Whatever address-collision the attacker would need to win is structurally impossible.
+For ATAs, this attack path closes. The ATA's address is a PDA derived under the Associated Token Program. The only way to create an account at that address is through the Associated Token Program's Create instruction, which always initializes the account as a proper TokenAccount with the correct mint and owner. An attacker cannot pre-create one with bad data, because there's no path to put bad data into an ATA. There is no way for an attacker to create an account at the ATA address without going through the Associated Token Program's Create instruction.
 
-That said, ATA-specific tradeoffs remain. Using `init_if_needed` means the payer of your transaction pays for the ATA creation when the account doesn't already exist. If the payer didn't expect to pay, this can be a small but real form of griefing. The handler also behaves differently depending on whether the account already exists, which makes its semantics implicit rather than explicit. Production protocols often prefer to require the client to create the ATA in a separate instruction before calling the handler, so the create-or-use distinction is plainly visible in the transaction's instruction list.
+That said, ATA-specific tradeoffs remain. Using `init_if_needed` means the payer of your transaction pays for the ATA creation when the account doesn't already exist. If the payer did not expect to pay, this can cause unexpected costs. The handler also behaves differently depending on whether the account already exists, which makes its semantics implicit rather than explicit. Production protocols often prefer to require the client to create the ATA in a separate instruction before calling the handler, so the create-or-use distinction is plainly visible in the transaction's instruction list.
 
 For your own program's PDAs, the rule is simpler: don't use `init_if_needed`. Use plain `init` and require the client to create the account exactly once. If the account already exists when init runs, the constraint fails, which is the safe behavior. The client can detect this and skip the init in subsequent calls, exactly the same effect as `init_if_needed` would have given but without the reinitialization risk.
 

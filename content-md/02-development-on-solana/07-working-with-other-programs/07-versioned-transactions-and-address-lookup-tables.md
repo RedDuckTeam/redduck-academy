@@ -10,7 +10,7 @@ A Solana transaction has to fit in a single UDP packet. The maximum packet size 
 
 For simple transactions this is plenty. A wallet sending SOL touches three accounts and uses well under 200 bytes. A token transfer with an ATA touches five and uses around 300. But composing DeFi protocols stacks accounts quickly. A single DEX swap easily reaches ten accounts. Routing through three pools brings you to 25. Adding an oracle, a fee account, and a few sysvars puts you near 30, and each account costs 32 bytes.
 
-Aggregators that route through multiple venues hit the wall hard. A multi-hop route can reference 40 or 50 accounts. Add the standard headers, signatures, blockhash, and instruction data, and you run out of room before the route is complete. Before versioned transactions existed, the workaround was to split the route across multiple transactions, which breaks atomicity and adds latency.
+Aggregators that route through multiple venues reach this limit quickly. A multi-hop route can reference 40 or 50 accounts. Add the standard headers, signatures, blockhash, and instruction data, and you run out of room before the route is complete. Before versioned transactions existed, the workaround was to split the route across multiple transactions, which breaks atomicity and adds latency.
 
 ## What v0 changed
 
@@ -20,7 +20,7 @@ The new layout splits the account list into two parts. The static list contains 
 
 At execution time, the runtime resolves the references. It reads each referenced ALT, looks up the pubkeys at the specified indices, and assembles the full account list. Your program sees the same `AccountInfo` array it would have seen in a legacy transaction. The compression is invisible to the on-chain code. It is purely a wire-format optimization.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Byte budget for a 30-account transaction: legacy vs v0 with one ALT</title><desc>Two side-by-side breakdowns compare a legacy transaction listing 30 full pubkeys (about 1,110 bytes, 90% of the 1,232-byte limit) with a v0 transaction using one address lookup table, 5 static pubkeys, and 25 indices (about 370 bytes, 30% of the limit). Both encode the same 30 accounts; the v0 version replaces 25 pubkey copies with 25 one-byte indices, leaving room for hundreds more accounts.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Byte budget for a 30-account transaction</text>
   <rect x="40" y="80" width="310" height="295" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -77,9 +77,9 @@ The practical ceiling jumps from roughly 30 accounts in a legacy transaction to 
 
 An ALT is an account owned by the Address Lookup Table program. It stores up to 256 pubkeys at fixed offsets. Anyone can create one and populate it with whatever pubkeys are useful.
 
-The lifecycle has four steps. **Create** allocates the ALT and stamps it with the current slot, which becomes part of how the table is identified. **Extend** appends pubkeys to the table. Because the 1,232-byte ceiling also applies to the extend instruction itself, adding pubkeys takes multiple transactions to fill a large table, roughly 30 pubkeys per call. **Freeze** is optional and makes the table immutable. **Close** marks the table for deactivation. The rent is not released immediately. A cooldown of about 500 slots, roughly 5 minutes, runs before the close completes, which prevents the same address from being reused mid-transaction.
+The lifecycle has four steps. **Create** allocates the ALT and stamps it with the current slot, which becomes part of how the table is identified. **Extend** appends pubkeys to the table. Because the 1,232-byte ceiling also applies to the extend instruction itself, adding pubkeys takes multiple transactions to fill a large table, roughly 30 pubkeys per call. **Freeze** is optional and makes the table immutable. **Close** marks the table for deactivation. The rent is not released immediately. A cooldown of about 500 slots, roughly 5 minutes, runs before the close completes. This prevents the ALT's address from being used to create a new table before any in-flight transactions that reference the old one have been processed.
 
-A newly created ALT cannot be used immediately. The runtime requires it to warm up for one slot before transactions can reference it. This protects against last-second changes that would alter the meaning of in-flight transactions.
+A newly created ALT cannot be used immediately. The runtime requires one slot to pass before transactions can reference it. This protects against last-second changes that would alter the meaning of in-flight transactions.
 
 A single transaction can reference up to four ALTs. Aggregators commonly pull from one ALT for token program IDs and common mints, one for the DEX they're routing through, and one for oracles or supporting accounts.
 
@@ -95,6 +95,6 @@ For client authors, the change is meaningful. You build a `VersionedTransaction`
 
 Most transactions you build don't need ALTs. They fit in a legacy transaction with room to spare. When you hit the size limit, the first response is to look at the account list and identify items that show up in every transaction your protocol issues: program IDs, common mints, shared authority PDAs, oracle accounts. Those are the right candidates for a protocol-specific ALT.
 
-If you're building a protocol that other clients will compose with, publishing an ALT of your protocol's static addresses is a small investment that saves every integrator some bytes. Production Solana protocols often ship an ALT alongside their deployment for exactly this reason.
+If you're building a protocol that other clients will compose with, publishing an ALT of your protocol's static addresses is a small investment that saves every integrator some bytes. Production Solana protocols often publish an ALT alongside their deployment for exactly this reason.
 
 The mental model is short. A legacy transaction is a list of pubkeys. A v0 transaction is a list of pubkey references, some inline and some by ALT index. The runtime resolves the references before execution, and your program doesn't notice the difference.

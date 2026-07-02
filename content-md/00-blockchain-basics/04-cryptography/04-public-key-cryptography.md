@@ -8,7 +8,7 @@ _type: lecture_
 
 You need a way to prove to anyone in the world that you are who you say you are, **without revealing the secret that makes you "you."**
 
-That sentence is doing a lot of work. Unpack it:
+That sentence packs in several separate requirements:
 
 - "Prove to anyone" means the proof has to be public-verifiable. No trusted middleman who knows your secret.
 - "Anyone in the world" means people you've never met, and people who will exist long after you stop being able to answer questions.
@@ -31,7 +31,7 @@ The mathematical idea underneath every key pair is a **one-way function**. Easy 
 
 A useful intuition: mixing paint. Given two paint colors, you can easily produce the mixture. Given the mixture, separating it back into the two original colors is hopeless. The forward operation is trivial. The reverse operation is intractable.
 
-<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Private key to public key: easy forward, infeasible reverse</title><desc>A solid arrow shows deriving the public key from the private key takes milliseconds. A dashed arrow shows the reverse is infeasible, taking longer than the age of the universe. This one-way function runs every time you use your wallet.</desc>
   <rect x="40" y="70" width="160" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="120" y="95" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">private key</text>
   <text x="120" y="115" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">(your secret)</text>
@@ -57,9 +57,9 @@ The strength of a key pair depends entirely on how steep that asymmetry is. A we
 
 ## The schemes blockchains use
 
-Two specific elliptic-curve schemes do almost all the public-key heavy lifting in the chains you'll encounter.
+Two specific elliptic-curve schemes do almost all of the public-key work in the chains you'll encounter.
 
-**secp256k1.** An elliptic curve standardised in the early 2000s. Used by Bitcoin, Ethereum, and most of the chain families that followed them. The "256" is the key size in bits: 32 bytes of private key material produce a public key on the curve. The "k1" is a parameter designation distinguishing it from a closely related curve (secp256r1) that some cryptographers were nervous about.
+**secp256k1.** An elliptic curve standardised in the early 2000s. Used by Bitcoin, Ethereum, and most of the chain families that followed them. The "256" is the key size in bits: 32 bytes of private key material produce a public key on the curve. The "k1" is a parameter designation distinguishing it from a closely related curve, secp256r1.
 
 **Ed25519.** A newer elliptic-curve scheme published in 2011. Cleaner mathematics, faster operations, smaller keys with equivalent security to secp256k1. Used by Solana and a growing number of newer chains. Also used outside blockchain in modern systems like SSH and Signal.
 
@@ -90,12 +90,12 @@ The playground below has a node that does this generation. Click and you'll see 
 
 ## What this enables
 
-Three different operations can be built on top of the priv/pub pair, each using the same mathematical machinery in a different direction.
+Three different operations can be built on top of the private/public key pair, each using the same mathematical machinery in a different direction.
 
 **Encryption to a public key.** Already covered in the previous lesson. Anyone takes your public key, encrypts a message, and only your private key decrypts. This is used at the edges of blockchain systems but is not how on-chain data is protected.
 
-**Digital signatures.** Use the private key to produce a short value that anyone can verify against the message and the public key. The signature proves that the message was approved by whoever holds the private key, and cannot be forged without it. This is the primitive that authorises every blockchain transaction. The next-but-one lesson takes this apart properly.
+**Digital signatures.** Use the private key to produce a short value that anyone can verify against the message and the public key. The signature proves that the message was approved by whoever holds the private key, and cannot be forged without it. This is the primitive that authorises every blockchain transaction. Two lessons from now, a dedicated lesson explains exactly how this works.
 
-**Identity.** Your public key is your address. The chain doesn't know your name, your country, or your email. It knows the public key that goes with the private key you control. Possession of the private key is the entire definition of "you" from the chain's perspective. Lose it and there is no recovery. Steal it and there is no insurance.
+**Identity.** Your address is derived from your public key. The chain doesn't know your name, your country, or your email. It knows the public key that goes with the private key you control. Possession of the private key is the entire definition of "you" from the chain's perspective. Lose it and there is no recovery. Steal it and there is no insurance.
 
-That last point is the one that surprises every developer who comes from a system with password resets and customer support. There is no customer support. The private key, and only the private key, is the identity. The next lesson covers exactly how that key gets generated, stored, and recovered.
+This is very different from systems with password resets and customer support. There is no customer support. The private key, and only the private key, is the identity. The next lesson covers exactly how that key gets generated, stored, and recovered.

@@ -12,7 +12,7 @@ Constraints are the adjectives. They take the same baseline type and narrow it d
 
 The split exists because the same account type plays different roles in different instructions. A `Vault` might be initialized once, deposited into many times, withdrawn from with extra signatures, closed when empty. Each of those instructions wants a different set of validation rules on the same underlying type. Putting the validation in the type would either make the type useless, since it would validate nothing extra, or force you to define a new type per role with names like `InitVault`, `DepositVault`, and `WithdrawVault`. Putting the validation in constraints lets one type cover all the roles and lets each instruction pick the exact set of rules it needs.
 
-<svg viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What the type checks vs what the constraints check for a Vault account</title><desc>The diagram splits one Accounts struct field, Account&lt;'info, Vault&gt; with #[account(mut, has_one = authority)], into two columns. The left column shows what the type always checks (owner, discriminator, deserialization, the same for every Vault account), and the right column shows what the constraints check for this instruction (the account is writable and vault.authority matches the authority account).</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Type plus constraints equals a full specification</text>
   <rect x="40" y="80" width="640" height="120" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
@@ -55,7 +55,7 @@ A handful of constraints cover the vast majority of real-world programs. Each on
 
 **`payer = some_field`**. Names the field in this same Accounts struct that pays the rent deposit when an account is initialized. Usually a `Signer` or some authority. The lamports come out of that account's balance and end up sitting on the new account.
 
-**`space = N`**. The number of bytes to allocate for the new account's data. Eight bytes for the discriminator, plus whatever your struct's fields need. The idiomatic form is `space = 8 + Vault::INIT_SPACE` when your account type derives `InitSpace`, which produces a constant with the right number of bytes for the struct's fields. Account sizing has more depth than that one-liner suggests, but the form above is enough to write your first init constraints.
+**`space = N`**. The number of bytes to allocate for the new account's data. Eight bytes for the discriminator, plus whatever your struct's fields need. The idiomatic form is `space = 8 + Vault::INIT_SPACE` when your account type derives `InitSpace`, which produces a constant with the right number of bytes for the struct's fields. The form above is enough to write your first init constraints.
 
 **`has_one = some_field`**. Cross-field check. The constraint says: read the value of a field on this account whose name matches `some_field`, and verify it equals the public key of the field named `some_field` in the Accounts struct. The classic use is a vault that stores its authority's pubkey inside its data, and an instruction that takes the authority as a Signer. `has_one = authority` makes Anchor confirm the signer is in fact the recorded authority, which is exactly the check the program would otherwise need to write by hand and would occasionally forget.
 
@@ -65,7 +65,7 @@ A handful of constraints cover the vast majority of real-world programs. Each on
 
 **`constraint = expr`**. The escape hatch for custom checks. Takes any boolean expression and verifies it evaluates to true. Use it for one-off rules that the named constraints don't cover, like `constraint = vault.total > 0` or `constraint = clock.unix_timestamp >= proposal.start_time`. Custom errors can be attached with `constraint = expr @ MyError::SomeReason`, which makes the failure produce a meaningful error rather than a generic "constraint violated."
 
-Two more worth mentioning that show up often: **`close = recipient`**, which marks the account for closure at the end of the instruction and sends its lamports to the named field, and **`realloc`**, which resizes an existing account's data. Both come up enough that you'll see them in real code, but they're not the daily-driver set above.
+Two more worth mentioning that show up often: **`close = recipient`**, which marks the account for closure at the end of the instruction and sends its lamports to the named field, and **`realloc`**, which resizes an existing account's data. Both come up enough that you'll see them in real code, but they are not as common as the constraints listed above.
 
 ## The init constraint is a contract of three pieces
 
@@ -131,4 +131,4 @@ By the time your handler runs, the runtime has verified everything declared in t
 
 Without constraints, every check would happen in your handler. The first dozen lines would be `if account.owner != program_id { return Err(...) }` and `if !authority.is_signer { return Err(...) }` and `if vault.authority != authority.key() { return Err(...) }`. The handler's actual logic would be buried under defensive boilerplate, and every check would be one place a bug could hide. Anchor's constraints turn each of those checks into one annotation that the macro is responsible for generating correctly. You spend less time writing validation code, and the validation that runs is more thorough than what you'd write by hand under deadline pressure.
 
-The flip side is that you have to know which constraint says what you mean. Reaching for `UncheckedAccount` without a check, or forgetting `mut` on an account you intend to write, or skipping `has_one` because "the client will pass the right thing," are all ways the safety net stops catching you. The constraints are tools. Knowing them is what makes them work.
+The tradeoff is that you have to know which constraint says what you mean. Reaching for `UncheckedAccount` without a check, or forgetting `mut` on an account you intend to write, or skipping `has_one` because "the client will pass the right thing," are all ways the safety net stops catching you. *(Delete — the examples in the preceding sentence already demonstrate the consequence of not knowing them.)*

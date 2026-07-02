@@ -10,9 +10,9 @@ In 2012 and 2013, a small group of people had started trying to build things on 
 
 Bitcoin Script, as you learned in the previous module, is deliberately minimal. No loops, no persistent state, no way for one script to call another. The Bitcoin developers had made this choice on purpose, to keep the protocol small and the security argument simple. They were not going to add features just because some app developers wanted them.
 
-Vitalik, who had been writing about all of this from inside the Bitcoin Magazine offices, came to a conclusion: the right move wasn't to keep pushing Bitcoin to add features. The right move was to start over with a chain designed from the ground up to run arbitrary programs. He drafted a whitepaper in November 2013 describing what such a chain would look like, sent it to a few people for feedback, and within weeks had a small group of co-founders willing to build it with him.
+Vitalik concluded that the answer was not to keep pushing Bitcoin to add features, but to start over with a new chain designed to run arbitrary programs. He drafted a whitepaper in November 2013 describing what such a chain would look like, sent it to a few people for feedback, and within weeks had a small group of co-founders willing to build it with him.
 
-The whitepaper called it Ethereum. The name was lifted from the historical concept of luminiferous ether, a medium that nineteenth-century physicists thought light travelled through. Vitalik liked the connotation of an invisible substrate that everything else runs on top of.
+The whitepaper called it Ethereum. The name comes from luminiferous ether, a medium that nineteenth-century physicists thought light travelled through. Vitalik liked the connotation of an invisible substrate that everything else runs on top of.
 
 ## The launch
 
@@ -36,13 +36,13 @@ This event shaped Ethereum culturally for years. It established that the communi
 
 ## The road to proof of stake
 
-Ethereum launched with proof of work, the same consensus mechanism Bitcoin uses, where miners burn electricity to compete for the right to produce blocks. The founders had said from the beginning that they wanted to move to proof of stake, where validators put up ETH as collateral and lose it if they misbehave. Proof of stake would use a fraction of the energy and would let the network scale differently.
+Ethereum launched with proof of work, the same consensus mechanism Bitcoin uses, where miners burn electricity to compete for the right to produce blocks. The founders had said from the beginning that they wanted to move to proof of stake, where validators put up ETH as collateral and lose it if they misbehave. Proof of stake would use a fraction of the energy.
 
 The transition took years. Various intermediate designs were proposed and revised. A separate chain called the Beacon Chain launched in December 2020 to test the proof-of-stake mechanism in isolation, without yet running real transactions. For nearly two years, the two chains ran in parallel: the original Ethereum chain processing transactions with mining, and the Beacon Chain finalising blocks with staking but not actually running any applications.
 
 In September 2022, the two were combined. The event was called the Merge. The original Ethereum chain stopped using mining and started taking its consensus from the Beacon Chain instead. From one block to the next, Ethereum stopped being a proof-of-work network and became a proof-of-stake network. No contract was interrupted. It was one of the most complex software upgrades ever attempted on a live system holding hundreds of billions of dollars, and it worked.
 
-Since the Merge, Ethereum has continued shipping upgrades on a regular cadence. The Shanghai upgrade in 2023 let stakers withdraw their ETH. The Dencun upgrade in 2024 introduced cheaper data storage for layer-2 rollups, which we'll cover later. The Pectra upgrade in 2025 brought changes to staking and to how regular accounts can temporarily act like smart contracts.
+Since the Merge, Ethereum has continued releasing upgrades on a regular schedule. The Shanghai upgrade in 2023 let stakers withdraw their ETH. The Dencun upgrade in 2024 introduced cheaper data storage for layer-2 rollups, which we'll cover later. The Pectra upgrade in 2025 brought changes to staking and to how regular accounts can temporarily act like smart contracts.
 
 ## Where things stand
 

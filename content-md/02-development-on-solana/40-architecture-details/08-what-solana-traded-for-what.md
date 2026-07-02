@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Every design choice in this module came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. This lecture is the honest accounting of what was given up to get those wins. There is no free lunch in distributed systems engineering. Solana made specific trades, and understanding them is what separates someone who can argue about chains from someone who just picks whatever's in fashion.
+> Every design choice in this module came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. This lecture is the honest accounting of what was given up to get those wins. Every design decision in distributed systems has a cost. Solana made specific trades, and understanding them is what separates a developer who can reason about chains from one who just picks whichever chain is currently popular.
 
 ## Throughput in exchange for validator hardware
 
@@ -28,9 +28,9 @@ The trade is essentially: programmer flexibility for execution parallelism. Sola
 
 You can have fast slots. You can have generous compute budgets. You cannot have both indefinitely. Solana chose fast slots.
 
-The cost is felt every time you bump up against the 200,000 compute unit default per instruction, or have to request the maximum 1.4 million CU for a complex transaction. Ethereum gives a single transaction up to 30 million gas in a block, and a single contract call can use most of that. Solana's per-instruction cap is more than an order of magnitude tighter.
+The cost is felt every time you hit the 200,000 compute unit default per instruction, or have to request the maximum 1.4 million CU for a complex transaction. Ethereum gives a single transaction up to 30 million gas in a block, and a single contract call can use most of that. Solana's per-instruction cap is more than an order of magnitude tighter.
 
-This forces design patterns that aren't necessary on slower chains. Off-chain compute with on-chain verification, which the course covered earlier, becomes essential rather than just nice-to-have. Heavy computation has to be split across multiple instructions in multiple transactions. Loops over data structures have to be bounded tighter than they would be on Ethereum. State machines that fit naturally in a single EVM call sometimes need multiple Solana instructions chained together.
+This forces design patterns that aren't necessary on slower chains. Off-chain compute with on-chain verification, which the course covered earlier, becomes essential rather than optional. Heavy computation has to be split across multiple instructions in multiple transactions. Loops over data structures have to be bounded tighter than they would be on Ethereum. State machines that fit naturally in a single EVM call sometimes need multiple Solana instructions chained together.
 
 The win, of course, is that user-perceived latency on Solana is measured in seconds rather than minutes. A swap on a Solana DEX confirms before the user has finished moving their mouse. The same swap on Ethereum mainnet involves a noticeable wait. For consumer-facing applications, this difference is enormous. For protocols that don't need real-time responsiveness, the trade matters less.
 
@@ -42,7 +42,7 @@ The cost is that MEV didn't disappear. It moved. Without a public mempool, trans
 
 The net effect is that Solana's MEV is more concentrated in leaders' hands and less visible to public observers. Whether this is better or worse than Ethereum's model is a genuine debate. The Ethereum MEV ecosystem is more competitive, with hundreds of searchers competing in the public mempool for every opportunity. The Solana model is less wasteful in terms of failed transactions and gas spent on losing bids, but the value extracted accrues more narrowly.
 
-A user-facing consequence: the median Solana transaction is cheaper than a comparable Ethereum transaction precisely because failed-tx waste is lower. A user-facing cost: when MEV does affect a Solana user, the path to detection and mitigation is less mature than Ethereum's flashbots-style ecosystem.
+A user-facing consequence: the median Solana transaction is cheaper than a comparable Ethereum transaction precisely because failed-tx waste is lower. A user-facing cost: when MEV does affect a Solana user, the tools for detecting and mitigating it are less mature than those available on Ethereum.
 
 ## A single execution model in exchange for less composability
 
@@ -56,11 +56,11 @@ Solana has rich composability in practice. Jupiter routes through hundreds of po
 
 ## Speed of consensus in exchange for finality complexity
 
-Bitcoin's finality story is simple: wait for six confirmations and call it done. Ethereum after the Merge has a clear finality moment, when a checkpoint two epochs back gets cryptoeconomically locked in.
+Bitcoin's finality story is simple: wait for six confirmations and consider the transaction final. Ethereum after the Merge has a clear finality moment, when a checkpoint two epochs back gets cryptoeconomically locked in.
 
 Solana's finality is harder to describe in one sentence. There's optimistic confirmation, meaning a slot has been voted on by enough validators that reverting is unlikely. There's rooted, meaning the slot has been further confirmed. There's full finality, which requires accumulated lockouts across many votes. For practical purposes, most applications consider a block confirmed when it's been voted on by a supermajority of stake, which usually happens within a few seconds. Full cryptoeconomic finality takes 12.8 seconds or so on mainnet today.
 
-The Tower BFT lockout mechanic, which is what makes Solana's consensus fast enough to keep up with 400ms slots, also makes finality probabilistic in a way that's harder to reason about than Ethereum's discrete finality moments. Every level of confirmation gives you exponentially more security, but there's no single "finalized" line in the sand.
+The Tower BFT lockout mechanic, which is what makes Solana's consensus fast enough to keep up with 400ms slots, also makes finality probabilistic in a way that's harder to reason about than Ethereum's discrete finality moments. Every level of confirmation gives you exponentially more security, but there is no single clear threshold where a block becomes "finalized."
 
 This shows up in user-facing applications. Bridges to Solana have to decide what level of confirmation they accept before crediting funds on the other side, and they typically wait for full finality to be safe. Exchanges set their own thresholds. The variability in finality semantics is a real cognitive cost. The win, of course, is that "good enough" confirmation happens fast enough to feel instant.
 
@@ -70,6 +70,6 @@ Every chain that exists made similar trades. Bitcoin chose maximum decentralizat
 
 None of these are wrong. They're answers to different optimization problems. Bitcoin is optimizing for a world where you want money that anyone with a Raspberry Pi can verify independently. Ethereum is optimizing for maximum composability and a permissionless application platform. Solana is optimizing for the user experience of an application running on a global computer: fast, cheap, and responsive.
 
-When you read someone's "Solana vs Ethereum" hot take, the question to ask is which set of trade-offs the author is implicitly weighing. Most arguments are really arguments about which trades matter most for a specific use case. Once you internalize that, you stop having opinions about which chain is "better" in some absolute sense and start having useful opinions about which chain fits which problem.
+When you read someone's "Solana vs Ethereum" opinion piece, the question to ask is which set of trade-offs the author is implicitly weighing. Most arguments are really arguments about which trades matter most for a specific use case. Once you internalize that, you stop having opinions about which chain is "better" in some absolute sense and start having useful opinions about which chain fits which problem.
 
 You finished module 7. You finished the Solana track, at least the substantive part. What you built over these seven modules is the working knowledge of how a high-throughput chain actually works at every level, from the BPF runtime executing your code to the consensus mechanism that puts that code's outputs into the canonical chain history. That picture, more than any specific syntax or library, is what you take away.

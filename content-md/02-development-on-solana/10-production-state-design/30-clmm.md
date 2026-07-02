@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Raydium's original AMM is an elegant first design: deposit two tokens in equal value, the pool prices swaps via `x * y = k`, you earn fees proportional to your share. The problem the Concentrated Liquidity Market Maker (CLMM) set out to solve is that the standard AMM wastes most of the capital LPs deposit. This lecture covers what concentrated liquidity is, how Raydium CLMM represents it with ticks, why a position below the current price needs only one token rather than two, and what else CLMM changed. The mental model takes some unpacking but the payoff is understanding how every modern DEX with concentrated liquidity thinks about LP capital.
+> Raydium's original AMM is an elegant first design: deposit two tokens in equal value, the pool prices swaps via `x * y = k`, you earn fees proportional to your share. The problem the Concentrated Liquidity Market Maker (CLMM) set out to solve is that the standard AMM wastes most of the capital LPs deposit. This lecture covers what concentrated liquidity is, how Raydium CLMM represents it with ticks, why a position below the current price needs only one token rather than two, and what else CLMM changed. The model is not obvious at first, but it explains how concentrated liquidity positions work in every major modern DEX.
 
 ## What's wrong with the standard AMM
 
@@ -14,9 +14,9 @@ Empirically, in a standard SOL/USDC pool, an LP's capital that's "active" within
 
 ## CLMM's idea: concentrated liquidity
 
-CLMM lets an LP say: "I think SOL will trade between $180 and $220. Concentrate all my capital in that range." The LP picks a lower price `Pl` and an upper price `Pu`. Their capital provides depth only in `[Pl, Pu]`. If trades happen inside that range, they earn fees. If price moves outside their range, their position earns nothing until either the price comes back or the LP repositions.
+CLMM lets an LP say: "I think SOL will trade between $180 and $220. Concentrate all my capital in that range." The LP picks a lower price Pl and an upper price Pu. Their capital provides depth only in [Pl, Pu]. If trades happen inside that range, they earn fees. If price moves outside their range, their position earns nothing until either the price comes back or the LP repositions.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Standard AMM liquidity spread vs Raydium CLMM concentrated liquidity in $180-$220</title><desc>The top chart shows a standard AMM spreading a $10,000 deposit across every price from $0 to infinity, so most of the capital sits far from the current price and earns no fees. The bottom chart shows the same $10,000 in a Raydium CLMM, concentrated only between $180 and $220, giving deep liquidity where trades actually happen but earning zero fees if the price moves outside that range.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Standard AMM spreads capital across every price. CLMM lets you concentrate it.</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">Standard AMM: same $10,000 deposit spread across all prices</text>
@@ -91,11 +91,11 @@ A tick is just a price level on a predefined grid. The formula is:
 price(tick) = 1.0001 ^ tick
 ```
 
-Each tick is 0.0001 of a price multiplier from the next, which is 0.01% (one basis point). Tick 0 corresponds to price 1.0. Tick 1 corresponds to price 1.0001. Tick -1 to price 0.9999. And so on.
+Each step from one tick to the next changes the price by 0.01% (one basis point). Tick 0 corresponds to price 1.0. Tick 1 corresponds to price 1.0001. Tick -1 to price 0.9999. And so on.
 
 For a SOL/USDC pool with SOL around $200, the corresponding tick is around 52,983. The integer is large because the price ratio is far from 1, but the math handles it cleanly. Frontends and SDKs convert between tick numbers and human-readable prices for you. You almost never compute ticks by hand.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Tick scale 52980-52989 mapped to SOL/USDC prices and fee-tier spacing</title><desc>A number line shows ticks 52980 to 52989 lined up with prices 199.94 to 200.12 USDC per SOL, each step equal to +0.01%. Below it, the formula price(tick) = 1.0001^tick is shown, along with a table of fee tiers (0.01%, 0.05%, 0.25%, 1.00%) and their matching tick spacing (1, 10, 60, 200).</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">A tick is just a discrete price level. Each step is 0.01% from the next.</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">Possible price levels (a few shown):</text>
@@ -181,7 +181,7 @@ Now to the part where CLMM starts to feel different from the standard AMM.
 
 In the standard AMM, you always deposit both tokens, in the ratio set by the current pool price. There's no other option. In CLMM, the ratio depends on where your chosen range sits relative to the current price. Sometimes you deposit both tokens. Sometimes only one. And it's not up to you which case applies. The range you pick forces the composition.
 
-<svg viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>CLMM position types: range below, straddling, or above current price</title><desc>Shows three price ranges around a current price of $200 for a USDC/SOL pool. A range set below current price (like $150-$180) needs only USDC, a range straddling current price (like $180-$250) needs both USDC and SOL, and a range set above current price (like $250-$300) needs only SOL.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Three position types. The range you pick decides which token(s) you deposit.</text>
   <text x="40" y="82" font-family="monospace" font-size="11" font-weight="bold">Range BELOW current price  →  deposit only USDC</text>
@@ -277,7 +277,7 @@ This is one of the things that makes building on CLMM more complex than the stan
 
 ## A better TWAP
 
-Standard AMM oracles use a single cumulative price counter, sampled at whatever times consumers care about. CLMM ships a more refined version.
+Standard AMM oracles use a single cumulative price counter, sampled at whatever times consumers care about. CLMM provides a more refined version.
 
 Each CLMM pool keeps an **observations array**, a circular buffer of past `(timestamp, tick cumulative)` entries. Pools default to a small number of slots but can be extended to cover longer windows. The slots get filled on every state-changing interaction (swap, mint, burn). A consumer reading a TWAP for the last 30 minutes asks the pool to find observations bracketing the start and end of the window, and computes the average from those two readings.
 
@@ -287,7 +287,7 @@ The advantages over the standard AMM's design:
 - Multiple consumers reading the same window share the cost.
 - Pools with extended observation arrays cover hours or days of history.
 
-CLMM also uses the geometric mean of tick (the log of price) rather than the arithmetic mean of raw price. This matters when prices can swing in large ratios. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric version is symmetric around the true price, which is more useful for risk-bearing applications.
+CLMM computes the TWAP by averaging tick values (log-price) over time rather than averaging raw price. Because the tick is the log of price, the result is the geometric mean of price over the window. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric mean treats equal ratio changes as equal distances — which matters when prices can swing by large multiples and makes it more useful for risk-bearing applications.
 
 ## When CLMM vs the standard AMM
 

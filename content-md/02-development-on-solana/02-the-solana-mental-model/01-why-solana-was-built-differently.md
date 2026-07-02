@@ -2,13 +2,13 @@
 
 _type: lecture_
 
-> Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model. Where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one falls out of the parallel-execution goal at the top.
+> Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model. Where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one follows directly from the parallel-execution goal at the top.
 
 ## What the choice costs
 
-A serial chain has a simpler life. One transaction at a time, one global state to read from and write to, a single thread of execution. The programmer writing code for that kind of chain can treat the state as a database that their contract reads and modifies. The runtime figures out which storage slots got touched. The developer doesn't have to think about it because there is only one thread.
+A serial chain is simpler to program. One transaction at a time, one global state to read from and write to, a single thread of execution. The programmer writing code for that kind of chain can treat the state as a database that their contract reads and modifies. The runtime figures out which storage slots got touched. The developer doesn't have to think about it because there is only one thread.
 
-Parallel execution doesn't work like that. If two transactions might run at the same time on different threads, the runtime has to know in advance which pieces of state each one will read and write. Otherwise it cannot schedule them safely, since a race condition between two threads writing the same byte produces inconsistent state and breaks consensus. The choice for parallelism therefore forces a chain of further choices, each one a constraint the developer has to live with.
+Parallel execution doesn't work like that. If two transactions might run at the same time on different threads, the runtime has to know in advance which pieces of state each one will read and write. Otherwise it cannot schedule them safely, since a race condition between two threads writing the same byte produces inconsistent state and breaks consensus. The choice for parallelism therefore forces a chain of further choices, each one a constraint the developer must accept.
 
 There are four of them.
 
@@ -24,7 +24,7 @@ The fourth is **rent**. Storing data on the chain takes space that every validat
 
 These four are not separate ideas. They are different views of the same decision.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>One design decision, four downstream consequences</title><desc>A top box states the choice: execute unrelated transactions in parallel, on different threads. Arrows lead to four boxes showing the consequences: stateless programs with data in accounts, transactions that declare which accounts they touch, one owner program per account with write rights, and accounts paying for storage with rent-exempt SOL.</desc>
   <defs>
     <marker id="arrS21R" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -93,7 +93,7 @@ The programming model that comes out of these four constraints feels different t
 
 You think about state ownership constantly during the early lessons and then stop thinking about it once the model is internalized. Every byte you read or write belongs to some account, and every account belongs to some program. The question "who can write this" is never ambiguous on Solana, because the runtime answers it for every transaction.
 
-You build the access plan on the client side, before sending the transaction. The client has to know which accounts the program will read and which it will write. Most of the work in a Solana client library is figuring this out, because the program author has to either document the access pattern or expose it through a machine-readable interface called an IDL.
+You build the access plan on the client side, before sending the transaction. The client has to know which accounts the program will read and which it will write. Most of the work in a Solana client library is figuring this out, because the program author has to either document the access pattern or expose it through a machine-readable interface called an IDL (Interface Definition Language). IDL will be covered in a later lesson.
 
 You stop worrying about contract storage growing unboundedly. Every account is sized at creation. Growing an account takes a deliberate call that pays for the new bytes. Programs cannot quietly accumulate state because every byte of state has an account behind it and someone paid for that account.
 
@@ -101,4 +101,4 @@ You stop worrying about contract storage growing unboundedly. Every account is s
 
 The cost of all this is that the programming model has more pieces. A Solana program is harder to write than the equivalent on a serial chain, especially the first time. You have to think about accounts, ownership, declaration, rent. You have to write tests that exercise the runtime's checks rather than relying on the runtime to discover them at execution time.
 
-What you get is a chain where a token swap on one decentralized exchange does not have to wait for an unrelated NFT mint, and where the network can process thousands of independent transactions per second without one of them blocking the rest. The applications people built on Solana, payments at credit-card speeds, on-chain order books, decentralized exchanges with sub-cent fees, exist because the runtime can run their transactions in parallel. Take that away and the chain becomes another serial chain, slower than it should be.
+What you get is a chain where a token swap on one decentralized exchange does not have to wait for an unrelated NFT mint, and where the network can process thousands of independent transactions per second without one of them blocking the rest. The applications people built on Solana, payments at credit-card speeds, on-chain order books, decentralized exchanges with sub-cent fees, exist because the runtime can run their transactions in parallel. Without parallel execution, the chain becomes another serial chain, slower than it should be.

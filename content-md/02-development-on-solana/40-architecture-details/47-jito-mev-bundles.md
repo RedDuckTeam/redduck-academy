@@ -10,7 +10,7 @@ Imagine a user is about to swap 100,000 USDC for SOL on a DEX. Their swap is lar
 
 That's MEV in one example. The profit comes from controlling transaction ordering. It exists in any system where somebody decides what goes in a block first, second, third. Solana has it just like every other chain does.
 
-The wrinkle is that Solana doesn't have a public mempool. On chains that do, anyone can watch pending transactions and try to front-run them. On Solana, transactions go straight from RPC nodes to leaders via Gulf Stream, with no public waiting room in between. So you can't scan for opportunities from the outside. But the leader still sees every transaction they're about to include and still chooses the order. The MEV is still there. It just goes to whoever has the closest relationship with the leader.
+There is one difference on Solana: it has no public mempool. On chains that do, anyone can watch pending transactions and try to front-run them. On Solana, transactions go straight from RPC nodes to leaders via Gulf Stream, with no public waiting room in between. So you can't scan for opportunities from the outside. But the leader still sees every transaction they're about to include and still chooses the order. The MEV is still there. It just goes to whoever has the closest relationship with the leader.
 
 This is the problem Jito was built to organize. Before Jito, MEV on Solana was opaque. Big trading firms ran their own validators or made informal deals with leaders, and ordinary users had no idea their transactions were being reordered around them. Jito turned this into an open market that anyone can participate in, with clear rules.
 
@@ -29,7 +29,7 @@ Tips are not the same as priority fees. They live alongside each other:
 
 A transaction can have both. Most production wallets and routers attach both, because together they maximize the chance the transaction lands.
 
-This is the mechanism behind a lot of behavior you've probably seen without knowing why. When Phantom shows you "transaction priority: high" and the swap lands quickly, there's a Jito tip in there. When Jupiter routes a swap and asks if you want "MEV protection," it's adding a tip plus some other tricks. When you read about a wallet's "land rate" improving, the team probably just turned on Jito tips. The tip mechanism is what makes all of this work.
+This is the mechanism behind a lot of behavior you've probably seen without knowing why. When Phantom shows you "transaction priority: high" and the swap lands quickly, there's a Jito tip in there. When Jupiter routes a swap and asks if you want "MEV protection," it adds a tip and routes the transaction through Jito's bundle system to prevent other transactions from being inserted around it. When you read about a wallet's "land rate" improving, the team probably just turned on Jito tips. The tip mechanism is what makes all of this work.
 
 ## Jito bundles: atomic groups of transactions
 
@@ -37,7 +37,7 @@ The other half is bundles. A bundle is a small group of up to 5 transactions tha
 
 Why does atomicity matter? Because some operations only make sense as a sequence. A classic example: arbitrage between two DEXes. You want to buy a token on one DEX, then sell it on another at a better price. If only the buy lands, you're stuck holding tokens you didn't want. If only the sell lands, you don't have the tokens to sell and the transaction fails. With a bundle, you get all-or-nothing. The two transactions land together, or neither does.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two paths into a block: normal transaction vs Jito bundle</title><desc>One path shows a normal transaction moving from user wallet to RPC node to current leader to a block, included one tx at a time with no atomicity guarantees. The other path shows a Jito bundle moving from searcher to Jito block engine to Jito-Solana leader to a block, where the whole bundle lands together or not at all.</desc>
   <defs>
     <marker id="arrJ1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -101,8 +101,8 @@ Two things to know about bundles:
 
 You probably won't submit a bundle yourself. Bundles are mostly used by trading firms and MEV bots. But Jito affects every Solana developer, because tips have become the standard way transactions get prioritized on the network.
 
-**Your users' transactions need tips to land reliably during busy periods.** When the network is calm, a normal transaction with a small priority fee lands easily. When the network is busy, transactions without tips often get dropped while tipped ones go through. If you ship a frontend that submits user transactions, you probably want to attach a Jito tip. Most wallet SDKs and transaction-building libraries support this directly.
+**Your users' transactions need tips to land reliably during busy periods.** When the network is calm, a normal transaction with a small priority fee lands easily. When the network is busy, transactions without tips often get dropped while tipped ones go through. If you build a frontend that submits user transactions, you probably want to attach a Jito tip. Most wallet SDKs and transaction-building libraries support this directly.
 
-**Your users get protected from MEV through Jito.** When a user does a large swap on a DEX, MEV bots want to sandwich them. The defense is to route the user's transaction through Jito, often as part of a bundle that includes a "protection" component preventing other transactions from being inserted nearby. Aggregators like Jupiter do this automatically when MEV protection is enabled. The user pays a small tip and gets a fair price.
+**Your users get protected from MEV through Jito.** When a user does a large swap on a DEX, MEV bots can profit by placing their own transactions around it — buying just before the swap drives the price up, then selling right after — exactly the pattern described at the start of this lesson. The defense is to route the user's transaction through Jito, often as part of a bundle that includes a "protection" component preventing other transactions from being inserted nearby. Aggregators like Jupiter do this automatically when MEV protection is enabled. The user pays a small tip and gets a fair price.
 
 You don't have to integrate any of this directly. Most developers get it for free by using a wallet adapter or aggregator that already handles tips internally. But knowing the mechanism is what makes you able to debug "why isn't my transaction landing" and "why did my user get a worse price than expected." The answer to both involves Jito, and now you know what to look for.

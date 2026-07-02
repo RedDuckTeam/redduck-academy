@@ -12,7 +12,7 @@ The reason it's safe for the lender is that Ethereum transactions are **atomic**
 
 For the lender this is risk-free. The worst case is the transaction reverts and they earn no fee. They never lose principal, because principal that doesn't come back means the transaction unwinds and the principal is still in their pool.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flash loan steps between borrower contract and provider in one transaction</title><desc>A borrower contract and a flash loan provider (Aave, Balancer, or Uniswap) run six steps inside one transaction: request the loan, receive tokens, call executeOperation, do anything with the funds, then repay the amount plus fee. The provider checks the balance; if repayment is short the whole transaction reverts as if the loan never happened, and if it is enough the transaction succeeds and the profit is kept.</desc>
   <defs>
     <marker id="arrFL1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -102,7 +102,7 @@ Flash loans look like a tool for attackers when you first encounter them, but th
 
 **Arbitrage between exchanges.** If Uniswap and SushiSwap show different prices for the same pair, someone can profit by buying on the cheaper one and selling on the more expensive one. Without a flash loan they'd need the upfront capital. With a flash loan they can do it from a contract that holds nothing.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Cross-DEX flash-loan arbitrage between Uniswap and SushiSwap</title><desc>Four numbered steps show an arbitrageur flash-loaning 1,000,000 USDC from Aave, buying ETH on Uniswap at $3,000, selling it on SushiSwap at $3,050, then repaying the loan for a net profit of about 16,166 USDC with zero starting capital. A final box shows the trade's effect on prices: ETH moves up slightly on Uniswap and down on SushiSwap.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Legitimate use: cross-DEX arbitrage with zero starting capital</text>
   <rect x="40" y="80" width="640" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -140,7 +140,7 @@ Arbitrage is one of the things that keeps prices consistent across DEXes. Withou
 
 **Refinancing and collateral swaps.** A user has a loan on Aave collateralized by ETH. They want to switch to using staked-ETH as collateral instead. Without a flash loan, they'd have to repay the loan first (which means they need the USDC they don't have), withdraw the ETH, swap to staked-ETH, redeposit, and reborrow. With a flash loan they can do all of it in a single transaction: flash-loan the USDC to repay, withdraw ETH, swap to staked-ETH, redeposit, reborrow, repay the flash loan from the new borrow.
 
-**Liquidations.** When someone else's loan goes underwater, anyone can liquidate it and take a bounty. Liquidators normally need capital sitting around to repay the bad loan. With a flash loan, they can liquidate any size position with no balance sheet, capturing the bounty cleanly.
+**Liquidations.** When someone else's loan goes underwater, anyone can liquidate it and take a bounty. Liquidators normally need capital sitting around to repay the bad loan. With a flash loan, they can liquidate any size position without holding capital of their own, and keep the bounty.
 
 In each of these, the flash loan is doing useful work. Capital efficiency goes up because nobody has to keep idle inventory waiting for opportunities.
 
@@ -148,11 +148,11 @@ In each of these, the flash loan is doing useful work. Capital efficiency goes u
 
 The flash loan stops being neutral the moment it's used to manipulate something the rest of the system depends on. The most common target is a price oracle that reads from a single AMM pool.
 
-Recall how V2 pricing works. The pool's spot price is just the ratio of its reserves. Any swap moves the ratio. A big-enough swap moves it a lot. Normally this isn't an issue because moving the price means paying a lot of slippage, and any attacker would lose more in slippage than they could gain by exploiting the moved price. But if some other protocol reads that pool's spot price and trusts it as "the price of TOKEN," an attacker who can briefly distort the pool's reserves can extract value from the downstream protocol.
+Recall how Uniswap V2 pool pricing works. The pool's spot price is just the ratio of its reserves. Any swap moves the ratio. A big-enough swap moves it a lot. Normally this isn't an issue because moving the price means paying a lot of slippage, and any attacker would lose more in slippage than they could gain by exploiting the moved price. But if some other protocol reads that pool's spot price and trusts it as "the price of TOKEN," an attacker who can briefly distort the pool's reserves can extract value from the downstream protocol.
 
 The flash loan provides exactly the capital needed for the distortion, free of charge.
 
-<svg viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flash-loan attack: manipulating a thin pool's price to fake a lending oracle</title><desc>A flash loan of 1,000,000 USDC is dumped into a TOKEN/USDC pool, pushing the price from $10 to $40 so the attacker can borrow 1,600,000 USDC against inflated TOKEN collateral. After the flash loan is repaid the price reverts to $10, leaving the attacker with about $600k profit and the lending protocol with about $1.1M in bad debt.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The attack: a flash loan turns a thin pool into a fake oracle reading</text>
   <rect x="40" y="80" width="640" height="84" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -195,7 +195,7 @@ The flash loan provides exactly the capital needed for the distortion, free of c
   <text x="360" y="678" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">The protocol's mistake: trusting a spot price that one flash-loaned trade could move.</text>
 </svg>
 
-The numbers in the diagram are illustrative. The pattern is the same: borrow huge -> distort some pool -> exploit a downstream protocol that trusted the pool's spot price -> repay -> walk away with the difference.
+The numbers in the diagram are illustrative. The pattern is the same: borrow a large amount -> distort a pool -> exploit a downstream protocol that trusted the pool's spot price -> repay -> keep the difference.
 
 Why doesn't the manipulation cost the attacker more than they gain? Two reasons.
 
@@ -203,11 +203,11 @@ The pool manipulation is *temporary*. The attacker swaps in, exploits, and then 
 
 The exploit is *leveraged*. A 4x price distortion can let the attacker over-borrow far more than the slippage cost of creating that distortion, especially when LTV ratios on the downstream protocol allow large borrows against the inflated collateral. Even after slippage, the math comes out positive.
 
-The historical version of this attack class hit bZx in February 2020, twice in one week, for combined losses around $1M. It hit Harvest Finance later that year for $24M. It hit Cream Finance, Warp Finance, and many others. In total, oracle manipulation enabled by flash loans has cost protocols hundreds of millions of dollars, and the pattern still surfaces on smaller projects with weak oracle designs.
+The historical version of this attack class exploited bZx in February 2020, twice in one week, for combined losses around $1M. Harvest Finance followed later that year at $24M. Cream Finance, Warp Finance, and many others were exploited the same way. In total, oracle manipulation enabled by flash loans has cost protocols hundreds of millions of dollars, and the pattern still surfaces on smaller projects with weak oracle designs.
 
 ## Why this is a flash loan problem, sort of
 
-The attacker doesn't strictly need a flash loan to manipulate a pool. Anyone with enough capital can do the same attack by simply holding the tokens. The flash loan just lowers the bar from "needs $10M of inventory" to "needs gas plus a flash-loan fee." It democratized this class of attack.
+The attacker doesn't strictly need a flash loan to manipulate a pool. Anyone with enough capital can do the same attack by simply holding the tokens. The flash loan reduces the barrier from needing $10M of capital to needing only gas and a flash-loan fee. It democratized this class of attack.
 
 The deeper issue is that **a spot price from a single AMM pool was never a safe oracle**. It was always manipulable, just expensively. Flash loans exposed how cheap the manipulation actually is.
 
@@ -221,4 +221,4 @@ Three main approaches in production today:
 
 **Multi-source checks**, where the protocol consumes two oracles and reverts if they diverge significantly. This catches the case where one of them is wrong or being attacked.
 
-The next lecture covers TWAP oracles, which are the main on-chain answer to this problem when an external oracle isn't available or sufficient. Knowing the attack pattern you just walked through, the design choices TWAP makes will land more clearly.
+The next lecture covers TWAP oracles, which are the main on-chain answer to this problem when an external oracle isn't available or sufficient. Having seen the attack pattern above, the design choices TWAP makes will be clearer.

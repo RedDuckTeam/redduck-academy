@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-A transaction sitting in a wallet is just a string of bytes. A transaction sitting in the Bitcoin network's mempool is just a string of bytes that many nodes happen to know about. Neither of those is settlement. The transaction is settled when it lands in a block, that block lands in the chain, and enough additional blocks pile on top of it that reversing the order would cost more than anyone would rationally spend. This lesson is about how that landing happens. Who builds the block. What's inside it. What the proof-of-work puzzle actually is. Why solving the puzzle is hard and checking the solution is trivial. And how new bitcoin gets minted into existence at the same moment each block is built.
+A transaction sitting in a wallet is just a string of bytes. A transaction sitting in the Bitcoin network's mempool is just a string of bytes that many nodes happen to know about. Neither of those is settlement. The transaction is settled when it lands in a block, that block lands in the chain, and enough additional blocks are added on top of it that reversing the transaction would cost more than anyone would rationally spend. This lesson is about how that landing happens. Who builds the block. What's inside it. What the proof-of-work puzzle actually is. Why solving the puzzle is hard and checking the solution is trivial. And how new bitcoin gets minted into existence at the same moment each block is built.
 
 ## From transactions to blocks
 
@@ -10,13 +10,13 @@ A block is a batch of transactions, plus a small header that gives the batch an 
 
 The winner gets two things in return for their work. First, all of the transaction fees from the transactions they bundled into the block. Second, a fresh amount of newly-created BTC, called the **block subsidy**, which is currently 3.125 BTC and halves every four years on a fixed schedule. Together these two things are called the **block reward**, and they're the only reason mining happens at all. Without the reward, there would be no incentive to spend electricity on hashing.
 
-The pattern of one new block roughly every ten minutes is a deliberate choice you've already met. Slow block times leave room for new blocks to reach most of the network before the next one is produced, which keeps the network converging on the same chain. Faster blocks would mean more accidental forks. Ten minutes is conservative on purpose.
+The pattern of one new block roughly every ten minutes is a deliberate choice introduced in an earlier lesson. Slow block times leave room for new blocks to reach most of the network before the next one is produced, which keeps the network converging on the same chain. Faster blocks would mean more accidental forks. Ten minutes is conservative on purpose.
 
 ## What's inside a block
 
 A block has two parts.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin block structure: 80-byte header and transaction list</title><desc>A Bitcoin block has two parts: a small block header on top and a much bigger transaction list below. The header is exactly 80 bytes and holds the version, previous block hash, merkle root, timestamp, bits, and nonce, while the transaction list is typically 1 MB to 4 MB, starting with the coinbase transaction and followed by thousands more.</desc>
   <rect x="120" y="20" width="480" height="40" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="45" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="bold">A Bitcoin block</text>
 
@@ -47,13 +47,13 @@ A block has two parts.
 <text x="360" y="365" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">A tiny header sitting on top of a much bigger transaction list.</text>
 </svg>
 
-The disproportion in this diagram is the most important thing to notice. The block body is megabytes of transaction data. The block header is exactly 80 bytes, no matter what. This asymmetry is not an accident. A lightweight wallet running on a phone wants to verify that a particular transaction is in the chain without storing the entire chain. It can do this by storing only block headers and asking a full node for a Merkle proof when it needs to check a specific transaction. The headers add up to about 4 megabytes per year. The whole structure is shaped to make that lightweight verification work, which is one of the design choices that fell out of "public verifiability" in the framing lesson.
+The disproportion in this diagram is the most important thing to notice. The block body is megabytes of transaction data. The block header is exactly 80 bytes, no matter what. This asymmetry is not an accident. A lightweight wallet running on a phone wants to verify that a particular transaction is in the chain without storing the entire chain. It can do this by storing only block headers and asking a full node for a Merkle proof when it needs to check a specific transaction. The headers add up to about 4 megabytes per year. The whole structure is shaped to make that lightweight verification work, which is one of the design choices that follows from the public-verifiability requirement introduced in an earlier lesson.
 
 ## The six fields in a block header
 
 Each block header packs six fields into exactly 80 bytes.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Six fields of a block header, totaling 80 bytes</title><desc>The header holds six fields: version, prev_block_hash, and merkle_root in the top row, then timestamp, bits, and nonce below, each labeled with its byte size and role. Five fields are set by existing data, while the nonce is the only field a miner chooses.</desc>
   <rect x="40" y="20" width="640" height="40" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="45" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="bold">Block header (80 bytes total)</text>
 
@@ -96,7 +96,7 @@ Take a closer look at three of these because they carry most of the meaning.
 
 **The merkle_root** is a single 32-byte commitment to every transaction in this block. It's computed by building a Merkle tree over the transaction list and taking the root. This is why the header doesn't need to grow with the block: no matter how many thousands of transactions are in the block, the commitment to all of them fits in 32 bytes. A light client can ask for a Merkle proof that a specific transaction is in this block, and verify the proof against the merkle_root in the header, without ever downloading the rest of the block.
 
-**The nonce** is the only field a miner gets to vary freely. It's a 4-byte integer the miner increments while searching for a header whose hash falls below the difficulty target. Everything else in the header is constrained by the world. Only the nonce is up to the miner.
+**The nonce** is the only field a miner gets to vary freely. It's a 4-byte integer the miner increments while searching for a header whose hash falls below the difficulty target. Every other field is fixed before the search begins.
 
 ## The mining puzzle
 
@@ -110,7 +110,7 @@ The "treated as a number" framing matters. A SHA-256 hash is 32 bytes, which is 
 
 So in practice, what miners are looking for is a hash that starts with a specific number of leading zero digits. Today, the target requires roughly 20 leading zero hex digits at the front of the hash before it qualifies. A miner who gets 18 leading zeros has missed and has to try a different nonce. A miner who gets 20 or more has found a winning block.
 
-<svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Mining loop: pick nonce, hash header, compare to target, mine block</title><desc>A flowchart shows a miner picking a nonce, hashing the 80-byte header with double SHA-256, and checking if the hash is less than the target: if not, it tries the next nonce, and if yes, the block is mined and broadcast. Below, three example hashes show two failed attempts that are too big and a winning attempt with about 20 leading zero hex digits, smaller than the target.</desc>
   <defs>
     <marker id="arr43m" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -170,7 +170,7 @@ So in practice, what miners are looking for is a hash that starts with a specifi
   <text x="360" y="500" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">The whole network produces one winner roughly every ten minutes.</text>
 </svg>
 
-The static picture is the structure. The thing that makes mining click is doing it once yourself, even at toy scale. Try the puzzle below before reading on. Change the data, watch the hash flip wildly, then mine for a hash that starts with a few zeros and feel how the work scales with each extra zero you ask for.
+The diagram shows the structure. Mining is easiest to understand by doing it once yourself, even on a small scale. Try the puzzle below before reading on. Change the data, watch the hash flip wildly, then mine for a hash that starts with a few zeros and feel how the work scales with each extra zero you ask for.
 
 [[block-mining]]
 
@@ -184,7 +184,7 @@ Three properties of the puzzle make the whole system work.
 
 ## Mining pools
 
-The math from the puzzle section has a consequence worth naming. A miner with a small share of global hashpower finds blocks rarely. With the network running at roughly 10²¹ hashes per second, an individual miner running modest hardware at a few terahashes per second would, on average, wait decades between finding a block. The reward when one finally lands is the same 3.125 BTC plus fees as anyone else's, but waiting decades for any income is not how a business runs. The standard response is **mining pools**. A pool operator builds a candidate block template and hands the header out to each connected miner along with the network's difficulty target. Each miner hashes nonces against that template exactly as they would solo. When a miner finds a hash that's below a much easier **share target**, easier than the real network target by some configurable factor, it submits that share to the operator as evidence of work done. The pool counts shares from everyone, and when one of the submitted hashes happens to also be below the real network target, the pool publishes the block and splits the reward in proportion to how many shares each miner contributed during the round. The participating miner's income changes from "3.125 BTC every several decades" to "a small payout every day," and practically every commercial miner today operates this way.
+The puzzle's difficulty has an important consequence. A miner with a small share of global hashpower finds blocks rarely. With the network running at roughly 10²¹ hashes per second, an individual miner running modest hardware at a few terahashes per second would, on average, wait decades between finding a block. The reward when one finally lands is the same 3.125 BTC plus fees as anyone else's, but waiting decades for any income is not how a business runs. The standard response is **mining pools**. A pool operator builds a candidate block template and hands the header out to each connected miner along with the network's difficulty target. Each miner hashes nonces against that template exactly as they would solo. When a miner finds a hash that's below a much easier **share target**, easier than the real network target by some configurable factor, it submits that share to the operator as evidence of work done. The pool counts shares from everyone, and when one of the submitted hashes happens to also be below the real network target, the pool publishes the block and splits the reward in proportion to how many shares each miner contributed during the round. The participating miner's income changes from "3.125 BTC every several decades" to "a small payout every day," and practically every commercial miner today operates this way.
 
 The cost is a centralization concern. A handful of large pools together control most of Bitcoin's hashpower at any given time. The pool operator is the one who decides which transactions go into the block template, so the operator effectively controls block contents on behalf of all the miners pointed at them. The underlying miners can switch pools if an operator misbehaves, and switching is fast with no lock-in, but the day-to-day power to censor or include transactions sits with a small number of pool operators rather than with the thousands of individual miners. This is one of the most-discussed structural tensions in Bitcoin and there's no clean fix to it.
 
@@ -203,7 +203,7 @@ The block subsidy starts at 50 BTC and halves every 210,000 blocks, which is rou
 - Fourth halving (April 2024): dropped to 3.125 BTC, where it sits today
 - Next halving (expected April 2028): will drop to 1.5625 BTC
 
-<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin block subsidy halving, 50 BTC in 2009 down to 3.125 BTC by 2024</title><desc>A step chart shows the block subsidy in BTC on the y-axis and years from 2009 to 2028+ on the x-axis. The subsidy starts at 50 BTC and halves every 210,000 blocks, dropping to 25, 12.5, 6.25, and 3.125 BTC, approaching zero near year 2140 with total supply capped at 21 million.</desc>
   <line x1="60" y1="260" x2="680" y2="260" stroke="#000000" stroke-width="2"/>
   <line x1="60" y1="40" x2="60" y2="260" stroke="#000000" stroke-width="2"/>
 

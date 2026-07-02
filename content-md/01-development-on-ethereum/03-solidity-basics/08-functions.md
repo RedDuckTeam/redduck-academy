@@ -14,7 +14,7 @@ function name(parameters) visibility [mutability] [modifiers] [returns (types)] 
 }
 ```
 
-Visibility is required. Mutability is required for read-only and pure functions and optional otherwise. The brackets denote optional pieces. Names follow `mixedCase` convention: first word lowercase, subsequent words capitalized, no underscores.
+Visibility is required. The brackets denote optional pieces. The mutability annotation is one of them: add `view` if the function only reads state, `pure` if it reads nothing, and leave it off if the function modifies state. Names follow `mixedCase` convention: first word lowercase, subsequent words capitalized, no underscores.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -37,7 +37,7 @@ contract Counter {
 
 Every function declares one of four visibility levels. The choice affects what code can call the function and how the arguments are passed under the hood.
 
-**`public`** functions can be called from anywhere. Off-chain callers can invoke them via transactions. Other contracts can call them. The contract's own code can call them. This is the most permissive option and the most flexible, which is why beginners reach for it. Production code rarely needs it.
+**`public`** functions can be called from anywhere. Off-chain callers can invoke them via transactions. Other contracts can call them. The contract's own code can call them. This is the most permissive option. Production code rarely needs it.
 
 **`external`** functions can only be called from outside the contract. An off-chain transaction or a call from another contract works. The contract calling its own `external` function does not, unless it goes through `this.functionName()` which is itself an external call and costs extra gas. The key reason `external` exists is gas efficiency. It lets the compiler read arguments directly from calldata. This is significantly cheaper than the `public` case, where arguments have to be copied into memory in case an internal caller passes them. For functions with large reference-type parameters like `bytes calldata` or `uint256[] calldata`, this difference can be hundreds of gas per call.
 
@@ -85,11 +85,11 @@ If a function modifies state, you don't write any mutability modifier at all. Th
 
 ## Why view and pure functions are free to call
 
-A function annotated `view` or `pure` doesn't change anything on chain. That means a node can answer the question "what does this function return?" by running it locally, in memory, without making it part of any block. There's no transaction, no gossip, no consensus, no gas paid by anyone. The RPC method `eth_call` does exactly this.
+A function annotated `view` or `pure` doesn't change anything on chain. That means a node can answer the question "what does this function return?" by running it locally, in memory, without making it part of any block. There's no transaction, no consensus, no gas paid by anyone. The RPC method `eth_call` does exactly this.
 
 A function that modifies state can't work that way. To change the chain's state, the operation has to go through a transaction, get mined into a block, and be applied by every full node. That's where the gas cost comes from: every node runs the function as part of validating the block.
 
-The practical consequence: calling `getCount` from your frontend is free, instant, and doesn't need a connected wallet. Calling `increment` costs gas, requires a signed transaction, and takes a few seconds to be mined. The visibility annotation `view` or `pure` is the signal that switches between these two worlds.
+The practical consequence: calling `getCount` from your frontend is free, instant, and doesn't need a connected wallet. Calling `increment` costs gas, requires a signed transaction, and takes a few seconds to be mined. The mutability annotation `view` or `pure` is the signal that switches between these two worlds.
 
 The same function can be called either way from contract code. When contract A calls `B.getCount()` from inside its own state-mutating function, it costs gas as part of A's transaction. When the same function is called from a frontend's `eth_call`, it's free. The cost depends on the calling context, not the function itself.
 

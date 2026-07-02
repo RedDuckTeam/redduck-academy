@@ -18,13 +18,13 @@ uint256 b = balances[someAddress];
 
 And then everything else you'd expect to work doesn't. You can't call `.length`. You can't loop over the keys. You can't return a mapping from a function. You can't even put one in memory. Reading a key that was never written doesn't throw an error, it just gives you zero.
 
-The right way to learn mappings is to figure out why these limitations exist. Once you understand the constraint Solidity is working under, every restriction becomes obvious.
+To understand mappings, start from why these limitations exist.
 
 ## The constraint: EVM storage
 
 A contract's persistent state lives in what the EVM calls storage. Storage has a specific shape that drives the entire design of mappings.
 
-Storage is a flat array of slots. Each slot holds exactly 32 bytes. There are `2^256` of them, numbered from 0 upward. That's an astronomically large number, far more than the atoms in the visible universe. Every slot exists in principle. Every slot is initialized to zero. Every slot can be read or written by the contract that owns it.
+Storage is a flat array of slots. Each slot holds exactly 32 bytes. There are `2^256` of them, numbered from 0 upward. That's an astronomically large number. Every slot exists in principle. Every slot is initialized to zero. Every slot can be read or written by the contract that owns it.
 
 Three properties matter for what follows:
 
@@ -40,7 +40,7 @@ Suppose you want a data structure that lets a contract store unbounded key-value
 
 **Step one: deriving slots from keys.** You have keys, and you have a flat numbered slot space. To get O(1) lookup, the slot for a given key needs to be computable from the key alone, with no intermediate table lookup. The standard way to do this is hashing. Hash your key with a cryptographic hash function, take the result as a 256-bit number, use that as the slot address.
 
-Solidity does exactly this. For a mapping declared at position `p` in the contract's storage layout, the slot for key `k` is `keccak256(k, p)`. No table lookup, no key list, no metadata. Just hash and go.
+Solidity does exactly this. For a mapping declared at position `p` in the contract's storage layout, the slot for key `k` is `keccak256(k, p)`. No table lookup, no key list, no metadata. The slot comes straight from the hash.
 
 **Step two: handling the "key not present" case.** Every key hashes to some slot. That slot was zero before anyone wrote to it. That slot is still zero unless someone wrote to it.
 
@@ -89,7 +89,7 @@ balances[msg.sender] += 50;             // SLOAD + add + SSTORE
 
 Reading a never-written key returns the zero value of the value type. For `uint256`, that's 0. For `bool`, `false`. For `address`, `0x0`. For `string`, the empty string. No revert, no error, just the type's default. The default-value rule that holds for every Solidity variable generalizes here: every key has a definite value at all times, which is zero until you write something else.
 
-**Key type restrictions** are tighter than value type restrictions. Keys must be value types the EVM can deterministically hash: integers, addresses, `bool`, fixed-width bytes. Dynamic types like `string` and `bytes` are also legal as keys, and the compiler hashes them by their full byte content. Structs, mappings, arrays, and other compound reference types aren't allowed as keys. They don't have a canonical fixed representation.
+**Key type restrictions** are tighter than value type restrictions. Keys must be types the EVM can deterministically hash: integers, addresses, `bool`, fixed-width bytes. Dynamic types like `string` and `bytes` are also legal as keys, and the compiler hashes them by their full byte content. Structs, mappings, arrays, and other compound reference types aren't allowed as keys. They don't have a canonical fixed representation.
 
 **Value types are unrestricted.** Any type works, including nested mappings, dynamic arrays, structs, anything. Nested mappings compose by recursive hashing: the slot for `outer[k1][k2]` is `keccak256(k2, keccak256(k1, p))`. All the way down.
 
@@ -124,7 +124,7 @@ Three lines of logic. Anyone can call `pay()` with ETH attached. The contract re
 
 Everything from the previous lesson shows up here. `msg.sender`, typed `address`, is the mapping key. `msg.value`, typed `uint256`, is the value being accumulated. The `payable` keyword admits ETH. The mapping pattern records per-user state without needing to track who has paid before.
 
-This three-line pattern, with small variations, is the basis for crowdfunding contracts, donation pools, balance tracking in token contracts, vote counting, and a long tail of accounting-style logic. Recognize the shape. You'll see it everywhere.
+This three-line pattern, with small variations, is the basis for crowdfunding contracts, donation pools, balance tracking in token contracts, vote counting, and many other accounting-style patterns. Recognize the shape. You'll see it everywhere.
 
 ## Workarounds for what mappings can't do
 
@@ -181,4 +181,4 @@ A few patterns to internalize.
 
 **Forgetting that public mappings expose every key.** The auto-generated getter takes the key as input. There's no privacy in mapping data. If you don't want every value queryable by anyone, mark the mapping `private`. Note that "private" only means the auto-getter is suppressed. The data is still readable directly from storage by anyone who knows the slot derivation, which on a public chain is everyone.
 
-**Using a mapping for ordered data.** Mappings are unordered by design. If insertion order matters, or rank order matters, you need a different structure. Trying to bolt sort order onto a mapping with a parallel array works but rapidly becomes expensive.
+**Using a mapping for ordered data.** Mappings are unordered by design. If insertion order or rank order matters, you need a different structure. As shown earlier, a parallel array can impose order, but maintaining it becomes expensive.

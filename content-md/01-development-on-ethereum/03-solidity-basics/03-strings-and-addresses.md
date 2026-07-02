@@ -2,13 +2,13 @@
 
 _type: lecture_
 
-Two types you'll meet in the first hour of any non-trivial contract. Both come with rules that surprise developers from other languages. They handle the two flavors of external data a contract sees. Strings carry text from humans. Addresses carry identifiers from the chain itself. Strings have surprising limitations. Operations you'd expect to work simply don't. Addresses have a surprising capability split. There are actually two address types in Solidity, and you have to pick the right one to move money.
+Two types you'll meet in the first hour of any non-trivial contract. They handle the two kinds of external data a contract sees. Strings carry text from humans. Addresses carry identifiers from the chain itself. Both behave in ways that catch developers coming from other languages. Strings have limitations: operations you'd expect to work simply don't. Addresses come in two forms, and you have to pick the right one to move money.
 
 ## What strings actually are
 
 A string in Solidity is not an array of characters the way it is in higher-level languages. It's a sequence of UTF-8 bytes. When you write a Latin letter, you get one byte. A Cyrillic letter takes two. An emoji takes three or four. The string type stores the bytes faithfully and refuses to commit to any single answer for "how long is this."
 
-This is the seed of every limitation that follows. Solidity did not decide to make strings weak. It decided not to pick a wrong answer for length, equality, or concatenation when the right answer depends on what you mean by "character."
+This single fact explains every limitation that follows. Solidity did not decide to make strings weak. It decided not to pick a wrong answer for length, equality, or concatenation when the right answer depends on what you mean by "character."
 
 Strings are reference types: the variable holds a reference to data that lives somewhere, and that somewhere has to be named. State variables declared at the contract level live in `storage` automatically. Function arguments and local variables require an explicit data-location keyword:
 
@@ -82,7 +82,7 @@ contract Example {
 }
 ```
 
-Addresses are written as hex literals without quotes. They are not strings, and they are not interchangeable with `bytes20` despite being the same size in bytes. The `.balance` property reads the current balance of any address in wei, the smallest ETH denomination. One ETH equals `10**18` wei, which is why ETH amounts are stored in `uint256` rather than a smaller integer.
+Addresses are written as hex literals without quotes. They are not strings, and they are not interchangeable with `bytes20` despite being the same size in bytes. The `.balance` property reads the current balance of any address in wei, the smallest ETH denomination. One ETH equals `10**18` wei. ETH amounts are stored in `uint256`, the EVM's native 256-bit word.
 
 All balance data on Ethereum is public, which is why you can query any address's balance, not just one your contract owns. The `view` keyword on these functions is a promise that they don't modify state, which lets them be called for free without sending a transaction.
 
@@ -119,7 +119,7 @@ contract Wallet {
 
 Both patterns appear in production code. Declaring the field as `address payable` makes the intent clear at the storage level. You can't always do that, since some sources of addresses give you a plain `address`, like function arguments from external callers or return values from certain operations. The `payable(addr)` cast lets you opt into the capability at the call site.
 
-A word on `.transfer()` itself. The method forwards a fixed 2300 gas stipend to the recipient. That used to be enough for the recipient's `receive()` function to log an event and return. Since EIP-1884 raised the cost of certain opcodes in 2019, the 2300 stipend has become unreliable, and `.transfer()` to a contract recipient can fail when the recipient is a multisig or a proxy that does a bit of bookkeeping on receipt. Modern Solidity style is to send ETH using a low-level `call` instead:
+A word on `.transfer()` itself. The method forwards a fixed 2300 gas stipend to the recipient. That used to be enough for the recipient's `receive()` function to log an event and return. Since EIP-1884 raised the cost of certain opcodes in 2019, the 2300 stipend has become unreliable, and `.transfer()` to a contract recipient can fail when the recipient is a multisig or a proxy that runs extra logic on receipt. Modern Solidity style is to send ETH using a low-level `call` instead:
 
 ```solidity
 (bool ok, ) = payable(target).call{value: amount}("");

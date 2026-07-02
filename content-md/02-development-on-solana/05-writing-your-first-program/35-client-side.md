@@ -6,13 +6,13 @@ _type: lecture_
 
 ## The libraries you'll be working with
 
-The Solana client ecosystem in TypeScript revolves around a handful of packages. Knowing what each one is for is most of the battle.
+The Solana client ecosystem in TypeScript revolves around a handful of packages. Knowing what each one is for is the most important starting point.
 
 **`@solana/web3.js`** is the canonical client library, maintained by Solana Labs / Anza. It gives you the primitives: `Connection` for talking to an RPC node, `Keypair` for holding a private key, `Transaction` and `TransactionInstruction` for building transactions, and dozens of helper functions for common operations. Almost every Solana project depends on it.
 
 **`@solana/kit`** is the newer modular successor to web3.js. Same idea, smaller and more tree-shakeable, with a slightly different API. You can think of it as web3.js v2: solid, growing in adoption, but most existing tutorials and codebases still use the older library. For this course we'll mostly stick with `@solana/web3.js` because that's what the tooling around Anchor and bankrun expects, but you should recognize `@solana/kit` when you see it in newer projects.
 
-**`@coral-xyz/anchor`** is the client SDK for Anchor. If your program was written in Anchor (and most are), this library wraps web3.js with a higher-level API that reads your program's IDL and gives you typed methods for every instruction. Instead of constructing raw `TransactionInstruction` objects by hand, you write `program.methods.deposit(amount).accounts({...}).rpc()`. Everything is typed end-to-end.
+**`@coral-xyz/anchor`** is the client SDK for Anchor. If your program was written in Anchor (and most are), this library wraps web3.js with a higher-level API that reads your program's IDL — a JSON description of the program's interface — and gives you typed methods for every instruction. Instead of constructing raw `TransactionInstruction` objects by hand, you write `program.methods.deposit(amount).accounts({...}).rpc()`. Everything is typed end-to-end.
 
 **`@solana/wallet-adapter`** is the standard library for connecting browser wallets like Phantom, Backpack, and Solflare to your frontend. It abstracts over which wallet the user installed, so your code is the same regardless of their choice.
 
@@ -123,7 +123,7 @@ if (accountInfo === null) {
 }
 ```
 
-The catch is that `accountInfo.data` is a raw `Buffer` of bytes. Web3.js doesn't know what those bytes mean. If you want to read the fields of an Anchor account, you have to decode them according to the layout the program uses, which is where the Anchor client comes in.
+The limitation is that `accountInfo.data` is a raw `Buffer` of bytes. Web3.js doesn't know what those bytes mean. If you want to read the fields of an Anchor account, you have to decode them according to the layout the program uses, which is where the Anchor client comes in.
 
 ## Anchor client: typed methods from the IDL
 
@@ -175,13 +175,13 @@ const counter = await program.account.counter.fetch(counterPda);
 console.log("value:", counter.value.toNumber());  // typed Counter struct
 ```
 
-This is why almost every modern Solana frontend uses the Anchor client when interacting with Anchor programs. You write less code, and TypeScript catches your mistakes at compile time instead of letting them blow up in production.
+This is why almost every modern Solana frontend uses the Anchor client when interacting with Anchor programs. You write less code, and TypeScript catches your mistakes at compile time instead of letting them fail at runtime in production.
 
 ## Wallet adapter: connecting browser wallets
 
 Most users on Solana have a wallet extension installed in their browser (Phantom, Backpack, Solflare). When they visit your dApp, you want to ask their wallet to sign transactions on their behalf. The wallet adapter is the library that handles this conversation.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Wallet adapter flow between frontend app and browser wallet</title><desc>The frontend app builds a transaction and passes it through the wallet adapter to the user's browser wallet (Phantom, Backpack, or Solflare). The wallet shows an approve or reject popup, keeps the private key, and sends the signed transaction back so the frontend can submit it to the RPC and wait for confirmation.</desc>
   <defs>
     <marker id="arrW1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>

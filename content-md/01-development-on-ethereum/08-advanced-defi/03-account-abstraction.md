@@ -6,11 +6,11 @@ _type: lecture_
 
 ## What's wrong with EOAs
 
-An EOA is just a public key derived from a private key, with a balance attached to it. The protocol allows exactly one kind of authorization: a transaction signed by the matching private key, using ECDSA on the secp256k1 curve. That's it.
+An EOA is an account at an address derived from a public key, controlled by the corresponding private key, with a balance attached to it. The protocol allows exactly one kind of authorization: a transaction signed by the matching private key, using ECDSA on the secp256k1 curve. That's it.
 
 This works but it's restrictive in a long list of ways.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EOA vs smart account: what changes when code controls your account</title><desc>Two columns compare an EOA and a smart account across signature scheme, gas payment, key loss, multiple signers, batched operations, and spending limits. The EOA is powerful but rigid and cannot be customized, while the smart account is flexible but can't self-initiate transactions without ERC-4337 or EIP-7702.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">EOA vs smart account: what changes when code controls your account</text>
   <rect x="40" y="80" width="310" height="430" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -84,11 +84,11 @@ The cost of this design is operational complexity. ERC-4337 deliberately avoided
 
 ## EIP-7702: smart accounts at the protocol level
 
-EIP-7702 takes a different approach. Instead of building infrastructure around EOAs, it lets an EOA temporarily (or persistently) act as a smart account directly, at its own address.
+Instead of building infrastructure around EOAs, EIP-7702 lets an EOA act as a smart account directly, at its own address.
 
 The idea: introduce a new transaction type (type `0x04`, the SetCode transaction) that includes an **authorization list**. Each authorization is signed by an EOA's private key and says "set my account's code to point to this contract."
 
-<svg viewBox="0 0 720 640" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 640" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EIP-7702: an EOA delegates to smart wallet contract code</title><desc>Before EIP-7702, Alice's EOA is only a keypair with no code. Alice signs an authorization naming a contract address, someone submits a type-0x04 transaction with it, and afterward calls to Alice's EOA execute that contract's code while keeping her own storage and balance.</desc>
   <defs>
     <marker id="arrA3" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -173,8 +173,8 @@ A nice side-effect of 7702: every existing EOA can become a smart account at any
 
 **The smart-account contract is itself an attack surface.** A bug in the implementation contract is a bug in every account delegated to it. Same for the EntryPoint. Both have been audited heavily but the principle stays: the security of your account depends on the security of the code controlling it.
 
-**Bundler censorship is a real concern.** If only a few bundlers exist and they all refuse to include UserOps from certain users (sanctioned addresses, for example), those users are de-facto blocked from using 4337. The mitigation is many independent bundlers, and the protocol's open structure aims to keep entry low.
+**Bundler censorship is a real concern.** If only a few bundlers exist and they all refuse to include UserOps from certain users (sanctioned addresses, for example), those users are de-facto blocked from using 4337. The mitigation is many independent bundlers, and the protocol's open structure aims to keep the barrier to entry low.
 
-**EIP-7702 has subtle gotchas around storage compatibility.** If two different implementation contracts use the same storage slots for different things, switching delegation between them can leave your account's state in a meaningless configuration. The fix is to use stable storage layouts (often via ERC-7201 namespaced storage) so swapping implementations doesn't conflict.
+**EIP-7702 has subtle pitfalls around storage compatibility.** If two different implementation contracts use the same storage slots for different things, switching delegation between them can leave your account's state in a meaningless configuration. The fix is to use stable storage layouts (often via ERC-7201 namespaced storage) so swapping implementations doesn't conflict.
 
-**Signature verification still costs gas.** A smart account that does ECDSA on every UserOp pays roughly the same as an EOA would. Fancier schemes (multisig, ZK proofs) cost more. The bill shows up in the verification gas limit on each UserOp.
+**Signature verification still costs gas.** A smart account that does ECDSA on every UserOp pays roughly the same as an EOA would. More complex schemes (multisig, ZK proofs) cost more. The bill shows up in the verification gas limit on each UserOp.

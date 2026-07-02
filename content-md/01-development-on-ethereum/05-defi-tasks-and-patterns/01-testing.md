@@ -6,7 +6,7 @@ _type: lecture_
 
 ## The stack we're using and why it doesn't really matter
 
-This lesson uses **Hardhat 3** with the **viem** library and the **Node.js test runner** (`node:test`). That's one specific stack. There are others. Foundry is Solidity-native and very popular in security audits. Hardhat with ethers.js is the older mainstream JavaScript stack. Truffle still appears in legacy projects. New frameworks will keep showing up. If you join a team they'll have picked one and you'll use what they picked.
+This lesson uses **Hardhat 3** with the **viem** library and the **Node.js test runner** (`node:test`). That's one specific stack. There are others. Foundry is Solidity-native and very popular in security audits. Hardhat with ethers.js is the older mainstream JavaScript stack. Truffle still appears in legacy projects. New frameworks will keep appearing. If you join a team they'll have picked one and you'll use what they picked.
 
 What you should take from this lesson is not "how to use Hardhat 3." It's the mental model of testing smart contracts: how to think about what to test, how to structure tests so they're readable, how to set up state, how to assert outcomes, how to manipulate the test environment. That mental model is identical across every framework. The syntax differs but the moves are the same:
 
@@ -81,13 +81,13 @@ Inside the test, `viem.deployContract("Counter")` deploys a new instance of the 
 
 `counter.read.x()` reads the value of the public state variable `x`. The `.read` namespace is for view/pure functions and public state variable getters. It returns the value directly without sending a transaction.
 
-`assert.equal(value, 1n)` checks that `value` equals `1n`. The `n` suffix makes it a BigInt, which is how viem represents all uint256 values. Mixing BigInt and number in JavaScript throws an error, so consistency matters: always compare BigInt to BigInt.
+`assert.equal(value, 1n)` checks that `value` equals `1n`. The `n` suffix makes it a BigInt, which is how viem represents all uint256 values. Arithmetic that mixes a BigInt and a number throws an error, and a strict comparison between them is never equal (`1n === 1` is false), so always compare BigInt to BigInt.
 
 To use `assert.equal` you need one more import: `import assert from "node:assert/strict"`. The `strict` variant uses strict equality with no type coercion, which is what you want.
 
 ## describe and it
 
-The `describe` block groups related tests under a label. The `it` block defines a single test case. Both take a string description and a callback function.
+Both `describe` and `it` take a string description and a callback function.
 
 ```typescript
 describe("Counter", function () {
@@ -287,7 +287,7 @@ Foundry has `vm.warp(timestamp)` for the same purpose. Ethers.js with `hardhat-n
 
 ## Fixtures
 
-If you've been reading carefully, you've noticed every test starts with `const counter = await viem.deployContract("Counter")`. That's a few seconds of setup time multiplied by every test you write. Across a real test suite this adds up to minutes of waiting. There's also a subtler problem: if the setup logic is repeated in every test, eventually some tests drift and their setups disagree. The wrong setup is a common source of false test failures and false test passes.
+Every test so far starts with `const counter = await viem.deployContract("Counter")`. That's a few seconds of setup time multiplied by every test you write. Across a real test suite this adds up to minutes of waiting. There's also a subtler problem: if the setup logic is repeated in every test, eventually some tests drift and their setups disagree. The wrong setup is a common source of false test failures and false test passes.
 
 Fixtures solve both problems. A fixture is a function that sets up the chain to a known state. The first time you call it, it runs. Subsequent calls don't re-run the function. Instead they snapshot-restore the chain to the state after the first run, which is much faster and guaranteed identical.
 
@@ -344,7 +344,7 @@ async function deployWithVoters() {
 }
 ```
 
-Then each test that needs voters loads this fixture and gets the full picture. Foundry has the equivalent in `setUp()` functions on test contracts. The concept is universal.
+Then each test that needs voters loads this fixture and receives the accounts and the deployed token it needs. Foundry has the equivalent in `setUp()` functions on test contracts. The concept is universal.
 
 ## What to test and what not to test
 
@@ -354,12 +354,12 @@ What you DO need to test:
 
 - **Your own contract's logic.** Every branch, every revert condition, every state change. If your contract has a `withdraw` function with three different paths, write three tests.
 - **The interaction between your contract and others.** If you call into an external token, test that you handle its return value correctly. If you use checks-effects-interactions, test that reentrancy doesn't succeed.
-- **Edge cases.** Zero amounts. Maximum values. Empty arrays. Self-transfers. The bug you don't write a test for is the one that ships.
+- **Edge cases.** Zero amounts. Maximum values. Empty arrays. Self-transfers. The bug you don't write a test for is the one that reaches production.
 - **Access control.** Every function with `onlyOwner` or a similar guard needs a test confirming non-owners are rejected.
 - **Time-dependent behavior.** Both sides of every deadline. The lock before, the lock after.
 - **Failure modes.** Every `revert` and `require` in your contract is a behavior that needs verification.
 
-A reasonable rule of thumb: every line in your contract should be reachable by at least one test, and every conditional branch should be covered by tests for both outcomes. There's a tool for this called code coverage that we'll come back to in a later lesson.
+A reasonable guideline: every line in your contract should be reachable by at least one test, and every conditional branch should be covered by tests for both outcomes. There's a tool for this called code coverage that we'll come back to in a later lesson.
 
 The Arrange-Act-Assert pattern is a useful shape for each test. Arrange the state by deploying contracts, transferring tokens, advancing time. Act on the system by calling the function being tested. Assert the result by checking state, checking events, or checking reverts. One clear arrangement, one clear action, one clear assertion. Tests that mix multiple actions in one block are harder to debug when they fail.
 

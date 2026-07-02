@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that real money rode through, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. This lecture walks through four notable outages, what each one revealed, and what changed. Treat this as a debugging-the-network exercise. You'll see your own programs in a new light afterward.
+> Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that affected real money, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. This lecture walks through four notable outages, what each one revealed, and what changed. Treat this as a debugging-the-network exercise. Afterward, you'll look at your own programs differently.
 
 ## Why outages teach more than uptime does
 
@@ -16,17 +16,17 @@ Solana's first major outage came in September 2021 during the launch of a popula
 
 The trigger was a flood of nearly-free transactions. The fix had to address the assumption underneath: that transactions arrive at a rate validators can keep up with. The architecture didn't have a transaction-level prioritization mechanism. Every transaction was treated as roughly equal, processed in the order it arrived. When millions of bots were submitting identical-looking transactions, the network had no way to distinguish "this transaction is important" from "this transaction is one of a million spammed copies."
 
-The lesson revealed was that throughput as a benchmark number is not the same as throughput under adversarial conditions. A network can do 50,000 TPS in a clean test environment and still get knocked over when 400,000 transactions per second arrive in a coordinated burst.
+The lesson revealed was that throughput as a benchmark number is not the same as throughput under adversarial conditions. A network can do 50,000 TPS in a clean test environment and still fail when 400,000 transactions per second arrive in a coordinated burst.
 
 The architectural fix took several forms. Solana migrated transaction submission from UDP to QUIC, which provided per-connection backpressure and identity. Stake-weighted Quality of Service was added: validators began prioritizing forwarding traffic from peers based on their stake, making it expensive to spam the network from low-stake or unstaked clients. These changes took months to roll out but they shaped the way transactions flow today. Every RPC node and every wallet you've interacted with uses this revised pipeline.
 
 ## 2022: the NFT mint cascades
 
-Throughout 2022, Solana experienced a recurring class of stress events tied to popular NFT mints. The Metaplex Candy Machine system was the dominant Solana NFT minting tool, and each high-profile mint would attract bot armies trying to grab allocations the moment minting opened. The pattern was the same as the IDO storm but lower amplitude and more frequent: a small number of slots saw extreme transaction floods, often degrading the network for 30 minutes to a few hours.
+Throughout 2022, Solana experienced a recurring class of stress events tied to popular NFT mints. The Metaplex Candy Machine system was the dominant Solana NFT minting tool, and each high-profile mint would attract bot armies trying to grab allocations the moment minting opened. The pattern was the same as the IDO storm but less severe and more frequent: a small number of slots saw extreme transaction floods, often degrading the network for 30 minutes to a few hours.
 
 These weren't full halts most of the time, but they were embarrassing. Users couldn't get transactions through. Wallets timed out. The Solana experience for ordinary users during a popular mint was that the chain didn't work.
 
-The trigger was again transaction spam, but the assumption being tested was different. The QUIC and stake-weighted QoS work had partially addressed the "spam arrives at validators" problem, but it didn't address the underlying economic reality: transactions on Solana were essentially free. The base fee of 5,000 lamports per signature is small enough that a bot operator can submit thousands of failed attempts and not feel it.
+The trigger was again transaction spam, but the assumption being tested was different. The QUIC and stake-weighted QoS work had partially addressed the "spam arrives at validators" problem, but it didn't address the underlying economic reality: transactions on Solana were essentially free. The base fee of 5,000 lamports per signature is small enough that a bot operator can submit thousands of failed attempts at negligible cost.
 
 The fix was the introduction of priority fees as a mainstream pattern. The mechanism had existed for a while, but it wasn't yet the default thing wallets and applications used. Through 2022 and into 2023, priority fees became normalized. Wallets started attaching them by default. Applications started bidding for inclusion. The economic incentive structure shifted: if you wanted your transaction prioritized, you paid for it. Spam transactions still happen, but the cost of doing damage at scale is now much higher, and the priority-fee market gives legitimate users a way to compete.
 
@@ -40,7 +40,7 @@ The trigger was a single-line software issue in the validator implementation. Th
 
 Compare to Ethereum, which has multiple independent validator clients in production. Geth, Erigon, Nethermind, Besu, Reth on the execution side. Prysm, Lighthouse, Teku, Nimbus, Lodestar on the consensus side. A bug in one client typically affects only the validators running that client rather than the whole network. The network keeps going. Solana didn't have that diversity.
 
-The architectural response was Firedancer. Firedancer is a second Solana validator client, written from scratch by Jump Crypto in C, designed as a high-performance independent implementation. The Feb 2023 outage was widely cited as the moment Firedancer's importance became urgent rather than nice-to-have. Firedancer's development accelerated, and partial versions of it, including a hybrid called Frankendancer that uses Firedancer's networking layer atop Agave's consensus, reached mainnet during 2024 and 2025. As of this writing, full Firedancer is running on mainnet, giving Solana the client diversity that was missing in 2023.
+The architectural response was Firedancer. Firedancer is a second Solana validator client, written from scratch by Jump Crypto in C, designed as a high-performance independent implementation. The Feb 2023 outage was widely cited as the moment Firedancer's importance shifted from optional to urgent. Firedancer's development accelerated, and partial versions of it, including a hybrid called Frankendancer that uses Firedancer's networking layer atop Agave's consensus, reached mainnet during 2024 and 2025. As of this writing, full Firedancer is running on mainnet, giving Solana the client diversity that was missing in 2023.
 
 The lesson here was about resilience as a property of the ecosystem rather than the design. The protocol itself was fine. The implementation diversity wasn't. You can have a beautifully designed network and still go down if there's only one program running it.
 
@@ -56,7 +56,7 @@ The fix was a multi-month effort across several teams. The scheduler in the Agav
 
 ## What the pattern tells you
 
-<svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Four Solana outages, 2021-2024: trigger, revealed, fix</title><desc>Four stacked cards, one per outage: Sept 2021 IDO bot storm, 2022 NFT mint cascades, Feb 2023 block propagation bug, and Q1 2024 high tx failure rate. Each card lists the trigger, what it revealed, and the fix applied.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Four Solana outages and what each revealed</text>
   <rect x="40" y="80" width="640" height="105" fill="#e0deda" stroke="#000000" stroke-width="2"/>

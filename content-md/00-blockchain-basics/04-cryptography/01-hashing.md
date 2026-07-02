@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> The last module ended with a promise: the next thing you'd learn is the cryptography that makes blockchains possible at all. This lesson keeps that promise by starting with the smallest, simplest cryptographic tool in the box. Hashing. It's a function that takes any input and returns a short, fixed-size hash, and it's the load-bearing pillar of every blockchain you'll ever meet. Everything else in cryptography (signatures, addresses, identity, the integrity of a block) is built on top of it. Start here and the rest of the module assembles itself.
+> The last module ended with a promise: the next thing you'd learn is the cryptography that makes blockchains possible at all. This lesson keeps that promise by starting with the smallest, simplest cryptographic tool there is: hashing. It's a function that takes any input and returns a short, fixed-size output, and it's the foundation that every blockchain rests on. Everything else in cryptography (signatures, addresses, identity, the integrity of a block) is built on top of it.
 
 ## The one-sentence definition
 
@@ -27,9 +27,9 @@ The playground below has two inputs pre-filled with `hello` and `hello!`, each w
 
 [interactive playground](https://plgrnd.io/#flow=N4IgbiBcDMA0IDsD2ATApgZygbVASxShAA5j0AWARmOgAZoBjc80lAI2nLXIDYBOAEwoAZvwE8AhgFYQ8AC4BPAA5oiAFQCiADTWyQSpBjxy8SBFFAAPKAFpKPHgDpalPpUpTaA8px5Sp8Aq2dI4A7C7kAsS0fFKhHm4AvvAoEnISFiByaJZyRAAWaAA2RUggySAAtmgSGACuAE5ohJCgAO4EcvlQdLTwhXgA5vl5kFKUFRjFaAzZLcISRVMpDRKDg3gIg1ALS2jJ+C0g4lxsPKE1EhJs5FJ8wnyh0CihKJTClLRSbLQ8DLR6RQqIgACQAggBlEF6AxGExmTLWSCUUICRx8ZgJYh8HjQHjEVGBYJOcShfi0Zj8R7eCqpdKZfK1bqQY4MYTedjSYQ-CR0NDiNA0NgCCQMb58fkSyhseyUNBSBjvCShSJSNBPCnQPECPjQYhsPjEbzleDVWqNZqZDooLpQDx9EADYajKQ8SbTWaWyC7ZYgFCrdabbbexZTA4gAhESLEKQPMXEXkq0IfAnQPii8i8rXoPx8QHKVQszQ6GGGYymcytEBIuyoxx4w20MmPLwOHhEyA8Wj1lGu0LxO5uXi0tIZKvZXIFYqlACEJqqNXqTRa7U6zN6-TQQxGUHG7qKMzmO1DaBWaw2W2Pe3DkZZAjYaD4LwYxEzgvIoV5pHZyoYKFx+KvMq+bAiy4JQqWcIVoidp1n2gjjA40ChP4oQdlI5COP4Aj+LEPACN4LgCCO9JVoyGDMiADBoL8MQCNyGJkPcCwMK8lCJjw3AUsKPBsChKFsAwipyjRUgSLwHjCGgwjkFJDDQLytD6vOZpLl6q42sy9qbtuLpuvAUwHp68wnmegaXiG14ALrwM0gyYDgoAYEgjTUUQrDcNQdCMMwrAcFwvCCCIYiSDIBkuQ01EghICAoAe7lkJ5ND0EwLBkP53BiMFgihTYE5yDYDS6YCEgNPZozHDwpznJc1y3PcjzPGxHxfD8fwAvIpXldFsXxXeVVoGcFxXHVdwPE8LxvC13y-P8NibEodQFQewh5PAt7VgoNh2WgAD6u0eVQyU+Wl7CcJlQWiDl0iHV5KW+el52BUIV3iNIeU5AVRXOjYJyDTVI03GNjWTe8nwze1f1DbVQMNRNzXg21c0LUtNgrXk4bOa5hYgNGsZ8PGiYfimTzpkwWbPGguZ6FjkVoD1cU43jcZSAmyHE9QpMZhTOZ3B9uSFcVnVlWgFX3o+z6vhI76fnqxA-qEf4AQSqShCVItyAzfXHA+T6K1LMtfvLIqK-+eIq8q80IIty3SWtEZHJYW07ftzME6zRPJpzabc1qlO5m7hPs17qZk5mfu83w-Nfbpv265Lb6vrL34m0r5tAai8f64nH5GwraeAarVs22jdvlDZ4B4GgbQGA0oxWFADh8I4xDUKQH6fHQDgdtAHjOJQ5D0LEfC0BSGHwAAXkgSCVHa9b+B4MacNAAhasQ5yJIkQA?view=true)
 
-Those three observations are already most of what you need to know. The rest of the lesson explains the formal properties behind them and why blockchains can't exist without them.
+Those three observations are already most of what you need to know. The sections below also show why blockchains can't exist without hashing.
 
-<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>"hello", a 50 page novel, and one bit all go into SHA-256, out comes 256 bits</title><desc>Three very different inputs, the text "hello", a 50 page novel, and one bit, each point with an arrow into the SHA-256 hash function box. A single arrow leads from SHA-256 to a result box showing "256 bits, always" and the example hash "2cf24dba...938b9824".</desc>
 
 <defs>
 
@@ -87,9 +87,9 @@ A regular hash function, the kind used in hash tables, only needs to spread inpu
 
 **Collision resistance.** It's computationally infeasible to find any two different inputs `x` and `y` such that `hash(x) = hash(y)`. If you could, you'd have a transaction whose contents you could swap without changing its identifier, which would destroy every signature-based guarantee in the system.
 
-A consequence of these properties is the **avalanche effect**: changing a single bit of input changes roughly half the output bits, in a way that looks completely random. Going from `hello` to `hello!` flips almost every bit of the resulting 256-bit value. There's no smooth gradient. Small input changes produce large, unpredictable output changes.
+A consequence of these properties is the **avalanche effect**: changing a single bit of input changes roughly half the output bits, in a way that looks completely random. Going from `hello` to `hello!` flips roughly half the bits of the resulting 256-bit value. There's no smooth gradient. Small input changes produce large, unpredictable output changes.
 
-<svg viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>"hello" vs "hellp" hash outputs differing in about half their bits</title><desc>The diagram shows the hash of "hello" above the hash of "hellp", where only one letter changed. Roughly half the bits flip in the output, which is the avalanche effect.</desc>
   <text x="30" y="40" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">"hello"</text>
   <text x="30" y="65" font-family="monospace" font-size="11" fill="#565653">2cf24dba5fb0a30e26e83b2a...</text>
   <text x="30" y="82" font-family="monospace" font-size="11" fill="#565653">...c5b9e29e1b161e5c1fa7425e</text>
@@ -113,7 +113,7 @@ Two uses are enough to make the point.
 
 **Block linking.** Every block in a blockchain contains the hash of the previous block as one of its fields. The diagram below shows what that looks like in practice.
 
-<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Block N-1, Block N, and Block N+1 linked by prev_hash fields</title><desc>Three blocks in a row, Block N-1, Block N, and Block N+1, each show a data field and a prev_hash field. Arrows connect each block to the next, showing that a block's prev_hash stores the hash of the previous block.</desc>
   <rect x="40" y="50" width="180" height="100" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="130" y="75" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Block N-1</text>
   <line x1="60" y1="85" x2="200" y2="85" stroke="#565653" stroke-width="1"/>
@@ -140,14 +140,14 @@ Two uses are enough to make the point.
 <text x="360" y="180" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Each block carries the hash of the previous one.</text>
 </svg>
 
-Change anything in a historical block, even a single bit, and that block's hash changes. The next block's `prev_hash` field no longer matches, so it becomes invalid, and so does every block after it. Tampering with the past is detectable by anyone holding the chain, in constant time, by recomputing one hash per block. This is the property that turns a list of records into a tamper-evident chain.
+Change anything in a historical block, even a single bit, and that block's hash changes. The next block's `prev_hash` field no longer matches, so it becomes invalid, and so does every block after it. Tampering with the past is detectable by anyone holding the chain, by recomputing one hash per block. Each block costs only a single hash to verify. This is the property that turns a list of records into a tamper-evident chain.
 
 ## The specific functions you'll see
 
 Three names cover almost everything in the ecosystems you'll work in. You don't need to remember the details right now. The point is to recognize the names when they show up in later lessons.
 
-**SHA-256.** Designed by the NSA, published by NIST in 2001, part of the SHA-2 family. This is the hash function Bitcoin uses for almost everything. 256-bit output. Battle-tested for 25 years with no known practical break.
+**SHA-256.** Designed by the NSA, published by NIST in 2001, part of the SHA-2 family. This is the hash function Bitcoin uses for almost everything. 256-bit output. In production use for 25 years with no known practical break.
 
-**Keccak-256.** The function Ethereum uses. It won the SHA-3 competition in 2012, and Ethereum adopted it before NIST finalized the standard. The final SHA-3 standard ended up with slightly different padding, so Ethereum's "Keccak-256" and the official "SHA3-256" produce different outputs for the same input even though they share the same underlying algorithm. This catches people off guard the first time they try to compute an Ethereum hash off-chain using a generic SHA-3 library and get a different answer than they expected.
+**Keccak-256.** The function Ethereum uses. It won the SHA-3 competition in 2012, and Ethereum adopted it before NIST finalized the standard. The final SHA-3 standard ended up with slightly different padding, so Ethereum's "Keccak-256" and the official "SHA3-256" produce different outputs for the same input even though they share the same underlying algorithm. This surprises many developers the first time they compute an Ethereum hash off-chain with a generic SHA-3 library and get a different answer than they expected.
 
 **RIPEMD-160.** An older function with a 160-bit output. Bitcoin uses it in combination with SHA-256 in a few places. You'll see it again in a later lesson. For now, just notice that it produces shorter outputs than the other two.

@@ -6,15 +6,15 @@ _type: lecture_
 
 ## Why PDAs have to exist
 
-A normal account's address is the public key of an ECDSA keypair. To authorize anything that account does, you sign a transaction with the matching private key. That model is fine when there's a human or a server holding the key in secret.
+A normal account's address is the public key of an Ed25519 keypair. To authorize anything that account does, you sign a transaction with the matching private key. That model is fine when there's a human or a server holding the key in secret.
 
 A program can't do this. The program is open-source bytecode running on every validator at once. Anything the program "knows" is visible to anyone running it. If a program tried to hold a private key, every validator would see it, which means every validator could sign with it, which means the key is effectively public, which means it isn't a key at all. The whole concept of a key the program controls just collapses.
 
 But programs need to control accounts. They need vaults that hold user deposits. They need state accounts that only the program is allowed to mutate. They need to sign for token transfers out of their own pools. None of that works with the standard keypair model.
 
-The resolution is to invent a kind of address that nobody can sign for in the normal way, and grant the program a special ability to sign for it instead. That's what a PDA is. A 32-byte value that looks like a public key but isn't one, derived deterministically from the program's address and some seeds chosen by the developer. No private key exists for it, because the derivation lands at a point that isn't on the secp256k1 curve, and the curve is where private keys come from. The runtime gives the program a back door: if a program submits the seeds, the runtime treats it as authorization for the PDA those seeds derive to.
+The resolution is to invent a kind of address that nobody can sign for in the normal way, and grant the program a special ability to sign for it instead. That's what a PDA is. A 32-byte value that looks like a public key but isn't one, derived deterministically from the program's address and some seeds chosen by the developer. No private key exists for it, because the derivation lands at a point that isn't on the Ed25519 curve, and the curve is where valid keypairs come from. The runtime gives the program a back door: if a program submits the seeds, the runtime treats it as authorization for the PDA those seeds derive to.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two ways an account gets an address: normal wallet vs program-derived PDA</title><desc>The diagram compares two ways a Solana account gets its address, side by side: a normal wallet on the left and a PDA on the right. The wallet's private key derives a public key, a point on the curve, as its address; the PDA's program ID and seeds go through a hash and bump search to land on a point off the curve, so only the program can sign for it.</desc>
   <defs>
     <marker id="arrS35aR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -74,7 +74,7 @@ The derivation looks roughly like this. Take the seeds, append a single byte cal
 
 The bump starts at 255 and decreases. Roughly half of all 32-byte values land on the curve, so on average two or three tries are enough to find one that doesn't. The first off-curve result encountered, with the highest bump, is the **canonical PDA** for those seeds. The bump that produced it is the **canonical bump**.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>find_program_address bump search from 255 down to the canonical PDA</title><desc>The flowchart tries bump values starting at 255 and checks each candidate address against the curve. Bumps 255 and 254 land on the curve and are rejected, but bump 253 falls off the curve and is returned as the canonical PDA with canonical_bump = 253.</desc>
   <defs>
     <marker id="arrS35bR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -141,7 +141,7 @@ The second reason PDAs are powerful, beyond the signing ability, is what their d
 
 Want one vault per user? Use seeds `[b"vault", user.key()]`. Each user's pubkey produces a unique PDA. To find a user's vault, you compute the PDA from their pubkey. No mapping table needed.
 
-<svg viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Vault PDAs derived from seeds b"vault" plus pubkey for Alice, Bob, Carol</title><desc>For Alice, Bob, and Carol, the seeds b"vault" and the user's pubkey are combined to deterministically derive that user's vault PDA and bump. No user-to-vault mapping table is needed, since the address itself is the lookup, like content-addressed storage.</desc>
   <defs>
     <marker id="arrS35cG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -200,7 +200,7 @@ Want one vault per user? Use seeds `[b"vault", user.key()]`. Each user's pubkey 
   <text x="360" y="518" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Same idea as content-addressed storage. The hash of the identity is the location.</text>
 </svg>
 
-The mental shift is the same one anyone who's used content-addressed storage has already made. In a normal database, you'd have a users table mapping user IDs to vault row IDs, and you'd look up the vault by joining. With PDAs, the address of the vault is a hash of the user's identity. You don't look up the mapping. You compute the location from the identity itself.
+The concept is similar to content-addressed storage: the address of an item is derived from its contents, so you never need a separate lookup table. In a normal database, you'd have a users table mapping user IDs to vault row IDs, and you'd look up the vault by joining. With PDAs, the address of the vault is a hash of the user's identity. You don't look up the mapping. You compute the location from the identity itself.
 
 This composes well. A vote record that's unique per user and per proposal can use seeds `[b"vote", user.key(), proposal.key()]`. A daily counter PDA could use `[b"counter", day_number.to_le_bytes()]`. Any tuple of public values that uniquely identifies the account you want can be the seeds. The runtime guarantees the resulting address is unique to that tuple under your program.
 

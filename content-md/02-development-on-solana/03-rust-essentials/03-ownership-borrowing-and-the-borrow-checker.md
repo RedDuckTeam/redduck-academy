@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. This lecture walks through what the borrow checker is actually doing, the two rules it enforces, what the `'info` lifetime in every Anchor account means, and the three specific borrow patterns that trip up almost every new Solana developer. If you understand what's in this lecture, the compiler error messages will start making sense and you'll lose hours less to fighting Rust.
+> Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. This lecture walks through what the borrow checker is actually doing, the two rules it enforces, what the `'info` lifetime in every Anchor account means, and the three specific borrow patterns that trip up almost every new Solana developer. If you understand what's in this lecture, the compiler error messages will start making sense and you'll spend fewer hours fighting the compiler.
 
 ## What the borrow checker is for
 
@@ -10,7 +10,7 @@ Most languages let you do whatever you want with memory and crash at runtime if 
 
 Rust takes a third approach. It tracks who owns each piece of memory at compile time, enforces a small number of rules about how that memory can be shared, and rejects code at compile time that would have caused a runtime bug in C. There's no garbage collector. There's no runtime cost. The price is that you have to write code the compiler can prove is safe, which sometimes means restructuring code that would have been fine in another language.
 
-For Solana programs specifically, the borrow checker matters because Anchor handlers receive a `Context<T>` containing references to a bunch of accounts. The runtime has loaded those accounts into memory and is letting your code read and write them. Anchor uses Rust's references and lifetimes to model who can touch which account, when, and for how long. Most of the time this is invisible. Occasionally you'll write code the compiler rejects, and you'll need to understand why.
+For Solana programs specifically, the borrow checker matters because Anchor handlers receive a `Context<T>` containing references to a set of accounts. The runtime has loaded those accounts into memory and is letting your code read and write them. Anchor uses Rust's references and lifetimes to model who can touch which account, when, and for how long. Most of the time this is invisible. Occasionally you'll write code the compiler rejects, and you'll need to understand why.
 
 ## The ownership rule
 
@@ -48,7 +48,7 @@ The two rules of references:
 
 These rules are what the borrow checker enforces. They prevent data races and aliasing bugs at compile time. They are also the source of nearly every borrow-checker error you'll see.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Rust borrowing rules: many readers, no writer vs one writer, no readers</title><desc>Two side-by-side panels compare Rust's reference rules with code examples. The left panel shows three shared references (&amp;config) compiling fine, and the right panel shows a mutable reference (&amp;mut config) alongside another reference being rejected with a borrow error.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The two reference rules, side by side</text>
   <rect x="40" y="80" width="310" height="280" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -105,7 +105,7 @@ You don't invent your own lifetime names in normal Anchor code. You write `'info
 
 ## Three borrow-checker errors you will hit
 
-Here are the patterns that trip up almost every Solana developer in their first week. Each shows up with a specific error message, and the fix is mechanical once you know it.
+Here are the patterns that cause borrow-checker errors for most Solana developers in their first week. Each produces a specific error message, and the fix is straightforward once you know the pattern.
 
 ### 1. Two mutable borrows of `ctx.accounts`
 
@@ -245,6 +245,6 @@ If you need to iterate over a collection and modify it, collect the changes firs
 
 If the compiler complains about a borrow, the first question to ask is: how long am I holding each reference, and do any of them overlap with another reference to the same data? Almost every borrow error reduces to "two things claim exclusive access at the same time" or "a reference outlived its owner."
 
-The first few days writing Anchor handlers, you'll fight the borrow checker. After a week or so, the patterns become muscle memory. You'll start writing code that compiles the first time, because you'll think about ownership and borrows as you write rather than after the compiler rejects you.
+In your first few days writing Anchor handlers, you will get borrow-checker errors regularly. After a week or two, the patterns become automatic. You'll start writing code that compiles the first time, because you'll think about ownership and borrows as you write rather than after the compiler rejects you.
 
 That's the goal. Not to memorize lifetime syntax, but to internalize the two reference rules well enough that you write code the compiler accepts without thinking about it.

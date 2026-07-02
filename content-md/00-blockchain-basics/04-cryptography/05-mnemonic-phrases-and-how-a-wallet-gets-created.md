@@ -17,19 +17,19 @@ A private key looks like this:
 Now imagine you have to write that on a piece of paper, store it somewhere safe, and read it back correctly five years from now. You will:
 
 - Mis-write one character and never notice
-- Confuse `0` and `O`, or `1` and `l`
+- Confuse `0` and `O`, or `1` and `l` (hex itself uses only 0–9 and a–f, so it has no O or l — but copying it by hand still invites exactly this kind of visual mix-up)
 - Lose the paper to a flood, a fire, or just plain misplacement
 - Find it ten years later and not remember which wallet it belonged to
 
 This is a real problem. Early cryptocurrency users lost meaningful amounts of money to exactly this failure mode. So in 2013, a standard was proposed that turned the same 32 bytes of randomness into something humans could actually back up: a short sequence of ordinary English words.
 
-That standard is **BIP 39**, and almost every wallet you'll meet uses it.
+That standard is **BIP 39**.
 
 ## The full pipeline
 
 Here's the end-to-end process that runs when you click "create a new wallet" in any modern wallet application.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Wallet creation pipeline: entropy, mnemonic, seed, then master and child keys</title><desc>Four boxes stacked top to bottom and joined by arrows. Entropy becomes a mnemonic phrase, the mnemonic becomes a seed through PBKDF2-HMAC-SHA512, and the seed derives a master key plus a whole tree of child keys and addresses.</desc>
   <rect x="40" y="20" width="640" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="360" y="45" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">1. Entropy</text>
   <text x="360" y="65" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">128 or 256 random bits from the OS entropy source</text>
@@ -60,7 +60,7 @@ Four stages, each with a specific job. Each stage is deterministic: same input a
 
 ## Stage 1: Entropy
 
-The wallet asks the operating system for high-quality random bytes. 128 bits for a 12-word mnemonic, 256 bits for a 24-word one. The bytes come from the OS entropy pool, the same pool that secures TLS connections and SSH sessions on the same machine. A wallet that uses anything weaker is a broken wallet, full stop.
+The wallet asks the operating system for high-quality random bytes. 128 bits for a 12-word mnemonic, 256 bits for a 24-word one. The bytes come from the OS entropy pool, the same pool that secures TLS connections and SSH sessions on the same machine. A wallet that uses anything weaker is a broken wallet.
 
 This step is short to describe and disastrous to get wrong. Past wallet failures with weak randomness have produced predictable private keys that attackers have systematically drained. The math of the rest of the pipeline only protects you if this first step is genuinely unpredictable.
 
@@ -82,7 +82,7 @@ army van defense carry jealous true garbage claim echo media make crunch
 
 The [wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt) is the same for every wallet. It contains no two words sharing a four-letter prefix, no plurals of other entries, no words easily confused with each other. This is why "rabb" is enough to uniquely identify "rabbit" when typing into a recovery field, why no wallet ever shows you the word "horsex" instead of "horse," and why entering the wrong word almost always triggers an "invalid mnemonic" error from the checksum.
 
-A 24-word mnemonic uses 256 bits of entropy plus 8 checksum bits, split into 24 chunks of 11 bits each. The same algorithm, just with more bits at the start.
+A 24-word mnemonic runs the same algorithm with more starting randomness — that is the only difference.
 
 ## Stage 3: Mnemonic to seed
 
@@ -101,7 +101,7 @@ PBKDF2 is a key-stretching function: it takes an input and repeatedly hashes it 
 
 The optional **passphrase** is the part most users don't know exists. If you supply one, any string at all, no length limit, the resulting seed is completely different from the seed you'd get with the same mnemonic and no passphrase. This is sometimes called the "25th word" because it acts like an extra hidden word on top of the visible 12 or 24.
 
-A passphrase is the killer feature for plausible deniability. Your written-down mnemonic plus an empty passphrase opens an obvious wallet, the same mnemonic plus your secret passphrase opens a completely different wallet. An attacker with the mnemonic can drain the visible wallet but cannot reach the hidden one without also knowing the passphrase.
+Imagine someone forces you to hand over your mnemonic — at a border crossing, or under threat. If the mnemonic opens one obvious wallet, they drain it and believe they got everything. A passphrase prevents this. The same mnemonic with an empty passphrase opens an obvious wallet; with your secret passphrase it opens a completely different, hidden one. An attacker who has the mnemonic can drain the visible wallet but cannot reach the hidden one without also knowing the passphrase — and has no way to know the hidden wallet exists at all. This property is called plausible deniability.
 
 The output of this stage is always 64 bytes regardless of mnemonic length. That 64-byte seed is what the rest of the system actually uses.
 

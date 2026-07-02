@@ -10,7 +10,7 @@ The EVM charges gas for every operation. A storage read costs around 2,100 gas t
 
 This pricing is fine for short, deterministic computation. It becomes a problem in three situations.
 
-First, when the work is unbounded. A loop over a dynamic array can run forever. If the array is attacker-controlled, an attacker can fill it until any function that iterates over it exceeds the block gas limit and reverts. The contract becomes unusable. This is denial-of-service through unbounded iteration, the same class of bug from [previous lessons]()
+First, when the work is unbounded. A loop over a dynamic array can run forever. If the array is attacker-controlled, an attacker can fill it until any function that iterates over it exceeds the block gas limit and reverts. The contract becomes unusable. This is denial-of-service through unbounded iteration, the same class of bug you saw in an earlier lesson. (Replace the empty `[previous lessons]()` link with a link to the specific lesson, and add the missing period.)
 
 Second, when the work is large but bounded. Iterating over 10,000 known elements doesn't risk DoS but costs hundreds of thousands of gas. Real users won't pay that for a single transaction.
 
@@ -32,7 +32,7 @@ The important property: the contract never trusts the user's claim blindly. The 
 
 ## Worked example 1: Merkle proofs for airdrop eligibility
 
-Suppose you want to airdrop tokens to 10,000 users. Storing 10,000 addresses on chain costs about 22 million gas just for the storage writes, plus the deployment cost of the contract code that handles them. At 30 gwei per gas, that's about 0.66 ETH spent on storage alone, an unreasonable cost for a list of names.
+Suppose you want to airdrop tokens to 10,000 users. Storing 10,000 addresses on chain costs about 22 million gas just for the storage writes, plus the deployment cost of the contract code that handles them. At 30 gwei per gas, that's about 0.66 ETH spent on storage alone — an unreasonable cost for what is just a list of addresses.
 
 The off-chain trick: build a Merkle tree of the 10,000 addresses off-chain. The tree's root is a single 32-byte hash. Store only the root in the contract. When a user wants to claim their airdrop, they prove they're in the tree by submitting their address and the path of sibling hashes that connect their address to the root.
 
@@ -127,7 +127,7 @@ Look at both examples. The structural similarity is obvious once you see it:
 - If verification succeeds, the contract trusts the value and uses it.
 - If verification fails, the contract reverts. The user's lie has cost them gas but accomplished nothing else.
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Off-chain user work submitted to a contract for on-chain verification</title><desc>The user does expensive computation off-chain with unbounded resources and submits a value plus proof to the contract. The contract runs cheap, bounded on-chain verification: if it passes, the contract uses the value and changes state; if it fails, the contract reverts with no state changes and the attacker burns gas.</desc>
   <!-- User box, top -->
   <rect x="40" y="30" width="280" height="100" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="180" y="55" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">USER (off-chain)</text>
@@ -167,7 +167,7 @@ Look at both examples. The structural similarity is obvious once you see it:
   <text x="540" y="350" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff">no state changes, attacker burns gas</text>
 </svg>
 
-This is the shape. Internalize it. Most non-trivial Solidity engineering involves recognizing situations that fit this pattern and applying it.
+This is the shape. Learn to recognize it. Much of non-trivial Solidity engineering is spotting situations that fit this pattern and applying it.
 
 ## Why malicious users can't break this
 
@@ -175,7 +175,7 @@ A natural concern: if the user is computing the answer, what stops them from lyi
 
 A lie has to pass verification. The verification logic is the contract's own code, running deterministically on the chain. The user can't influence it. They can only submit inputs, and whatever they submit gets fed into the verification function. If the inputs don't produce a passing result, the contract reverts.
 
-Reverting is harmless to the contract. State doesn't change. Other users aren't affected. The lying user pays gas for a failed transaction and gets nothing in return. There's no path where a wrong answer is accepted and used.
+Cut this paragraph. The same point — a failed verification reverts and changes nothing, so a lie only costs the liar gas — is already made in "The reframe," in worked example 1, and in worked example 2. Keep only the new content that follows: the model holds only if the verification itself is correct.
 
 The security model only works if the verification is correct. A buggy Merkle verification that accepts invalid proofs is a disaster. A buggy sqrt verification that accepts wrong roots silently corrupts whatever consumes the root. The verification step is the security boundary, and it has to be airtight.
 
@@ -207,4 +207,4 @@ Not every problem fits. Three situations where you can't or shouldn't reach for 
 
 **When the off-chain answer changes faster than the chain can verify.** Time-sensitive answers like current prices can't be off-chain-computed and then verified, because by the time the verification runs, the answer is stale. This is the oracle problem in disguise.
 
-For everything else, the pattern is your friend. If you ever find yourself looking at a loop that could DoS or a computation that's too expensive, ask yourself: can I move this work off-chain and verify a result?
+For everything else, reach for this pattern. Whenever you see a loop that could exceed the block gas limit, or a computation that is too expensive on-chain, ask: can I move this work off-chain and verify the result instead?

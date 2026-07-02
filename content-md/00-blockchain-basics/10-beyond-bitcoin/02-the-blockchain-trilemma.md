@@ -22,11 +22,11 @@ The trilemma is the empirical observation that improving any of these three tend
 
 **Wanting more decentralization** means keeping hardware requirements low enough that ordinary people can participate. But low hardware requirements cap how much computation, storage, and bandwidth the network can collectively handle, which caps throughput. Decentralization and scalability pull against each other on the base layer.
 
-**Wanting more security** means long confirmation times, conservative upgrades, and heavy economic stake required to be a validator. All of those make the chain feel slow and inflexible. That's the trade-off Bitcoin has been making for fifteen years. Security comes from caution, and caution costs speed.
+**Wanting more security** means long confirmation times, conservative upgrades, and heavy economic stake required to be a validator. All of those make the chain feel slow and inflexible. That's the trade-off Bitcoin has been making for more than fifteen years. Security comes from caution, and caution costs speed.
 
 These aren't strict laws. They're observations about how the design choices tend to interact. A clever design might push the trade-off in one direction without hurting the others as much as the typical trade would, but no design has eliminated the trade-off entirely.
 
-<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Blockchain trilemma triangle plotting Bitcoin, Ethereum, and Solana</title><desc>A triangle has Security, Decentralization, and Scalability at its three corners. Bitcoin is placed near security and decentralization with a slow base layer, Ethereum sits balanced on L1 and pushes scaling to L2, and Solana sits near scalability with high throughput but heavier hardware needs.</desc>
   <text x="360" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">The blockchain trilemma</text>
 
 <polygon points="360,80 140,420 580,420" fill="none" stroke="#000000" stroke-width="2"/>
@@ -56,17 +56,17 @@ These aren't strict laws. They're observations about how the design choices tend
 
 The diagram is qualitative. There are no scores. Bitcoin sits up near the security/decentralization edge because that's what its design optimizes for, with the well-known cost of base-layer throughput. Solana sits closer to the scalability/security edge, with higher hardware requirements that cap how many people can run a full node. Ethereum tries to balance all three on L1 by being conservative about base-layer throughput. It pushes the scaling work off the base layer entirely, to a category of systems called Layer 2.
 
-A quick definition of those two terms before we go further. They show up in every conversation about blockchain scaling. A **Layer 1** or **L1** is a base blockchain that runs by itself and doesn't depend on any other chain for security. Bitcoin is an L1. Ethereum is an L1. Solana is an L1. When you hear the phrase "base layer," it means the L1. A **Layer 2** or **L2** is a system built on top of an L1 that handles transactions separately but periodically writes its state back down to the L1, inheriting the L1's security in the process. L2s are not chains in the usual sense. They're protocols that use an L1 as their foundation. Bitcoin has Lightning as its main L2. Ethereum has several. Solana, designed for high base-layer throughput, has fewer.
+Both terms come up in every discussion of blockchain scaling. A **Layer 1** or **L1** is a base blockchain that runs by itself and doesn't depend on any other chain for security. Bitcoin is an L1. Ethereum is an L1. Solana is an L1. When you hear the phrase "base layer," it means the L1. A **Layer 2** or **L2** is a system built on top of an L1 that handles transactions separately but periodically writes its state back down to the L1, inheriting the L1's security in the process. An L2 is not a standalone chain. It relies on an L1 as its foundation for security. Bitcoin has Lightning as its main L2. Ethereum has several. Solana, designed for high base-layer throughput, has fewer.
 
 ## Layer 2 as a way out
 
-If the trilemma forces every L1 to compromise on one of the three properties, the natural question is whether you have to do everything on the L1. The answer, increasingly, is no. Layer 2 systems handle transactions off the base chain and only periodically write back to it.
+If the trilemma forces every L1 to compromise on one of the three properties, the natural question is whether you have to do everything on the L1. The answer, increasingly, is no.
 
 The idea is simple. The L1 is slow, expensive, and very secure. So use the L1 for what it's best at: providing strong final settlement that nobody can roll back. Above it, run a faster system that handles the actual transaction volume. That faster system regularly anchors its state back to the L1, inheriting the L1's security guarantees without being constrained by the L1's throughput.
 
 There are three styles of L2 worth knowing by name. Each one approaches the same problem differently.
 
-<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Layer 2 on top of Layer 1, with periodic summaries settling to L1</title><desc>A top box labeled Layer 2 is fast, cheap, and handles everyday activity, sitting above a bottom box labeled Layer 1 that is slow, expensive, and provides final settlement. An arrow points down from Layer 2 to Layer 1, labeled periodic summaries written down to L1.</desc>
   <defs>
     <marker id="arr52" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>

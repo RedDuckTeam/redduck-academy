@@ -2,15 +2,15 @@
 
 _type: lecture_
 
-> Most developers walk into web3 assuming the blockchain "encrypts" their data. It doesn't. Almost nothing on a public chain is encrypted at the protocol level, and understanding why that's true is the difference between a working mental model and a confused one. This lesson starts with what encryption actually is, then explains where it lives in your stack and where it doesn't.
+> A common assumption is that the blockchain "encrypts" your data. It doesn't. Almost nothing on a public chain is encrypted at the protocol level, and understanding why that's true is the difference between a working mental model and a confused one. This lesson starts with what encryption actually is, then explains where it lives in your stack and where it doesn't.
 
 ## The misconception
 
-Ask a backend engineer what protects their data on a blockchain and most will answer "encryption." It sounds right. The space is full of cryptographic jargon, transactions are signed, addresses look like cryptographic gibberish, the chain is described as "secure," so encryption must be doing the work somewhere.
+It is natural to assume the thing protecting your data on a blockchain is "encryption." It sounds right. The space is full of cryptographic jargon, transactions are signed, addresses look like cryptographic gibberish, the chain is described as "secure," so encryption must be doing the work somewhere.
 
 It isn't. Public blockchains do not encrypt transactions, balances, contract storage, or anything else at the protocol level. Every byte of state on a public chain is readable by anyone with a node. Your balance, every transaction you've ever sent, every piece of data you've stored on-chain: all public, all permanently visible.
 
-What protects you on a blockchain is **authentication** (proving you authorized an action) and **integrity** (proving data wasn't tampered with). These properties come from hashing and from another cryptographic primitive covered later in this module. They don't come from encryption.
+What protects you on a blockchain is **authentication** (proving you authorized an action) and **integrity** (proving data wasn't tampered with). These properties come from hashing and from digital signatures, a cryptographic primitive covered later in this module. They don't come from encryption.
 
 That said, encryption is real infrastructure on the internet, and it does show up around the edges of blockchain systems at specific places. Knowing where is the goal of this lesson.
 
@@ -18,7 +18,7 @@ That said, encryption is real infrastructure on the internet, and it does show u
 
 Encryption transforms data using a **key** so that only someone with the right key can transform it back. The transformed data is called **ciphertext** and looks like random noise. The original data is **plaintext**. Without the key, ciphertext is meant to be useless, with the key, it returns to the exact original byte for byte. The strength of an encryption scheme is the gap between those two outcomes: how expensive it is to recover the plaintext without the key.
 
-This is what makes encryption different from encoding. Encoding has no key and anyone can reverse it. Encryption has a key and nobody without it can reverse it in any practical amount of time.
+The encoding lesson already drew this line: encoding has no key, so anyone can reverse it. The key is exactly what encryption adds, and without it the ciphertext cannot be reversed in any practical amount of time.
 
 There are two families of encryption schemes that differ in how the key works.
 
@@ -26,7 +26,7 @@ There are two families of encryption schemes that differ in how the key works.
 
 The simplest model. There is one key. Whoever has the key can encrypt new data and decrypt existing data. Both directions use the same key.
 
-<svg viewBox="0 0 790 220" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 790 220" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice to Bob symmetric encryption using one shared key</title><desc>Alice's plaintext is encrypted with a shared key into ciphertext, then sent to Bob who decrypts it with the same key back into plaintext. The same key works on both ends, so whoever holds it can encrypt and decrypt the data.</desc>
   <rect x="30" y="80" width="120" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="90" y="105" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Alice</text>
   <text x="90" y="125" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">plaintext</text>
@@ -58,11 +58,11 @@ The simplest model. There is one key. Whoever has the key can encrypt new data a
 <text x="380" y="190" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Same key on both ends. Whoever has the key can read and write.</text>
 </svg>
 
-The standard algorithm here is **AES** (Advanced Encryption Standard), specifically AES-256, which uses a 256-bit key. AES-256 is what your operating system uses to encrypt your disk, what password managers use to encrypt their vaults, and what almost every "encrypted at rest" system you've ever heard of relies on under the hood.
+The standard algorithm here is **AES** (Advanced Encryption Standard), specifically AES-256, which uses a 256-bit key. AES-256 is what your operating system uses to encrypt your disk, what password managers use to encrypt their vaults, and what almost every "encrypted at rest" system relies on internally.
 
 Symmetric encryption is **fast**. AES-256 can encrypt gigabytes per second on modern hardware. It's the right tool for bulk data.
 
-The catch is **key distribution**. Symmetric encryption only works if both ends already share the key. If Alice and Bob want to communicate securely and they've never met, how does Alice send Bob the key without an attacker intercepting it? You can't encrypt the key with symmetric encryption because they don't have a shared key yet. This is the classic chicken-and-egg problem of secure communication, and it's exactly the problem the other family of encryption was invented to solve.
+The catch is **key distribution**. Symmetric encryption only works if both ends already share the key. If Alice and Bob want to communicate securely and they've never met, how does Alice send Bob the key without an attacker intercepting it? You can't encrypt the key with symmetric encryption because they don't have a shared key yet. This is the central problem of secure communication: to share the key safely you would already need a secure channel, which is the very thing you are trying to create. It's exactly the problem the other family of encryption was invented to solve.
 
 ## Asymmetric encryption
 
@@ -70,7 +70,7 @@ Also called **public-key encryption**. Each participant has a **key pair**: two 
 
 The participant keeps one key secret (the **private key**) and publishes the other (the **public key**) freely. Anyone in the world can take your public key and use it to encrypt a message that only your private key can decrypt. The public key cannot be used to decrypt, only to encrypt.
 
-<svg viewBox="0 0 870 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 870 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice encrypts plaintext with Bob's public key to send ciphertext, Bob decrypts with his private key</title><desc>Alice's plaintext is encrypted into ciphertext using Bob's public key, then sent to Bob. Bob decrypts the ciphertext back into plaintext using his private key, which only he holds.</desc>
   <rect x="30" y="90" width="120" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="90" y="115" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Alice</text>
   <text x="90" y="135" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">plaintext</text>

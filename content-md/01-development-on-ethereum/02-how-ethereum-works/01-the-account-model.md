@@ -33,7 +33,7 @@ In Bitcoin, if Alice wants to send 3 BTC to Bob and she has a single 10 BTC UTXO
 
 In Ethereum, if Alice wants to send 3 ETH to Bob and she has a balance of 10 ETH, her transaction just says: send 3 ETH to Bob. After the transaction, her balance is 7 and Bob's balance has increased by 3. There are no outputs, no change addresses, no UTXOs being consumed.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin UTXO model vs Ethereum account model for Alice's payment to Bob</title><desc>On the left, Bitcoin's UTXO model spends Alice's 10 BTC UTXO and creates two new UTXOs: 3 BTC for Bob and 7 BTC change back to Alice. On the right, Ethereum's account model just updates balances in place, from Alice 10 ETH and Bob 0 ETH before, to Alice 7 ETH and Bob 3 ETH after.</desc>
   <defs>
     <marker id="arr21u" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -114,13 +114,13 @@ Three things follow from this choice that matter for the rest of this course.
 
 **State changes are simpler to reason about.** In Bitcoin, "what is Alice's balance" requires scanning the entire UTXO set for outputs locked to her addresses and summing them. In Ethereum, "what is Alice's balance" is one lookup in the state table. This makes contract code dramatically simpler. A token contract just keeps a mapping from address to balance and updates it on every transfer. The protocol doesn't need to know what the contract is doing. The contract manages its own state.
 
-**Parallelism is harder.** Two Bitcoin transactions that touch different UTXOs are independent and can be processed in parallel. Two Ethereum transactions that touch the same account may conflict. This includes cases where both transactions only read from a popular contract's storage. The Ethereum protocol processes transactions sequentially within a block to handle this. Most newer chains that came after Ethereum, including Solana, build elaborate machinery to recover the parallelism Ethereum gave up.
+**Parallelism is harder.** Two Bitcoin transactions that touch different UTXOs are independent and can be processed in parallel. Two Ethereum transactions that touch the same account may conflict. The Ethereum protocol processes transactions sequentially within a block to handle this. Most newer chains, including Solana, build elaborate machinery to recover the parallelism Ethereum gave up.
 
 ## Why nonces exist
 
 There's one more piece of the account that needs explaining.
 
-Every account has a **nonce**: a counter that starts at zero and increases by one with every transaction the account sends. When Alice signs a transaction, she includes her current nonce in it. The chain only accepts the transaction if the nonce matches what it expects from Alice's account.
+Recall the **nonce** from the account fields. It starts at zero, and Alice includes her current value in every transaction she signs. The chain only accepts the transaction if the nonce matches what it expects from Alice's account.
 
 The nonce exists because the account model has a problem the UTXO model doesn't. In Bitcoin, a transaction is uniquely identified by the UTXOs it consumes. If Alice broadcasts the same transaction twice, the second one fails because the first one already consumed the input. Replay is impossible by construction.
 
@@ -132,4 +132,4 @@ The nonce also enforces ordering. If Alice broadcasts transactions with nonces 5
 
 Most of the code you write in this course will assume the account model without naming it. When a token contract does `balances[alice] -= 3` and `balances[bob] += 3`, that's the account model at work, inside a contract. When a transaction reverts halfway through and the chain rolls back the state, that's the account model at work, at the protocol level. When you debug why a transaction "stuck" with the wrong nonce, that's the account model at work, at the wallet level.
 
-The UTXO model produces a kind of cryptocurrency that's good at being money. The account model produces a kind of cryptocurrency that's good at being a substrate for arbitrary programs. Ethereum picked the second one. The rest of this module is what falls out of that choice.
+The UTXO model produces a kind of cryptocurrency that's good at being money. The account model produces a kind of cryptocurrency that's good at being a platform for running arbitrary programs. Ethereum picked the second one. The rest of this module is what follows from that choice.

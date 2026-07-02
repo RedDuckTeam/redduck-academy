@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. The mental model that helps most is this. Think of Ethereum as a single computer that the entire world shares. Every program written for it runs forever, and nobody can shut it down.
+> Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. Think of Ethereum as a single computer that the entire world shares. Every program written for it runs forever, and nobody can shut it down.
 
 ## The shape of the thing
 
@@ -18,7 +18,7 @@ That picture is what people mean when they call Ethereum the "world computer." I
 
 Two kinds of things have addresses on Ethereum and can hold state.
 
-The first is a regular user account, called an **externally owned account** or EOA. It's controlled by a private key, exactly like a Bitcoin address. You sign transactions with the key to spend your ETH or trigger something else on the chain. EOAs hold a balance of ETH and a counter called a nonce. Nothing else.
+The first is a regular user account, called an **externally owned account** or EOA. It's controlled by a private key, exactly like a Bitcoin address. You sign transactions with the key to spend your ETH or call a smart contract (the second account type, described next). EOAs hold a balance of ETH and a counter called a nonce. Nothing else.
 
 The second is a **smart contract** account. It's controlled by code, not by a private key. When a contract is created, its code gets deployed to a new address on the chain. That code lives at that address forever. Anyone can send a transaction to a contract's address. When they do, the contract's code runs. It can read and write its own storage, send ETH around, and call other contracts. The result of the code's execution becomes part of the global state.
 
@@ -32,7 +32,7 @@ The unit of cost is called **gas**. Every transaction declares a maximum amount 
 
 Gas exists for two reasons. First, computation on every full node has to be paid for or the network gets spammed. Second, gas bounds execution. A transaction cannot run forever because it cannot consume more gas than it brought with it. When the gas runs out, the transaction is reverted, the state changes it made are undone, and the gas spent so far is kept by the producer as the cost of the attempt.
 
-ETH is what gas is paid in. ETH is also what most things on Ethereum are denominated in. New ETH enters circulation as block rewards to validators, and a portion of every transaction fee is burned, which means total supply moves around rather than only growing.
+ETH is also what most values on Ethereum are denominated in. New ETH enters circulation as block rewards to validators. Combined with the fee burn mentioned above, this means the total supply can rise or fall rather than only growing.
 
 ## What you can do that you couldn't do with Bitcoin
 

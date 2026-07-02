@@ -8,7 +8,7 @@ The contrast with the previous lesson is worth holding in mind. Mappings are acc
 
 ## How `enum` works
 
-An enum declares a finite set of named values. Solidity stores them as small integers behind the scenes, but in your code you reference them by name.
+An enum declares a finite set of named values. Solidity stores them internally as small integers, but in your code you reference them by name.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -29,7 +29,7 @@ contract Order {
 
 Three things to notice. First, you declare an enum at the contract level, the same way you'd declare a state variable. Second, you reference values with dot syntax: `Status.Paid`, never just `Paid`. Third, when you read `currentStatus` from the public getter, you get back a small integer because that's how the value is actually stored. The first declared name gets 0, the second gets 1, and so on.
 
-The default value of an enum variable is always the first declared value. In the example above, a freshly declared `Status` variable equals `Status.Pending` because `Pending` is index 0. This matters. Order your enum values so that the most natural starting state comes first. Putting `Delivered` first by accident would mean every newly created order starts as delivered, which is exactly the kind of bug that ships to production.
+The default value of an enum variable is always the first declared value. In the example above, a freshly declared `Status` variable equals `Status.Pending` because `Pending` is index 0. This matters. Order your enum values so that the most natural starting state comes first. Putting `Delivered` first by accident would mean every newly created order starts as delivered, which is exactly the kind of bug that reaches production.
 
 You can convert between enum values and their underlying integer with an explicit cast:
 
@@ -40,7 +40,7 @@ Status reconstructed = Status(2);          // build a Status from an integer
 
 The cast in the second line will revert if the integer is out of range for the enum. So `Status(7)` on a four-value enum reverts at runtime. You don't get an undefined value the way you might in C.
 
-The storage cost is small. Solidity picks the smallest unsigned integer width that fits all the declared values. An enum with up to 256 values fits in `uint8`, up to 65,535 fits in `uint16`, and so on. This makes enums much cheaper than the string-typed status fields you'd use in a database schema.
+The storage cost is small. Solidity stores enum values in a `uint8`, the smallest unsigned integer type. An enum can have at most 256 members, so one `uint8` always holds the value. This makes enums much cheaper than the string-typed status fields you'd use in a database schema.
 
 Enums also make excellent mapping keys. The previous lesson's mapping pattern composes naturally:
 
@@ -70,7 +70,7 @@ contract FixedArray {
 }
 ```
 
-The size goes inside the brackets after the element type. Indexing is zero-based, the same as every mainstream language. Reading or writing an index that's out of bounds reverts the transaction. This is a runtime check the EVM performs automatically.
+The size goes inside the brackets after the element type. Indexing is zero-based, the same as most mainstream languages. Reading or writing an index that's out of bounds reverts the transaction. This is a runtime check the EVM performs automatically.
 
 The unfilled slots have the zero value of the element type. So in the example above, every position from 0 to 9 reads as 0 immediately after deployment, until you write to it. This is consistent with how all storage works in Solidity, but it's worth saying out loud because some languages return `null` or undefined for unset array slots.
 
@@ -82,7 +82,7 @@ You can initialize a fixed array with literal values, but the syntax is finicky:
 uint256[3] memory firstThree = [uint256(1), 2, 3];
 ```
 
-The cast on the first element forces the literal type. Without it, the compiler infers `uint8` for the literal `1` and then refuses to assign a `uint8[3]` to a `uint256[3]`. This is one of those Solidity papercuts that appears unfair until you understand the type inference rules. For state-variable declarations it usually doesn't come up. You'll hit it in memory arrays.
+The cast on the first element forces the literal type. Without it, the compiler infers `uint8` for the literal `1` and then refuses to assign a `uint8[3]` to a `uint256[3]`. This is one of those small Solidity annoyances that seems unfair until you understand the type inference rules. For state-variable declarations it usually doesn't come up. You'll hit it in memory arrays.
 
 ## Dynamic arrays
 
@@ -113,7 +113,7 @@ Note that `push` and `pop` do not exist on fixed-length arrays. Trying `scores.p
 
 `delete` works on dynamic arrays in two ways. `delete arr[i]` sets the element at index `i` to the zero value of the element type, without changing the array's length. `delete arr` clears the entire array, setting its length to zero. The latter is the bulk-clear operation that mappings don't have.
 
-Dynamic arrays in storage are gas-friendly for appends and individual reads, but expensive for operations that touch the whole array. Iterating over a thousand-element dynamic array inside a function is a great way to hit the block gas limit. The general guidance: if you might iterate, keep the array small, or keep iteration off-chain.
+Dynamic arrays in storage are gas-friendly for appends and individual reads, but expensive for operations that touch the whole array. Iterating over a thousand-element dynamic array inside a function can easily exceed the block gas limit. The general guidance: if you might iterate, keep the array small, or keep iteration off-chain.
 
 ## Nested arrays and the right-to-left reading rule
 
@@ -136,7 +136,7 @@ The trick is that `uint256[3][2]` should be read right-to-left as "an array of l
 
 The brackets in the access expression go in the opposite order from the type declaration. Declaring `[3][2]` and then accessing `grid[outer][inner]` looks contradictory until you remember that the access reads left-to-right, with the outer index first and the inner second, while the type reads right-to-left, with the innermost type first.
 
-If this seems like a deliberate trap, the convention does have a logic. The type `uint256[3][2]` reads as "an array of length 2 whose elements are `uint256[3]`," and the same logic applies to higher dimensions. But until you've internalized it, double-check every nested array declaration. Real bugs have shipped because someone declared `uint256[5][10]` thinking they were getting 5 rows of 10 columns when they actually got 10 rows of 5 columns.
+The same right-to-left logic applies to higher dimensions. Until you are used to it, double-check every nested array declaration. Real bugs have reached production because someone declared `uint256[5][10]` thinking they were getting 5 rows of 10 columns when they actually got 10 rows of 5 columns.
 
 ## Memory arrays
 

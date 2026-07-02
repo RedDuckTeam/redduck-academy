@@ -6,11 +6,11 @@ _type: lecture_
 
 ## SOL and lamports
 
-A SOL is a big number split into a billion small pieces called lamports. One lamport is the smallest amount of value the chain knows how to talk about. Everything is measured in lamports underneath: balances, fees, storage deposits, validator rewards. SOL is the friendlier label humans put on top of large lamport numbers.
+SOL is the main currency unit of Solana. One SOL is divided into one billion smaller units called lamports. One lamport is the smallest amount of value the chain knows how to talk about. Everything is measured in lamports underneath: balances, fees, storage deposits, validator rewards. SOL is the friendlier label humans put on top of large lamport numbers.
 
 The conversion is exact. One SOL is one billion lamports. Half a SOL is five hundred million lamports. The base fee for one transaction signature is five thousand lamports, or 0.000005 SOL. Storage deposit for a typical token account is around two million lamports, or 0.00204 SOL. The numbers stay in the thousands and millions for almost everything you'll do day to day.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>SOL to lamports table: five amounts from 1 SOL down to 1 lamport</title><desc>A header shows that 1 SOL equals 1,000,000,000 lamports, the smallest unit. Below it, a table lists five amounts, from 1 SOL down to 0.000000001 SOL, with each row giving the lamport value and a real example, such as a token account storage deposit or a transaction signature fee.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">SOL and lamports at human scale</text>
   <rect x="40" y="90" width="640" height="50" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
@@ -53,7 +53,7 @@ Solana originally had two ways to pay for account storage. Accounts could pay a 
 
 The size of the deposit scales with the bytes the account holds. A bigger account needs a bigger deposit. The math is fixed: roughly 6,960 lamports per byte, plus 128 bytes of overhead per account. An empty wallet costs about 890,000 lamports. A 165-byte token account costs about 2,040,000 lamports. A 200-kilobyte program account costs about 1.4 SOL.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Rent deposit sizes for an empty wallet, a token account, and a deployed program</title><desc>The diagram compares three accounts: an empty wallet (0 bytes, about 890,880 lamports), a token account (165 bytes, about 2,039,280 lamports), and a deployed program (about 200,000 bytes, about 1.4 SOL). A formula box below shows the deposit equals (account size in bytes plus 128 overhead) times about 6,960 lamports per byte, and notes the deposit is refunded when the account closes.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The deposit scales with the size of the account</text>
   <rect x="40" y="90" width="200" height="240" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -103,7 +103,7 @@ The size of the deposit scales with the bytes the account holds. A bigger accoun
   <text x="360" y="455" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Bigger account, bigger deposit. The deposit is fully refundable when the account closes.</text>
 </svg>
 
-Two consequences fall out of this. The first is that every account on Solana has to be sized at creation time. You can't have an account that grows without bound, because growing it later means paying additional deposit to cover the new bytes. The second is that storage cost is paid by whoever creates the account, which is almost always either the user or the program acting on the user's behalf. The program never pays out of its own pocket. The lamports come from the user's wallet at the moment of creation.
+Two consequences follow from this. The first is that every account on Solana has to be sized at creation time. You can't have an account that grows without bound, because growing it later means paying additional deposit to cover the new bytes. The second is that storage cost is paid by whoever creates the account, which is almost always either the user or the program acting on the user's behalf. The program never pays from its own balance. The lamports come from the user's wallet at the moment of creation.
 
 ## The life of an account
 
@@ -111,11 +111,11 @@ Every account on the chain follows the same three-stage life. It gets created, i
 
 **Creating an account** takes one instruction from the System Program. That instruction does three things in one step: it allocates the right number of bytes for the account's data, transfers the rent-exempt deposit from a payer into the account's lamports field, and assigns ownership to a target program. After this completes, the new account exists, has the right size, holds the right balance, and the listed owner program can start using it.
 
-**Holding an account** does not cost anything. As long as the rent-exempt deposit is in place, the account stays on the chain indefinitely. Validators keep it in memory, programs read and write its data field as their logic requires, and nothing on the network ever decides to garbage-collect it. There is no per-block fee, no expiration, no need to top up. The deposit just sits there.
+**Holding an account** does not cost anything. As long as the rent-exempt deposit is in place, the account stays on the chain indefinitely. Validators keep it in memory, programs read and write its data field as their logic requires, and nothing on the network ever decides to garbage-collect it. There is no per-block fee, no expiration, no need to add more lamports. The deposit just sits there.
 
 **Closing an account** is two operations packed into one. The owner program zeros out the data field and transfers the entire lamports balance out to a recipient address you specify. Once the balance hits zero, the runtime considers the account uninitialized and free to be created again at the same address by anybody. The data is gone, the bytes are released, and the deposit you paid at creation is now sitting in whatever wallet received it.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Account lifecycle: create, hold, and close, with the lamport deposit refunded</title><desc>Three steps show an account's life: creating it makes Alice pay about 2,040,000 lamports, holding it has no ongoing fees, and closing it drains the lamports back to a recipient, usually Alice. A summary box shows the net storage cost is zero, since the deposit paid at creation equals the amount refunded at closing.</desc>
   <defs>
     <marker id="arrS24cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -184,4 +184,4 @@ When your program creates an account, somebody has to pay the deposit. That some
 
 When you decide how big an account should be, you decide its cost. A 200-byte account is cheap. A 10,000-byte account is fifty times more expensive. There is no penalty for using small accounts, so most production programs keep their accounts as small as the data they need to store.
 
-When you want to clean up after a user, you close the account and send its lamports back to them. The Anchor framework you'll be using has a `close` constraint that does this in one line. The user gets their deposit back, the account disappears, and the chain has less garbage in it. Programs that don't bother to clean up leave dust everywhere and force their users to pay for storage they no longer need.
+When you want to clean up after a user, you close the account and send its lamports back to them. The Anchor framework you'll be using has a `close` constraint that does this in one line. The user gets their deposit back, the account disappears, and the chain has less garbage in it. Programs that skip cleanup leave unused accounts on the chain and force their users to pay for storage they no longer need.

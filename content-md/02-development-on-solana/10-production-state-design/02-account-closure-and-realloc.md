@@ -16,7 +16,7 @@ Closure reclaims the SOL. The owner program drains the account's lamports to a r
 
 A safe close has three steps. Anchor's `close = recipient` constraint performs all three for you, but understanding what they do is worth more than the syntax.
 
-<svg viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The three steps of closing an account: drain lamports, zero data, overwrite discriminator</title><desc>The diagram shows a normal account with lamports and data, then three stacked steps that close it: step 1 transfers all lamports to the recipient, step 2 zeros the data buffer, and step 3 overwrites the discriminator with CLOSED_ACCOUNT_DISCRIMINATOR. Each step lists what happens if it is skipped, such as stranded SOL, readable stale fields, or a revival attack.</desc>
   <defs>
     <marker id="arr52A" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -54,11 +54,11 @@ A safe close has three steps. Anchor's `close = recipient` constraint performs a
 
 Step 1 returns the rent. Every Solana account holds enough SOL to be rent-exempt, and at close time that SOL is sent somewhere. The "recipient" in `close = recipient` is the account that receives it. Until the rent drains below the exempt threshold, the runtime keeps the account alive on chain. Skip this step and you've leaked rent into a dead account, exactly the situation closure is meant to prevent.
 
-Step 2 zeros the data. Stale fields are a footgun the closer needs to handle. Even after the lamports are gone, the byte buffer still contains the old struct's contents until the runtime garbage-collects the account at the end of the transaction. If anything in the rest of the transaction reads that account's data, it sees the old state.
+Step 2 zeros the data. Stale fields are a problem the program needs to handle. Even after the lamports are gone, the byte buffer still contains the old struct's contents until the runtime garbage-collects the account at the end of the transaction. If anything in the rest of the transaction reads that account's data, it sees the old state.
 
-Step 3 is the one most people learn about the hard way. The first 8 bytes of every Anchor account are a discriminator, a hash identifying which struct type the bytes represent. After steps 1 and 2, the account's data is all zeros. If an attacker funds the account back to rent-exempt in a separate transaction, since anyone can transfer lamports to any pubkey, the runtime keeps the account alive. The discriminator is still gone, but the old discriminator hash could be re-attached by the program itself if someone calls a path that doesn't check carefully. To eliminate this risk entirely, Anchor writes a special "closed" discriminator of all `0xFF` bytes. Any subsequent attempt to deserialize the account as its original type fails immediately.
+Step 3 is the most commonly missed. The first 8 bytes of every Anchor account are a discriminator, a hash identifying which struct type the bytes represent. After steps 1 and 2, the account's data is all zeros. If an attacker funds the account back to rent-exempt in a separate transaction, since anyone can transfer lamports to any pubkey, the runtime keeps the account alive. The discriminator is still gone, but the old discriminator hash could be re-attached by the program itself if someone calls a path that doesn't check carefully. To eliminate this risk entirely, Anchor writes a special "closed" discriminator of all `0xFF` bytes. Any subsequent attempt to deserialize the account as its original type fails immediately.
 
-The historical name for the attack this prevents is the "revival attack." Early Anchor versions would close an account without writing the closed-account discriminator. An attacker could re-fund the account in a follow-up transaction, then call an instruction that re-initialized the donor_record assuming it was fresh, and slip in adversarial values. The closed discriminator pattern killed that class of attack. When you use the `close = recipient` constraint, all three steps happen for free.
+The historical name for the attack this prevents is the "revival attack." Early Anchor versions would close an account without writing the closed-account discriminator. An attacker could re-fund the account in a follow-up transaction, then call an instruction that re-initialized the donor_record assuming it was fresh, and slip in adversarial values. The closed discriminator pattern killed that class of attack. When you use the `close = recipient` constraint, all three steps are handled automatically.
 
 ## Using the close constraint
 
@@ -105,7 +105,7 @@ The choice depends on who paid, who benefits from cleanup, and who you want to i
 
 The opposite operation: an account exists, it works, but the data inside it needs more room. Realloc resizes the buffer in place, paying the rent delta when growing, without forcing you to close and recreate.
 
-<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Growing an account with realloc: before (100 bytes) and after (200 bytes)</title><desc>Shows an account before and after realloc: before it is 100 bytes with 50 used and 50 empty, after it is 200 bytes with the same 50 used bytes preserved plus 100 new bytes that are zeroed or left untouched depending on realloc::zero. A third box shows the rent delta the payer covers to keep the bigger account rent-exempt, about 700,000 lamports, and notes that shrinking gives no refund and growth is capped at 10 KB per instruction.</desc>
   <defs>
     <marker id="arr52B" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -179,9 +179,9 @@ The hard ceiling on a single realloc operation is 10 KB of growth per instructio
 
 ## Realloc, many PDAs, or close-and-recreate?
 
-Realloc is one of three tools for handling data that doesn't fit in a single fixed account. It's worth knowing when to reach for each.
+Realloc is one of three tools for handling data that doesn't fit in a single fixed account. It is worth knowing when to use each.
 
-<svg viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Realloc, many small PDAs, or close-and-recreate: three account strategies</title><desc>Three columns compare ways to handle growing account data: grow one account with realloc, use many small PDAs (marked as the Solana default), or close and recreate the account. Each column lists its approach, good-for cases, tradeoffs, and an example, such as a message board, donations or votes, and a vesting record.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Realloc, many PDAs, or close-and-recreate?</text>
   <rect x="40" y="80" width="205" height="395" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -261,8 +261,8 @@ Realloc earns its place when the bound is real and small. A message board where 
 
 For most accounts, you'll never need realloc or explicit close handling. The default Anchor account pattern is: pick a fixed size at init, store data in it, leave it. When users go inactive, their accounts sit there harmlessly. The protocol doesn't need to clean up unless rent recovery matters for your scale.
 
-When you do need closure, reach for `close = recipient`. Pick the recipient deliberately based on who paid and who benefits from cleanup. Add a `has_one` constraint or equivalent auth check to gate who can close. Anchor handles the three-step process for you, including the closed-account discriminator that prevents revival attacks.
+When you do need closure, use `close = recipient`. Pick the recipient deliberately based on who paid and who benefits from cleanup. Add a `has_one` constraint or equivalent auth check to gate who can close. Anchor handles the three-step process for you, including the closed-account discriminator that prevents revival attacks.
 
-When you do need realloc, the questions to answer are: how much growth, how often, who pays? Set a sensible growth chunk of 1 KB or 2 KB, have the user pay the delta, and use `realloc::zero = true` unless you're certain you don't need the safety. Watch the 10 KB cap. If you find yourself fighting it, your design probably wants many small PDAs instead.
+When you do need realloc, the questions to answer are: how much growth, how often, who pays? Set a sensible growth chunk of 1 KB or 2 KB, have the user pay the delta, and use `realloc::zero = true` unless you're certain you don't need the safety. Watch the 10 KB cap. If you keep hitting that ceiling, your design probably wants many small PDAs instead.
 
-The accounts your program ships with at v1 are the accounts that determine its operating cost forever. Lay out the storage with closure and realloc in mind from the start, and these become small tools you reach for occasionally. Lay it out carelessly, and these become migration headaches you fight repeatedly.
+The accounts your program releases at v1 are the accounts that determine its operating cost forever. Lay out the storage with closure and realloc in mind from the start, and these become small tools you use occasionally. Lay it out carelessly, and these become migration problems you address repeatedly.

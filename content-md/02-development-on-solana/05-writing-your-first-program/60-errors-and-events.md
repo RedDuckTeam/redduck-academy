@@ -38,7 +38,7 @@ That's the whole enum. Now you need to actually raise these errors from your han
 
 Anchor gives you a small family of macros for raising errors plus an explicit form for unusual cases.
 
-<svg viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Four ways to throw an error: require!, require_eq!, require_keys_eq!, return Err(ERR.into())</title><desc>Four boxes show the macros require!, require_eq!, and require_keys_eq!, plus the explicit return Err(ERR.into()) form, each with a short code example and a note on when to use it. A line at the bottom says to default to require! for boolean checks and require_keys_eq! for pubkeys.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Four ways to throw an error</text>
   <rect x="40" y="90" width="310" height="200" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
@@ -121,7 +121,7 @@ require_eq!(order.size, expected_size, CounterError::SizeMismatch);
 // log on failure: "SizeMismatch. Left: 100. Right: 250."
 ```
 
-When you're chasing down why a test is failing, having the actual values in the log saves a debugging round trip. Reach for `require_eq!`, or its negation `require_neq!`, when the comparison is equality of two integers, byte arrays, or anything that implements `Debug`.
+When you're chasing down why a test is failing, having the actual values in the log saves a debugging round trip. Use `require_eq!`, or its negation `require_neq!`, when the comparison is equality of two integers, byte arrays, or anything that implements `Debug`.
 
 ### `require_keys_eq!` and `require_keys_neq!`: Pubkey comparisons
 
@@ -181,13 +181,13 @@ emit!(Incremented {
 
 The `#[event]` macro registers the struct's schema in the IDL, so off-chain code knows how to decode it. The `emit!` macro inside the handler serializes one instance of the struct and writes it to the transaction's logs.
 
-That's it on the program side. The off-chain side is where events earn their keep. Indexers like Helius or Triton subscribe to a program's logs, decode every event they care about, and write rows into a database. Frontend code reads from that database to show "the latest deposits" or "recent trades." Discord bots tail the same stream to announce events as they happen. None of this would be possible if you had to scan account state to figure out what changed.
+That is the program side. The off-chain side is where events do most of their work. Indexers like Helius or Triton subscribe to a program's logs, decode every event they care about, and write rows into a database. Frontend code reads from that database to show "the latest deposits" or "recent trades." Discord bots read the same stream and post announcements as events arrive. None of this would be possible if you had to scan account state to figure out what changed.
 
 ## State vs events: where each piece of data belongs
 
 The most common mistake new developers make in this area is treating events as a substitute for on-chain state. They emit an event for some piece of data, then try to read it back from another instruction. It doesn't work, because events are not on-chain readable.
 
-<svg viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>State vs events: two different output channels</title><desc>Two side-by-side panels compare state (on accounts) and events (emit!) across written by, lives, cost, readable by, and good for. State lives in the account's data field and is readable by on-chain and off-chain code, while events live in the transaction's logs and can only be read by off-chain consumers, never by on-chain code.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">State vs events: two different output channels</text>
   <rect x="40" y="90" width="310" height="380" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -310,4 +310,4 @@ pub enum CounterError {
 
 A few things to notice in this code. The checks happen up front, before any state changes. If any of them fails, the transaction aborts before `counter.value` is touched. That's the standard pattern: validate first, mutate last. The `checked_add` returns `Option<u64>`, and `ok_or` converts a `None` into your custom error. This is the idiomatic way to handle arithmetic that might overflow. Finally, the event is emitted at the end, after the state update, so the values in the event reflect what's now on chain.
 
-Every handler you write will follow some version of this shape: a few `require!` calls validating inputs, the actual state change, an `emit!` call announcing what happened. Internalize the pattern once and you'll reach for it without thinking.
+Every handler you write will follow some version of this shape: a few `require!` calls validating inputs, the actual state change, an `emit!` call announcing what happened. Learn the pattern once and you will apply it automatically.

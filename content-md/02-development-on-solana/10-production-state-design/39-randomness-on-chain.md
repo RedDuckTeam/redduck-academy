@@ -10,7 +10,7 @@ The Solana runtime is a deterministic state machine. Every validator must execut
 
 The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain. The Clock sysvar's unix timestamp, the current slot number, the SlotHashes sysvar, recent transaction hashes, the caller's pubkey. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the slot leader producing the block.
 
-<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Lottery seed inputs a slot leader controls: Clock, SlotHashes, and tx inclusion</title><desc>A code box shows a lottery program picking a winner from a seed made of the Clock sysvar timestamp and slot number. Three boxes below show that the Clock sysvar, the SlotHashes sysvar, and transaction inclusion are all set or seen by the slot leader, and a red box lists four steps a malicious leader can use to simulate the lottery and skip transactions until the outcome favors them.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Why on-chain "randomness" is manipulable</text>
   <text x="40" y="84" font-family="monospace" font-size="12" font-weight="bold">A lottery program picks a winner using the Clock sysvar as the seed:</text>
@@ -43,7 +43,7 @@ The standard workaround in beginner tutorials is to derive "randomness" from val
   <text x="60" y="418" font-family="monospace" font-size="11">  4. Sysvar values change at the next slot, so the outcome reshuffles.</text>
 </svg>
 
-The attack does not require the validator to be the lottery's intended target. It requires only that the validator has any financial interest in the outcome and the option to suppress an unfavorable block. The cost of skipping a slot is the lost block reward. If the lottery payout exceeds that, the attack is profitable. For pools worth more than a few SOL, this math works out in the attacker's favor every time.
+The attack does not require the validator to be the lottery's intended target. It requires only that the validator has any financial interest in the outcome and the option to suppress an unfavorable block. The cost of skipping a slot is the lost block reward. If the lottery payout exceeds that, the attack is profitable. For pools worth more than a few SOL, the attack produces a profit every time.
 
 The fundamental issue: anything visible inside the block is visible to whoever is producing it, and the leader chooses what to publish. You cannot patch this by combining more sources. Any input the program reads is an input the leader can either control or see, and any deterministic function of public inputs produces an output the leader can predict.
 
@@ -57,15 +57,15 @@ The setup involves a keypair. The party generating randomness, the VRF oracle se
 2. The oracle signs the seed with its private key using the VRF algorithm. This produces a random output and a proof.
 3. Anyone with the public key can verify, by examining the proof, that the output was generated from exactly that seed using exactly that key, and that the oracle had no freedom to choose the output.
 
-The third point is the load-bearing one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
+The third point is the critical one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
 
-The summary is: the oracle has nowhere to hide. Either it returns the cryptographically determined output, or its proof fails verification and the on-chain program rejects the response.
+In short: the oracle cannot choose or manipulate the output. Either it returns the cryptographically determined output, or its proof fails verification and the on-chain program rejects the response.
 
 ## The request-and-receive cycle
 
 VRF cannot be a single instruction call. The proof must be generated off chain by an entity holding the private key, and that work cannot happen inside a normal program execution. The pattern is asynchronous: your program submits a request in one transaction, and receives the result in a second transaction some slots later.
 
-<svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two-transaction VRF request flow between your program, Magicblock VRF, and the oracle service</title><desc>In transaction 1, your program calls the Magicblock VRF program via CPI to request randomness, which writes a request PDA with a seed and callback target; the off-chain oracle service reads the request, signs the seed with its private VRF key, and produces bytes and a proof. In transaction 2, the oracle submits the bytes and proof, the VRF program verifies them against its on-chain public key, and calls back your program's handler to store the result.</desc>
   <defs>
     <marker id="arrM2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -240,8 +240,8 @@ The number is fully revealed on chain the moment the oracle delivers it. If your
 
 ## What can go wrong
 
-Two considerations production programs get wrong.
+Two things production programs often get wrong.
 
-**The callback can fail.** If your `receive_randomness` handler runs out of compute units, or panics on a checked-arithmetic overflow, or hits any other Anchor constraint failure, the callback transaction reverts. The Magicblock VRF program records the failure, but your program does not receive the randomness. Keep callbacks minimal. Store the result and any cheap derived values. Save complex logic for a separate user-triggered instruction that reads from storage. A callback that reverts is a request that you paid for and got nothing from.
+**The callback can fail.** If your `receive_randomness` handler runs out of compute units, or panics on a checked-arithmetic overflow, or hits any other Anchor constraint failure, the callback transaction reverts. The Magicblock VRF program records the failure, but your program does not receive the randomness. Keep callbacks minimal. Store the result and any cheap derived values. Save complex logic for a separate user-triggered instruction that reads from storage. A callback that reverts means you paid for the request and received no randomness.
 
-**You cannot use the random number in the request transaction.** A common beginner mistake is to write something like "request a number and then check if the user won." There is no number yet. The check has to happen in the callback. The user either sends a follow-up transaction to claim their prize or the callback automatically settles the outcome.
+**You cannot use the random number in the request transaction.** A common mistake is to write logic that requests a number and then immediately checks if the user won. There is no number yet. The check has to happen in the callback. The user either sends a follow-up transaction to claim their prize or the callback automatically settles the outcome.

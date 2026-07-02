@@ -2,7 +2,7 @@
 
 _type: lecture_
 
-> This lecture zooms out to the protocol layer underneath. How does a transaction actually get from your wallet into a block, and how do thousands of validators agree on the result, in 400 milliseconds? The pieces have names you've heard in passing: Proof of History, Tower BFT, Turbine, Gulf Stream. None of them are magic. Each is an engineering answer to a specific bottleneck that other chains hit and didn't solve. Putting them together shows why Solana looks the way it does and what trade-offs the design accepted along the way.
+> This lecture zooms out to the protocol layer underneath. How does a transaction actually get from your wallet into a block, and how do thousands of validators agree on the result, in 400 milliseconds? These names may have come up before without a full explanation: Proof of History, Tower BFT, Turbine, Gulf Stream. None of them are magic. Each is an engineering answer to a specific bottleneck that other chains hit and didn't solve. Putting them together shows why Solana looks the way it does and what trade-offs the design accepted along the way.
 
 ## Why the standard playbook doesn't work at Solana's target throughput
 
@@ -17,7 +17,7 @@ Solana aimed for 400 milliseconds per slot. At that speed, every step has to be 
 - Voting cannot block production. By the time votes finish for slot N, the leader for slot N+1 has to already be producing.
 - The very notion of "what time is it" has to be agreed on cheaply, because every other coordination step depends on it.
 
-Solana's architecture is what falls out of taking each of these constraints seriously. The components are PoH, Tower BFT, Gulf Stream, and Turbine, plus the parallel execution engine that processes transactions inside a slot. Everything else is built on top.
+Solana's architecture results from taking each of these constraints seriously. The components are PoH, Tower BFT, Gulf Stream, and Turbine, plus the parallel execution engine that processes transactions inside a slot. Everything else is built on top.
 
 ## Proof of History: the clock the network can verify
 
@@ -27,7 +27,7 @@ Solana's answer is to not use clock time at all. Instead, the network agrees on 
 
 The mechanic is straightforward. Take a SHA-256 hash. Hash it. Hash the result. Hash that. Keep going. Each hash output becomes the next hash's input, forming a long chain.
 
-<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Proof of History hash chain from hash_0 to hash_5 with tx_A and tx_B embedded</title><desc>A row of six boxes, hash_0 through hash_5, linked by arrows shows each hash computed from the one before it; tx_A is mixed in at hash_2 and tx_B is mixed in later at hash_4. A panel below lists three properties of the chain: sequential, verifiable in parallel, and tamper-evident timestamps.</desc>
   <defs>
     <marker id="arrA1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -86,7 +86,7 @@ The standard misunderstanding to clear up: PoH is not consensus. PoH gives an or
 
 Tower BFT is Solana's consensus mechanism, in the family of practical Byzantine fault tolerance protocols. The general PBFT pattern is: validators receive a proposed block, run it, and vote on whether to accept. Once enough votes accumulate, the block is final.
 
-The challenge classical PBFT runs into is that votes themselves need to be timestamped. To decide whether a vote was on time, validators have to agree on a clock, which they can't, which leads to elaborate timeout and view-change protocols. Tower BFT skirts the entire problem by using PoH as the timestamp.
+The challenge classical PBFT runs into is that votes themselves need to be timestamped. To decide whether a vote was on time, validators have to agree on a clock, which they can't, which leads to elaborate timeout and view-change protocols. Tower BFT avoids this problem entirely by using PoH as the timestamp.
 
 Every vote a validator casts references the PoH hash at the moment of the vote. The PoH stream is the same stream the leader produced, so it's globally agreed on. There's no ambiguity about whether the vote came before or after some other event. The vote either happened at PoH position N or it didn't.
 
@@ -106,7 +106,7 @@ This has three consequences.
 
 First, the leader doesn't waste time during their slot fetching transactions. They have a queue. They process. Tiny startup latency, important when slots are 400ms long.
 
-Second, "front-running the mempool" is impossible because there is no mempool. You can't watch a public pool for transactions to sandwich because the transactions aren't gossiped publicly. They're sent point-to-point to specific leaders. This eliminates one major class of MEV that Ethereum has to contend with.
+Second, "front-running the mempool" is impossible because there is no mempool. You cannot see pending transactions in a shared pool and insert your own transactions around them to extract profit, because transactions are not broadcast publicly. They're sent point-to-point to specific leaders. This eliminates one major class of MEV — the practice of extracting profit by manipulating transaction ordering — that Ethereum has to contend with.
 
 Third, it shifts MEV pressure elsewhere. The leader sees all transactions arriving at their queue and can decide ordering inside the slot. If a leader wants to extract value, they can reorder transactions within their own slot, or buy private order flow from RPC providers. The MEV problem doesn't disappear, it moves from "everyone watches the mempool" to "leaders have local ordering power."
 
@@ -132,7 +132,7 @@ The trade-off, as you've internalized by now, is that the access pattern has to 
 
 Now, putting it together. Here's what actually happens when a user signs a transaction.
 
-<svg viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The life of a Solana transaction, from RPC submission to finalized block</title><desc>Six stacked boxes connected top to bottom show the steps of a Solana transaction: a user signs and submits it via an RPC node, Gulf Stream forwards it to upcoming leaders, the leader builds a block using Proof of History, Turbine fans the block out to all validators, validators verify and vote with Tower BFT, and the block is finalized once supermajority votes accumulate.</desc>
   <defs>
     <marker id="arrA2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -178,6 +178,6 @@ Each step exists because of one of the bottlenecks named at the start. No mempoo
 
 You spent six modules learning to write code that runs inside step 3. Every Anchor constraint you wrote, every PDA you derived, every CPI you composed, runs as part of "leader executes transactions in parallel based on their account lists." That part of the architecture is the only part your program directly interacts with.
 
-But the other parts shape the world your program lives in. Slots are 400 ms because of the propagation budget Turbine provides. Compute units are tightly capped because the leader must finish executing within one slot. Versioned transactions and Address Lookup Tables exist because the 1,232-byte transaction size limit comes from the UDP-packet shape that Turbine uses for shreds. Priority fees matter because Gulf Stream lets RPC nodes choose ordering when forwarding. The leader having scheduling power is what makes priority-fee tipping meaningful.
+But the other parts shape the world your program lives in. Slots are 400 ms because of the propagation budget Turbine provides. Compute units are tightly capped because the leader must finish executing within one slot. Versioned transactions and Address Lookup Tables exist because the 1,232-byte transaction size limit comes from the UDP-packet shape that Turbine uses for shreds. Priority fees matter because the leader controls transaction ordering within their slot and can process higher-fee transactions first. The leader having scheduling power is what makes priority-fee tipping meaningful.
 
 You don't have to remember every component. You do need the high-level picture: a Solana transaction is signed off-chain, forwarded directly to known upcoming leaders, executed in parallel under a verifiable clock, propagated via a tree to all validators, voted on with exponentially-doubling lockouts, and finalized over the next several seconds. Everything else, including all the constraints you internalized as a programmer, falls out of that pipeline.

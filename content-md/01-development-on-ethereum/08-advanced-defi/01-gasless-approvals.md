@@ -12,7 +12,7 @@ This works fine when the owner already holds ETH. It breaks when they don't. Som
 
 It also makes dApp UX worse. A DEX swap on Uniswap, for example, requires the user to sign two transactions in a row: one approving the router to spend their input token, then the swap itself. Two wallet pop-ups, two waits for confirmations, two gas fees, for what feels like a single action.
 
-<svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Classic approve+transferFrom vs permit+transferFrom transaction flow</title><desc>Two side-by-side panels compare token approval methods: the classic flow needs two transactions, approve then transferFrom, and the owner must hold ETH to pay gas for the first one. The permit flow replaces that with an off-chain signature, so the owner pays nothing and anyone, such as a spender or relayer, can pay gas for the single on-chain transaction. A panel below lists three practical benefits: first-time users without ETH can spend tokens, DEX swaps drop from two wallet pop-ups to one signature, and gasless dApps let a relayer cover gas costs.</desc>
   <defs>
     <marker id="arrP1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -68,7 +68,7 @@ Second, **signatures are cross-application by default.** A signature for "approv
 
 The structure has two layers: a **domain** and a **message**.
 
-<svg viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EIP-712 signing: domain and Permit message hashed into a final digest</title><desc>The diagram shows a Domain box (name, version, chainId, verifyingContract) and a Permit message box (owner, spender, value, nonce, deadline) both feeding into a Final digest computed as keccak256("\x19\x01" || domainHash || messageHash), which is signed with the owner's key to produce (v, r, s). Below, it shows what the wallet displays to the user, such as "Approve 0xBob... to spend 100 USDC", instead of an opaque hex blob.</desc>
   <defs>
     <marker id="arrP2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -166,7 +166,7 @@ function nonces(address owner) external view returns (uint256);
 function DOMAIN_SEPARATOR() external view returns (bytes32);
 ```
 
-`nonces(owner)` returns the next valid nonce for that owner. Every successful permit increments this counter, which is how the contract prevents a signature from being submitted twice. `DOMAIN_SEPARATOR()` returns the hashed domain (the contract's identity) so off-chain code can build the right digest without having to know the token's name and version separately.
+`nonces(owner)` returns the next valid nonce for that owner. Every successful permit increments this counter, which is how the contract prevents a signature from being submitted twice. `DOMAIN_SEPARATOR()` returns the precomputed hash of the domain — the token's name, version, chain ID, and contract address — so off-chain code can build the correct digest directly.
 
 ## How the on-chain side works
 
@@ -218,11 +218,11 @@ contract MyTokenPermit is ERC20, EIP712 {
 }
 ```
 
-A few specific things to notice.
+(remove this sentence; the paragraphs that follow stand on their own)
 
-The `PERMIT_TYPEHASH` is a precomputed hash of the message type definition. It encodes "this is a Permit struct with these field types." The exact string format matters down to the last character including no spaces between fields. This is part of the EIP-712 spec.
+The `PERMIT_TYPEHASH` is a precomputed hash of the message type definition. It encodes "this is a Permit struct with these field types." The exact string must match character for character, with no spaces between fields. This is part of the EIP-712 spec.
 
-`nonces[owner]++` is doing two things in one expression: returning the current nonce and incrementing it for next time. Reading and incrementing in one shot prevents a class of bugs where the wrong nonce gets folded into the digest.
+`nonces[owner]++` is doing two things in one expression: returning the current nonce and incrementing it for next time. Reading and incrementing in a single expression prevents a class of bugs where an incorrect nonce is included in the digest.
 
 `_hashTypedDataV4(structHash)` is OpenZeppelin's helper that combines the struct hash with the contract's domain separator according to the `\x19\x01 || ...` formula. The `EIP712` base contract handles caching the domain separator at deployment time so this stays cheap on repeated reads.
 
@@ -232,7 +232,7 @@ If all checks pass, the function calls `_approve(owner, spender, value)`, which 
 
 ## The full lifecycle
 
-<svg viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EIP-712 permit flow: owner signs off-chain, relayer submits and transfers on-chain</title><desc>Five steps show the owner building and signing an EIP-712 message off-chain, then sending it to a relayer. On-chain, the relayer submits one transaction that calls permit to verify the signature and set the allowance, then calls transferFrom to move the tokens, so the owner pays zero gas.</desc>
 
 <defs>
 
@@ -340,7 +340,7 @@ If all checks pass, the function calls `_approve(owner, spender, value)`, which 
 
 </svg>
 
-The shape of an end-to-end permit flow:
+(remove this fragment; the paragraph that follows begins the explanation directly)
 
 The owner's wallet builds the EIP-712 typed data structure with the domain (read from the token's `DOMAIN_SEPARATOR()`) and the message fields. The wallet shows the user a human-readable preview. The user clicks approve. The wallet returns a signature, broken into the three components `v`, `r`, and `s`.
 
@@ -394,9 +394,9 @@ const s = `0x${signature.slice(66, 130)}` as `0x${string}`;
 const v = parseInt(signature.slice(130, 132), 16);
 ```
 
-Every field in `domain` must match exactly what the contract uses, byte for byte. A wrong name, wrong version, or wrong chain ID will produce a signature that the contract will reject as invalid, with no helpful error message about what went wrong. This is the most common source of "my permit doesn't work" bugs.
+Every field in `domain` must match exactly what the contract uses, byte for byte. A wrong name, wrong version, or wrong chain ID will produce a signature that the contract will reject as invalid, with no helpful error message about what went wrong. Mismatches here are a common cause of permit failures, and the contract gives no indication of which field was wrong.
 
-Most modern wallet libraries include a `signTypedData` helper that takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method; the helper handles the `\x19\x01` prefixing, the canonical JSON encoding, and the domain separator calculation correctly.
+Viem's `signTypedData` — and equivalents in other wallet libraries — takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method; the helper handles the `\x19\x01` prefixing, the canonical JSON encoding, and the domain separator calculation correctly.
 
 ## Security considerations
 

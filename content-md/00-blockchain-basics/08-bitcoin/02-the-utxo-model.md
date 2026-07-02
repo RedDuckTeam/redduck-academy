@@ -2,19 +2,19 @@
 
 _type: lecture_
 
-> Most software developers carry one model of money so deeply that they don't notice it's a model. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how banks work, how PayPal works, how every traditional payment system works. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by the next. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.
+> There is one model of money so common in software that it is easy to mistake it for the only one. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how banks work, how PayPal works, how every traditional payment system works. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by the next. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.
 
 ## Two ways to track money
 
 Imagine you want to build a digital payment system. There are two natural ways to do it.
 
-The first way is the **account model**, and it's the one almost every traditional system uses. The system keeps a table. Each row has a user and a balance. To send money, you decrement one row and increment another. To check a balance, you look up the row. Simple. Familiar. The way every developer's first instinct says payments should work.
+The first way is the **account model**, and it's the one almost every traditional system uses. The system keeps a table. Each row has a user and a balance. To send money, you decrement one row and increment another. To check a balance, you look up the row. Simple. Familiar. It is the model that feels like the obvious way to build payments.
 
 The second way is the **UTXO model**, and it's the one Bitcoin uses. The system doesn't keep a table of users and balances. It keeps a set of coins. Each coin has a specific value and a specific owner. To send money, you don't update any balances. You destroy some of your coins and create new ones for the recipient. To check a balance, you scan for every coin still belonging to you and add them up.
 
 UTXO stands for **Unspent Transaction Output**. Every coin in Bitcoin started life as the output of some past transaction and has not yet been spent by being used as the input of a later one. The set of every UTXO across the chain is what Bitcoin nodes actually track. There is no balance ledger. There is only the UTXO set.
 
-<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Account balance table compared to Bitcoin's UTXO set of coins</title><desc>On the left, the account model is a table of balances: Alice has 2.5 BTC, Bob has 0.8 BTC, Carol has 1.2 BTC; paying means updating two rows, and reading a balance means looking up a row. On the right, the UTXO model is a set of coins, such as a 1.0 BTC coin owned by Alice or a 0.3 BTC coin owned by Bob; paying means destroying some coins and creating new ones, and reading a balance means summing your coins.</desc>
   <!-- Account model column -->
   <text x="180" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Account model</text>
   <text x="180" y="50" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">a table of balances</text>
@@ -80,7 +80,7 @@ Now imagine Alice wants to send 0.3 BTC to Bob. She holds the 1.0 BTC coin from 
 
 Her transaction takes her 1.0 BTC coin as the input. That coin is destroyed in the process. She creates two new coins as outputs. One coin worth 0.3 BTC, owned by Bob. One coin worth a little less than 0.7 BTC, owned by Alice herself. The difference between the input value and the output value is the fee.
 
-<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>UTXO transaction: 1.0 BTC input splits into 0.3 BTC and 0.699 BTC outputs</title><desc>A 1.0 BTC coin owned by Alice is destroyed as the input and replaced by two new output coins: 0.3 BTC for Bob and 0.699 BTC change for Alice. The transaction box shows in: 1.0 BTC, out: 0.3 + 0.699 BTC, fee: 0.001 BTC, and the rule in = out + fee.</desc>
   <defs>
     <marker id="arr42" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -136,7 +136,7 @@ Each **output** has two essential pieces. The first is the value of the new coin
 
 The "small program" framing is worth pausing on. Each locking condition is written in a stack-based language called **Bitcoin Script**, deliberately limited so that every node can run it cheaply and deterministically. No loops. No external data. No shared state. The language only exists to answer one question per transaction: is this spend allowed, yes or no? The most common locking pattern, used in almost every routine payment, is called **Pay-to-Public-Key-Hash**. It locks the coin to a specific public key hash, and the spender unlocks it by providing a signature plus their public key. Other patterns exist, but the shape is always the same: the output sets a condition, the input satisfies it. Bitcoin's intentional choice to keep this language small is one of its defining design decisions, and we'll come back to it when we look at the trade-offs at the end of the module.
 
-<svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction input referencing output 1 of an earlier transaction</title><desc>An earlier transaction has three outputs, and output 1 sends 1.0 BTC to Alice. Alice's new transaction has input 0, which points back to that output using prev_txid and prev_vout, and unlocks it with an unlocking script containing a signature and public key.</desc>
   <defs>
     <marker id="arr42b" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -180,7 +180,7 @@ One detail worth flagging: the fee paid to the miner is not its own field in the
 
 If you're meeting the UTXO model for the first time, your reaction is probably "this is a complicated way to do something simple." Why not just update Alice's balance and Bob's balance directly, like every database in the world?
 
-The answer goes back to the framing lesson. Bitcoin is designed for a network where there's no operator, every node has to validate every transaction independently, and the validation has to be cheap and deterministic. UTXOs are a way of structuring state that makes that validation easy.
+The answer goes back to the Bitcoin design philosophy lesson. Bitcoin is designed for a network where there's no operator, every node has to validate every transaction independently, and the validation has to be cheap and deterministic. UTXOs are a way of structuring state that makes that validation easy.
 
 To validate a UTXO transaction, a node has to check three things. The inputs exist as unspent outputs in the current UTXO set. The signature on each input is valid against the coin's owner condition. The output values add up to no more than the input values. Three local checks. Each one is independent of everything else happening on the chain. There's no global table to consult, no balance to scan, no race condition to worry about. Just three lookups and some arithmetic.
 
@@ -190,7 +190,7 @@ This local-validation property pays off in three more ways.
 
 **Parallelism.** Two transactions that touch different UTXOs are independent. The network can validate them in parallel without coordination. An account-model transaction touching Alice's balance and another transaction also touching Alice's balance cannot be processed in parallel without locking.
 
-**Privacy.** Each coin has its own owner condition. The chain doesn't have a permanent identifier for a user. Alice can have a hundred different addresses, each holding different coins, and there's no on-chain record that they're all hers. The account model implies that every transaction from Alice is associated with the same account identifier, which is a privacy property the UTXO model doesn't have to give up.
+**Privacy.** Each coin has its own owner condition. The chain doesn't have a permanent identifier for a user. Alice can have a hundred different addresses, each holding different coins, and there's no on-chain record that they're all hers. In an account model, every transaction Alice makes is tied to the same account identifier, so her whole history is linked together. The UTXO model has no such per-user identifier, so it never forces that link.
 
 **Audit clarity.** Every coin's history can be traced exactly. This specific coin was created by this transaction, which was funded by these earlier coins, which were created by these even earlier transactions, all the way back to a mining reward. The provenance is built into the data structure, not bolted on as an audit log.
 

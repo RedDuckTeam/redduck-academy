@@ -22,7 +22,7 @@ For accounts under a kilobyte or two, none of this matters. For accounts above a
 
 Zero-copy reframes the account from a value type to a reference type. You don't get a copy of the data, you get a pointer into the data. Reads happen against the original buffer, writes happen against the original buffer, and there is no deserialize-then-serialize round trip.
 
-<svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Account&lt;T&gt; copy path vs AccountLoader&lt;T&gt; zero-copy path</title><desc>Two side-by-side flows show how an account becomes a Rust struct. Account&lt;T&gt; deserializes the on-chain bytes into a copied struct in the handler, then serializes it back, for two copies per call; AccountLoader&lt;T&gt; casts a pointer straight into the same buffer, so reads and writes hit the account data directly, for zero copies per call.</desc>
   <defs>
     <marker id="arr51A" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -82,7 +82,7 @@ The cost of this is discipline. The runtime cannot just cast a byte buffer to an
 To use zero-copy on a struct, the struct must satisfy the `bytemuck::Pod` and `bytemuck::Zeroable` traits. Anchor expresses this through `#[account(zero_copy)]` and enforces it at compile time. In practice, Pod requires:
 
 - `#[repr(C)]` on the struct, so the compiler doesn't reorder fields.
-- Every field type is itself Pod: primitive integers, fixed-size arrays of Pod types, other `#[repr(C)]` structs of Pod fields. Pubkey and bool count as Pod.
+- Every field type is itself Pod: primitive integers, fixed-size arrays of Pod types, other `#[repr(C)]` structs of Pod fields. `Pubkey` counts as Pod. `bool` does not — only bit patterns 0 and 1 are valid, which violates the `bytemuck::Pod` requirement that all bit patterns are valid. Use `u8` instead and document the meaning.
 - No `Vec`, no `String`, no `HashMap`, no `Option<T>` where the niche optimization changes layout.
 - No enum with payload. A fieldless enum is debatable, and the safest path is to use a plain `u8` and document the meaning.
 - No references, no boxed pointers, no heap allocation of any kind.
@@ -121,9 +121,9 @@ The cost of the constraint is real. You can't have a dynamically-sized message f
 
 ## When zero-copy is the right call
 
-Most accounts in most programs should stay on the default `Account<T>`. Reaching for zero-copy is a deliberate decision driven by the size of the account.
+Most accounts in most programs should stay on the default `Account<T>`. Using zero-copy is a deliberate decision driven by the size of the account.
 
-<svg viewBox="0 0 720 510" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 510" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Config, UserState, and OrderBook: Account&lt;T&gt;, Box&lt;Account&lt;T&gt;&gt;, or AccountLoader&lt;T&gt; by size</title><desc>Three columns compare accounts by size and Solana strategy: Config (120 bytes) uses the default Account&lt;T&gt;, UserState (~6 KB, 64 position slots) uses heap-allocated Box&lt;Account&lt;T&gt;&gt;, and OrderBook (48 KB, 1000 order slots) uses zero-copy AccountLoader&lt;T&gt; for large CU savings. Each column lists the account's fields and the reason for its strategy, and a footer notes that account size and call frequency drive the decision.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Three accounts, three strategies</text>
   <rect x="40" y="80" width="205" height="380" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -204,7 +204,7 @@ The middle case is `Box<Account<T>>`. Same serialization as the default, same `S
 
 Zero-copy accounts are reached through `AccountLoader<'info, T>`, not `Account<'info, T>`. The loader has three methods that matter, each with different runtime semantics.
 
-<svg viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three ways to open a zero-copy account: load_init, load, load_mut</title><desc>Compares AccountLoader's three methods: load_init() runs once to create the account and returns exclusive write access, load() gives shared read-only access, and load_mut() gives exclusive write access. A bottom panel states the borrow rule: only one load_mut() can be active at a time, enforced at runtime by RefCell.</desc>
   <defs>
     <marker id="arr51C" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -312,11 +312,11 @@ The borrow rules matter most when a handler calls into other code while still ho
 some_cpi_call(ctx.accounts.order_book.to_account_info(), ...)?;
 ```
 
-Scope the `RefMut` to the smallest region that needs write access, drop it before any CPI, and the borrow checker stops biting.
+Scope the `RefMut` to the smallest region that needs write access, drop it before any CPI, and the error goes away.
 
 ## Box as the middle ground
 
-If your account is too big for the stack but you don't want the Pod discipline, `Box<Account<'info, T>>` is the right answer. It works exactly like `Account<'info, T>` from your code's perspective: you read fields, mutate them, and Anchor serializes back at the end. The only difference is that the deserialized struct lives on the heap. Stack overflows stop being a concern. The copy still happens on every call, so the CU cost stays, but for accounts in the low-kilobyte range that cost is manageable.
+If your account is too big for the stack but you don't want the Pod discipline, `Box<Account<'info, T>>` is the right answer. The copy still happens on every call, so the CU cost stays, but for accounts in the low-kilobyte range that cost is manageable. The copy still happens on every call, so the CU cost stays, but for accounts in the low-kilobyte range that cost is manageable.
 
 The signature looks like this:
 

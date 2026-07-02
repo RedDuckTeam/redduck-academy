@@ -6,7 +6,7 @@ _type: lecture_
 
 A simplification we've been using throughout these lessons: "a transaction is submitted and then it happens." The reality has a step in between.
 
-When you submit a transaction to Ethereum, it doesn't execute immediately. It goes into a waiting area called the **mempool**, which is a queue of pending transactions that every node on the network maintains and shares with its peers. Your transaction sits there until a block proposer decides to include it in a block.
+When you submit a transaction to Ethereum, it doesn't execute immediately. It goes into a waiting area called the **mempool**, which is a pool of pending transactions that every node on the network maintains and shares with its peers. Your transaction sits there until a block proposer decides to include it in a block.
 
 The mempool is **public**. Anyone running an Ethereum node can see every pending transaction: the caller, the contract being called, the function, the arguments, the gas price. Bots specifically designed to watch the mempool see your transaction within milliseconds of you submitting it, before any block has included it.
 
@@ -20,7 +20,7 @@ Three actors matter for understanding MEV:
 
 Here's the flow visually:
 
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction path from user wallet through mempool and searchers to block</title><desc>A user wallet submits a transaction into the public mempool, where it sits alongside other pending transactions. Searchers run bots that read every transaction and build profitable bundles around them, then the builder orders all the transactions, the proposer signs the block, and it goes on chain.</desc>
   <!-- User wallet -->
   <rect x="40" y="30" width="140" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="110" y="58" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000">user wallet</text>
@@ -82,13 +82,13 @@ Here's the flow visually:
   <text x="380" y="362" font-family="monospace" font-size="11" fill="#000000">block on chain</text>
 </svg>
 
-The mempool's public visibility is what makes the whole thing work. Every searcher sees your transaction the moment it leaves your wallet. The builder, who ultimately controls the order, optimizes for their own revenue rather than yours.
+This public visibility, combined with the builder's freedom to order transactions for profit, is what every attack in this lesson builds on.
 
 ## What is MEV?
 
 **MEV** stands for "Maximal Extractable Value." It's the extra profit that can be made by choosing the right order of transactions in a block, or by inserting your own transactions between someone else's.
 
-A simple example: imagine you submit a transaction that will change the price of a token. A searcher sees this in the mempool. They submit two of their own transactions, one before yours and one after, both with higher gas fees than yours. The builder, motivated to maximize their fee revenue, orders these transactions in a way that lets the searcher profit at your expense. The proposer signs the block.
+A simple example: imagine you submit a transaction that will change the price of a token. A searcher sees this in the mempool. They submit two of their own transactions, one before yours and one after — the first with a higher gas fee than yours so it executes first, the second with a lower fee so it lands right after yours. The builder, motivated to maximize their fee revenue, orders these transactions in a way that lets the searcher profit at your expense. The proposer signs the block.
 
 You paid a normal gas fee. The searcher profited. The builder collected fees. The proposer got paid. Every party in the supply chain made money except you, the user whose transaction was the bait that made the whole thing possible.
 
@@ -118,17 +118,17 @@ A front-running attack is the simplest form. The attacker sees a profitable tran
 
 Example: a token is about to be listed on a major exchange, news that everyone agrees will push its price up. Alice notices the news early and submits a transaction to buy 10,000 tokens at the current price. Bob's bot sees Alice's transaction in the mempool. Before Alice's transaction is mined, Bob submits the same trade with 50% higher gas fee. Bob's transaction mines first, he buys his tokens at the lower price, then Alice's transaction mines and pushes the price up further. Bob immediately sells, profiting from the price movement Alice was about to cause.
 
-Alice still gets her tokens, but at a worse price than she would have. The profit Bob made came directly out of Alice's pocket, even though Bob never touched Alice's wallet.
+Alice still gets her tokens, but at a worse price than she would have. The profit Bob made came directly from Alice's loss, even though Bob never touched Alice's wallet.
 
 ## Sandwich attacks: front-running plus back-running
 
-A sandwich attack is the more sophisticated cousin. The attacker places two transactions: one before the victim's trade, called the front-run, and one after, called the back-run. The victim's trade gets sandwiched between them.
+A sandwich attack is a more advanced form of front-running. The attacker places two transactions: one before the victim's trade, called the front-run, and one after, called the back-run. The victim's trade gets sandwiched between them.
 
 Walk through a concrete example. Alice wants to swap 100 ETH for USDC on a DEX. The current price is 2000 USDC per ETH. Alice expects to receive about 200,000 USDC. She sets her slippage tolerance to 2%, meaning her transaction will revert if she'd get less than 196,000 USDC.
 
 A sandwich bot named Mallory sees Alice's pending transaction. The three-transaction sequence Mallory constructs looks like this:
 
-<svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Sandwich attack: Mallory front-runs and back-runs Alice's ETH/USDC swap</title><desc>A four-step table tracks the pool's ETH/USDC reserves and price as Mallory front-runs Alice's 100 ETH swap, then back-runs it after her trade executes. The summary shows Alice lost about 3,500 USDC of expected value while Mallory netted about 2 ETH profit, purely through transaction ordering, not a contract bug.</desc>
   <!-- Column headers -->
   <text x="160" y="30" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">pool state</text>
   <text x="500" y="30" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">outcome</text>
@@ -296,7 +296,7 @@ The drawback in all cases is friction. Two transactions instead of one, with a d
 
 Instead of fixing the contract, you can change how transactions are submitted. Instead of broadcasting to the public mempool, the user sends their transaction to a **private relay** that bypasses the public mempool entirely. The relay sends the transaction directly to block builders without it ever being visible to searchers.
 
-<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Public mempool vs private relay: sandwich attack outcome compared</title><desc>On the left, the user wallet sends a tx to the public mempool, where searchers read every tx and the block includes the tx sandwiched by Mallory. On the right, the user wallet sends the tx through the Flashbots private relay straight to trusted builders, so searchers cannot read it and no sandwich is possible.</desc>
   <!-- Column headers -->
   <text x="180" y="30" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">public mempool</text>
   <text x="540" y="30" text-anchor="middle" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">private relay</text>

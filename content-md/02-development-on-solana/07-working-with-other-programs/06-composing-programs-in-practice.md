@@ -8,7 +8,7 @@ _type: lecture_
 
 Every concept from the rest of this module exists to support composition. Cross-program invocation lets one program call another. PDA signing lets a program act on its own behalf inside that call. The Token Program standardizes the operation everyone calls into. Associated Token Accounts make the addresses of those operations predictable. Token-2022 widens the set of behaviors any of those programs can request. None of these pieces is interesting in isolation. They become interesting because they compose.
 
-A swap program is two hundred lines of code because the actual token movement happens in the Token Program through a CPI. A lending protocol can plug into multiple price oracles by CPI-ing into Pyth or Switchboard. An aggregator can route a single user trade across half a dozen DEXes by orchestrating CPIs into each one. Every protocol on Solana sits somewhere on a stack, with simpler programs below it doing primitive operations and more sophisticated programs above it stitching those primitives into product features.
+A swap program is two hundred lines of code because the actual token movement happens in the Token Program through a CPI. A lending protocol can plug into multiple price oracles by making CPI calls into Pyth or Switchboard. An aggregator can route a single user trade across half a dozen DEXes by orchestrating CPIs into each one. Every protocol on Solana sits somewhere on a stack, with simpler programs below it doing primitive operations and more sophisticated programs above it stitching those primitives into product features.
 
 If you've written or used HTTP middleware, the pattern will feel familiar. Each layer wraps the layer beneath, adds its own behavior, and passes what's left through to the next layer. CPI composition is the on-chain version of the same idea: each program wraps the layer beneath, adds orchestration, and what reaches the bottom carries the cumulative accounts and the cumulative authority.
 
@@ -16,7 +16,7 @@ If you've written or used HTTP middleware, the pattern will feel familiar. Each 
 
 Concrete numbers help. Take an aggregator program that calls a swap program, which in turn calls the Token Program. Three layers, each doing real work.
 
-<svg viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Aggregator calls Swap calls Token Program: three CPI layers, 10 accounts</title><desc>Three stacked layers show Aggregator calling Swap via CPI, and Swap calling the Token Program via CPI. Each layer lists its handler and accounts, with a running total that reaches 10 distinct accounts needed in the outer transaction.</desc>
   <defs>
     <marker id="arrS46aR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -53,7 +53,7 @@ Concrete numbers help. Take an aggregator program that calls a swap program, whi
   <text x="360" y="555" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Three nested calls. Ten distinct accounts that all must appear in the outer transaction.</text>
 </svg>
 
-The mechanics underneath this diagram are worth saying out loud. When the user signs a transaction calling your aggregator's `aggregate_swap` handler, they have to supply every account the call will touch. In practice this work is done by the user's frontend constructing the transaction, but the principle is the same: every account that any layer of the call will read or write has to be in the outer transaction's accounts list. That means the user side needs to know every account the swap will need, including the pool state, the pool authority PDA, both pool ATAs, and the user's own ATAs for the input and output tokens. The user side also needs to know the Token Program will be called eventually, which means the Token Program's program ID has to be in the accounts list too.
+When the user signs a transaction calling your aggregator's `aggregate_swap` handler, they have to supply every account the call will touch. In practice this work is done by the user's frontend constructing the transaction, but the principle is the same: every account that any layer of the call will read or write has to be in the outer transaction's accounts list. That means the user side needs to know every account the swap will need, including the pool state, the pool authority PDA, both pool ATAs, and the user's own ATAs for the input and output tokens. The user side also needs to know the Token Program will be called eventually, which means the Token Program's program ID has to be in the accounts list too.
 
 Your aggregator handler receives all of these in its own `ctx.accounts`. It picks out the ones the swap needs and assembles them into a `CpiContext` for the swap CPI. The swap handler receives them, validates them with its own constraints, picks out the four token accounts plus the pool authority, and assembles its own `CpiContext` for the Token Program CPI. The Token Program receives a strict subset, executes the transfer, and returns. Control unwinds back up the stack.
 
@@ -63,7 +63,7 @@ Accounts propagate upward through the call chain in the sense that the outermost
 
 Three layers and ten accounts is a toy example. Production aggregator transactions reach much further. Consider what happens when a user routes a single trade across two DEXes simultaneously to get better pricing.
 
-<svg viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Aggregator swap of USDC to BONK via Raydium and Orca: 27 accounts</title><desc>A user swaps USDC for BONK routed through SOL, split half through Raydium and half through Orca. Listing every user, aggregator, pool, mint, and program account needed gives 27 accounts, close to the roughly 35-account cap for legacy transactions.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">A real aggregator transaction: the accounts list balloons</text>
   <rect x="40" y="85" width="640" height="65" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -115,13 +115,13 @@ Three layers and ten accounts is a toy example. Production aggregator transactio
 
 Twenty-seven accounts is the conservative count for a relatively simple two-leg aggregator route. Real Jupiter-style routes that pass through three or four DEXes on the way to an exotic token easily exceed forty distinct accounts. Each transaction has to encode every account address, each one 32 bytes, plus the instruction data, plus signatures, plus the message header. A legacy transaction format puts a hard cap at 1232 bytes for the entire payload. That works out to about 35 accounts in the best case, less when the instruction data is anything other than trivial.
 
-For a long time, this ceiling shaped what protocols could ship. Aggregators had to split routes across multiple transactions. Composite operations that should logically happen atomically got broken into pieces with intermediate state. Anything that wanted to compose more than two or three layers of programs ran into a hard wall.
+For a long time, this ceiling shaped what protocols could release. Aggregators had to split routes across multiple transactions. Composite operations that should logically happen atomically got broken into pieces with intermediate state. Anything that wanted to compose more than two or three layers of programs could not fit in a single transaction.
 
 ## The fix: versioned transactions and address lookup tables
 
 Solana's answer to the size ceiling is a new transaction format and a new on-chain primitive that work together. The transaction format is called the versioned transaction, sometimes referred to as v0 messages in contrast to the original legacy format. The primitive is called an Address Lookup Table, or ALT.
 
-<svg viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
+<svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>How Address Lookup Tables compress the accounts list</title><desc>Compares a legacy transaction, where each of 27 accounts needs a full 32-byte pubkey (864 bytes total), with a versioned transaction that references an on-chain Address Lookup Table holding up to 256 pubkeys. The versioned transaction uses a 1-byte index per account instead of the full address, raising the practical ceiling to about 256 accounts per transaction.</desc>
   <defs>
     <marker id="arrS46cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -157,9 +157,9 @@ Solana's answer to the size ceiling is a new transaction format and a new on-cha
   <text x="360" y="572" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Same accounts, same execution. The wire format is what changed.</text>
 </svg>
 
-The trick is straightforward once you see it. An ALT is just an on-chain account that stores up to 256 pubkeys in an array. An aggregator creates one ahead of time, populates it with the addresses it expects to reference repeatedly, such as DEX program IDs, common pool states, common mints, the System Program, and the Token Program. From that point forward, any transaction that knows the ALT's address can refer to entries in it by a one-byte index. The transaction itself still names the ALT once, at the full 32 bytes, but every reference into the table after that is a single byte.
+An ALT is just an on-chain account that stores up to 256 pubkeys in an array. An aggregator creates one ahead of time, populates it with the addresses it expects to reference repeatedly, such as DEX program IDs, common pool states, common mints, the System Program, and the Token Program. From that point forward, any transaction that knows the ALT's address can refer to entries in it by a one-byte index. The transaction itself still names the ALT once, at the full 32 bytes, but every reference into the table after that is a single byte.
 
-A transaction can reference multiple ALTs. Real production transactions often pull from two or three: a global one with universal addresses such as token programs, system program, and common mints, plus one or two protocol-specific ones for the addresses unique to that protocol's pools.
+A transaction can reference multiple ALTs. Real production transactions often reference two or three: a global one with universal addresses such as token programs, system program, and common mints, plus one or two protocol-specific ones for the addresses unique to that protocol's pools.
 
 The runtime expands the indices into full pubkeys before executing. From a program's perspective, nothing changes. Your handler still receives the full `AccountInfo` for every account it expected. The compression is purely a wire-format optimization, with no impact on how programs are written or how privileges propagate. Versioned transactions are not a new programming model. They're a more compact way to encode the same thing.
 
@@ -171,12 +171,12 @@ For programs, nothing changes. You write the same handlers, the same Accounts st
 
 For clients, the change is that you build a `VersionedTransaction` instead of a `Transaction` and pass a list of resolved lookup tables to the SDK. The `@solana/web3.js` library has full support, and so does the Rust client SDK. The aggregator or wallet building the transaction has to fetch the relevant ALTs from the chain, decide which accounts come from where, and emit the right indices. Most of this is hidden by SDK helpers. If you're building a frontend that submits trades, you're working with versioned transactions almost by default. If you're writing tests with bankrun, you're probably still building legacy transactions for simplicity, and the test stack handles that fine.
 
-The one operational concern with ALTs is that creating and warming up a new lookup table takes some on-chain work and a slot or two before it's usable. Protocols that intend to use ALTs in their hot path create them at deployment time and reuse them indefinitely. Aggregators dynamically maintain a set of ALTs covering the venues they route to, refreshing them periodically as pool addresses change.
+The one operational concern with ALTs is that creating and activating a new lookup table takes some on-chain work and a slot or two before it is usable. Protocols that intend to use ALTs in their hot path create them at deployment time and reuse them indefinitely. Aggregators dynamically maintain a set of ALTs covering the venues they route to, refreshing them periodically as pool addresses change.
 
 ## What the module added up to
 
 Every program on Solana has the same shape underneath. It defines accounts, accepts instructions, validates inputs with constraints, and uses CPI to delegate work it can't do alone. Composition is what turns that small primitive set into an ecosystem. A simple program at the bottom of the stack, like the Token Program, does one thing well and exposes a small instruction set. A more sophisticated program above it, like a swap, calls it through CPI to do the basic work and adds its own value through price calculation, pool state, and fees. A program above that, like an aggregator, orchestrates multiple swaps and adds another layer of value through route optimization, MEV protection, and gas savings. The layers can compose four or five deep before the practical limits become relevant.
 
-The student who's followed the whole module can now read any program on Solana and recognize its shape. Where are its accounts defined. What constraints does each one carry. What CPIs does it make. Which of its accounts are signers, which are writable, which are PDAs that sign on its own behalf. The mechanics no longer feel like magic. They're a small set of patterns that compose in deep ways.
+If you've followed the whole module, you can now read any program on Solana and recognize its shape. Where are its accounts defined. What constraints does each one carry. What CPIs does it make. Which of its accounts are signers, which are writable, which are PDAs that sign on its own behalf. The mechanics no longer feel like magic. They're a small set of patterns that compose in deep ways.
 
 Reading other programs is the fastest path from here. Open any open-source Solana protocol. The shape will be familiar. The patterns will be recognizable. The places where the protocol added its own clever thing on top of the primitives will be visible. That's what the whole track has been building toward: a working mental model that lets you read the chain rather than just write isolated examples on it.
