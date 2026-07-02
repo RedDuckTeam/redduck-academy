@@ -7,7 +7,7 @@ import { env } from './env'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 
-// Create a new router instanc
+// Create a new router instan
 export const getRouter = () => {
   const providersContext = Providers.getContext()
 
