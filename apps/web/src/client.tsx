@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/tanstackstart-react'
 
 // Custom client entry (overrides @tanstack/react-start's default-entry/client.tsx).
 // Identical to the framework default — StrictMode + startTransition + hydrateRoot(<StartClient />)
-// — plus an `onCaughtError` hook.
+// — plus an `onCaughtError` hook
 //
 // Why: errors caught by a React error boundary (e.g. TanStack Router's error component) never
 // reach `window.onerror`, so Sentry's window-based autocapture misses them. This forwards
