@@ -81,24 +81,30 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
   // and emit the full SVG when </svg> is reached; continuation paragraphs render nothing.
   let svgBuffer: string | null = null
 
+  const svgClass = 'my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full'
+
   const renderSvg = (markup: string) => {
+    const raw = markup ?? ''
+
+    // Diagrams carry an authored <title>/<desc> + role="img" baked into the SVG
+    // markup (see scripts/apply-svg-titles.mjs) so crawlers, AI, and screen
+    // readers get a real description. Render those verbatim.
+    if (/<title[\s>]/i.test(raw)) {
+      return <div className={svgClass} dangerouslySetInnerHTML={{ __html: raw }} />
+    }
+
+    // Fallback for any diagram without a baked-in <title>: derive a name from the
+    // SVG's <text> labels and inject a <title> + role="img" so it isn't invisible.
     let label: string | undefined
     try {
-      const textNodes = typeof markup === 'string'
-        ? [...markup.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
-            .map((m) => m[1]?.replace(/<[^>]+>/g, '').trim() ?? '')
-            .filter(Boolean)
-        : []
+      const textNodes = [...raw.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
+        .map((m) => m[1]?.replace(/<[^>]+>/g, '').trim() ?? '')
+        .filter(Boolean)
       label = textNodes.join(', ') || undefined
     } catch {
       label = undefined
     }
-
-    // Make the diagram machine-readable. Instead of only labelling a wrapper
-    // <div>, inject a <title> (the accessible name crawlers and screen readers
-    // read from *inside* the SVG) and role="img" onto the <svg> element itself.
-    // A raw SVG scraped without this reads as concatenated <text> gibberish.
-    let html = markup ?? ''
+    let html = raw
     if (label) {
       const esc = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       const openTag = html.match(/<svg\b[^>]*>/i)?.[0]
@@ -107,12 +113,10 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
         html = html.replace(openTag, `${withRole}<title>${esc}</title>`)
       }
     }
-
     return (
       <div
-        // When the SVG has no <text> to name it, fall back to a labelled wrapper.
         {...(label ? {} : { role: 'img', 'aria-label': 'Diagram' })}
-        className="my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full"
+        className={svgClass}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     )
