@@ -37,6 +37,7 @@ async function buildLlmsTxt(): Promise<string> {
     '',
     link('Home', `${site}/`, 'Platform overview'),
     link('All courses', `${site}/courses`, 'Full course catalog'),
+    link('Full content (Markdown)', `${site}/llms-full.txt`, 'Every lesson in one Markdown file, each with a Source URL'),
     link('Ranking', `${site}/ranking`, 'Learner leaderboard'),
     link('Privacy Policy', LINKS.PrivacyPolicy),
   ]

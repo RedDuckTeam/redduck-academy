@@ -178,3 +178,11 @@ export function lexicalToMarkdown(content: unknown): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
+
+/**
+ * A full, self-attributing Markdown document for one lesson: title, a `Source:`
+ * line with the canonical URL (so an LLM that ingests it can cite us), then body.
+ */
+export function lessonToMarkdownDoc(title: string, sourceUrl: string, content: unknown): string {
+  return `# ${title}\n\nSource: ${sourceUrl}\n\n${lexicalToMarkdown(content)}\n`
+}

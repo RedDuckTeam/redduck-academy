@@ -19,6 +19,13 @@ export function absoluteUrl(path: string): string {
   return `${getBaseUrl()}${path.startsWith('/') ? path : `/${path}`}`
 }
 
+/** Normalise a DB timestamp (raw Postgres or ISO) to valid ISO 8601, or undefined. */
+function toIsoDate(value?: string): string | undefined {
+  if (!value) return undefined
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString()
+}
+
 /**
  * Extracts plain text from rich content (Markdoc, Lexical, etc.) for meta descriptions.
  */
@@ -300,7 +307,7 @@ export function buildCourseLd({ course }: { course: Course }): JsonLdObject {
     url,
     inLanguage: 'en',
     provider: organizationRef(),
-    dateModified: course.updatedAt,
+    dateModified: toIsoDate(course.updatedAt),
   }
 }
 
@@ -331,8 +338,8 @@ export function buildLessonLd({
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     inLanguage: 'en',
-    datePublished: lesson.createdAt,
-    dateModified: lesson.updatedAt,
+    datePublished: toIsoDate(lesson.createdAt),
+    dateModified: toIsoDate(lesson.updatedAt),
     author: organizationRef(),
     publisher: organizationRef(),
     image: OG_IMAGE_URL,

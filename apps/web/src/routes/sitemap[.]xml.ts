@@ -39,9 +39,17 @@ interface UrlEntry {
   priority?: number
 }
 
+/** Normalise a DB timestamp (raw Postgres or ISO) to a valid W3C datetime, or drop it. */
+function toW3CDate(value?: string): string | undefined {
+  if (!value) return undefined
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString()
+}
+
 function renderUrl({ loc, lastmod, changefreq, priority }: UrlEntry): string {
   const parts = [`  <url>`, `    <loc>${escapeXml(loc)}</loc>`]
-  if (lastmod) parts.push(`    <lastmod>${escapeXml(lastmod)}</lastmod>`)
+  const iso = toW3CDate(lastmod)
+  if (iso) parts.push(`    <lastmod>${iso}</lastmod>`)
   if (changefreq) parts.push(`    <changefreq>${changefreq}</changefreq>`)
   if (priority !== undefined) parts.push(`    <priority>${priority.toFixed(1)}</priority>`)
   parts.push(`  </url>`)
@@ -52,7 +60,6 @@ async function buildSitemap(): Promise<string> {
   const site = baseUrl()
   const urls: UrlEntry[] = [
     { loc: `${site}/`, changefreq: 'weekly', priority: 1.0 },
-    { loc: `${site}/dashboard`, changefreq: 'weekly', priority: 0.8 },
     { loc: `${site}/courses`, changefreq: 'weekly', priority: 0.9 },
     { loc: `${site}/ranking`, changefreq: 'daily', priority: 0.5 },
   ]
