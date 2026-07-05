@@ -45,7 +45,7 @@ export default function Header() {
           <HeaderMenuIcon isOpen={isOpen} />
         </button>
         <div className="md:w-[20%] xl:w-[15%]">
-          <Link to="/dashboard" aria-label="RedDuck Academy — home">
+          <Link to="/" aria-label="RedDuck Academy — home">
             <RedDuckIcon className="max-sm:w-[150px] h-full w-[186px]" />
           </Link>
         </div>

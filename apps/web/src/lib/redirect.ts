@@ -15,10 +15,10 @@ export function sanitizeRedirect(value: unknown): string | undefined {
 
 /**
  * Send the user where they came from after authenticating, falling back to the
- * dashboard. `redirect` is an already-sanitized relative href; we use the
+ * home page. `redirect` is an already-sanitized relative href; we use the
  * history API so an arbitrary path string navigates cleanly.
  */
 export function navigateAfterAuth(router: AnyRouter, redirect?: string): void {
   if (redirect) router.history.replace(redirect)
-  else void router.navigate({ to: '/dashboard', replace: true })
+  else void router.navigate({ to: '/', replace: true })
 }

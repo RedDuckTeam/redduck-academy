@@ -31,8 +31,8 @@ export const Route = createFileRoute('/sign-up')({
     const session = queryClient.getQueryData(queryKeys.user.settings())
     // Logged-in users skip the page. When a redirect is present we let the
     // component mount and `navigateAfterAuth` send them on (it handles arbitrary
-    // paths); otherwise bounce straight to the dashboard.
-    if (session && !search.redirect) throw redirect({ to: '/dashboard' })
+    // paths); otherwise bounce straight to the home page.
+    if (session && !search.redirect) throw redirect({ to: '/' })
   },
   head: () =>
     createPageMeta({

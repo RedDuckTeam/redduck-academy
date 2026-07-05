@@ -174,7 +174,11 @@ export function createLessonMeta({
       { name: 'twitter:description', content: description },
       { name: 'twitter:image', content: OG_IMAGE_URL },
     ],
-    links: [{ rel: 'canonical', href: canonicalUrl }],
+    links: [
+      { rel: 'canonical', href: canonicalUrl },
+      // The same URL serves Markdown via content negotiation (see src/start.ts).
+      { rel: 'alternate', type: 'text/markdown', href: canonicalUrl },
+    ],
   }
 }
 
@@ -308,6 +312,21 @@ export function buildCourseLd({ course }: { course: Course }): JsonLdObject {
     inLanguage: 'en',
     provider: organizationRef(),
     dateModified: toIsoDate(course.updatedAt),
+    isAccessibleForFree: true,
+    offers: {
+      '@type': 'Offer',
+      price: 0,
+      priceCurrency: 'USD',
+      category: 'Free',
+    },
+    ...(course.modules?.length
+      ? {
+          syllabusSections: course.modules.map((m) => ({
+            '@type': 'Syllabus',
+            name: m.title,
+          })),
+        }
+      : {}),
   }
 }
 

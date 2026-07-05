@@ -3,18 +3,27 @@ import { useLayoutEffect, useMemo, useState } from 'react'
 
 export const headerLinks = [
   {
-    to: '/dashboard',
+    to: '/',
     text: 'MY PROGRESS',
+    // `/dashboard` serves the same page as `/`.
+    aliases: ['/dashboard'],
   },
   {
     to: '/courses',
     text: 'COURSE PROGRAM',
+    aliases: [],
   },
   {
     to: '/ranking',
     text: 'RANKING',
+    aliases: [],
   },
 ]
+
+function isActive(link: (typeof headerLinks)[number], currentPath: string): boolean {
+  const paths = [link.to, ...link.aliases]
+  return paths.some((path) => currentPath === path || currentPath.startsWith(path + '/'))
+}
 
 export const useHeaderLinks = () => {
   const router = useRouter()
@@ -25,9 +34,7 @@ export const useHeaderLinks = () => {
 
   const activeLinkRef = useMemo(() => {
     const currentPath = router.state.location.pathname
-    const activeIndex = headerLinks.findIndex(
-      (link) => currentPath === link.to || currentPath.startsWith(link.to + '/'),
-    )
+    const activeIndex = headerLinks.findIndex((link) => isActive(link, currentPath))
     return activeIndex !== -1 ? (refs[activeIndex] ?? null) : null
   }, [router.state.location.pathname, refs])
 

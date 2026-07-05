@@ -8,7 +8,8 @@ import { lessonToMarkdownDoc } from '@/lib/lexical-to-markdown'
 // non-lesson page, or a failed fetch) we answer with a clean 406 — TanStack's
 // document handler otherwise 500s on a non-HTML Accept, and it ignores
 // request-middleware request overrides so we can't make it render HTML instead.
-// All non-markdown requests pass straight through.
+// Non-markdown requests pass through; lesson HTML responses get `Vary: Accept`
+// so shared caches keep the two representations apart.
 const LESSON_PATH = /^\/courses\/([^/]+)\/[^/]+\/([^/]+)\/?$/
 const CACHE_TTL_SECONDS = 6 * 60 * 60
 
@@ -18,9 +19,24 @@ const markdownHeaders = {
   'Cache-Control': `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TTL_SECONDS}`,
 }
 
+/** Mark a response as varying on Accept (lesson URLs serve HTML or Markdown). */
+function addVaryAccept(response: Response): void {
+  const vary = (response.headers.get('vary') ?? '').split(',').map((v) => v.trim().toLowerCase())
+  if (vary.includes('accept') || vary.includes('*')) return
+  try {
+    response.headers.append('Vary', 'Accept')
+  } catch {
+    // immutable headers (e.g. static asset passthrough) — nothing to do
+  }
+}
+
 const markdownForAgents = createMiddleware({ type: 'request' }).server(async ({ request, pathname, next }) => {
   const wantsMarkdown = (request.headers.get('accept') ?? '').includes('text/markdown')
-  if (!wantsMarkdown) return next()
+  if (!wantsMarkdown) {
+    const result = await next()
+    if (LESSON_PATH.test(pathname)) addVaryAccept(result.response)
+    return result
+  }
 
   const lesson = LESSON_PATH.exec(pathname)
   if (lesson) {

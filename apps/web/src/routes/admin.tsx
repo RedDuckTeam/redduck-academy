@@ -28,7 +28,7 @@ function AdminLayout() {
       return
     }
     if (settings.role !== 'admin') {
-      void router.navigate({ to: '/dashboard', replace: true })
+      void router.navigate({ to: '/', replace: true })
     }
   }, [settings, isError, isPending, router])
 

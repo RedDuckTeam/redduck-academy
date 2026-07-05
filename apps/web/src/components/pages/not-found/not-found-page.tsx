@@ -10,8 +10,8 @@ export const NotFoundPage = () => {
       </Text>
       <Text variant="subtitle-45">You've probably lost</Text>
       <Button asChild>
-        <Link to="/dashboard">
-          <Text variant="caps-24">Back to Dashboard</Text>
+        <Link to="/">
+          <Text variant="caps-24">Back to Home</Text>
         </Link>
       </Button>
     </main>
