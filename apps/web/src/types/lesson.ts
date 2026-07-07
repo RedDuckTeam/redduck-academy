@@ -120,6 +120,13 @@ export interface PublicReviewGradingTask {
   criteria?: string
 }
 
+/** One FAQ row authored in admin. Emitted as FAQPage JSON-LD + a Markdown "## FAQ" section, never rendered on the page. */
+export interface LessonFaqItem {
+  id?: string | null
+  question: string
+  answer: string
+}
+
 export interface Lesson {
   id: number
   title: string
@@ -130,6 +137,7 @@ export interface Lesson {
   content?: any
   updatedAt: string
   createdAt: string
+  faq?: LessonFaqItem[] | null
   questions?: TestQuestion[]
   templateRepoUrl?: string
   /** Folder name in the starter repo containing this task's TASK.md. Falls back to slug when blank. */

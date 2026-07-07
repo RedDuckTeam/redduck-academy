@@ -13,7 +13,14 @@ import { LessonLecture } from '@/components/pages/lesson/lecture/lesson-lecture'
 import { LessonCodeChallenge } from '@/components/pages/lesson/code-challenge/lesson-code-challenge'
 import { LessonNavigation } from '@/components/pages/lesson/lesson-navigation/lesson-navigation'
 import { LessonProject } from '@/components/pages/lesson/project/lesson-project'
-import { absoluteUrl, buildBreadcrumbLd, buildLessonLd, createDefaultMeta, createLessonMeta } from '@/lib/seo'
+import {
+  absoluteUrl,
+  buildBreadcrumbLd,
+  buildLessonFaqLd,
+  buildLessonLd,
+  createDefaultMeta,
+  createLessonMeta,
+} from '@/lib/seo'
 import { JsonLd } from '@/components/seo/json-ld'
 import { RichText } from '@/components/ui/rich-text'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
@@ -81,6 +88,7 @@ function LessonPage() {
   useLessonCompletionToast({ courseSlug, lessonSlug, lessonTitle: lesson.title })
   const isCodingChallenge = lesson.type === 'coding_task'
   const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
+  const faqLd = buildLessonFaqLd({ lesson })
 
   useScrollMagnet({ enabled: isCodingChallenge, targetId: 'coding-task-row', offset: 20, range: 40 })
 
@@ -91,6 +99,7 @@ function LessonPage() {
       <JsonLd
         data={[
           buildLessonLd({ lesson, courseTitle, courseSlug, moduleSlug, lessonSlug }),
+          ...(faqLd ? [faqLd] : []),
           buildBreadcrumbLd([
             { name: courseTitle, url: absoluteUrl(`/courses/${courseSlug}`) },
             { name: lesson.title, url: absoluteUrl(`/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`) },

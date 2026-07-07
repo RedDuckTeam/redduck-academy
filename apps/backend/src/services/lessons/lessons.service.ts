@@ -24,6 +24,9 @@ export class LessonsService {
       ),
       with: {
         module: { with: { course: true } },
+        faq: {
+          orderBy: (rows, { asc }) => [asc(rows._order)],
+        },
         questions: { with: { options: true } },
         reviewGradingTasks: {
           orderBy: (tasks, { asc }) => [asc(tasks._order)],

@@ -43,7 +43,7 @@ async function buildLlmsFull(): Promise<string> {
   const sections = await mapLimit(targets, FETCH_CONCURRENCY, async (t) => {
     try {
       const { data } = await getLesson(t.course, t.lesson)
-      return lessonToMarkdownDoc(data.title, `${site}/courses/${t.course}/${t.module}/${t.lesson}`, data.content)
+      return lessonToMarkdownDoc(data.title, `${site}/courses/${t.course}/${t.module}/${t.lesson}`, data.content, data.faq)
     } catch {
       return ''
     }

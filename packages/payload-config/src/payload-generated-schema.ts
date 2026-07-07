@@ -170,6 +170,26 @@ export const modules = db_schema.table(
   ],
 )
 
+export const lessons_faq = db_schema.table(
+  'lessons_faq',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    question: varchar('question').notNull(),
+    answer: varchar('answer').notNull(),
+  },
+  (columns) => [
+    index('lessons_faq_order_idx').on(columns._order),
+    index('lessons_faq_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [lessons.id],
+      name: 'lessons_faq_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
 export const lessons_questions_options = db_schema.table(
   'lessons_questions_options',
   {
@@ -639,6 +659,13 @@ export const relations_modules = relations(modules, ({ one }) => ({
     relationName: 'course',
   }),
 }))
+export const relations_lessons_faq = relations(lessons_faq, ({ one }) => ({
+  _parentID: one(lessons, {
+    fields: [lessons_faq._parentID],
+    references: [lessons.id],
+    relationName: 'faq',
+  }),
+}))
 export const relations_lessons_questions_options = relations(lessons_questions_options, ({ one }) => ({
   _parentID: one(lessons_questions, {
     fields: [lessons_questions_options._parentID],
@@ -743,6 +770,9 @@ export const relations_lessons = relations(lessons, ({ one, many }) => ({
     references: [modules.id],
     relationName: 'module',
   }),
+  faq: many(lessons_faq, {
+    relationName: 'faq',
+  }),
   questions: many(lessons_questions, {
     relationName: 'questions',
   }),
@@ -844,6 +874,7 @@ type DatabaseSchema = {
   courses_tags: typeof courses_tags
   courses: typeof courses
   modules: typeof modules
+  lessons_faq: typeof lessons_faq
   lessons_questions_options: typeof lessons_questions_options
   lessons_questions: typeof lessons_questions
   lessons_solidity_constructor_args: typeof lessons_solidity_constructor_args
@@ -869,6 +900,7 @@ type DatabaseSchema = {
   relations_courses_tags: typeof relations_courses_tags
   relations_courses: typeof relations_courses
   relations_modules: typeof relations_modules
+  relations_lessons_faq: typeof relations_lessons_faq
   relations_lessons_questions_options: typeof relations_lessons_questions_options
   relations_lessons_questions: typeof relations_lessons_questions
   relations_lessons_solidity_constructor_args: typeof relations_lessons_solidity_constructor_args

@@ -366,6 +366,25 @@ export function buildLessonLd({
   }
 }
 
+/**
+ * schema.org/FAQPage from a lesson's admin-authored FAQ rows, or null when the
+ * lesson has none. The Q&A is deliberately not rendered on the page — the FAQ
+ * targets AI crawlers (JSON-LD here, `## FAQ` in the Markdown representation).
+ */
+export function buildLessonFaqLd({ lesson }: { lesson: Lesson }): JsonLdObject | null {
+  const rows = (lesson.faq ?? []).filter((f) => f.question?.trim() && f.answer?.trim())
+  if (rows.length === 0) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: rows.map((f) => ({
+      '@type': 'Question',
+      name: f.question.trim(),
+      acceptedAnswer: { '@type': 'Answer', text: f.answer.trim() },
+    })),
+  }
+}
+
 /** schema.org/BreadcrumbList mirroring the on-page breadcrumb trail. */
 export function buildBreadcrumbLd(items: { name: string; url?: string }[]): JsonLdObject {
   return {

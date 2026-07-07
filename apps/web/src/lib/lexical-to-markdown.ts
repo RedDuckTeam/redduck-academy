@@ -7,6 +7,8 @@
  * each diagram as its title + description — the meaning survives, the noise doesn't.
  */
 
+import type { LessonFaqItem } from '@/types/lesson'
+
 interface LexNode {
   type?: string
   text?: string
@@ -179,10 +181,22 @@ export function lexicalToMarkdown(content: unknown): string {
     .trim()
 }
 
+function faqToMarkdown(faq?: LessonFaqItem[] | null): string {
+  const rows = (faq ?? []).filter((f) => f.question?.trim() && f.answer?.trim())
+  if (rows.length === 0) return ''
+  return '\n\n## FAQ\n\n' + rows.map((f) => `### ${f.question.trim()}\n\n${f.answer.trim()}`).join('\n\n')
+}
+
 /**
  * A full, self-attributing Markdown document for one lesson: title, a `Source:`
- * line with the canonical URL (so an LLM that ingests it can cite us), then body.
+ * line with the canonical URL (so an LLM that ingests it can cite us), body,
+ * and — when authored — a FAQ section (Markdown-only; not on the HTML page).
  */
-export function lessonToMarkdownDoc(title: string, sourceUrl: string, content: unknown): string {
-  return `# ${title}\n\nSource: ${sourceUrl}\n\n${lexicalToMarkdown(content)}\n`
+export function lessonToMarkdownDoc(
+  title: string,
+  sourceUrl: string,
+  content: unknown,
+  faq?: LessonFaqItem[] | null,
+): string {
+  return `# ${title}\n\nSource: ${sourceUrl}\n\n${lexicalToMarkdown(content)}${faqToMarkdown(faq)}\n`
 }

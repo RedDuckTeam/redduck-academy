@@ -11,7 +11,7 @@ import { errorSchema } from './schemas'
 export const getLessonDesc = describeRoute({
   summary: 'Get lesson by slug',
   description:
-    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden. AI-only fields (aiTaskSummary, aiExpectedResult) are stripped.',
+    'Returns a single lesson with questions and options. Strips correct answers from options for test lessons. For review_task lessons, includes reviewGradingTasks (title, isRequired, optional criteria); rows marked hide criteria in admin omit criteria in the payload and set criteriaHidden. AI-only fields (aiTaskSummary, aiExpectedResult) are stripped. Includes `faq` rows (question/answer) used by the frontend for FAQPage JSON-LD and the Markdown representation.',
   tags: ['Lessons'],
   responses: {
     200: {

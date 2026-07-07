@@ -247,6 +247,16 @@ export interface Lesson {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * FAQ for search engines and AI crawlers — emitted as FAQPage JSON-LD and a "## FAQ" section in the lesson's Markdown representation. NOT rendered on the lesson page. Write 2–4 short questions phrased the way a learner would ask them, each with a self-contained 2–4 sentence answer. Never restate quiz questions or their answers.
+   */
+  faq?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
   questions?:
     | {
         question: {
@@ -673,6 +683,13 @@ export interface LessonsSelect<T extends boolean = true> {
   order?: T;
   type?: T;
   content?: T;
+  faq?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
   questions?:
     | T
     | {

@@ -356,6 +356,29 @@ export const Lessons: CollectionConfig = {
         description: 'Shown to students. For review tasks, use this as the learner-facing task description.',
       },
     },
+    {
+      name: 'faq',
+      type: 'array',
+      admin: {
+        description:
+          'FAQ for search engines and AI crawlers — emitted as FAQPage JSON-LD and a "## FAQ" section in the ' +
+          'lesson\'s Markdown representation. NOT rendered on the lesson page. Write 2–4 short questions phrased ' +
+          'the way a learner would ask them, each with a self-contained 2–4 sentence answer. Never restate quiz ' +
+          'questions or their answers.',
+      },
+      fields: [
+        {
+          name: 'question',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'answer',
+          type: 'textarea',
+          required: true,
+        },
+      ],
+    },
     // --------------------------------------------------------------------------
     // Test Fields
     {
