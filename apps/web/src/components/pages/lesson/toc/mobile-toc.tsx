@@ -5,6 +5,7 @@ import { TableOfContentsIcon } from '@/components/ui/icons/table-of-contents'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { cn } from '@/lib/utils'
 import { useToc } from './use-toc'
+import { lessonRouteApi } from '@/lib/lesson-route'
 import { scrollToHeading } from './scroll-to-heading'
 
 interface MobileTocProps {
@@ -14,7 +15,8 @@ interface MobileTocProps {
 const SCROLL_OFFSET = 160
 
 export function MobileToc({ lesson }: MobileTocProps) {
-  const { items, activeId, activeItem } = useToc(lesson)
+  const { lessonBody } = lessonRouteApi.useLoaderData()
+  const { items, activeId, activeItem } = useToc(lesson, lessonBody)
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLElement>(null)
 

@@ -1,3 +1,6 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { CONTENT_ASSET_PREFIX } from './src/lib/content/paths'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
@@ -117,10 +120,73 @@ function sentrySsrStub(): Plugin {
   }
 }
 
+// Serves the open-source `content/` Markdown tree (repo root) as static assets at
+// `/_content/<course>/<module>/<lesson>.md` — in dev straight from disk, and in the
+// prod build emitted into the client output so Cloudflare serves them from its CDN
+// (NOT bundled into the Worker or the client JS). The SSR loader fetches the current
+// lesson's file at request time; see lib/content/lesson-body.
+function contentAssets(): Plugin {
+  const CONTENT_DIR = path.resolve(import.meta.dirname, '../../content')
+  const PREFIX = CONTENT_ASSET_PREFIX
+  const EMIT_DIR = CONTENT_ASSET_PREFIX.replace(/^\//, '') // "_content/" without the leading slash
+
+  async function mdFiles(dir: string): Promise<string[]> {
+    const out: string[] = []
+    for (const e of await fs.readdir(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name)
+      if (e.isDirectory()) out.push(...(await mdFiles(p)))
+      else if (e.name.endsWith('.md')) out.push(p)
+    }
+    return out
+  }
+
+  return {
+    name: 'content-assets',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url
+        if (!url || !url.startsWith(PREFIX)) return next()
+        const rel = decodeURIComponent(url.slice(PREFIX.length).split('?')[0])
+        const filePath = path.join(CONTENT_DIR, rel)
+        // Guard against path traversal; only serve Markdown.
+        if (!filePath.startsWith(CONTENT_DIR + path.sep) || !filePath.endsWith('.md')) return next()
+        fs.readFile(filePath).then(
+          (data) => {
+            res.setHeader('Content-Type', 'text/markdown; charset=utf-8')
+            res.end(data)
+          },
+          () => next(),
+        )
+      })
+    },
+    async generateBundle() {
+      // Emit only into the client build (the source of Cloudflare static assets).
+      if (this.environment && this.environment.name !== 'client') return
+      for (const abs of await mdFiles(CONTENT_DIR)) {
+        const rel = path.relative(CONTENT_DIR, abs).split(path.sep).join('/')
+        this.emitFile({ type: 'asset', fileName: `${EMIT_DIR}${rel}`, source: await fs.readFile(abs) })
+      }
+    },
+  }
+}
+
 const config = defineConfig({
   optimizeDeps: {
     // Pre-bundle browser-only PDF/image libs so dev-server dynamic imports resolve cleanly.
-    include: ['jspdf', 'html-to-image'],
+    // The markdown stack (used by MarkdownContent) is pre-bundled too, otherwise the dev
+    // server re-optimizes mid-request the first time a lesson renders and briefly loads a
+    // second React copy (Invalid hook call in SSR).
+    include: [
+      'jspdf',
+      'html-to-image',
+      'react-markdown',
+      'remark-gfm',
+      'rehype-raw',
+      'rehype-sanitize',
+      'hast-util-to-html',
+      'mdast-util-from-markdown',
+      'mdast-util-to-string',
+    ],
   },
   resolve: {
     alias: [
@@ -133,6 +199,7 @@ const config = defineConfig({
   },
   plugins: [
     assertRequiredEnv(),
+    contentAssets(),
     privySsrStub(),
     posthogSsrStub(),
     sentrySsrStub(),

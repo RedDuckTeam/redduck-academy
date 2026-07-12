@@ -23,6 +23,8 @@ import {
 } from '@/lib/seo'
 import { JsonLd } from '@/components/seo/json-ld'
 import { RichText } from '@/components/ui/rich-text'
+import { MarkdownContent } from '@/components/ui/markdown-content'
+import { loadLessonBody } from '@/lib/content/lesson-body'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
 import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
@@ -39,7 +41,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
   },
   loader: async ({ params, context: { queryClient } }) => {
     try {
-      const [lesson, course] = await Promise.all([
+      const [lesson, course, lessonBody] = await Promise.all([
         queryClient.ensureQueryData({
           queryKey: queryKeys.lessons.detail(params.courseSlug, params.lessonSlug),
           queryFn: () => getLesson(params.courseSlug, params.lessonSlug),
@@ -50,6 +52,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
           queryFn: () => getCourse(params.courseSlug),
           staleTime: 30 * 60 * 1000,
         }),
+        loadLessonBody(params.courseSlug, params.moduleSlug, params.lessonSlug),
       ])
       if (!lesson?.data || !course?.data) throw notFound()
       return {
@@ -58,6 +61,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
         courseSlug: params.courseSlug,
         moduleSlug: params.moduleSlug,
         lessonSlug: params.lessonSlug,
+        lessonBody,
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) throw notFound()
@@ -71,6 +75,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
       courseSlug: params.courseSlug,
       moduleSlug: params.moduleSlug,
       lessonSlug: params.lessonSlug,
+      markdownBody: loaderData.lessonBody,
     })
   },
   component: LessonPage,
@@ -83,7 +88,9 @@ function LessonNotFound() {
 }
 
 function LessonPage() {
-  const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
+  const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug, lessonBody } = Route.useLoaderData()
+  // Prose is served from the open-source content/ files (static assets, resolved in the
+  // loader); fall back to the DB Lexical only if no file exists (e.g. a row not yet dumped).
   const { error: userLessonError } = useLessonForUser(courseSlug, lessonSlug)
   useLessonCompletionToast({ courseSlug, lessonSlug, lessonTitle: lesson.title })
   const isCodingChallenge = lesson.type === 'coding_task'
@@ -98,7 +105,7 @@ function LessonPage() {
     >
       <JsonLd
         data={[
-          buildLessonLd({ lesson, courseTitle, courseSlug, moduleSlug, lessonSlug }),
+          buildLessonLd({ lesson, courseTitle, courseSlug, moduleSlug, lessonSlug, markdownBody: lessonBody }),
           ...(faqLd ? [faqLd] : []),
           buildBreadcrumbLd([
             { name: courseTitle, url: absoluteUrl(`/courses/${courseSlug}`) },
@@ -138,9 +145,11 @@ function LessonPage() {
             <LessonContentContainer>
               <>
                 <LessonTitle title={lesson.title} />
-                {lesson.content && (
+                {lessonBody != null ? (
+                  <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
+                ) : lesson.content ? (
                   <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
-                )}
+                ) : null}
               </>
 
               {lesson.type === 'lecture' && <LessonLecture lesson={lesson} courseSlug={courseSlug} />}

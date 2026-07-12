@@ -188,15 +188,16 @@ function faqToMarkdown(faq?: LessonFaqItem[] | null): string {
 }
 
 /**
- * A full, self-attributing Markdown document for one lesson: title, a `Source:`
- * line with the canonical URL (so an LLM that ingests it can cite us), body,
- * and — when authored — a FAQ section (Markdown-only; not on the HTML page).
+ * A full, self-attributing Markdown document for one lesson: title, a `Source:` line
+ * with the canonical URL (so an LLM that ingests it can cite us), the body (already
+ * Markdown, from the `content/` files), and — when authored — a FAQ section
+ * (Markdown-only; not on the HTML page).
  */
-export function lessonToMarkdownDoc(
+export function lessonMarkdownDoc(
   title: string,
   sourceUrl: string,
-  content: unknown,
+  bodyMarkdown: string,
   faq?: LessonFaqItem[] | null,
 ): string {
-  return `# ${title}\n\nSource: ${sourceUrl}\n\n${lexicalToMarkdown(content)}${faqToMarkdown(faq)}\n`
+  return `# ${title}\n\nSource: ${sourceUrl}\n\n${bodyMarkdown.trim()}${faqToMarkdown(faq)}\n`
 }

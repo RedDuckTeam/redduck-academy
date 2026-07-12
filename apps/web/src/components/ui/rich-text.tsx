@@ -3,10 +3,11 @@ import { Link } from '@tanstack/react-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
-import { EmbedFrame } from '@/components/ui/embed-frame'
 import { BlockMiningSimulator } from '@/components/ui/block-mining-simulator'
-import { extractText, slugify } from '@/components/pages/lesson/toc/build-toc-items'
+import { createSlugDeduper, extractText } from '@/components/pages/lesson/toc/build-toc-items'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { anchorStyles, blockquoteStyles, codeStyles, svgWrapperClass } from '@/components/ui/rich-content-styles'
+import { BLOCK_MINING_SHORTCODE, detectEmbed } from '@/components/ui/embeds'
 
 type EnrichedLessonDoc = {
   href?: string
@@ -19,69 +20,20 @@ interface CustomRichTextProps {
   paragraphClassName?: string
 }
 
-const blockquoteStyles =
-  '[&_blockquote]:text [&_blockquote]:pl-2.5 [&_blockquote]:border-l [&_blockquote]:border-border'
-const anchorStyles = '[&_a]:text-primary [&_a]:underline'
-
-const codeStyles =
-  '[&_p_code]:bg-border/40 [&_p_code]:text-primary [&_p_code]:border [&_p_code]:border-border [&_p_code]:rounded-[2px] [&_p_code]:px-[3px] [&_p_code]:py-[0px]'
-
 const ulMarkerClassName = 'mt-[0.45em] h-2.5 w-2.5 shrink-0 bg-black dark:bg-white'
-
-function getEthBuildUrl(text: string): string | null {
-  const trimmed = text.trim()
-  try {
-    const url = new URL(trimmed)
-    if (url.hostname === 'sandbox.eth.build' || url.hostname === 'eth.build') {
-      return trimmed
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-function getPlgrndUrl(text: string): string | null {
-  const trimmed = text.trim()
-  try {
-    const url = new URL(trimmed)
-    if (url.hostname === 'plgrnd.io' || url.hostname.endsWith('.plgrnd.io')) {
-      return trimmed
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-function getYoutubeEmbedUrl(text: string): string | null {
-  const trimmed = text.trim()
-  try {
-    const url = new URL(trimmed)
-    let videoId: string | null = null
-    if (url.hostname === 'youtu.be') {
-      videoId = url.pathname.slice(1).split('?')[0]
-    } else if (url.hostname === 'www.youtube.com' || url.hostname === 'youtube.com') {
-      videoId = url.searchParams.get('v')
-    }
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null
-  } catch {
-    return null
-  }
-}
 
 export function RichText({ data, className, paragraphClassName }: CustomRichTextProps) {
   if (!data) return null
 
-  // Mirrors the TOC's slug-dedup counter so heading ids match the TOC's hrefs even when
-  // Lexical splits a heading across multiple text nodes (e.g. mixed inline formatting).
-  const slugCounts = new Map<string, number>()
+  // Mirrors the TOC's slug-dedup so heading ids match the TOC's hrefs even when Lexical
+  // splits a heading across multiple text nodes (e.g. mixed inline formatting).
+  const nextHeadingId = createSlugDeduper()
 
   // Pasted multi-line SVG markup arrives as one paragraph per line. Buffer across paragraphs
   // and emit the full SVG when </svg> is reached; continuation paragraphs render nothing.
   let svgBuffer: string | null = null
 
-  const svgClass = 'my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full'
+  const svgClass = svgWrapperClass
 
   const renderSvg = (markup: string) => {
     const raw = markup ?? ''
@@ -147,10 +99,7 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               variant: 'main-18' as const,
               element: 'p' as const,
             }
-            const baseSlug = slugify(extractText(node).trim())
-            const count = slugCounts.get(baseSlug) ?? 0
-            slugCounts.set(baseSlug, count + 1)
-            const id = count === 0 ? baseSlug : `${baseSlug}-${count + 1}`
+            const id = nextHeadingId(extractText(node).trim())
             return (
               <div id={id} className="scroll-mt-20">
                 <Text variant={variant} element={element} className="mb-3! font-medium">
@@ -181,46 +130,12 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
               return <></>
             }
 
-            const textNode = node.children[0] as unknown as { type?: 'autolink'; fields?: { url?: string } }
-            if (
-              textNode?.type === 'autolink' &&
-              (textNode.fields?.url?.includes('youtube.com') || textNode.fields?.url?.includes('youtu.be'))
-            ) {
-              const embedUrl = getYoutubeEmbedUrl(textNode.fields?.url ?? '')
-              if (embedUrl) {
-                return (
-                  <div className="aspect-video w-full overflow-hidden rounded-xl my-4">
-                    <iframe
-                      src={embedUrl}
-                      title="YouTube video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="h-full w-full"
-                    />
-                  </div>
-                )
-              }
+            const textNode = node.children[0] as unknown as { type?: string; fields?: { url?: string } }
+            if (textNode?.type === 'autolink' || textNode?.type === 'link') {
+              const embed = detectEmbed(textNode.fields?.url ?? '')
+              if (embed) return embed
             }
-            if (
-              (textNode?.type === 'autolink' || textNode?.type === 'link') &&
-              (textNode.fields?.url?.includes('sandbox.eth.build') || textNode.fields?.url?.includes('eth.build'))
-            ) {
-              const ethBuildUrl = getEthBuildUrl(textNode.fields?.url ?? '')
-              if (ethBuildUrl) {
-                return <EmbedFrame src={ethBuildUrl} title="eth.build interactive flow" />
-              }
-            }
-
-            if (
-              (textNode?.type === 'autolink' || textNode?.type === 'link') &&
-              textNode.fields?.url?.includes('plgrnd.io')
-            ) {
-              const plgrndUrl = getPlgrndUrl(textNode.fields?.url ?? '')
-              if (plgrndUrl) {
-                return <EmbedFrame src={plgrndUrl} title="plgrnd.io interactive flow" />
-              }
-            }
-            if (trimmed === '[[block-mining]]') {
+            if (trimmed === BLOCK_MINING_SHORTCODE) {
               return <BlockMiningSimulator />
             }
             return (

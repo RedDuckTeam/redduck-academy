@@ -1,6 +1,5 @@
 import { createMiddleware, createStart } from '@tanstack/react-start'
-import { getLesson } from '@/lib/api/courses'
-import { lessonToMarkdownDoc } from '@/lib/lexical-to-markdown'
+import { buildLessonMarkdownDoc } from '@/lib/content/lesson-markdown'
 
 // Content negotiation for AI agents: serve a lesson as Markdown (with diagram
 // descriptions + a Source line) at the same URL as its HTML page when the request
@@ -10,7 +9,7 @@ import { lessonToMarkdownDoc } from '@/lib/lexical-to-markdown'
 // request-middleware request overrides so we can't make it render HTML instead.
 // Non-markdown requests pass through; lesson HTML responses get `Vary: Accept`
 // so shared caches keep the two representations apart.
-const LESSON_PATH = /^\/courses\/([^/]+)\/[^/]+\/([^/]+)\/?$/
+const LESSON_PATH = /^\/courses\/([^/]+)\/([^/]+)\/([^/]+)\/?$/
 const CACHE_TTL_SECONDS = 6 * 60 * 60
 
 const markdownHeaders = {
@@ -41,9 +40,9 @@ const markdownForAgents = createMiddleware({ type: 'request' }).server(async ({ 
   const lesson = LESSON_PATH.exec(pathname)
   if (lesson) {
     try {
-      const { data } = await getLesson(decodeURIComponent(lesson[1]), decodeURIComponent(lesson[2]))
+      const [, course, module, lessonSlug] = lesson.map((s) => (s ? decodeURIComponent(s) : s))
       const { origin } = new URL(request.url)
-      return new Response(lessonToMarkdownDoc(data.title, `${origin}${pathname}`, data.content, data.faq), {
+      return new Response(await buildLessonMarkdownDoc(course, module, lessonSlug, `${origin}${pathname}`), {
         headers: markdownHeaders,
       })
     } catch {
