@@ -16,11 +16,12 @@ import adminApp from './services/admin/admin.routes'
 import { AppError, GENERIC_ERROR_MESSAGE } from './lib/errors'
 import { Logger } from './lib/logger'
 import { env } from './env'
+import { isAllowedOrigin, parseAllowedOrigins } from './lib/allowed-origins'
 import { installProcessLifecycle } from './lib/process-lifecycle'
 
 const port = Number(process.env.PORT) || 3001
 const backendOrigin = `http://localhost:${port}`
-const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS)
 
 const app = new Hono({ strict: false })
 const rootLogger = new Logger('HonoApp')
@@ -43,7 +44,7 @@ app.onError((err, c) => {
 app.use(
   '/api/*',
   cors({
-    origin: allowedOrigins,
+    origin: (origin) => (origin && isAllowedOrigin(origin, allowedOrigins) ? origin : null),
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     exposeHeaders: ['Content-Length'],
