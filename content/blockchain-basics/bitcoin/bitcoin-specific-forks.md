@@ -40,11 +40,11 @@ A **hard fork** is a change that the old rules don't accept. Blocks valid under 
 
 The next three stories are: two successful soft forks, SegWit and Taproot, and one hard fork, Bitcoin Cash, that split the network in two.
 
-<svg role="img" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin timeline: SegWit and Taproot soft forks, Bitcoin Cash hard fork</title><desc>A timeline runs from Bitcoin's launch in 2009 to 2021. Soft forks, SegWit (2017) and Taproot (2021), sit above the line, while the Bitcoin Cash hard fork (2017) sits below, showing where the chain split.</desc>
-  <text x="360" y="30" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Three real Bitcoin upgrades</text>
+<svg role="img" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin timeline: SegWit and Taproot soft forks, Bitcoin Cash hard fork</title><desc>A timeline runs from Bitcoin's launch in 2009 to 2021. Soft forks, SegWit (2017) and Taproot (2021), sit above the line, while the Bitcoin Cash hard fork (2017) sits below, showing where the chain split</desc>
+<text x="360" y="30" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Three real Bitcoin upgrades</text>
 
 <text x="180" y="80" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">soft forks (everyone stays on one chain) sit above</text>
-  <text x="180" y="200" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">hard forks (the chain can split) sit below</text>
+<text x="180" y="200" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">hard forks (the chain can split) sit below</text>
 
 <line x1="40" y1="140" x2="680" y2="140" stroke="#000000" stroke-width="2"/>
 
@@ -91,11 +91,11 @@ That disagreement was deep enough that no compromise emerged. So on the same day
 This is what a hard fork looks like in practice.
 
 <svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin hard fork splitting into Bitcoin (BTC) and Bitcoin Cash (BCH)</title><desc>A shared history box leads to a last shared point, which then splits into two paths: Bitcoin (BTC), where old rules continue, and Bitcoin Cash (BCH), a new chain with new rules. Notes explain that both chains share the same history up to the split and diverge forever after, and anyone holding 1 BTC at the split also held 1 BCH on the new chain.</desc>
-  <defs>
-    <marker id="arr45" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
-    </marker>
-  </defs>
+<defs>
+<marker id="arr45" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
+</marker>
+</defs>
 
 <text x="360" y="25" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">A chain splits in two</text>
 
@@ -123,7 +123,7 @@ This is what a hard fork looks like in practice.
 <line x1="580" y1="185" x2="660" y2="185" stroke="#ed4937" stroke-width="2" stroke-dasharray="4 2"/>
 
 <text x="360" y="245" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Up to the split, both chains share the same history. After, they diverge forever.</text>
-  <text x="360" y="263" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Anyone holding 1 BTC at the split moment also held 1 BCH on the new chain.</text>
+<text x="360" y="263" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Anyone holding 1 BTC at the split moment also held 1 BCH on the new chain.</text>
 </svg>
 
 The shared history is the key idea. Up to the split moment, both chains are literally the same chain. The same blocks, the same balances, the same transaction history. After the split, the two networks operate independently and never reconnect. Both still produce blocks today.
