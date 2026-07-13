@@ -4,4 +4,10 @@
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  // Exposes the static assets (the `content/` Markdown emitted to dist/client/_content)
+  // to the Worker as `env.ASSETS`, so the SSR loader can read a lesson's file. The plugin
+  // fills in the assets directory from the client build.
+  "assets": {
+    "binding": "ASSETS",
+  },
 }
