@@ -10,7 +10,7 @@ import * as Sentry from '@sentry/tanstackstart-react'
 // Why: errors caught by a React error boundary (e.g. TanStack Router's error component) never
 // reach `window.onerror`, so Sentry's window-based autocapture misses them. This forwards
 // every boundary-caught render error to Sentry (including TanStack Router's `errorComponent`
-// and our own `ErrorBoundary`), so a single hook covers all custom boundaries.
+// and our own `ErrorBoundary`), so a single hook covers all custom boundaries
 //
 // We deliberately do NOT override `onUncaughtError`: React's default calls `reportError()`, which
 // already surfaces uncaught errors to `window.onerror` and thus to Sentry autocapture. Overriding
