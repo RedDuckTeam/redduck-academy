@@ -99,6 +99,18 @@ function validate(file, raw, meta, sets) {
   optType('id', 'number')
   optType('isHidden', 'boolean')
 
+  // `id` is the stable link to the CMS row. It must be a positive integer and unique
+  // among files of the same kind (courses, modules, and lessons each have their own id
+  // sequence in the CMS), so two of them can never claim the same DB row.
+  if (typeof data.id === 'number') {
+    if (!Number.isInteger(data.id) || data.id <= 0) err('id: must be a positive integer')
+    const rel = relative(ROOT, file)
+    const others = (sets.idOwners.get(`${c.role}:${data.id}`) ?? []).filter((o) => o !== rel)
+    if (others.length) {
+      err(`id ${data.id} is already used by another ${c.role} (${others.join(', ')}) — pick a fresh one with \`node scripts/new-id.mjs\``)
+    }
+  }
+
   for (const k of Object.keys(data)) {
     if (!ALLOWED[c.role].includes(k)) warn.push(`unknown field "${k}" (allowed: ${ALLOWED[c.role].join(', ')})`)
   }
@@ -134,11 +146,21 @@ function validate(file, raw, meta, sets) {
 async function main() {
   const all = (await mdFiles(CONTENT)).sort()
   // Build the set of existing course/module metadata for parent checks.
-  const sets = { courses: new Set(), modules: new Set() }
+  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map() }
   for (const f of all) {
     const c = classify(relative(CONTENT, f))
     if (c.role === 'course') sets.courses.add(c.course)
     if (c.role === 'module') sets.modules.add(`${c.course}/${c.module}`)
+    // Collect declared ids per role. Payload gives each collection its own id sequence,
+    // so a course, a module, and a lesson may legitimately share a number — only a clash
+    // within the same role means two files point at the same DB row.
+    const { data } = parseFrontmatter(await readFile(f, 'utf8'))
+    if (data && typeof data.id === 'number' && c.role !== 'unknown') {
+      const key = `${c.role}:${data.id}`
+      const owners = sets.idOwners.get(key) ?? []
+      owners.push(relative(ROOT, f))
+      sets.idOwners.set(key, owners)
+    }
   }
 
   const argFile = process.argv[2]

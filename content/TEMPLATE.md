@@ -1,8 +1,10 @@
 ---
-# Copy this file to content/<course-slug>/<module-slug>/<your-lesson-slug>.md,
-# then delete these comment lines and fill it in. See README.md for the full reference.
-#
-# New lessons: OMIT `id` (a maintainer assigns it when your PR is merged).
+# HOW TO USE THIS TEMPLATE — full guide in README.md
+#   1. Copy this file to  content/<course>/<module>/<your-lesson-slug>.md
+#      (the file name becomes the lesson's URL slug: lowercase, hyphens).
+#   2. Run  node scripts/new-id.mjs  and paste the number below.
+#   3. Delete these comment lines, then fill in the rest.
+id: 0 # ← replace with the number from `node scripts/new-id.mjs`
 title: Your lesson title
 type: lecture # lecture | test | coding_task | review_task — new files must be "lecture"
 order: 10 # position within the module; gaps (10, 20, 30) leave room to insert later

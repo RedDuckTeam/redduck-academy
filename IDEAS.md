@@ -1,2 +1,0 @@
-- Add README file for the big projects and give some points if user cant write code but can think of the valid solution
-- Add strict time limit to complete the task

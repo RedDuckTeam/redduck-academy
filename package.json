@@ -77,6 +77,7 @@
     "contracts:compile": "yarn workspace contracts compile",
     "content:fetch": "node scripts/fetch-lessons-content.mjs",
     "content:extract": "node scripts/extract-lessons-text.mjs",
+    "content:db-sync": "tsx scripts/sync-content-db.ts",
     "content:sync": "yarn content:fetch && yarn content:extract && git add content-md && (git diff --cached --quiet || git commit -m \"chore: update lesson markdown\") && git subtree push --prefix=content-md content-export main",
     "heroku-postbuild": "yarn workspace backend build && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   }

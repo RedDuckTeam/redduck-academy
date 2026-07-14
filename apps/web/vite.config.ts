@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { CONTENT_ASSET_PREFIX } from './src/lib/content/paths'
+import { buildContentTree, coursesIndexJson, courseManifestJson } from './src/lib/content/build-manifest'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
@@ -125,6 +126,12 @@ function sentrySsrStub(): Plugin {
 // prod build emitted into the client output so Cloudflare serves them from its CDN
 // (NOT bundled into the Worker or the client JS). The SSR loader fetches the current
 // lesson's file at request time; see lib/content/lesson-body.
+//
+// Alongside the prose it emits two structure manifests built from the files' frontmatter,
+// so the whole program and any lecture render with no backend (see lib/content/manifest):
+//   • `/_content/_courses.json`           — every course, structure only (program pages).
+//   • `/_content/<course>/_manifest.json` — one course's structure + per-lesson faq
+//                                            (loaded on a lesson page, that course only).
 function contentAssets(): Plugin {
   const CONTENT_DIR = path.resolve(import.meta.dirname, '../../content')
   const PREFIX = CONTENT_ASSET_PREFIX
@@ -143,10 +150,39 @@ function contentAssets(): Plugin {
   return {
     name: 'content-assets',
     configureServer(server) {
+      // Rebuild the tree lazily and cache it; invalidate whenever a content file changes so
+      // a new/edited lesson shows up on the next request without restarting the dev server.
+      let treeCache: ReturnType<typeof buildContentTree> | null = null
+      const getTree = () => (treeCache ??= buildContentTree(CONTENT_DIR))
+      server.watcher.add(CONTENT_DIR)
+      server.watcher.on('all', (_event, file) => {
+        if (file.startsWith(CONTENT_DIR + path.sep)) treeCache = null
+      })
+
+      const sendJson = (res: import('node:http').ServerResponse, body: string) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(body)
+      }
+
       server.middlewares.use((req, res, next) => {
         const url = req.url
         if (!url || !url.startsWith(PREFIX)) return next()
         const rel = decodeURIComponent(url.slice(PREFIX.length).split('?')[0])
+
+        if (rel === '_courses.json') {
+          getTree().then((tree) => sendJson(res, coursesIndexJson(tree)), () => next())
+          return
+        }
+        const courseManifest = rel.match(/^([^/]+)\/_manifest\.json$/)
+        if (courseManifest) {
+          getTree().then((tree) => {
+            const course = tree.find((c) => c.slug === courseManifest[1])
+            if (!course) return next()
+            sendJson(res, courseManifestJson(course))
+          }, () => next())
+          return
+        }
+
         const filePath = path.join(CONTENT_DIR, rel)
         // Guard against path traversal; only serve Markdown.
         if (!filePath.startsWith(CONTENT_DIR + path.sep) || !filePath.endsWith('.md')) return next()
@@ -165,6 +201,16 @@ function contentAssets(): Plugin {
       for (const abs of await mdFiles(CONTENT_DIR)) {
         const rel = path.relative(CONTENT_DIR, abs).split(path.sep).join('/')
         this.emitFile({ type: 'asset', fileName: `${EMIT_DIR}${rel}`, source: await fs.readFile(abs) })
+      }
+      // Structure manifests derived from the same files' frontmatter.
+      const tree = await buildContentTree(CONTENT_DIR)
+      this.emitFile({ type: 'asset', fileName: `${EMIT_DIR}_courses.json`, source: coursesIndexJson(tree) })
+      for (const course of tree) {
+        this.emitFile({
+          type: 'asset',
+          fileName: `${EMIT_DIR}${course.slug}/_manifest.json`,
+          source: courseManifestJson(course),
+        })
       }
     },
   }
