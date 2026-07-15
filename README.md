@@ -71,10 +71,17 @@ locally or self-host your own copy, see:
 
 Contributing lecture content needs none of this — just the guide above.
 
-## License and disclaimer
+## License
 
-This project is provided **as is**, with no warranty of any kind. RedDuck is **not
-responsible** for any loss, damage, or breakage arising from using, modifying, forking, or
-deploying it. If you change it and something breaks, that is on you.
+RedDuck Academy is split in two:
 
-You are free to fork the academy and use the code for your own purposes, at your own risk.
+- **Platform code** — everything outside `content/` — is licensed under the **MIT License**. See
+  [`LICENSE`](LICENSE). Fork it, adapt it, deploy it.
+- **Lecture content** — the Markdown under `content/` — is licensed under **Creative Commons
+  Attribution-ShareAlike 4.0** ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)).
+  See [`content/LICENSE`](content/LICENSE). You may reuse and adapt it with attribution to RedDuck
+  Academy, as long as you keep derivatives under the same license.
+
+Both are provided **as is**, with no warranty of any kind. RedDuck is **not responsible** for any
+loss, damage, or breakage arising from using, modifying, forking, or deploying it. If you change it
+and something breaks, that is on you.
