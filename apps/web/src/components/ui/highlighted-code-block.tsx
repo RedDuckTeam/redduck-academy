@@ -2,8 +2,13 @@ import { useEffect, useState, useCallback } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { createHighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
-import { bundledLanguages } from 'shiki/langs'
-import { bundledThemes } from 'shiki/themes'
+// Import ONLY the languages/theme we use, directly. Importing the `bundledLanguages` /
+// `bundledThemes` maps instead pulls every shiki grammar (~200 of them: emacs-lisp, wolfram,
+// cpp…) into the bundle, and on Cloudflare Workers every module counts toward the size limit.
+import typescript from '@shikijs/langs/typescript'
+import rust from '@shikijs/langs/rust'
+import solidity from '@shikijs/langs/solidity'
+import vitesseDark from '@shikijs/themes/vitesse-dark'
 import type { HighlighterCore } from 'shiki/core'
 import type { CodingLanguage } from '@/types/lesson'
 import { CODING_LANGUAGES } from '@/lib/utils'
@@ -13,8 +18,8 @@ let highlighterPromise: Promise<HighlighterCore> | null = null
 function getHighlighter(): Promise<HighlighterCore> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighterCore({
-      themes: [bundledThemes['vitesse-dark']],
-      langs: [bundledLanguages.typescript, bundledLanguages.rust, bundledLanguages.solidity],
+      themes: [vitesseDark],
+      langs: [typescript, rust, solidity],
       engine: createJavaScriptRegexEngine(),
     })
   }
