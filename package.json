@@ -61,6 +61,7 @@
     "typescript": "^5.7.2"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "solc-utils:build-stdlib": "yarn workspace @redduck/solc-utils build:stdlib",
     "payload-config:generate": "yarn workspace @redduck/payload-config generate",
     "admin:build": "yarn workspace admin build",
@@ -78,6 +79,8 @@
     "content:fetch": "node scripts/fetch-lessons-content.mjs",
     "content:extract": "node scripts/extract-lessons-text.mjs",
     "content:db-sync": "tsx scripts/sync-content-db.ts",
+    "content:index": "node scripts/generate-course-index.mjs",
+    "content:index:check": "node scripts/generate-course-index.mjs --check",
     "content:sync": "yarn content:fetch && yarn content:extract && git add content-md && (git diff --cached --quiet || git commit -m \"chore: update lesson markdown\") && git subtree push --prefix=content-md content-export main",
     "heroku-postbuild": "yarn workspace backend build && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   }
