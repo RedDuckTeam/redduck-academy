@@ -2,7 +2,7 @@
 // is produced by scripts/dump-content.mjs (`---\n…\n---\n`); this is its sole reader
 // in the app, so keep the delimiter contract here in one place.
 
-export const FRONTMATTER_RE = /^---\n[\s\S]*?\n---\n?/
+export const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/
 
 /** Strip the leading YAML frontmatter block from a Markdown string. */
 export function stripFrontmatter(raw: string): string {

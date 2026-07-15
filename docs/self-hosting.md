@@ -8,7 +8,7 @@ RedDuck Academy is a monorepo with three deployable apps:
 
 | App | Stack | Hosting | Workflow |
 |---|---|---|---|
-| `apps/web` | TanStack Start + Vite | Cloudflare Workers | `.github/workflows/deploy-web.yml` |
+| `apps/web` | TanStack Start + Vite | Cloudflare Workers | manual: `yarn workspace web deploy` |
 | `apps/backend` | Hono (Node) | Heroku | `.github/workflows/deploy-backend.yml` |
 | `apps/admin` | Next.js + Payload CMS | Vercel | `.github/workflows/deploy-admin.yml` |
 
@@ -47,6 +47,8 @@ You'll need values for `PAYLOAD_SECRET` and `BETTER_AUTH_SECRET`. **`PAYLOAD_SEC
 
 ```env
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
+
+ALLOWED_ORIGINS=https://yourdomain.com   # required; comma-separated CORS allowlist, supports *.sub wildcards
 
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=https://api.yourdomain.com/api/auth
@@ -156,8 +158,9 @@ All variables from the `apps/backend` env section above. `PORT` is set automatic
 After your first deploy, update production URLs in source:
 
 - `apps/backend/src/lib/auth.ts` — add your frontend URL to `trustedOrigins`
-- `apps/backend/src/index.ts` — add your frontend URL to CORS `origin`
 - `apps/backend/src/lib/auth.ts` — set `siwe({ domain: 'yourdomain.com', ... })`
+
+CORS itself needs no source edit — it reads the `ALLOWED_ORIGINS` env var above.
 
 ---
 
@@ -189,15 +192,11 @@ All variables from the `apps/admin` env section. Sensitive flag is fine — runt
 
 ## 6. Deploy: `apps/web` → Cloudflare Workers
 
-Deployment is push-to-deploy via `.github/workflows/deploy-web.yml`.
+Deploy manually with `yarn workspace web deploy` from the repo root, which runs `yarn build && wrangler deploy`. There is no GitHub Actions workflow for the web app.
 
-**GitHub Actions secrets:**
+**Cloudflare auth:** run `wrangler login` once, or set `CLOUDFLARE_API_TOKEN` (a token with `Workers Scripts: Edit`) in your shell before deploying.
 
-| Secret | Value |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | token with `Workers Scripts: Edit` |
-
-**GitHub Actions variables** (`vars`, not `secrets` — these end up in the client bundle):
+**Build-time client variables** (baked into the client bundle from `apps/web/.env`, so they are public — never secrets):
 
 | Variable | Notes |
 |---|---|
@@ -206,7 +205,7 @@ Deployment is push-to-deploy via `.github/workflows/deploy-web.yml`.
 | `VITE_PRIVY_APP_ID` | Privy project ID |
 | `VITE_CHAIN_ENV` | `mainnet` or `testnet` |
 
-Worker config lives in `apps/web/wrangler.jsonc`. The workflow runs `yarn deploy` which builds and `wrangler deploy`s.
+Worker config lives in `apps/web/wrangler.jsonc`.
 
 **Reown AppKit project ID** is hardcoded in `apps/web/src/constants/wallet-config.ts`. The current ID is for `redduck.academy` — create a new one at [cloud.reown.com](https://cloud.reown.com) for a different domain.
 
@@ -216,10 +215,10 @@ Worker config lives in `apps/web/wrangler.jsonc`. The workflow runs `yarn deploy
 
 1. Provision Postgres, R2, Google OAuth, OpenAI key, GitHub PAT.
 2. Set Heroku config vars + GitHub secrets for the backend workflow. Push to `main` (or trigger workflow). Note the deployed URL.
-3. Update `BETTER_AUTH_URL`, `trustedOrigins`, CORS origins, and SIWE domain in backend source. Push again.
+3. Update `BETTER_AUTH_URL`, `trustedOrigins`, and SIWE domain in backend source, and set the `ALLOWED_ORIGINS` env var. Push again.
 4. Set Vercel env vars + GitHub secrets for the admin workflow. Push.
 5. Visit `/admin` on the admin URL → create first Payload admin user → add courses/modules/lessons.
-6. Set Cloudflare token + GitHub vars for the web workflow. Push.
+6. Configure Cloudflare auth and `apps/web/.env`, then run `yarn workspace web deploy`.
 7. Verify: Google sign-in, wallet sign-in, media uploads, lessons render.
 
 ---

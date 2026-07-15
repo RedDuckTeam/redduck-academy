@@ -9,9 +9,9 @@ import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
 import { BlockMiningSimulator } from '@/components/ui/block-mining-simulator'
 import { createSlugDeduper } from '@/components/pages/lesson/toc/build-toc-items'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { anchorStyles, blockquoteStyles, codeStyles, svgWrapperClass } from '@/components/ui/rich-content-styles'
-import { BLOCK_MINING_SHORTCODE, detectEmbed } from '@/components/ui/embeds'
-import { markdownRehypePlugins } from '@/components/ui/markdown-sanitize'
+import { anchorStyles, blockquoteStyles, codeStyles, svgWrapperClass } from './rich-content-styles'
+import { BLOCK_MINING_SHORTCODE, detectEmbed } from './embeds'
+import { markdownRehypePlugins } from './markdown-sanitize'
 
 interface MarkdownContentProps {
   source: string

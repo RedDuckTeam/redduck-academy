@@ -137,6 +137,8 @@ describe('MarkdownContent', () => {
       '',
       '<img src=x onerror="window.__pwned=1">',
       '',
+      '<img src="https://ex.com/a.png" style="position:fixed;inset:0;width:100vw;height:100vh">',
+      '',
       '<iframe src="https://evil.example"></iframe>',
       '',
       '<svg onload="window.__pwned=2"><rect onclick="window.__pwned=3" width="10" height="10"></rect>' +
@@ -160,6 +162,12 @@ describe('MarkdownContent', () => {
     expect(withHandlers.map((e) => e.tagName)).toEqual([])
     // No javascript: hrefs.
     expect(container.querySelector('a[href^="javascript:"]')).toBeNull()
+    // `style` is scoped to SVG elements only, so a non-SVG element can't keep it — this is
+    // what stops an injected <img style="position:fixed;…"> from covering the page.
+    expect(
+      container.querySelector('img[src="https://ex.com/a.png"]')?.getAttribute('style'),
+      'style survived on a non-SVG element',
+    ).toBeNull()
   })
 
   it('renders a real dumped lesson (multi-line SVGs, real code fences, plgrnd embed)', () => {

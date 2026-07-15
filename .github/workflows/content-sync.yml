@@ -17,6 +17,9 @@ on:
       - 'content/**'
   workflow_dispatch: {} # manual full re-sync (e.g. to backfill a missed insert)
 
+permissions:
+  contents: read
+
 concurrency:
   group: content-db-sync
   cancel-in-progress: false # never interrupt a database write

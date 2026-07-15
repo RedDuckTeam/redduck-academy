@@ -1,6 +1,6 @@
 /**
  * Stored in `project_user_submissions.feedback` (jsonb) when review completes.
- * Extends the AI-CODE-REVIEW.md shape: each criterion includes `taskId` for Payload `reviewGradingTasks` row identity.
+ * Each criterion includes `taskId` for Payload `reviewGradingTasks` row identity.
  */
 
 export interface ReviewCriterionFeedback {

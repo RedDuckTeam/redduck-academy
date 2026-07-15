@@ -28,7 +28,11 @@ const schema = {
   tagNames: [...(defaultSchema.tagNames ?? []), ...SVG_TAGS],
   attributes: {
     ...defaultSchema.attributes,
-    '*': [...(defaultSchema.attributes?.['*'] ?? []), ...SVG_ATTRS],
+    // SVG presentation attributes (including `style`) are allowed ONLY on SVG elements, never
+    // globally on `*`. Keeping `style` off `*` stops contributor HTML such as
+    // `<img style="position:fixed;inset:0;width:100vw;height:100vh">` from covering the whole
+    // page with a click-through overlay.
+    ...Object.fromEntries(SVG_TAGS.map((tag) => [tag, SVG_ATTRS])),
   },
 }
 

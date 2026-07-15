@@ -22,8 +22,8 @@ import {
   createLessonMeta,
 } from '@/lib/seo'
 import { JsonLd } from '@/components/seo/json-ld'
-import { RichText } from '@/components/ui/rich-text'
-import { MarkdownContent } from '@/components/ui/markdown-content'
+import { RichText } from '@/components/content/rich-text'
+import { MarkdownContent } from '@/components/content/markdown-content'
 import { loadLessonBody } from '@/lib/content/lesson-body'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'

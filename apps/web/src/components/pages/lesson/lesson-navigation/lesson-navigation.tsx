@@ -3,6 +3,7 @@ import { getRouteApi, useLocation, useRouter } from '@tanstack/react-router'
 import { NavTile } from './nav-tile'
 import { SignInPromptModal } from '../sign-in-prompt-modal'
 import type { Lesson } from '@/types/lesson'
+import { adjacentLessons } from '@/lib/lessons/lesson-nav'
 import { useCourse } from '@/hooks/api/courses/useCourse'
 import { useSession } from '@/hooks/useSession'
 import { useMarkLessonCompleted } from '@/hooks/api/lessons/useMarkLessonCompleted'
@@ -13,12 +14,6 @@ import { usePostHog } from '@posthog/react'
 interface LessonNavigationProps {
   courseSlug: string
   lesson: Lesson
-}
-
-interface NavTarget {
-  moduleSlug: string
-  lessonSlug: string
-  title: string
 }
 
 const lessonRoute = getRouteApi('/courses/$courseSlug/$moduleSlug/$lessonSlug')
@@ -32,15 +27,12 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
   const router = useRouter()
   const location = useLocation()
   const { pendingNext } = lessonRoute.useSearch()
+  const { moduleSlug } = lessonRoute.useParams()
   const [promptOpen, setPromptOpen] = useState(false)
 
-  const flat: NavTarget[] =
-    course?.data?.modules?.flatMap((m) =>
-      (m.lessons ?? []).map((l) => ({ moduleSlug: m.slug, lessonSlug: l.slug, title: l.title })),
-    ) ?? []
-  const currentIndex = flat.findIndex((entry) => entry.lessonSlug === lesson.slug)
-  const prev = currentIndex > 0 ? flat[currentIndex - 1] : null
-  const next = currentIndex >= 0 && currentIndex < flat.length - 1 ? flat[currentIndex + 1] : null
+  // Prev/next come from the course's reading order, each carrying its real module slug so a
+  // move across a module boundary navigates to the correct URL.
+  const { prev, next } = adjacentLessons(course?.data, moduleSlug, lesson.slug)
 
   const isLecture = lesson.type === 'lecture'
   const isCourseLocked = courseAccess.lockedSlugs.has(courseSlug)
@@ -124,4 +116,4 @@ export const LessonNavigation = ({ courseSlug, lesson }: LessonNavigationProps) 
   )
 }
 
-export type { NavTarget }
+export type { NavTarget } from '@/lib/lessons/lesson-nav'
