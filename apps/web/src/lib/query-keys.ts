@@ -7,6 +7,8 @@ export const queryKeys = {
   lessons: {
     detail: (courseSlug: string, lessonSlug: string) =>
       ['lessons', courseSlug, lessonSlug] as const,
+    body: (courseSlug: string, moduleSlug: string, lessonSlug: string) =>
+      ['lessons', courseSlug, moduleSlug, lessonSlug, 'body'] as const,
   },
   user: {
     completedLessons: () => ['user', 'completed-lessons'] as const,
