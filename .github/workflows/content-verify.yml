@@ -12,11 +12,13 @@ on:
     paths:
       - 'content/**'
       - 'scripts/validate-content.mjs'
+      - 'scripts/generate-course-index.mjs'
       - '.github/workflows/content-verify.yml'
   pull_request:
     paths:
       - 'content/**'
       - 'scripts/validate-content.mjs'
+      - 'scripts/generate-course-index.mjs'
       - '.github/workflows/content-verify.yml'
 
 concurrency:
@@ -36,3 +38,5 @@ jobs:
       - run: yarn install --immutable
       - name: Validate content
         run: node scripts/validate-content.mjs
+      - name: Check course outlines are in sync
+        run: node scripts/generate-course-index.mjs --check
