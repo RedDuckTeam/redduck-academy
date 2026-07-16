@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { stashRedirect } from '@/lib/redirect'
 import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
@@ -27,7 +28,13 @@ export function SignInPromptModal({ open, onClose, redirectTo, onContinue, onSig
           </Text>
           <div className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link to="/sign-up" search={{ redirect: redirectTo }} onClick={onSignIn}>
+              <Link
+                to="/sign-up"
+                onClick={() => {
+                  stashRedirect(redirectTo)
+                  onSignIn()
+                }}
+              >
                 <Text variant="caps-20">Sign in</Text>
               </Link>
             </Button>
