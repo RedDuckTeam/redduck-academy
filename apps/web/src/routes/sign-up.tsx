@@ -13,8 +13,8 @@ import { queryKeys } from '@/lib/query-keys'
 import { useSession } from '@/hooks/useSession'
 import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 import { createPageMeta } from '@/lib/seo'
-import { navigateAfterAuth, sanitizeRedirect } from '@/lib/redirect'
-import { useEffect } from 'react'
+import { navigateAfterAuth, peekRedirect, sanitizeRedirect } from '@/lib/redirect'
+import { useEffect, useMemo } from 'react'
 
 const MARQUEE_LABELS = ['DeFi', 'Rebase tokens', 'DEX', 'Synthetic tokens', 'DeFi'] as const
 
@@ -48,7 +48,11 @@ function SignUp() {
   const { session } = useSession()
   const { enabled, ready, requestPrivy } = usePrivyAuth()
   const router = useRouter()
-  const { redirect: redirectTo } = Route.useSearch()
+  const search = Route.useSearch()
+  // New CTAs carry the post-login target in sessionStorage (no crawlable ?redirect= param); the
+  // legacy search param is still honored for any old links. Resolved synchronously so the login
+  // buttons capture the right target on first render.
+  const redirectTo = useMemo(() => search.redirect ?? peekRedirect(), [search.redirect])
 
   // Privy is no longer mounted globally — this is the login entry point, so ask
   // for it here. The login buttons call Privy hooks directly, so they can only
