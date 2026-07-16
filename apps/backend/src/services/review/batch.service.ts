@@ -1,13 +1,8 @@
-import { createReadStream, unlinkSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import OpenAI from 'openai'
 import type { Lesson } from '@redduck/payload-config'
-import { env } from '../../env'
-import { DEFAULT_MODEL } from '../ai/openai-client'
-import { normalizeUsage, type NormalizedUsage } from '../ai/usage.service'
+import { getAiProvider } from '../ai'
+import type { NormalizedUsage } from '../ai/usage.service'
 import type { ReviewFeedback } from '../../types/review-feedback'
-import { buildReviewFeedbackResponseFormat } from './review-feedback-json-schema'
+import { buildReviewFeedbackSchema } from './review-feedback-json-schema'
 import type { ReviewPrompt } from './prompt.builder'
 import { Logger } from '../../lib/logger'
 
@@ -15,115 +10,40 @@ const logger = new Logger('ReviewBatchService')
 
 const ASSISTANT_OUTPUT_LOG_MAX_CHARS = 8_000
 
+// Review feedback can be large (one criterion per rubric task, each with quoted evidence), so give
+// the model generous output headroom. OpenAI ignores this; Anthropic needs an explicit cap.
+const REVIEW_MAX_OUTPUT_TOKENS = 16_384
+
 export type BatchPollResult =
   | { type: 'pending' }
   | { type: 'failed'; message: string }
   | { type: 'completed'; feedback: ReviewFeedback; usage: NormalizedUsage | null; model: string }
 
-function getOpenAiClient(): OpenAI {
-  return new OpenAI({ apiKey: env.OPENAI_API_KEY })
-}
-
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
+/** Batch custom_id used to match a submission's request back to its result. */
+function customIdFor(submissionId: number): string {
+  return `submission-${submissionId}`
+}
+
 // ─── Batch creation ──────────────────────────────────────────────────────────
 
-/**
- * Uploads a one-line JSONL file and creates an OpenAI Batch for chat completions.
- * Returns the batch id.
- * @see https://platform.openai.com/docs/guides/batch
- */
+/** Creates one structured-review batch job via the configured provider. Returns the batch id. */
 export async function createBatch(prompt: ReviewPrompt, submissionId: number, criteriaCount: number): Promise<string> {
-  const openai = getOpenAiClient()
-  const line =
-    JSON.stringify({
-      custom_id: `submission-${submissionId}`,
-      method: 'POST',
-      url: '/v1/chat/completions',
-      body: {
-        model: DEFAULT_MODEL,
-        response_format: buildReviewFeedbackResponseFormat(criteriaCount),
-        messages: [
-          { role: 'system', content: prompt.system },
-          { role: 'user', content: prompt.user },
-        ],
-      },
-    }) + '\n'
-
-  const path = join(tmpdir(), `review-batch-${submissionId}-${Date.now()}.jsonl`)
-  writeFileSync(path, line, 'utf8')
-  try {
-    const uploaded = await openai.files.create({ file: createReadStream(path), purpose: 'batch' })
-    const batch = await openai.batches.create({
-      input_file_id: uploaded.id,
-      endpoint: '/v1/chat/completions',
-      completion_window: '24h',
-    })
-    return batch.id
-  } finally {
-    try {
-      unlinkSync(path)
-    } catch {
-      /* temp file cleanup — best effort */
-    }
-  }
+  const provider = getAiProvider()
+  return provider.createBatch({
+    customId: customIdFor(submissionId),
+    model: provider.reviewModel,
+    system: prompt.system,
+    user: prompt.user,
+    output: buildReviewFeedbackSchema(criteriaCount),
+    maxOutputTokens: REVIEW_MAX_OUTPUT_TOKENS,
+  })
 }
 
-// ─── Batch polling & output parsing ─────────────────────────────────────────
-
-function extractBatchErrorMessage(batch: Awaited<ReturnType<OpenAI['batches']['retrieve']>>): string {
-  if (batch.errors?.data && batch.errors.data.length > 0) {
-    return batch.errors.data.map((e) => e.message ?? JSON.stringify(e)).join('; ')
-  }
-  return `OpenAI batch ${batch.status}`
-}
-
-function extractBatchCompletion(
-  jsonlText: string,
-  submissionId: number,
-): { content: string; usage: unknown; model: string | null } {
-  const want = `submission-${submissionId}`
-  for (const line of jsonlText.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(trimmed)
-    } catch {
-      continue
-    }
-    if (!isRecord(parsed) || parsed.custom_id !== want) continue
-
-    const response = parsed.response
-    if (!isRecord(response)) throw new Error('Invalid batch output: missing response')
-
-    if (response.status_code !== 200) {
-      const body = response.body
-      const msg =
-        isRecord(body) && isRecord(body.error) && typeof body.error.message === 'string'
-          ? body.error.message
-          : `Batch item status ${String(response.status_code)}`
-      throw new Error(`Batch line item failed: ${msg}`)
-    }
-
-    const body = response.body
-    if (!isRecord(body)) throw new Error('Missing response body in batch output')
-    const choices = body.choices
-    if (!Array.isArray(choices) || choices.length === 0) throw new Error('No choices in batch completion')
-    const choice0 = choices[0]
-    if (!isRecord(choice0)) throw new Error('Invalid choice shape')
-    const message = choice0.message
-    if (!isRecord(message) || typeof message.content !== 'string') throw new Error('Missing assistant message content')
-    return {
-      content: message.content,
-      usage: body.usage ?? null,
-      model: typeof body.model === 'string' ? body.model : null,
-    }
-  }
-  throw new Error('No batch output line for this submission')
-}
+// ─── Output parsing ──────────────────────────────────────────────────────────
 
 function parseReviewFeedback(
   content: string,
@@ -160,10 +80,9 @@ function parseReviewFeedback(
     }
   }
 
-  // Verify the model returned exactly one criterion per rubric task — no
-  // duplicates, no omissions, no fabricated taskIds. Without this, the
-  // strict-schema length lock (minItems = maxItems = N) would still allow
-  // a duplicated taskId to displace a missing one.
+  // Verify the model returned exactly one criterion per rubric task — no duplicates, no omissions,
+  // no fabricated taskIds. This is the real length lock: OpenAI's strict minItems/maxItems helps,
+  // but Anthropic drops those keywords, so this check is what actually guarantees full coverage.
   const expectedIds = new Set(tasks.map((t) => String(t.id)))
   const seenIds = new Set<string>()
   for (const c of parsed.criteria as Array<{ taskId: string }>) {
@@ -214,8 +133,10 @@ function applyAdminTitles(feedback: ReviewFeedback, tasks: NonNullable<Lesson['r
   }
 }
 
+// ─── Batch polling ───────────────────────────────────────────────────────────
+
 /**
- * Polls the batch status and, if completed, downloads and parses the output.
+ * Polls the batch via the provider and, if completed, parses and validates the review feedback.
  * Returns a discriminated union so the caller can handle each case without try/catch.
  */
 export async function pollAndParse(
@@ -223,51 +144,13 @@ export async function pollAndParse(
   submissionId: number,
   tasks: NonNullable<Lesson['reviewGradingTasks']>,
 ): Promise<BatchPollResult> {
-  const openai = getOpenAiClient()
-
-  let batch: Awaited<ReturnType<OpenAI['batches']['retrieve']>>
-  try {
-    batch = await openai.batches.retrieve(batchRequestId)
-  } catch (err) {
-    logger.error('Failed to retrieve batch status', err, { batchRequestId, submissionId })
-    return { type: 'failed', message: 'batch retrieval failed' }
-  }
-
-  if (batch.status === 'failed' || batch.status === 'cancelled' || batch.status === 'expired') {
-    logger.error('Batch ended in terminal non-success state', undefined, {
-      batchRequestId,
-      submissionId,
-      status: batch.status,
-      detail: extractBatchErrorMessage(batch),
-    })
-    return { type: 'failed', message: `batch ${batch.status}` }
-  }
-  if (batch.status !== 'completed') {
-    return { type: 'pending' }
-  }
-  if (!batch.output_file_id) {
-    logger.error('Batch completed with no output_file_id', undefined, { batchRequestId, submissionId })
-    return { type: 'failed', message: 'batch has no output file' }
-  }
-
-  let jsonlText: string
-  try {
-    const fileResponse = await openai.files.content(batch.output_file_id)
-    jsonlText = await fileResponse.text()
-  } catch (err) {
-    logger.error('Failed to download batch output', err, {
-      batchRequestId,
-      submissionId,
-      outputFileId: batch.output_file_id,
-    })
-    return { type: 'failed', message: 'batch output download failed' }
-  }
+  const result = await getAiProvider().pollBatch(batchRequestId, customIdFor(submissionId))
+  if (result.type !== 'completed') return result
 
   try {
-    const { content, usage, model } = extractBatchCompletion(jsonlText, submissionId)
-    const parsed = parseReviewFeedback(content, submissionId, tasks)
+    const parsed = parseReviewFeedback(result.content, submissionId, tasks)
     const feedback = applyAdminTitles(applyConfidenceRules(parsed, tasks), tasks)
-    return { type: 'completed', feedback, usage: normalizeUsage(usage), model: model ?? DEFAULT_MODEL }
+    return { type: 'completed', feedback, usage: result.usage, model: result.model }
   } catch (err) {
     logger.error('Failed to parse batch output', err, { batchRequestId, submissionId })
     return { type: 'failed', message: 'batch output parse failed' }

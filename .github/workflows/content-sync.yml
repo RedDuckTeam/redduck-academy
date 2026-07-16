@@ -1,0 +1,73 @@
+name: Sync content to database
+
+# On merge to main, inserts DB rows for any NEW course/module/lesson files (matched by the
+# id declared in their frontmatter). INSERT-ONLY and idempotent — it never updates or
+# deletes, and re-running inserts nothing. See scripts/sync-content-db.ts.
+#
+# Rendering does not depend on this (the site is files-first); the DB rows exist so user
+# progress and the CMS know about new lessons.
+#
+# Requires one repository secret: DATABASE_URL (the production Postgres connection). An
+# optional DATABASE_CONNECTION_POOL_URL is used in preference when set.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/**'
+  workflow_dispatch: {} # manual full re-sync (e.g. to backfill a missed insert)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-db-sync
+  cancel-in-progress: false # never interrupt a database write
+
+jobs:
+  sync:
+    name: Insert new content rows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need history to diff the push for newly added files
+
+      - name: Detect newly added content files
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual run — syncing all content."
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          before='${{ github.event.before }}'
+          if [ -z "$before" ] || ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
+            echo "No usable base commit — running full sync."
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          added=$(git diff --diff-filter=A --name-only "$before" "${{ github.sha }}" -- content | grep -E '\.md$' || true)
+          if [ -n "$added" ]; then
+            echo "New content files added:"; echo "$added"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No new content files added — skipping DB sync."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.run == 'true'
+        with:
+          node-version: 22
+
+      - if: steps.detect.outputs.run == 'true'
+        run: corepack enable
+
+      - if: steps.detect.outputs.run == 'true'
+        run: yarn install --immutable
+
+      - name: Insert new rows
+        if: steps.detect.outputs.run == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_CONNECTION_POOL_URL: ${{ secrets.DATABASE_CONNECTION_POOL_URL }}
+        run: yarn content:db-sync

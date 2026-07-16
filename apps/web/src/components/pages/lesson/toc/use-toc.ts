@@ -10,8 +10,8 @@ export interface UseTocResult {
   activeItem: TocItem | null
 }
 
-export function useToc(lesson: Lesson): UseTocResult {
-  const items = useMemo(() => buildTocItems(lesson), [lesson])
+export function useToc(lesson: Lesson, markdownBody?: string | null): UseTocResult {
+  const items = useMemo(() => buildTocItems(lesson, markdownBody ?? undefined), [lesson, markdownBody])
   const ids = useMemo(() => items.map((i) => i.id), [items])
   const activeId = useActiveHeading(ids)
   const activeItem = useMemo(() => items.find((i) => i.id === activeId) ?? null, [items, activeId])

@@ -3,8 +3,11 @@
  * `.md` endpoints that AI agents and LLM tools fetch.
  *
  * Diagrams are stored as inline `<svg>` markup with an authored `<title>` and
- * `<desc>` (see scripts/apply-svg-titles.mjs). Markdown has no SVG, so we render
- * each diagram as its title + description — the meaning survives, the noise doesn't.
+ * `<desc>`. Markdown has no SVG, so we render each diagram as its title +
+ * description — the meaning survives, the noise doesn't.
+ *
+ * A sibling serializer lives in scripts/dump-content.mjs (the content dumper); the two
+ * cover the same Lexical nodes and must stay in sync when either changes.
  */
 
 import type { LessonFaqItem } from '@/types/lesson'
@@ -188,15 +191,16 @@ function faqToMarkdown(faq?: LessonFaqItem[] | null): string {
 }
 
 /**
- * A full, self-attributing Markdown document for one lesson: title, a `Source:`
- * line with the canonical URL (so an LLM that ingests it can cite us), body,
- * and — when authored — a FAQ section (Markdown-only; not on the HTML page).
+ * A full, self-attributing Markdown document for one lesson: title, a `Source:` line
+ * with the canonical URL (so an LLM that ingests it can cite us), the body (already
+ * Markdown, from the `content/` files), and — when authored — a FAQ section
+ * (Markdown-only; not on the HTML page).
  */
-export function lessonToMarkdownDoc(
+export function lessonMarkdownDoc(
   title: string,
   sourceUrl: string,
-  content: unknown,
+  bodyMarkdown: string,
   faq?: LessonFaqItem[] | null,
 ): string {
-  return `# ${title}\n\nSource: ${sourceUrl}\n\n${lexicalToMarkdown(content)}${faqToMarkdown(faq)}\n`
+  return `# ${title}\n\nSource: ${sourceUrl}\n\n${bodyMarkdown.trim()}${faqToMarkdown(faq)}\n`
 }

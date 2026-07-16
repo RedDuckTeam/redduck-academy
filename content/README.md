@@ -1,123 +1,136 @@
-# Course content (open source)
+# Contributing to the lectures
 
-This folder is the **source of truth** for the academy's lecture prose. Edit the
-Markdown here, open a PR, and once merged a sync job writes your changes into the
-live database. You do **not** need to run the app or touch a database to contribute.
+The academy's lecture text lives here as Markdown, one file per lesson. Improving it is a
+normal GitHub pull request, and **you don't need to run the app or a database.** Edit a
+file, open a PR, and once it's merged the site rebuilds with your change.
 
-> Git wins: for the fields listed below, these files are authoritative. Editing
-> them in the CMS is disabled — change them here.
+## Fix or improve an existing lesson
+
+1. **Find the file.** The folder path mirrors the lesson's URL. For
+   `academy.redduck.io/courses/blockchain-basics/cryptography/hashing`, edit
+   `content/blockchain-basics/cryptography/hashing.md`.
+2. **Edit the Markdown.** Improve the prose, fix a code sample, sharpen a diagram. Leave the
+   `---` frontmatter block at the top as it is.
+3. **Open a pull request.** A check validates your file automatically. That's it.
+
+## Add a new lesson
+
+New lessons must be **lectures**. Tests and coding tasks are set up in the CMS first,
+because they need answer keys and graders that don't live in these files.
+
+1. **Copy the template.** Copy [`TEMPLATE.md`](./TEMPLATE.md) to
+   `content/<course>/<module>/<your-lesson-slug>.md`. The file name becomes the URL slug, so
+   keep it lowercase-with-hyphens.
+2. **Generate an id** and paste it into the frontmatter:
+   ```bash
+   node scripts/new-id.mjs
+   ```
+3. **Fill in the frontmatter** (`title`, `type: lecture`, `order`) and write the lesson.
+4. **Open a pull request.**
+
+Adding a whole new module or course? Same idea: create the folder and give it a `_module.md`
+or `_course.md` (copy the shape of an existing one), each with its own generated id.
+
+## Check it before you push (optional)
+
+CI runs this for you, but you can catch problems early:
+
+```bash
+node scripts/validate-content.mjs
+```
+
+It checks required fields, valid slugs, unique ids, and a complete folder tree, and tells
+you exactly how to fix anything it finds.
 
 ---
+
+# Reference
 
 ## Folder layout
 
-The tree encodes structure. Nesting = relationships; the numeric prefix = order;
-the rest of the name = slug.
+The tree mirrors the lesson URLs — `content/<course>/<module>/<lesson>.md` maps to
+`/courses/<course>/<module>/<lesson>`. Names are plain **slugs** (lowercase, hyphens); the
+reading order comes from the `order:` field, not the file name.
 
 ```
 content/
-  00-blockchain-basics/            # <courseOrder>-<courseSlug>/
-    _course.md                     # course metadata (this file's body = description)
-    04-cryptography/               # <moduleOrder>-<moduleSlug>/
-      _module.md                   # module metadata
-      01-hashing.md                # <lessonOrder>-<lessonSlug>.md  -> a lesson
-      02-encoding.md
+  blockchain-basics/              # course slug
+    _course.md                    # course metadata (its body is the course description)
+    cryptography/                 # module slug
+      _module.md                  # module metadata
+      hashing.md                  # a lesson
+      encoding.md
 ```
 
-**The path is the single source of truth for three things** (do not duplicate them
-in frontmatter):
+## Frontmatter
 
-| Encoded in the path | Example segment | Meaning |
+Every file starts with a YAML frontmatter block between `---` fences.
+
+**`_course.md`** — the body is the course description.
+
+| Field | Required | Notes |
 |---|---|---|
-| **order**        | `04-cryptography` | `order = 4` |
-| **slug**         | `04-cryptography` | `slug = cryptography` |
-| **relationship** | file lives under `04-cryptography/` | lesson belongs to that module |
+| `id` | ✅ | CMS row id. Keep it when editing. For a **new** course, run `node scripts/new-id.mjs`. |
+| `title` | ✅ | |
+| `order` | ✅ | Number. Position among courses. |
+| `isHidden` | optional | `true` hides it; omit otherwise. |
 
-- **Order** uses gap numbering (00, 02, 04, …) so you can insert between two items
-  without renumbering everything. Reorder = rename the prefix.
-- **Rename a slug** = rename the file/folder. If the item has an `id` (see below),
-  the sync updates the existing row's slug; without an `id` it's treated as new.
-- Prefixes are zero-padded to 2 digits.
+**`_module.md`** — no body.
 
----
+| Field | Required | Notes |
+|---|---|---|
+| `id` | ✅ | Keep it when editing. For a **new** module, run `node scripts/new-id.mjs`. |
+| `title` | ✅ | |
+| `order` | ✅ | Number. Position within the course. |
+| `isHidden` | optional | |
 
-## `_course.md`
+**Lesson `<slug>.md`** — the body is the lesson prose.
 
-```markdown
----
-id: 1                       # DB id. Present for existing courses; OMIT for a new one.
-title: Blockchain basics
-tags: [foundations, bitcoin]
-durationHours: null
-prerequisiteCourse: null    # slug of another course, or null
-isHidden: false
----
-A foundations course on how blockchains work from the cryptography up: hashing,
-signatures, consensus, nodes, forks, and Bitcoin's design as the worked example.
-```
+| Field | Required | Notes |
+|---|---|---|
+| `id` | ✅ | Keep it when editing. For a **new** lesson, run `node scripts/new-id.mjs`. |
+| `title` | ✅ | |
+| `type` | ✅ | `lecture` \| `test` \| `coding_task` \| `review_task`. New files must be `lecture`. |
+| `order` | ✅ | Number. Position within the module. Use gaps (10, 20, 30) to leave room. |
+| `isHidden` | optional | |
+| `faq` | optional | Lectures only. List of `{ question, answer }` — short Q&As for search/AI, **not** shown on the page. |
 
-- The **body is the course `description`**.
-- `coverImage` and `publishedAt` are **CMS-managed** (media upload / publish state)
-  and intentionally not represented here.
+> Course `tags`, `coverImage`, `durationHours`, `prerequisiteCourse`, publish state, and all
+> lesson **assessment data** (quiz questions/answers, coding tests, grading criteria) are
+> managed in the CMS, not here.
 
-## `_module.md`
+## What you can write
 
-```markdown
----
-id: 67                      # OMIT for a new module.
-title: Cryptography
-isHidden: false
----
-```
+The body is standard Markdown. Supported:
 
-Modules have no description, so the body is empty.
+- **Headings** `##` and `###` — the lesson `title` is the page's only `#`, so don't add one.
+- **Text**: `**bold**`, `*italic*`, `` `inline code` ``.
+- **Code fences** with a language: ` ```solidity `, ` ```rust `, ` ```typescript `, or a bare ` ``` ` for plain text.
+- **Lists** (`-` and `1.`, nestable), **blockquotes** (`>`), and **tables** (GitHub-flavored).
+- **Links**: `[text](https://…)`, or link to another lesson with a site-relative path like `[see this](/courses/blockchain-basics/cryptography/hashing)`.
+- **Interactive embeds**: a paragraph that is *only* a link to `plgrnd.io`, `eth.build`, or a YouTube URL renders as an embedded frame.
+- **Diagrams**: paste raw `<svg>…</svg>` markup. Include a `<title>` (and ideally `<desc>`) for accessibility. Everything is sanitized on render, so no scripts or event handlers survive.
 
-## Lesson files — `NN-slug.md`
+## Rules
 
-```markdown
----
-id: 70                      # OMIT for a new lesson.
-title: Hashing
-type: lecture               # lecture | test | coding_task | review_task
-isHidden: false
-faq:                        # lectures only; optional
-  - question: Is a hash reversible?
-    answer: >-
-      No. A cryptographic hash is one-way: you cannot recover the input from the
-      output. You can only guess-and-check.
----
-> Opening quote / intro...
+- **A lesson body is only the lesson prose.** For non-lecture lessons (`test`,
+  `coding_task`, `review_task`) the body is still just the intro/description — their
+  questions, test cases, and grading criteria live in the CMS.
+- **New lessons you add must be `type: lecture`.** New tests and tasks are authored in the
+  CMS first (they need assessment data), then their prose appears here.
+- **Keep the `id`** when editing an existing file. For anything new, generate one with
+  `node scripts/new-id.mjs`. Every id must be unique among files of the same kind, and the
+  validator rejects duplicates.
+- **Renaming a file or folder renames the slug** (and the lesson URL), so do it
+  deliberately.
 
-## A heading
+## How it's published
 
-Body prose, code blocks, diagrams — this is the lesson's `content` field,
-rendered to Markdown and back by Payload's own converter.
-```
+Files are read at **build time** and served as CDN static assets — the content never enters
+the app's JavaScript bundle or the server. On merge to `main` the site rebuilds and serves
+your Markdown.
 
-### Lesson rules
-
-- **The body is the `content` field, and only that.**
-- For **non-lecture** lessons (`test`, `coding_task`, `review_task`) the body is
-  still only the `content` prose. Their questions, options, test cases, grading
-  criteria, and answer keys live in the CMS and are **never** written here. The
-  sync updates **only** the `content` field for these types.
-- **New lessons created from files must be `type: lecture`.** New tests/tasks are
-  authored in the CMS first (they need assessment data that doesn't live here),
-  then dumped to a file so their prose can be edited like any other lesson.
-
----
-
-## `id`: how the sync matches a file to a row
-
-- **`id` present** → update that exact row (safe across slug/title renames).
-- **`id` absent** → the sync matches by path (course/module/lesson slug); if nothing
-  matches, it **creates** a new course/module/lesson.
-- Contributors adding new content just omit `id`. After a new row is created, the
-  sync writes the assigned `id` back into the file in a follow-up commit.
-
-## What the sync will/won't do
-
-- Writes back: `title`, `content` (lecture prose), `faq`, `isHidden`, `order`, `slug`,
-  and structural relationships — creating courses/modules/lessons as needed.
-- Never touches: assessment data (questions, options, test cases, grading criteria),
-  `coverImage`, `publishedAt`, user progress, or anything outside the fields above.
+The course structure (which lessons exist, their order, type, and titles) is built from
+these files too, so a new lesson appears on the site as soon as your PR is merged — no
+database change is needed to read it. The database is used only for per-user progress and
+for the interactive parts of non-lecture lessons, which a maintainer wires up separately.

@@ -25,3 +25,5 @@ apps/contracts/cache/
 apps/contracts/artifacts/
 # Real mainnet parameters (use main.example.json as template)
 apps/contracts/ignition/parameters/main.json
+
+.claude

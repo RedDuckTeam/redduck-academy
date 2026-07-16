@@ -22,7 +22,9 @@ import {
   createLessonMeta,
 } from '@/lib/seo'
 import { JsonLd } from '@/components/seo/json-ld'
-import { RichText } from '@/components/ui/rich-text'
+import { RichText } from '@/components/content/rich-text'
+import { MarkdownContent } from '@/components/content/markdown-content'
+import { loadLessonContent } from '@/lib/content/lesson-body'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
 import { useLessonForUser, CourseLockedError } from '@/hooks/api/lessons/useLessonForUser'
@@ -39,16 +41,24 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
   },
   loader: async ({ params, context: { queryClient } }) => {
     try {
-      const [lesson, course] = await Promise.all([
+      // Content assets are immutable per deploy, so cache them for the session
+      // (staleTime Infinity) — this stops the manifest and body being refetched on every
+      // navigation. The lesson's faq rides along with its body from the one `.md` fetch.
+      const [lesson, course, content] = await Promise.all([
         queryClient.ensureQueryData({
           queryKey: queryKeys.lessons.detail(params.courseSlug, params.lessonSlug),
           queryFn: () => getLesson(params.courseSlug, params.lessonSlug),
-          staleTime: 30 * 60 * 1000,
+          staleTime: Infinity,
         }),
         queryClient.ensureQueryData({
           queryKey: queryKeys.courses.detail(params.courseSlug),
           queryFn: () => getCourse(params.courseSlug),
-          staleTime: 30 * 60 * 1000,
+          staleTime: Infinity,
+        }),
+        queryClient.ensureQueryData({
+          queryKey: queryKeys.lessons.body(params.courseSlug, params.moduleSlug, params.lessonSlug),
+          queryFn: () => loadLessonContent(params.courseSlug, params.moduleSlug, params.lessonSlug),
+          staleTime: Infinity,
         }),
       ])
       if (!lesson?.data || !course?.data) throw notFound()
@@ -58,6 +68,8 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
         courseSlug: params.courseSlug,
         moduleSlug: params.moduleSlug,
         lessonSlug: params.lessonSlug,
+        lessonBody: content?.body ?? null,
+        lessonFaq: content?.faq ?? null,
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) throw notFound()
@@ -71,6 +83,7 @@ export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSl
       courseSlug: params.courseSlug,
       moduleSlug: params.moduleSlug,
       lessonSlug: params.lessonSlug,
+      markdownBody: loaderData.lessonBody,
     })
   },
   component: LessonPage,
@@ -83,12 +96,14 @@ function LessonNotFound() {
 }
 
 function LessonPage() {
-  const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug } = Route.useLoaderData()
+  const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug, lessonBody, lessonFaq } = Route.useLoaderData()
+  // Prose is served from the open-source content/ files (static assets, resolved in the
+  // loader); fall back to the DB Lexical only if no file exists (e.g. a row not yet dumped).
   const { error: userLessonError } = useLessonForUser(courseSlug, lessonSlug)
   useLessonCompletionToast({ courseSlug, lessonSlug, lessonTitle: lesson.title })
   const isCodingChallenge = lesson.type === 'coding_task'
   const courseLockedError = userLessonError instanceof CourseLockedError ? userLessonError : null
-  const faqLd = buildLessonFaqLd({ lesson })
+  const faqLd = buildLessonFaqLd(lessonFaq)
 
   useScrollMagnet({ enabled: isCodingChallenge, targetId: 'coding-task-row', offset: 20, range: 40 })
 
@@ -98,7 +113,7 @@ function LessonPage() {
     >
       <JsonLd
         data={[
-          buildLessonLd({ lesson, courseTitle, courseSlug, moduleSlug, lessonSlug }),
+          buildLessonLd({ lesson, courseTitle, courseSlug, moduleSlug, lessonSlug, markdownBody: lessonBody }),
           ...(faqLd ? [faqLd] : []),
           buildBreadcrumbLd([
             { name: courseTitle, url: absoluteUrl(`/courses/${courseSlug}`) },
@@ -138,9 +153,11 @@ function LessonPage() {
             <LessonContentContainer>
               <>
                 <LessonTitle title={lesson.title} />
-                {lesson.content && (
+                {lessonBody != null ? (
+                  <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
+                ) : lesson.content ? (
                   <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
-                )}
+                ) : null}
               </>
 
               {lesson.type === 'lecture' && <LessonLecture lesson={lesson} courseSlug={courseSlug} />}

@@ -5,6 +5,8 @@ import { Text } from '@/components/ui/text'
 import { useMarkLessonCompleted } from '@/hooks/api/lessons/useMarkLessonCompleted'
 import { useSession } from '@/hooks/useSession'
 import { useCourseAccess } from '@/hooks/api/user/useUserCourseAccess'
+import { useCourse } from '@/hooks/api/courses/useCourse'
+import { adjacentLessons } from '@/lib/lessons/lesson-nav'
 
 interface NextButtonProps {
   courseSlug: string
@@ -18,9 +20,13 @@ export const NextButton = ({ courseSlug, moduleSlug, lesson, className }: NextBu
   const { session } = useSession()
   const { mutate: markCompleted } = useMarkLessonCompleted()
   const courseAccess = useCourseAccess()
+  const { data: course } = useCourse(courseSlug)
   const isCourseLocked = courseAccess.lockedSlugs.has(courseSlug)
-  const hasNext = lesson.next !== null
-  const link = hasNext ? `/courses/${courseSlug}/${moduleSlug}/${lesson.next}` : `/courses/${courseSlug}`
+  // Resolve the next lesson (and its real module) from the course order, so advancing across
+  // a module boundary links to the correct URL instead of reusing the current module slug.
+  const { next } = adjacentLessons(course?.data, moduleSlug, lesson.slug)
+  const hasNext = next !== null
+  const link = next ? `/courses/${courseSlug}/${next.moduleSlug}/${next.lessonSlug}` : `/courses/${courseSlug}`
   const isLecture = lesson.type === 'lecture'
 
   if (!session) {

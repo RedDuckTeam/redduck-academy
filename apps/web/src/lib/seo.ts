@@ -1,5 +1,5 @@
 import type { CommunityEvent } from '@/types/community'
-import type { Course, Lesson } from '@/types/lesson'
+import type { Course, Lesson, LessonFaqItem } from '@/types/lesson'
 import { env } from '@/env'
 
 const SITE_NAME = 'RedDuck Academy'
@@ -45,6 +45,20 @@ function extractPlainText(value: unknown): string {
     return Object.values(value).map(extractPlainText).filter(Boolean).join(' ')
   }
   return ''
+}
+
+/** Reduce a Markdown lesson body to readable prose for meta descriptions: drop SVG
+ *  diagrams, code fences, and Markdown syntax; keep link/image text. */
+function markdownToPlainText(md: string): string {
+  return md
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/[*_>#|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function truncateDescription(text: string, maxLength = META_DESCRIPTION_MAX_LENGTH): string {
@@ -149,14 +163,18 @@ export function createLessonMeta({
   courseSlug,
   moduleSlug,
   lessonSlug,
+  markdownBody,
 }: {
   lesson: Lesson
   courseSlug: string
   moduleSlug: string
   lessonSlug: string
+  /** Open-source Markdown body (preferred source for the description). */
+  markdownBody?: string | null
 }): HeadConfig {
   const fullTitle = `${lesson.title} | ${SITE_NAME}`
-  const rawDescription = lesson.content ? extractPlainText(lesson.content) : ''
+  const rawDescription =
+    markdownBody != null ? markdownToPlainText(markdownBody) : lesson.content ? extractPlainText(lesson.content) : ''
   const description = rawDescription ? truncateDescription(rawDescription) : lesson.title
   const canonicalUrl = `${getBaseUrl()}/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`
 
@@ -337,17 +355,21 @@ export function buildLessonLd({
   courseSlug,
   moduleSlug,
   lessonSlug,
+  markdownBody,
 }: {
   lesson: Lesson
   courseTitle: string
   courseSlug: string
   moduleSlug: string
   lessonSlug: string
+  /** Open-source Markdown body (preferred source for the description). */
+  markdownBody?: string | null
 }): JsonLdObject {
   const base = getBaseUrl()
   const url = `${base}/courses/${courseSlug}/${moduleSlug}/${lessonSlug}`
   const courseUrl = `${base}/courses/${courseSlug}`
-  const raw = lesson.content ? extractPlainText(lesson.content) : ''
+  const raw =
+    markdownBody != null ? markdownToPlainText(markdownBody) : lesson.content ? extractPlainText(lesson.content) : ''
   const description = raw ? truncateDescription(raw, 500) : lesson.title
   return {
     '@context': 'https://schema.org',
@@ -371,8 +393,8 @@ export function buildLessonLd({
  * lesson has none. The Q&A is deliberately not rendered on the page — the FAQ
  * targets AI crawlers (JSON-LD here, `## FAQ` in the Markdown representation).
  */
-export function buildLessonFaqLd({ lesson }: { lesson: Lesson }): JsonLdObject | null {
-  const rows = (lesson.faq ?? []).filter((f) => f.question?.trim() && f.answer?.trim())
+export function buildLessonFaqLd(faq: LessonFaqItem[] | null | undefined): JsonLdObject | null {
+  const rows = (faq ?? []).filter((f) => f.question?.trim() && f.answer?.trim())
   if (rows.length === 0) return null
   return {
     '@context': 'https://schema.org',
