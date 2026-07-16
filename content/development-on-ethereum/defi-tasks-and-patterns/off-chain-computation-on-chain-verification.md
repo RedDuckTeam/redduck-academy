@@ -221,7 +221,7 @@ A short tour of where you'll meet this pattern as you keep learning:
 
 **Signatures and permits.** A user signs a message off-chain saying "I authorize transferring 100 tokens to Alice." The contract verifies the signature with `ecrecover` and trusts the action. This is how EIP-2612 permit, Permit2, and meta-transactions all work. The "off-chain compute" is the cryptographic signing. The "on-chain verify" is the signature check. One line of work for the contract, one ECDSA recovery.
 
-**Oracle attestations.** A user submits a data point with a signature from a trusted oracle. The contract verifies the signature and uses the data. Chainlink's data feeds work approximately this way under the hood, though with multiple signatures and aggregation.
+**Oracle attestations.** A user submits a data point with a signature from a trusted oracle. The contract verifies the signature and uses the data. Chainlink's data feeds work approximately this way internally, though with multiple signatures and aggregation.
 
 **ZK proofs.** A user computes a complex statement off-chain with a SNARK or STARK, producing a tiny proof. The contract verifies the proof in fixed-size constant work, regardless of how complex the underlying statement is. ZK rollups use this to compress thousands of transactions into a single chain proof.
 

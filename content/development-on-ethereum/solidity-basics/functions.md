@@ -72,7 +72,7 @@ contract Counter {
 
 ## Visibility: who can call this
 
-Every function declares one of four visibility levels. The choice affects what code can call the function and how the arguments are passed under the hood.
+Every function declares one of four visibility levels. The choice affects what code can call the function and how the arguments are passed internally.
 
 **`public`** functions can be called from anywhere. Off-chain callers can invoke them via transactions. Other contracts can call them. The contract's own code can call them. This is the most permissive option. Production code rarely needs it.
 
