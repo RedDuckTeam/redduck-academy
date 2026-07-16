@@ -37,6 +37,10 @@ faq:
 
 > The previous lesson built up a blockchain from scratch. A reasonable reaction at this point is "interesting, but isn't that just a database?" The answer is yes, structurally. But the differences are exactly what makes a blockchain useful for the small set of things it's actually good at.
 
+## A blockchain is a ledger
+
+Databases and ledgers are two different tools, and both are old. A database is a general store of records you can add to, change, and erase. A ledger is an append-only record of events, the format banks and accountants have kept for centuries, where entries are only ever added and the earlier history stays intact. Append-only is part of what defines a ledger, the way the category has always worked, so in a blockchain it is a starting assumption built into the design. A blockchain sits in this second category. That is what makes the database comparison worth doing, because most developers reach for a database by habit, and also what limits that comparison, because a blockchain is a ledger first, built to run without a trusted keeper.
+
 ## They are both databases, in the loose sense
 
 A blockchain stores records. A database stores records. Both let you write new records and read existing ones. Both have to keep their data consistent under some definition of consistency. Both have to handle many users at once.

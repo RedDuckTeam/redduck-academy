@@ -36,7 +36,7 @@ faq:
       history easy to trace.
 ---
 
-> There is one model of money so common in software that it is easy to mistake it for the only one. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how banks work, how PayPal works, how every traditional payment system works. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by the next. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.
+> There is one model of money so common in software that it is easy to mistake it for the only one. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how a bank account looks to its user, and how PayPal and every other traditional payment system look to theirs. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by the next. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.
 
 ## Two ways to track money
 
