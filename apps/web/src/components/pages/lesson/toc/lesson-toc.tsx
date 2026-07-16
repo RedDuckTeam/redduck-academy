@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/text'
 import { TableOfContentsIcon } from '@/components/ui/icons/table-of-contents'
 import { cn } from '@/lib/utils'
 import { useToc } from './use-toc'
+import { lessonRouteApi } from '@/lib/routes/lesson-route'
 import { scrollToHeading } from './scroll-to-heading'
 
 interface LessonTocProps {
@@ -13,7 +14,8 @@ interface LessonTocProps {
 const SCROLL_OFFSET = 80
 
 export function LessonToc({ lesson }: LessonTocProps) {
-  const { items, activeId } = useToc(lesson)
+  const { lessonBody } = lessonRouteApi.useLoaderData()
+  const { items, activeId } = useToc(lesson, lessonBody)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef(new Map<string, HTMLAnchorElement>())

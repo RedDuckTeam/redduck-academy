@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { env } from '@/env'
-import { getCourses, getLesson } from '@/lib/api/courses'
-import { lessonToMarkdownDoc } from '@/lib/lexical-to-markdown'
+import { getCourses } from '@/lib/api/courses'
+import { buildLessonMarkdownDoc } from '@/lib/content/lesson-markdown'
+import { lessonPath } from '@/lib/content/paths'
 
 // The entire public course corpus as one Markdown file, so an agent can pull it
 // in a single request. Each lesson carries a Source URL for attribution.
@@ -42,8 +43,7 @@ async function buildLlmsFull(): Promise<string> {
 
   const sections = await mapLimit(targets, FETCH_CONCURRENCY, async (t) => {
     try {
-      const { data } = await getLesson(t.course, t.lesson)
-      return lessonToMarkdownDoc(data.title, `${site}/courses/${t.course}/${t.module}/${t.lesson}`, data.content, data.faq)
+      return await buildLessonMarkdownDoc(t.course, t.module, t.lesson, `${site}${lessonPath(t.course, t.module, t.lesson)}`)
     } catch {
       return ''
     }

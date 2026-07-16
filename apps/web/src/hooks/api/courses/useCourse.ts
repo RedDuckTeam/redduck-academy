@@ -7,7 +7,8 @@ export const useCourse = (slug: string) => {
     queryKey: queryKeys.courses.detail(slug),
     queryFn: () => getCourse(slug),
     enabled: !!slug,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    // Immutable per deploy — cache for the session (fetched once, not per navigation).
+    staleTime: Infinity,
+    gcTime: Infinity,
   })
 }

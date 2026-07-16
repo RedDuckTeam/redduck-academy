@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing guide
+    url: https://github.com/RedDuck-Software/redduck-academy/blob/main/CONTRIBUTING.md
+    about: How to fix or add lectures, open a PR, or run the platform.
