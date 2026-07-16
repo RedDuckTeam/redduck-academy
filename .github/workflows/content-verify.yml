@@ -21,6 +21,9 @@ on:
       - 'scripts/generate-course-index.mjs'
       - '.github/workflows/content-verify.yml'
 
+permissions:
+  contents: read
+
 concurrency:
   group: verify-content-${{ github.ref }}
   cancel-in-progress: true

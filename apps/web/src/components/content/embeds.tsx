@@ -9,7 +9,7 @@ import { EmbedFrame } from '@/components/ui/embed-frame'
 export const BLOCK_MINING_SHORTCODE = '[[block-mining]]'
 
 /** Convert a YouTube watch/short URL to its embed URL, or null if it isn't one. */
-export function youtubeEmbedUrl(raw: string): string | null {
+function youtubeEmbedUrl(raw: string): string | null {
   try {
     const url = new URL(raw.trim())
     if (url.hostname === 'youtu.be') return `https://www.youtube.com/embed/${url.pathname.slice(1).split('?')[0]}`
@@ -23,7 +23,7 @@ export function youtubeEmbedUrl(raw: string): string | null {
   }
 }
 
-export function YouTubeEmbed({ url }: { url: string }): ReactElement {
+function YouTubeEmbed({ url }: { url: string }): ReactElement {
   return (
     <div className="aspect-video w-full overflow-hidden rounded-xl my-4">
       <iframe

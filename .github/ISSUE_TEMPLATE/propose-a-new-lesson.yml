@@ -1,0 +1,26 @@
+name: Propose a new lesson
+description: Suggest a new lecture. New lessons are lectures; tests and coding tasks are set up in the CMS first.
+title: "[New lesson] "
+labels: ["content", "new-lesson"]
+body:
+  - type: input
+    id: placement
+    attributes:
+      label: Course and module
+      description: Where should it live?
+      placeholder: development-on-ethereum / token-security-and-evm-internals
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Proposed lesson title
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What should it teach, and why does it belong here?
+      description: One or two ideas, and how it connects to the lessons around it.
+    validations:
+      required: true

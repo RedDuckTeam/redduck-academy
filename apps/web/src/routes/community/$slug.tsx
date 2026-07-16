@@ -4,7 +4,7 @@ import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
 import { getCommunityEvent } from '@/lib/api/community'
 import { queryKeys } from '@/lib/query-keys'
 import { createCommunityEventMeta } from '@/lib/seo'
-import { RichText } from '@/components/ui/rich-text'
+import { RichText } from '@/components/content/rich-text'
 import { LessonContentContainer } from '@/components/pages/lesson/lesson-content-container'
 
 export const Route = createFileRoute('/community/$slug')({

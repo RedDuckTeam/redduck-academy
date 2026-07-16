@@ -1,0 +1,29 @@
+name: Improve a lesson
+description: Fix or sharpen the wording, a code sample, or a diagram in an existing lecture.
+title: "[Lesson] "
+labels: ["content", "lesson-improvement"]
+body:
+  - type: input
+    id: lesson
+    attributes:
+      label: Which lesson?
+      description: The lesson URL, or its file path under content/.
+      placeholder: content/blockchain-basics/cryptography/hashing.md
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or unclear?
+      description: Quote the exact sentence, or describe the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording (optional)
+      description: >-
+        If you already have a fix in mind, put it here. Small fixes are often faster as a direct
+        pull request — see CONTRIBUTING.md.
+    validations:
+      required: false

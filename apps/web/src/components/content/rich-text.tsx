@@ -6,8 +6,8 @@ import { HighlightedCodeBlock } from '@/components/ui/highlighted-code-block'
 import { BlockMiningSimulator } from '@/components/ui/block-mining-simulator'
 import { createSlugDeduper, extractText } from '@/components/pages/lesson/toc/build-toc-items'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { anchorStyles, blockquoteStyles, codeStyles, svgWrapperClass } from '@/components/ui/rich-content-styles'
-import { BLOCK_MINING_SHORTCODE, detectEmbed } from '@/components/ui/embeds'
+import { anchorStyles, blockquoteStyles, codeStyles, svgWrapperClass } from './rich-content-styles'
+import { BLOCK_MINING_SHORTCODE, detectEmbed } from './embeds'
 
 type EnrichedLessonDoc = {
   href?: string
@@ -39,8 +39,8 @@ export function RichText({ data, className, paragraphClassName }: CustomRichText
     const raw = markup ?? ''
 
     // Diagrams carry an authored <title>/<desc> + role="img" baked into the SVG
-    // markup (see scripts/apply-svg-titles.mjs) so crawlers, AI, and screen
-    // readers get a real description. Render those verbatim.
+    // markup so crawlers, AI, and screen readers get a real description. Render
+    // those verbatim.
     if (/<title[\s>]/i.test(raw)) {
       return <div className={svgClass} dangerouslySetInnerHTML={{ __html: raw }} />
     }

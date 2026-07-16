@@ -4,8 +4,9 @@
 //
 // Source of truth is the DB (NOT the public API export, which omits hidden
 // lessons, the faq field, and tags). `content` is a jsonb Lexical tree that we
-// serialize to Markdown with a serializer proven (by scripts/audit) to cover
-// every node type and format flag present in the corpus.
+// serialize to Markdown with a serializer covering every Lexical node type and format flag
+// present in the corpus. This serializer mirrors apps/web/src/lib/lexical-to-markdown.ts (the
+// runtime fallback); keep the two in sync when either changes.
 //
 //   node scripts/dump-content.mjs                      # -> content/  (local DB)
 //   node scripts/dump-content.mjs --out /tmp/review    # -> review dir
@@ -200,10 +201,12 @@ async function main() {
     if (m && c) LESSON_PATHS.set(l.id, `/courses/${c.slug}/${m.slug}/${l.slug}`);
   }
 
-  // Clear previously generated content but keep docs like README.md.
+  // Clear previously generated content, but keep the hand-maintained docs the validator skips
+  // (content/README.md and content/TEMPLATE.md).
+  const KEEP_FILES = new Set(['README.md', 'TEMPLATE.md']);
   try {
     for (const name of await readdir(OUT)) {
-      if (name === 'README.md') continue;
+      if (KEEP_FILES.has(name)) continue;
       await rm(join(OUT, name), { recursive: true, force: true });
     }
   } catch { /* OUT does not exist yet */ }

@@ -49,7 +49,6 @@
     "postgres": "^3.4.8",
     "quansync": "^1.0.0",
     "sharp": "^0.34.5",
-    "vaul": "^1.1.2",
     "viem": "^2.44.4",
     "zod": "^4.3.5"
   },
@@ -76,12 +75,9 @@
     "web:dev": "yarn workspace web dev",
     "contracts:clean": "yarn workspace contracts clean",
     "contracts:compile": "yarn workspace contracts compile",
-    "content:fetch": "node scripts/fetch-lessons-content.mjs",
-    "content:extract": "node scripts/extract-lessons-text.mjs",
+    "content:validate": "node scripts/validate-content.mjs",
     "content:db-sync": "tsx scripts/sync-content-db.ts",
-    "content:index": "node scripts/generate-course-index.mjs",
-    "content:index:check": "node scripts/generate-course-index.mjs --check",
-    "content:sync": "yarn content:fetch && yarn content:extract && git add content-md && (git diff --cached --quiet || git commit -m \"chore: update lesson markdown\") && git subtree push --prefix=content-md content-export main",
+    "content:dump": "node scripts/dump-content.mjs",
     "heroku-postbuild": "yarn workspace backend build && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   }
 }

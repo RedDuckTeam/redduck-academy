@@ -1,5 +1,5 @@
 import type { CommunityEvent } from '@/types/community'
-import type { Course, Lesson } from '@/types/lesson'
+import type { Course, Lesson, LessonFaqItem } from '@/types/lesson'
 import { env } from '@/env'
 
 const SITE_NAME = 'RedDuck Academy'
@@ -393,8 +393,8 @@ export function buildLessonLd({
  * lesson has none. The Q&A is deliberately not rendered on the page — the FAQ
  * targets AI crawlers (JSON-LD here, `## FAQ` in the Markdown representation).
  */
-export function buildLessonFaqLd({ lesson }: { lesson: Lesson }): JsonLdObject | null {
-  const rows = (lesson.faq ?? []).filter((f) => f.question?.trim() && f.answer?.trim())
+export function buildLessonFaqLd(faq: LessonFaqItem[] | null | undefined): JsonLdObject | null {
+  const rows = (faq ?? []).filter((f) => f.question?.trim() && f.answer?.trim())
   if (rows.length === 0) return null
   return {
     '@context': 'https://schema.org',

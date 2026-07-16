@@ -7143,7 +7143,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@radix-ui/react-dialog@npm:1.1.15, @radix-ui/react-dialog@npm:^1.1.1, @radix-ui/react-dialog@npm:^1.1.15":
+"@radix-ui/react-dialog@npm:1.1.15, @radix-ui/react-dialog@npm:^1.1.15":
   version: 1.1.15
   resolution: "@radix-ui/react-dialog@npm:1.1.15"
   dependencies:
@@ -25333,7 +25333,6 @@ __metadata:
     sharp: "npm:^0.34.5"
     tsx: "npm:^4.21.0"
     typescript: "npm:^5.7.2"
-    vaul: "npm:^1.1.2"
     viem: "npm:^2.44.4"
     zod: "npm:^4.3.5"
   languageName: unknown
@@ -28382,18 +28381,6 @@ __metadata:
     react:
       optional: true
   checksum: 10c0/727976e35c7b8853b37cfc5ab14dd5be46ddf572482aa2d888c7e41e9b2d54bb5962c8dd7e26bd9ae69687c818464daf0a814098c3bc64b47e1363f0f7109423
-  languageName: node
-  linkType: hard
-
-"vaul@npm:^1.1.2":
-  version: 1.1.2
-  resolution: "vaul@npm:1.1.2"
-  dependencies:
-    "@radix-ui/react-dialog": "npm:^1.1.1"
-  peerDependencies:
-    react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-    react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-  checksum: 10c0/a6da539eb5576c0004a6b17e3673ea1db2c34e80355860131183abf53279ce025bbd016d542c345d1cc8464ad12f9dc9860949c751055d8a84961e8472a53707
   languageName: node
   linkType: hard
 
