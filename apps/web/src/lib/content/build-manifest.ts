@@ -232,7 +232,15 @@ export function coursesIndexJson(tree: ManifestCourse[]): string {
   return JSON.stringify(stripped)
 }
 
-/** Serialize a single course's manifest: full structure WITH per-lesson faq (lesson page). */
+/** Serialize a single course's manifest: structure only, no per-lesson faq. faq is ~85% of
+ *  the payload and only the current lesson's is ever used, so it is parsed from that lesson's
+ *  own `.md` frontmatter at request time instead (see loadLessonContent). */
 export function courseManifestJson(course: ManifestCourse): string {
-  return JSON.stringify(course)
+  return JSON.stringify({
+    ...course,
+    modules: course.modules.map((m) => ({
+      ...m,
+      lessons: m.lessons.map(({ faq, ...rest }) => rest),
+    })),
+  })
 }

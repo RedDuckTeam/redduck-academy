@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text'
 import { TableOfContentsIcon } from '@/components/ui/icons/table-of-contents'
 import { cn } from '@/lib/utils'
 import { useToc } from './use-toc'
-import { lessonRouteApi } from '@/lib/lesson-route'
+import { lessonRouteApi } from '@/lib/routes/lesson-route'
 import { scrollToHeading } from './scroll-to-heading'
 
 interface LessonTocProps {

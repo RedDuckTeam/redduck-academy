@@ -1,8 +1,8 @@
 import type { Lesson, LessonForUser } from '@/types/lesson'
-import { RichText } from '@/components/ui/rich-text'
-import { MarkdownContent } from '@/components/ui/markdown-content'
+import { RichText } from '@/components/content/rich-text'
+import { MarkdownContent } from '@/components/content/markdown-content'
 import { Text } from '@/components/ui/text'
-import { lessonRouteApi } from '@/lib/lesson-route'
+import { lessonRouteApi } from '@/lib/routes/lesson-route'
 
 interface DescriptionPanelProps {
   lesson: Lesson

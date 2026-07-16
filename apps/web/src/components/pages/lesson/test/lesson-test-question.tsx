@@ -4,7 +4,7 @@ import type { TestQuestion } from '@/types/lesson'
 import { Text } from '@/components/ui/text'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { RichText } from '@/components/ui/rich-text'
+import { RichText } from '@/components/content/rich-text'
 import { cn } from '@/lib/utils'
 
 interface LessonTestQuestionProps {

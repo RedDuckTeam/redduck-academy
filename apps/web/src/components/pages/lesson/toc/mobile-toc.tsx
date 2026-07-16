@@ -5,7 +5,7 @@ import { TableOfContentsIcon } from '@/components/ui/icons/table-of-contents'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { cn } from '@/lib/utils'
 import { useToc } from './use-toc'
-import { lessonRouteApi } from '@/lib/lesson-route'
+import { lessonRouteApi } from '@/lib/routes/lesson-route'
 import { scrollToHeading } from './scroll-to-heading'
 
 interface MobileTocProps {

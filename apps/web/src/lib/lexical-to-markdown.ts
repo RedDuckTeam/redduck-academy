@@ -3,8 +3,11 @@
  * `.md` endpoints that AI agents and LLM tools fetch.
  *
  * Diagrams are stored as inline `<svg>` markup with an authored `<title>` and
- * `<desc>` (see scripts/apply-svg-titles.mjs). Markdown has no SVG, so we render
- * each diagram as its title + description — the meaning survives, the noise doesn't.
+ * `<desc>`. Markdown has no SVG, so we render each diagram as its title +
+ * description — the meaning survives, the noise doesn't.
+ *
+ * A sibling serializer lives in scripts/dump-content.mjs (the content dumper); the two
+ * cover the same Lexical nodes and must stay in sync when either changes.
  */
 
 import type { LessonFaqItem } from '@/types/lesson'
