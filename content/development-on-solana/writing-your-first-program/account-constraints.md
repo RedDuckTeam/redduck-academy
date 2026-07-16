@@ -113,7 +113,7 @@ pub vault: Account<'info, Vault>,
 
 Three pieces, all required together:
 
-**`init`** tells Anchor to create the account fresh in this instruction. Under the hood, Anchor calls into the System Program to allocate bytes and assign ownership of the new account to your program. The constraint fails if the account already exists at the expected address, which is what makes it a single-use guard.
+**`init`** tells Anchor to create the account fresh in this instruction. Internally, Anchor calls into the System Program to allocate bytes and assign ownership of the new account to your program. The constraint fails if the account already exists at the expected address, which is what makes it a single-use guard.
 
 **`payer = signer`** names which field in the same Accounts struct pays the rent deposit. The named field has to be a `Signer` or otherwise able to send lamports. Lamports leave the payer's balance and end up sitting on the new account as its rent-exempt deposit.
 

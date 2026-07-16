@@ -33,7 +33,7 @@ This was the world from roughly 1991 to about 2004. By the end of it, most peopl
 
 ## Web2: the read-write internet
 
-Then came the platforms. Facebook in 2004, YouTube in 2005, Twitter in 2006, Instagram in 2010. Suddenly anyone could publish without owning infrastructure. You wrote a post, the platform delivered it. You uploaded a video, the platform stored it and served it to whoever wanted to watch.
+Then the platforms arrived. Facebook in 2004, YouTube in 2005, Twitter in 2006, Instagram in 2010. Suddenly anyone could publish without owning infrastructure. You wrote a post, the platform delivered it. You uploaded a video, the platform stored it and served it to whoever wanted to watch.
 
 This was a genuine revolution. The number of people publishing on the internet went from millions to billions inside a decade. The cost of reaching an audience dropped to near zero. Whole new categories of work appeared, including the kind of work the people building this course do, because suddenly there was an audience large enough to support it.
 
@@ -41,7 +41,7 @@ But there was a price, and as the second web matured, the price became impossibl
 
 Every post you wrote lived on someone else's server. Every connection you made was tracked. Every minute of attention was sold to an advertiser. The platforms could change the rules at any time, demonetise your account, suspend you, ban you, lose your data, sell to a different owner with different politics, or simply decide you no longer fit their algorithm. Your followers were not your followers. Your photos were not your photos. Your identity was a row in someone else's database, and you only got to keep it as long as the database operator allowed.
 
-For most people most of the time, this was fine. The trade was implicit, the cost was invisible, and the convenience was enormous. But for some categories of activity, especially anything involving money, opinions a platform might dislike, or work whose value depended on permanent ownership, the trade started to look bad. By the late 2010s, a generation of developers was asking a harder question.
+For most people most of the time, this was fine. The trade was implicit, the cost was invisible, and the convenience was enormous. But for some categories of activity, especially anything involving money, opinions a platform might dislike, or work whose value depended on permanent ownership, the trade no longer made sense. By the late 2010s, a generation of developers was asking a harder question.
 
 What if the internet had a way for users to actually own things again?
 
@@ -61,11 +61,11 @@ The infrastructure works. Real people use it for real things. The reason most de
 
 ## Why developers care now
 
-The shift from web2 to web3 is the kind of shift that doesn't come around often in a software career. It's comparable in scope to the shift from desktop to mobile, or from on-premise to cloud. A new infrastructure category opens up, the early teams that build on it release things nobody else could release, and for a window of time the demand for skilled developers vastly exceeds the supply. We're inside that window right now.
+The shift from web2 to web3 is the kind of shift that doesn't come around often in a software career. It's comparable in scope to the shift from desktop to mobile, or from on-premise to cloud. A new infrastructure category opens up, the early teams that build on it release things nobody else could release, and for a limited time the demand for skilled developers far exceeds the supply. We are in that period right now.
 
 A few things are different from previous cycles, though, and worth knowing about going in.
 
-The technology rewards depth far more than breadth. A developer who actually understands how a blockchain works, what a signature actually does, what a smart contract really is, can build things that look indistinguishable from magic to someone with only surface-level knowledge. The opposite is also true. The ecosystem has a high rate of catastrophic bugs, lost funds, and exploited contracts, almost always traceable to a developer who released code without fully understanding their tools. The premium on getting the fundamentals right is enormous, which is exactly why a course like this one exists.
+The technology rewards depth far more than breadth. A developer who actually understands how a blockchain works, what a signature actually does, what a smart contract really is, can build things that look impossible to someone with only surface-level knowledge. The opposite is also true. The ecosystem has a high rate of catastrophic bugs, lost funds, and exploited contracts, almost always traceable to a developer who released code without fully understanding their tools. The premium on getting the fundamentals right is enormous, which is exactly why a course like this one exists.
 
 The technology is also unusually open. Most major chains are open source. Most major protocols publish their design documents publicly. Most major dApps (decentralised applications) can be read in full by anyone, because the code runs on a public chain. You can learn from the actual production systems running real money. There is no equivalent in most other parts of software where the leading implementations are locked behind a corporate firewall.
 
