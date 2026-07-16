@@ -45,7 +45,7 @@ export class ReviewService {
     }
 
     // Reject re-submissions of the same commit before doing any expensive work
-    // (file fetch, rate-limit consumption, OpenAI batch). Reuse the resolved SHA for
+    // (file fetch, rate-limit consumption, AI review batch). Reuse the resolved SHA for
     // the file fetch so the branch can't drift to a newer tip between the two calls.
     const { owner, repo, refFromUrl } = parseGitHubRepoUrl(repoUrl)
     const { commitSha: resolvedSha, resolvedRef } = await githubService.resolveRepoRef(owner, repo, refFromUrl)
@@ -78,7 +78,7 @@ export class ReviewService {
       const batchId = await createBatch(prompt, submissionId, tasks.length)
       await SubmissionRepository.updateBatch(submissionId, batchId, fetchResult.commitSha)
     } catch (err) {
-      logger.error('Failed to create OpenAI batch', err, { submissionId, lessonId: lesson.id })
+      logger.error('Failed to create review batch', err, { submissionId, lessonId: lesson.id })
       // Mark the submission failed so the user isn't stuck in a pending state with no batch.
       // Store the safe message — the raw error would otherwise surface in the learner's submission history.
       await SubmissionRepository.markFailed(submissionId, GENERIC_ERROR_MESSAGE)

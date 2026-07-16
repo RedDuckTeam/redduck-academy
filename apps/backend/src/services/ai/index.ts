@@ -1,17 +1,27 @@
 import { env } from '../../env'
-import { OpenAiAiClient } from './openai-client'
-import type { AiClient } from './types'
+import { OpenAiProvider } from './openai-provider'
+import { AnthropicProvider } from './anthropic-provider'
+import type { AiProvider } from './provider'
 
-export type { AiClient, ChatMessage, ChatParams, ChatResult } from './types'
-export { OpenAiAiClient } from './openai-client'
+export type {
+  AiProvider,
+  AiProviderName,
+  StructuredSchema,
+  StructuredChatRequest,
+  StructuredChatResult,
+  BatchCreateRequest,
+  BatchPollResult,
+} from './provider'
+
+let cached: AiProvider | null = null
 
 /**
- * Returns an OpenAI-backed client. Throws if OPENAI_API_KEY is missing.
+ * Returns the configured AI provider (a singleton). Routes to Anthropic when `AI_PROVIDER=anthropic`,
+ * otherwise OpenAI. The concrete provider throws if its API key is missing, so a misconfigured switch
+ * fails loudly on first use rather than silently degrading.
  */
-export function createAiClient(): AiClient {
-  const key = env.OPENAI_API_KEY
-  if (!key) {
-    throw new Error('OPENAI_API_KEY is not set')
-  }
-  return new OpenAiAiClient(key)
+export function getAiProvider(): AiProvider {
+  if (cached) return cached
+  cached = env.AI_PROVIDER === 'anthropic' ? new AnthropicProvider() : new OpenAiProvider()
+  return cached
 }
