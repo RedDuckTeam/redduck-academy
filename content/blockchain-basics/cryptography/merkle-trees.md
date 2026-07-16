@@ -279,7 +279,7 @@ The verification:
 5. They concatenate `h(AB,CD)` with `h(EF,GH)` from the proof and hash one more time, producing a value.
 6. If that final value equals the root they already trusted, `D` is in the set. If it doesn't, `D` is not in the set (or the proof is forged).
 
-Three hashes from the prover, three hash operations on the verifier's side. The other five leaves and their hashes never appear. For a tree with 1,000 leaves, the proof would be 10 hashes. For a tree with one billion leaves, the proof would still only be 30 hashes. That logarithmic scaling is the entire trick.
+Three hashes travel from the prover. The verifier does four hash operations: one to turn `D` into `h(D)`, then three more to combine up the path to the root. The other five leaves and their hashes never appear. For a tree with 1,000 leaves, the proof would be 10 hashes. For a tree with one billion leaves, the proof would still only be 30 hashes. That logarithmic scaling is the entire trick.
 
 The verifier doesn't need to trust the prover. The hash function is doing the trust work: if the prover sends a wrong sibling hash, the final computed value won't match the root, and the proof fails. If the prover lies about which item they're proving (claims `D` was in the set when it wasn't), they can't construct a sequence of hashes that mathematically rolls up to the trusted root without breaking the hash function itself. This is the hash function's collision resistance: because finding two different inputs that produce the same hash is computationally infeasible, the prover cannot forge a path that leads to the real root.
 

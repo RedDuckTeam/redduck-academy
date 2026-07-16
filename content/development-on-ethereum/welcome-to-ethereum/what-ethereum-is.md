@@ -24,8 +24,8 @@ faq:
     answer: "An externally owned account (EOA) is a regular user account controlled
       by a private key, holding only an ETH balance and a nonce, and you sign
       transactions with the key to spend ETH or call contracts. A smart contract
-      account is controlled by code, not a key: its code deploys to an address
-      forever, and when anyone sends it a transaction the code runs, reads and
+      account is controlled by code, not a key: its code deploys to an address and
+      stays there as long as the chain runs, and when anyone sends it a transaction the code runs, reads and
       writes its own storage, and can move ETH or call other contracts."
   - question: If a transaction runs out of gas halfway, do I lose the gas I already paid?
     answer: Yes. When the gas runs out, the transaction is reverted, meaning every
@@ -35,7 +35,7 @@ faq:
       brought with it, so it cannot run forever.
 ---
 
-> Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. Think of Ethereum as a single computer that the entire world shares. Every program written for it runs forever, and nobody can shut it down.
+> Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. Think of Ethereum as a single computer that the entire world shares. Every program written for it runs forever, and no single party can switch the network off.
 
 ## The shape of the thing
 
@@ -53,7 +53,7 @@ Two kinds of things have addresses on Ethereum and can hold state.
 
 The first is a regular user account, called an **externally owned account** or EOA. It's controlled by a private key, exactly like a Bitcoin address. You sign transactions with the key to spend your ETH or call a smart contract (the second account type, described next). EOAs hold a balance of ETH and a counter called a nonce. Nothing else.
 
-The second is a **smart contract** account. It's controlled by code, not by a private key. When a contract is created, its code gets deployed to a new address on the chain. That code lives at that address forever. Anyone can send a transaction to a contract's address. When they do, the contract's code runs. It can read and write its own storage, send ETH around, and call other contracts. The result of the code's execution becomes part of the global state.
+The second is a **smart contract** account. It's controlled by code, not by a private key. When a contract is created, its code gets deployed to a new address on the chain. That code stays at that address for as long as the chain runs, and no one else can change it or take it down. The one historical exception is selfdestruct: for years a contract could erase its own code with that operation, though a later change to the protocol has since removed almost all of its effect. Anyone can send a transaction to a contract's address. When they do, the contract's code runs. It can read and write its own storage, send ETH around, and call other contracts. The result of the code's execution becomes part of the global state.
 
 The state of Ethereum at any moment is the combined state of every account, EOA and contract, that has ever existed on the chain. Balances, nonces, contract code, contract storage. Every node holds this state, updates it as new blocks arrive, and rejects any block whose transactions don't transition the state correctly.
 

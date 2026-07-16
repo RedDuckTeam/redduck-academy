@@ -26,7 +26,11 @@ const envSchema = z.object({
    */
   DATABASE_CONNECTION_POOL_URL: z.string().optional(),
   PAYLOAD_SECRET: z.string().min(1),
+  /** Which AI vendor backs the review subsystem. OpenAI by default; set to `anthropic` for Claude. */
+  AI_PROVIDER: z.enum(['openai', 'anthropic']).default('openai'),
   OPENAI_API_KEY: z.string().min(1),
+  /** Required only when AI_PROVIDER=anthropic; validated at provider construction, not here. */
+  ANTHROPIC_API_KEY: z.string().optional(),
   R2_BUCKET: z.string().min(1),
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),

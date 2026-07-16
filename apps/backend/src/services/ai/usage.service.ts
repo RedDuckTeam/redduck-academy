@@ -37,6 +37,31 @@ export function normalizeUsage(raw: unknown): NormalizedUsage | null {
 }
 
 /**
+ * Normalizes an Anthropic `usage` object into our shape. Anthropic reports uncached input, cache
+ * reads, and cache writes as separate counts, so `promptTokens` is their sum (to satisfy
+ * computeCostUsd's "promptTokens includes cached" contract) and `cachedTokens` is the cache-read
+ * portion. Accepts `unknown` so it works for both the typed SDK response and JSON from batch output.
+ */
+export function normalizeAnthropicUsage(raw: unknown): NormalizedUsage | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const u = raw as Record<string, unknown>
+  const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+
+  const inputTokens = num(u.input_tokens)
+  const cacheRead = num(u.cache_read_input_tokens)
+  const cacheCreation = num(u.cache_creation_input_tokens)
+  const outputTokens = num(u.output_tokens)
+  const promptTokens = inputTokens + cacheRead + cacheCreation
+
+  return {
+    promptTokens,
+    cachedTokens: cacheRead,
+    completionTokens: outputTokens,
+    totalTokens: promptTokens + outputTokens,
+  }
+}
+
+/**
  * Records one LLM call's token usage + estimated cost. Best-effort: a logging failure must never
  * break the review that produced it, so all errors are swallowed (and logged). No-ops when usage
  * is missing.

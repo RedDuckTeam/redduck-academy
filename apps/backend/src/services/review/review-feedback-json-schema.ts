@@ -1,20 +1,20 @@
+import type { StructuredSchema } from '../ai'
+
 /**
- * Strict JSON Schema for {@link ReviewFeedback} — used with Chat Completions
- * `response_format: { type: 'json_schema', json_schema: ... }` so the API enforces shape (no markdown).
- * @see https://platform.openai.com/docs/guides/structured-outputs
+ * Provider-agnostic structured-output contract for {@link ReviewFeedback}. Each AI provider wraps
+ * this raw JSON Schema its own way (OpenAI `response_format`, Anthropic `output_config.format`) so
+ * the API enforces the shape (no markdown). The `minItems`/`maxItems` length lock is honored by
+ * OpenAI; Anthropic drops it and the batch layer re-validates criteria coverage regardless.
  */
-export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
+export function buildReviewFeedbackSchema(criteriaCount: number): StructuredSchema {
   const n = Math.max(1, criteriaCount)
   return {
-    type: 'json_schema' as const,
-    json_schema: {
-      name: 'review_feedback',
-      description: 'Structured grading result for a student project submission.',
-      strict: true,
-      schema: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
+    name: 'review_feedback',
+    description: 'Structured grading result for a student project submission.',
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
           lessonPassed: {
             type: 'boolean',
             description:
@@ -77,6 +77,5 @@ export function buildReviewFeedbackResponseFormat(criteriaCount: number) {
         },
         required: ['lessonPassed', 'summary', 'promptInjectionDetected', 'promptInjectionNotes', 'criteria'],
       },
-    },
   }
 }
