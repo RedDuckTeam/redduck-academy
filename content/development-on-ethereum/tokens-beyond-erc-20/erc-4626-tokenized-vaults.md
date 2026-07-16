@@ -271,7 +271,7 @@ A simpler alternative that also defends against this attack: have the deployer m
 
 A vault's share token has its own `decimals()`, which by convention should match the underlying asset's decimals. If USDC has 6 decimals, the share token should also have 6, so amounts look consistent in the UI.
 
-The catch is that the original ERC-20 standard doesn't require `decimals()` to exist. It's part of the optional `IERC20Metadata` extension. A vault deployed against an exotic asset might not be able to read its decimals at all.
+The limitation is that the original ERC-20 standard doesn't require `decimals()` to exist. It's part of the optional `IERC20Metadata` extension. A vault deployed against an exotic asset might not be able to read its decimals at all.
 
 OpenZeppelin's solution is a helper that tries to call `decimals()` on the asset using a low-level `staticcall`, falls back to 18 if the call reverts or returns garbage, and then optionally adds the offset before exposing the vault's own decimals. The pattern looks like this:
 

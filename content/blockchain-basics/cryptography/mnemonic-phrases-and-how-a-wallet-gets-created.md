@@ -114,6 +114,8 @@ The [wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt)
 
 A 24-word mnemonic runs the same algorithm with more starting randomness — that is the only difference.
 
+Because that mapping is reversible, the words are the entropy itself in readable form, so restoring a wallet by re-entering them reproduces the exact same bits, and there is no separate stored key that a password would open.
+
 ## Stage 3: Mnemonic to seed
 
 The mnemonic itself is not the cryptographic input to anything. The seed is. To convert one to the other, the wallet runs:

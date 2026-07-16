@@ -1,5 +1,5 @@
 import { LessonsService } from '../lessons/lessons.service'
-import { reviewCodingTask, secondLayerReview, CODING_TASK_MODEL } from './coding-task.review'
+import { reviewCodingTask, secondLayerReview } from './coding-task.review'
 import { CodingTaskRepository } from './coding-task.repository'
 import { CodingTaskRateLimitService } from '../rate-limit/coding-task-rate-limit.service'
 import { recordAiUsage, type AiSubmissionType, type NormalizedUsage } from '../ai/usage.service'
@@ -19,6 +19,8 @@ interface VerdictResolution {
   // Present only when an AI call was made (skipped for short-circuit fails).
   usage?: NormalizedUsage | null
   submissionType?: AiSubmissionType
+  // The model the provider actually ran, for cost logging.
+  model?: string
 }
 
 export class CodingTaskService {
@@ -76,7 +78,7 @@ export class CodingTaskService {
         userLessonId,
         submissionType: verdict.submissionType,
         submissionId,
-        model: CODING_TASK_MODEL,
+        model: verdict.model ?? 'unknown',
         isBatch: false,
         usage: verdict.usage,
       })
@@ -117,6 +119,7 @@ export class CodingTaskService {
       aiComment: packVerdictComment({ clientPassed: null, legacy: true, note: result.adminComment }),
       usage: result.usage,
       submissionType: 'coding_task',
+      model: result.model,
     }
   }
 
@@ -152,6 +155,7 @@ export class CodingTaskService {
       }),
       usage: result.usage,
       submissionType: 'coding_task_recheck',
+      model: result.model,
     }
   }
 

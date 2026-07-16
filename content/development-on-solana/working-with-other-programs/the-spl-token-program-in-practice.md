@@ -107,7 +107,7 @@ A common new-developer confusion is conflating these two layers. People will say
 
 A balance stored in a token account is not a display value. It's a raw integer scaled by ten to the power of the mint's decimal precision. USDC has 6 decimals, which means a stored balance of `100,000,000` represents `100.000000` USDC when displayed. To take a user-friendly input like "I want to send 100 USDC" and turn it into the right transfer amount, you multiply by `10^6` to get `100,000,000`. To display a balance from the chain, you divide by `10^6`.
 
-The decimals are stored on the mint rather than on the token account. So to convert correctly between raw and display values, you need to know which mint a balance belongs to. SOL uses 9 decimals, so 1 SOL displays as a balance of 1,000,000,000 lamports under the hood. Most fungible tokens use 6 or 9. NFTs typically use 0 decimals, since you can't have half of one.
+The decimals are stored on the mint rather than on the token account. So to convert correctly between raw and display values, you need to know which mint a balance belongs to. SOL uses 9 decimals, so 1 SOL is 1,000,000,000 lamports in raw units. Most fungible tokens use 6 or 9. NFTs typically use 0 decimals, since you can't have half of one.
 
 This is the most common source of scale errors in early Solana programs. A new developer reads a balance, treats it as a display value, multiplies it by some factor in their handler, and ends up moving the wrong amount of tokens. The fix is discipline: every amount that touches the Token Program is a raw integer. Conversion to and from display values happens only at the edges, in your frontend or in your test setup, never inside program logic.
 

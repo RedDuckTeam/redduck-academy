@@ -5,9 +5,9 @@ type: lecture
 order: 1
 faq:
   - question: What types of lessons are in the RedDuck blockchain course?
-    answer: The course mixes four kinds of lessons. Lectures are short reading that
-      explain one idea at a time, tests are a few questions to confirm a concept
-      actually stuck, coding tasks ask you to write real code that is checked
+    answer: The course mixes four types of lessons. Lectures are short reading that
+      explain one idea at a time, tests are a few questions to confirm you
+      understood the concept, coding tasks ask you to write real code that is checked
       automatically, and projects are larger builds you push to your own GitHub
       repo and submit as a link for automated review with feedback.
   - question: How do I earn the certificate for a course here?
@@ -18,7 +18,7 @@ faq:
       you finish the course they build on.
   - question: I'm stuck on a coding task, what should I do?
     answer: Re-read the lecture directly above the task, because the answer is
-      usually there. The course ramps up difficulty gradually and is meant to be
+      usually there. The course increases difficulty gradually and is meant to be
       learned step by step, so it also helps to avoid skipping ahead. You can
       always return later using the Continue button on the home page and the
       course outline on the left.
@@ -28,10 +28,10 @@ Welcome. This is a hands-on course in blockchain development. You'll read, check
 
 ### What you'll do here
 
-Each course is a sequence of short lessons. You'll meet four kinds:
+Each course is a sequence of short lessons. There are four types:
 
 - **Lectures** are the reading. Concise, example-driven, one idea at a time. This is one.
-- **Tests** are a few questions to confirm a concept actually stuck before you move on.
+- **Tests** are a few questions to confirm you understood the concept before you move on.
 - **Coding tasks** ask you to write real code in the editor. It's checked automatically.
 - **Projects** are larger builds in your own GitHub repo that you submit as a link. They get reviewed automatically, with detailed feedback.
 
@@ -44,12 +44,15 @@ So it's not just quizzes. You'll be writing and submitting real code.
 - Some courses have prerequisites and unlock once you finish the course they build on.
 - Your rank on the leaderboard reflects how many lessons you've completed overall.
 
-Pick up where you left off anytime with the Continue button on the home page, and navigate between lessons using the course outline on the left.
+Return to your most recent lesson anytime with the Continue button on the home page, and move between lessons using the course outline on the left.
 
 ### A few tips
 
-- Difficulty ramps up gradually. Don't skip ahead.
+- Difficulty increases gradually. Don't skip ahead.
 - Stuck on a coding task? Re-read the lecture above it. The answer is usually there.
 - Take your time. This is built to be learned, not rushed.
+- Pull the engineering principle out of each lesson. The exact API matters less than the reason it works this way.
+- Ask why something works this way and not another. That contrast is usually where the understanding is.
+- An AI assistant helps with both. Ask one to name the principle behind a lesson, or to check your reasoning about why it works.
 
 That's it. Let's get started.

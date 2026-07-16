@@ -29,7 +29,7 @@ jobs:
     name: Insert new content rows
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # need history to diff the push for newly added files
 
@@ -54,7 +54,7 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.detect.outputs.run == 'true'
         with:
           node-version: 22

@@ -103,7 +103,7 @@ This works but it's restrictive in a long list of ways.
 
 A smart account is a contract that holds your funds and decides for itself what counts as a valid operation. The code can require two signatures from a 2-of-3 multisig. It can accept a passkey signature from your phone instead of an ECDSA signature. It can require a transaction below a daily spending limit to go through automatically while above-limit transactions wait for a second approver. It can rotate keys, recover access via trusted guardians, pay gas in any token. Anything you can express in Solidity.
 
-The catch is the one thing in the right-hand column that's missing: a contract cannot initiate a transaction. Only an EOA can. Without something to bridge the two sides, smart accounts are still passive, they wait to be called. Account abstraction is the work of building that bridge.
+The limitation is the one thing in the right-hand column that's missing: a contract cannot initiate a transaction. Only an EOA can. Without something to bridge the two sides, smart accounts are still passive, they wait to be called. Account abstraction is the work of building that bridge.
 
 Two production approaches exist today. **ERC-4337** is an application-layer solution that went live on Ethereum mainnet in March 2023. It works without any consensus change. **EIP-7702** is a protocol-layer change that activated in the Pectra upgrade in May 2025. It's a smaller mechanism that achieves much of what 4337 does with less infrastructure.
 
