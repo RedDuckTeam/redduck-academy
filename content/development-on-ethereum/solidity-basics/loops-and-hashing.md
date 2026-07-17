@@ -125,7 +125,7 @@ The contract still iterates, but each call is bounded by `count` instead of by `
 
 **Pull over push.** Instead of the contract pushing tokens or ETH to many recipients, let each recipient pull their own share. The contract records what each recipient is owed, and `claim()` is a fixed-size operation with no loop. The contract works correctly no matter how many recipients exist.
 
-**Off-chain iteration.** Compute the result off-chain, submit it on-chain as a single transaction. This is how Merkle-proof airdrops work: the contract verifies one proof per transaction, which is bounded. We covered this pattern in detail in the off-chain computation lesson.
+**Off-chain iteration.** Compute the result off-chain, submit it on-chain as a single transaction. This is how Merkle-proof airdrops work: the contract verifies one proof per transaction, which is bounded.
 
 Each pattern shifts the work somewhere different. Pagination spreads it across multiple transactions, pull-over-push moves it to the recipients, off-chain iteration moves it off the chain entirely. All three avoid the block-gas-limit pitfall.
 
