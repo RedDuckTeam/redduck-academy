@@ -23,7 +23,7 @@ faq:
       costs the same to store as a uint256 and can even cost slightly more gas
       because it has to be masked. Smaller integer types only pay off when
       several of them are declared together and the compiler can pack them into
-      a single 32-byte storage slot; for loop counters and ordinary values, just
+      a single 32-byte storage slot. For loop counters and ordinary values, just
       use uint256.
   - question: Do I need to initialize variables in Solidity, or can they be null?
     answer: "There is no null or undefined in Solidity: every variable has a
@@ -34,7 +34,7 @@ faq:
       value."
 ---
 
-> The next several lessons walk through the Solidity type system, the building blocks every contract is made of. This lesson covers the structure of a Solidity file and the first half of the type system. The first half is value types, the simple types that hold their data inline.
+> Solidity's value types are the simple types that hold their data inline, and booleans and integers are where every contract begins. The surprise for newcomers is that Solidity integers are fixed-size rather than the arbitrary-precision numbers Python or JavaScript give you, which means arithmetic can overflow or silently truncate. Get the file structure and these types right, and everything else in the type system builds on them.
 
 ## How a Solidity file is structured
 
@@ -101,7 +101,7 @@ Two ideas before any syntax.
 
 First, **every variable in Solidity has a definite value the moment it is declared**. There is no `null`, no `undefined`, no "uninitialized" state. If you write `uint256 public count;` and never assign to it, reading it returns `0`. Booleans default to `false`, addresses to `0x0...`, strings to empty, structs to all-zero. This is a consequence of how storage on a chain works. Every storage slot is a 32-byte word, and an unwritten slot reads as zeros, which the type system interprets as the zero value of that type.
 
-Second, **Solidity integers are fixed-size machine integers, not arbitrary-precision math**. When you write `uint256 x = 5`, you have actually allocated 256 bits to hold that 5. Languages you've used hide this from you. Python's `int` grows as needed. JavaScript's `Number` trades away precision silently above 2^53. Ruby's `Integer` auto-promotes to bignum. Solidity does none of that. You choose the bit budget up front, and any arithmetic that exceeds it is treated as a real error.
+Second, **Solidity integers are fixed-size machine integers rather than arbitrary-precision math**. When you write `uint256 x = 5`, you have actually allocated 256 bits to hold that 5. Languages you've used hide this from you. Python's `int` grows as needed. JavaScript's `Number` trades away precision silently above 2^53. Ruby's `Integer` auto-promotes to bignum. Solidity does none of that. You choose the bit budget up front, and any arithmetic that exceeds it is treated as a real error.
 
 Those two ideas underlie everything in this section.
 

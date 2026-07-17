@@ -24,7 +24,7 @@ faq:
       keeping the same address. When you grow it, the payer covers the extra
       rent needed to stay rent-exempt, and a single realloc can add at most 10
       KB, so bigger growth needs several instructions. Shrinking an account does
-      not refund any SOL; if you want the SOL back you have to close the account
+      not refund any SOL. If you want the SOL back you have to close the account
       entirely.
   - question: Should I use realloc, many small PDAs, or close-and-recreate for
       growing data?
@@ -36,7 +36,7 @@ faq:
       fits best.
 ---
 
-> Solana accounts are not garbage-collected. Every byte you allocate stays paid for forever, and the SOL locked for rent-exemption stays locked until someone explicitly reclaims it. Closing an account is the deliberate act of saying "I'm done, give the SOL back, and make sure nobody can resurrect this slot with stale state." Resizing an account is the inverse: keeping the account alive but changing how many bytes it holds. Both are operations the default Anchor model does not perform automatically, and getting them wrong has real consequences. This lecture is the mechanics of doing them safely.
+> Solana accounts are not garbage-collected. Every byte you allocate stays paid for forever, and the SOL locked for rent-exemption stays locked until someone explicitly reclaims it. Closing an account is the deliberate act of saying "I'm done, give the SOL back, and make sure nobody can resurrect this slot with stale state." Resizing an account is the inverse: keeping the account alive but changing how many bytes it holds. Both are operations the default Anchor model does not perform automatically, and getting them wrong has real consequences. Doing both safely comes down to a small set of mechanics.
 
 ## Why closure exists
 
@@ -83,7 +83,7 @@ A safe close has three steps. Anchor's `close = recipient` constraint performs a
   <text x="360" y="480" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">step 3: overwrite discriminator with CLOSED_ACCOUNT_DISCRIMINATOR</text>
   <text x="55" y="510" font-family="monospace" font-size="10" fill="#565653">data[0..8]:    [255, 255, 255, 255, 255, 255, 255, 255]</text>
   <text x="55" y="528" font-family="monospace" font-size="10" fill="#565653">Anchor will refuse to deserialize this account as anything</text>
-  <text x="55" y="549" font-family="monospace" font-size="9" fill="#ed4937" font-weight="bold">if skipped: revival attack — caller funds it, original handler runs on stale state</text>
+  <text x="55" y="549" font-family="monospace" font-size="9" fill="#ed4937" font-weight="bold">if skipped: revival attack, caller funds it, original handler runs on stale state</text>
 </svg>
 
 Step 1 returns the rent. Every Solana account holds enough SOL to be rent-exempt, and at close time that SOL is sent somewhere. The "recipient" in `close = recipient` is the account that receives it. Until the rent drains below the exempt threshold, the runtime keeps the account alive on chain. Skip this step and you've leaked rent into a dead account, exactly the situation closure is meant to prevent.
@@ -291,7 +291,7 @@ The Donor Tiers Vault from the first milestone is the canonical many-PDAs case. 
 
 Realloc earns its place when the bound is real and small. A message board where each board has up to a few hundred posts, capped at maybe 8 KB total, is fine to grow with realloc. A position-history log that tops out at 1 KB is fine. Anything that could plausibly need more than 10 KB total or might want to grow past the cap in one transaction needs a different design.
 
-## What you actually do day to day
+## When to reach for close and realloc
 
 For most accounts, you'll never need realloc or explicit close handling. The default Anchor account pattern is: pick a fixed size at init, store data in it, leave it. When users go inactive, their accounts sit there harmlessly. The protocol doesn't need to clean up unless rent recovery matters for your scale.
 

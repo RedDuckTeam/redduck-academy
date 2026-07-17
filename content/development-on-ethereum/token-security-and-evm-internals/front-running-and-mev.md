@@ -5,20 +5,21 @@ type: lecture
 order: 6
 faq:
   - question: How can a bot profit from my trade before it even executes?
-    answer: When you submit a transaction it does not run immediately; it waits in a
+    answer: When you submit a transaction it does not run immediately. It waits in a
       public pool of pending transactions called the mempool, which anyone can
       watch. A bot sees your pending swap, calculates how it will move the
       price, and inserts its own transactions around yours by paying gas fees
       that make them land in the right order. In a sandwich attack it buys just
       before you (pushing the price up), lets your trade execute at that worse
       price, then sells just after, pocketing the difference. This is a
-      structural property of transparent blockchains, not a contract bug.
+      structural property of transparent blockchains, and it happens even when
+      your contract has no bug.
   - question: What is slippage tolerance and why does setting it wrong cost me money?
     answer: Slippage is the gap between the price you expected and the price you
       actually get, because the pool can change between when you submit and when
       your trade runs. Slippage tolerance is the minimum output you will accept,
       and the trade reverts if it would do worse. Set it too tight and normal
-      price movement makes your transactions fail; set it too loose and you are
+      price movement makes your transactions fail. Set it too loose and you are
       advertising exactly how much a sandwich bot is allowed to extract from you
       before your trade still goes through.
   - question: What does a deadline parameter on a swap actually protect against?
@@ -32,10 +33,10 @@ faq:
   - question: Can I hide my transaction from front-running bots entirely?
     answer: You can reduce exposure by sending it through a private relay instead of
       the public mempool. A service like Flashbots Protect gives you a special
-      RPC endpoint; transactions sent through it go straight to block builders
+      RPC endpoint. Transactions sent through it go straight to block builders
       and never appear publicly, so searchers cannot see or sandwich them. This
-      protection lives at the wallet level, not in the contract, so as a
-      developer you can recommend it but not enforce it. Note that MEV can never
+      protection lives at the wallet level, so as a developer you can recommend
+      it but cannot enforce it from the contract. Note that MEV can never
       be fully eliminated, because as long as pending transactions are visible
       and someone chooses their order, some value extraction remains possible.
 ---
@@ -126,7 +127,7 @@ This public visibility, combined with the builder's freedom to order transaction
 
 **MEV** stands for "Maximal Extractable Value." It's the extra profit that can be made by choosing the right order of transactions in a block, or by inserting your own transactions between someone else's.
 
-A simple example: imagine you submit a transaction that will change the price of a token. A searcher sees this in the mempool. They submit two of their own transactions, one before yours and one after — the first with a higher gas fee than yours so it executes first, the second with a lower fee so it lands right after yours. The builder, motivated to maximize their fee revenue, orders these transactions in a way that lets the searcher profit at your expense. The proposer signs the block.
+A simple example: imagine you submit a transaction that will change the price of a token. A searcher sees this in the mempool. They submit two of their own transactions, one before yours and one after. The first carries a higher gas fee than yours so it executes first, the second a lower fee so it lands right after yours. The builder, motivated to maximize their fee revenue, orders these transactions in a way that lets the searcher profit at your expense. The proposer signs the block.
 
 You paid a normal gas fee. The searcher profited. The builder collected fees. The proposer got paid. Every party in the supply chain made money except you, the user whose transaction was the bait that made the whole thing possible.
 
@@ -324,7 +325,7 @@ So why is commit-reveal still useful? Because it actually defeats a different cl
 For DEX swaps specifically, the pattern only works if combined with additional contract-side mechanics. Two common designs:
 
 - **Batch auctions.** The contract collects many commits over a window, then settles all the reveals at a single uniform price computed from the aggregated trades. CoW Protocol uses a variant of this idea. Within a batch, ordering doesn't matter, so sandwich attacks have nothing to extract.
-- **Price-lock to commit block.** The contract uses the pool's reserves at the block where the commit was made, not at the block where the reveal executes. A bot that tries to pump the price before your reveal accomplishes nothing because the contract ignores the current price. This is expensive in practice because it requires storing pool state history.
+- **Price-lock to commit block.** The contract uses the pool's reserves at the block where the commit was made rather than at the block where the reveal executes. A bot that tries to pump the price before your reveal accomplishes nothing because the contract ignores the current price. This is expensive in practice because it requires storing pool state history.
 
 Naive commit-reveal alone is not an MEV solution for AMMs. It's a building block that protects intent disclosure but needs additional protocol-level mechanics to actually neutralize price-impact attacks.
 
@@ -413,7 +414,7 @@ Instead of fixing the contract, you can change how transactions are submitted. I
 
 The most well-known service is **Flashbots Protect**. Users add a custom RPC endpoint to their wallet, and transactions submitted through that endpoint never appear in the public mempool. Searchers can't see them, so they can't front-run them.
 
-This defense lives at the wallet layer, not the contract layer. As a contract developer, you can't enforce that your users use private mempools, but you can recommend it and integrate with services that make it easier. Many production DeFi frontends have started defaulting their users to private RPCs.
+This defense lives at the wallet layer rather than the contract layer. As a contract developer, you can't enforce that your users use private mempools, but you can recommend it and integrate with services that make it easier. Many production DeFi frontends have started defaulting their users to private RPCs.
 
 A bonus to private relays: some of them participate in "MEV-Share" schemes where searchers bid for the right to back-run your transaction profitably. A portion of that bid goes back to you as a rebate. So instead of being a victim of MEV, you can earn a small cut of it.
 

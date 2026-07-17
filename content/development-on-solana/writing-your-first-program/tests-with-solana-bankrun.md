@@ -17,7 +17,7 @@ faq:
       every transaction goes through real slot timing. solana-bankrun instead
       runs your program's compiled bytecode in-process against an in-memory
       Bank, so tests finish in milliseconds. Bankrun is the fast inner-loop
-      tool; you might still use the real validator right before release to check
+      tool. You might still use the real validator right before release to check
       full RPC integration.
   - question: How do I fund an account in a bankrun test without an airdrop or faucet?
     answer: Use context.setAccount, which writes account state directly into the
@@ -310,10 +310,10 @@ A few habits worth picking up from the start.
 
 **Test the failure cases.** Every error variant your program defines should have at least one test that triggers it. The pattern is the `try`/`catch` shown above, asserting on the error name in the message. Errors are part of your program's contract with clients, and they break silently if not tested.
 
-**Use ****`setAccount`**** for setup, never for shortcuts.** It's tempting to skip writing the `initialize` call by just pre-populating the counter account with the right state. Don't. Tests that depend on hand-crafted state can pass even when the initialization logic is broken. Use `setAccount` only to seed prerequisites your test isn't trying to exercise, like funding keypairs.
+**Use `setAccount` for setup, never for shortcuts.** It's tempting to skip writing the `initialize` call by just pre-populating the counter account with the right state. Don't. Tests that depend on hand-crafted state can pass even when the initialization logic is broken. Use `setAccount` only to seed prerequisites your test isn't trying to exercise, like funding keypairs.
 
 **Re-derive PDAs in every test.** The `PublicKey.findProgramAddressSync` call shows up in every test. You could share it via a helper, but inlining it makes each test more self-contained, which matters when you're debugging one in isolation.
 
-**`warpToSlot`**** for time, never for retries.** Don't use time-warping to "settle" something asynchronous. Bankrun is synchronous, with nothing to settle. Use it strictly to advance the chain past a time gate your program is testing for.
+**`warpToSlot` for time, never for retries.** Don't use time-warping to "settle" something asynchronous. Bankrun is synchronous, with nothing to settle. Use it strictly to advance the chain past a time gate your program is testing for.
 
 A program with a clean bankrun suite under it is a program you can refactor confidently. Every later instruction you write, every constraint you add, every error variant you introduce, your suite tells you in seconds whether you broke anything. That's the payoff of investing in tests early, and it's what makes bankrun's millisecond feedback loop worth learning over the alternatives.

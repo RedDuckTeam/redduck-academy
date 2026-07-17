@@ -35,7 +35,7 @@ faq:
       constraint when building with VRF.
 ---
 
-> Smart contracts can't generate random numbers on their own. The reasons are structural, not solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.
+> Smart contracts can't generate random numbers on their own. The reasons are structural and cannot be solved by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.
 
 ## Why a blockchain can't roll dice
 
@@ -97,7 +97,7 @@ The setup involves a key pair. The party generating randomness (the VRF oracle s
 
 The third point is the load-bearing one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
 
-For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle cannot deviate. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
+For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle cannot deviate. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
 
 ## The request-and-receive cycle
 
@@ -124,7 +124,7 @@ VRF cannot be a single function call. The proof must be generated off chain by a
   <line x1="580" y1="116" x2="580" y2="540" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
   <line x1="140" y1="155" x2="356" y2="155" stroke="#ed4937" stroke-width="2" marker-end="url(#arrV2)"/>
   <text x="248" y="148" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">requestRandomWords()</text>
-  <text x="248" y="170" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">TX 1 — user pays gas</text>
+  <text x="248" y="170" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">TX 1: user pays gas</text>
   <rect x="280" y="186" width="160" height="34" fill="#e0deda" stroke="#000000" stroke-width="1"/>
   <text x="360" y="207" text-anchor="middle" font-family="monospace" font-size="10">emit event with seed</text>
   <line x1="360" y1="246" x2="576" y2="246" stroke="#ed4937" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arrV2)"/>
@@ -137,7 +137,7 @@ VRF cannot be a single function call. The proof must be generated off chain by a
   <text x="468" y="356" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653" font-style="italic">waits N block confirmations</text>
   <line x1="580" y1="380" x2="364" y2="380" stroke="#ed4937" stroke-width="2" marker-end="url(#arrV2)"/>
   <text x="472" y="373" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">submits (number, proof)</text>
-  <text x="472" y="395" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">TX 2 — service pays gas</text>
+  <text x="472" y="395" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">TX 2: service pays gas</text>
   <rect x="280" y="411" width="160" height="48" fill="#e0deda" stroke="#000000" stroke-width="1"/>
   <text x="360" y="431" text-anchor="middle" font-family="monospace" font-size="10">verifies proof against</text>
   <text x="360" y="445" text-anchor="middle" font-family="monospace" font-size="10">public VRF key on-chain</text>
@@ -148,7 +148,7 @@ VRF cannot be a single function call. The proof must be generated off chain by a
   <text x="140" y="530" text-anchor="middle" font-family="monospace" font-size="10">stores the result</text>
 </svg>
 
-The implication for your contract design is that you cannot use a random number in the same transaction that requests it. The number does not exist yet. Your `requestRandomWords` call returns a request ID. The number arrives in a separate transaction via the callback function. Anything the contract needs to do with the number (pick a winner, reveal an NFT, settle a bet) happens inside that callback, not the original user transaction. This async shape is the biggest design constraint in working with VRF and it shapes every contract you'll build with it.
+The implication for your contract design is that you cannot use a random number in the same transaction that requests it. The number does not exist yet. Your `requestRandomWords` call returns a request ID. The number arrives in a separate transaction via the callback function. Anything the contract needs to do with the number (pick a winner, reveal an NFT, settle a bet) happens inside that callback rather than the original user transaction. This async shape is the biggest design constraint in working with VRF and it shapes every contract you'll build with it.
 
 The number of block confirmations the service waits before responding is configurable per request. The current minimum on Sepolia is 3. Higher values give you better protection against shallow reorgs, at the cost of waiting longer for the result.
 
@@ -229,7 +229,7 @@ constructor(
 }
 ```
 
-The `keyHash` identifies which off-chain VRF job runs for your request. Different gas lanes (lower gas tolerance vs higher) have different key hashes. Each gas lane has an associated maximum gas price ceiling; the key hash is its identifier. Choose the key hash for the gas price ceiling that fits your target network. The supported networks page lists the valid key hashes for each chain.
+The `keyHash` identifies which off-chain VRF job runs for your request. Different gas lanes (lower gas tolerance vs higher) have different key hashes. Each gas lane has an associated maximum gas price ceiling. The key hash is its identifier. Choose the key hash for the gas price ceiling that fits your target network. The supported networks page lists the valid key hashes for each chain.
 
 The request function builds a struct and calls the coordinator:
 

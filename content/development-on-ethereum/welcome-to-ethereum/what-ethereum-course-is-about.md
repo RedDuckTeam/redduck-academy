@@ -8,7 +8,7 @@ faq:
       blockchain basics?
     answer: Because there is a real gap between understanding how a blockchain works
       and being able to build something on one that holds funds without losing
-      them. The basics module explains what Ethereum is; this track teaches you
+      them. The basics module explains what Ethereum is. This track teaches you
       to actually write the contracts that run on it. Closing that gap between
       knowledge and safe, working code is the whole point of these lessons.
   - question: How is security taught in this Ethereum course?
@@ -18,7 +18,7 @@ faq:
       the original bug. Testing runs alongside every project too, starting with
       simple unit tests and moving to fuzz and invariant tests, so the goal is
       developing mental models for what your contract does when an attacker runs
-      it, not memorizing syntax.
+      it, rather than memorizing syntax.
 ---
 
 This is the part of the course where you stop reading about blockchains and start building on one. The basics module taught you what Ethereum is and how it works. This track teaches you how to write the contracts that run on it. It is a separate track because there is a real gap between understanding a blockchain and being able to build something on one that holds funds without losing them. Closing that gap is what these lessons are for.

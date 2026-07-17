@@ -8,7 +8,7 @@ faq:
     answer: 'Define a Rust enum tagged with #[error_code], where each variant has a
       human-readable #[msg("...")] message that clients will see. In your
       handler, guard preconditions with the require! macro, for example
-      require!(amount > 0, MyError::ZeroAmount); if the condition is false, the
+      require!(amount > 0, MyError::ZeroAmount). If the condition is false, the
       named error fires and the whole transaction aborts cleanly. The standard
       pattern is to run all your require! checks first, then change state last.'
   - question: Why does my Anchor custom error come back as code 6000 instead of 0?
@@ -22,7 +22,7 @@ faq:
       the transaction's logs and can only be read by off-chain consumers like
       indexers, frontends, or Discord bots, never by on-chain code. The rule of
       thumb is: if another instruction needs to read a value, it must live in
-      account state; if only humans and dashboards need it, emit it as an
+      account state. If only humans and dashboards need it, emit it as an
       event."
   - question: When should I use require_keys_eq! instead of plain require! in Anchor?
     answer: Use require_keys_eq! (and require_neq for the opposite) whenever you're
@@ -33,7 +33,7 @@ faq:
       and reserve plain require! for simple boolean conditions.
 ---
 
-> You're about to write a handler. Half the work is the happy path: read accounts, do the operation, write state. The other half is everything else: someone passed a zero amount, the caller isn't authorized, the lockup hasn't expired, the vault is empty. Every one of these conditions needs to abort the transaction cleanly with a message the user can actually read. Separately, when the happy path succeeds, off-chain consumers want to know what changed: who deposited, who withdrew, how much. The first half is errors. The second half is events. This lecture is the practical mechanics of both.
+> You're about to write a handler. Half the work is the happy path: read accounts, do the operation, write state. The other half is everything else: someone passed a zero amount, the caller isn't authorized, the lockup hasn't expired, the vault is empty. Every one of these conditions needs to abort the transaction cleanly with a message the user can actually read. Separately, when the happy path succeeds, off-chain consumers want to know what changed: who deposited, who withdrew, how much. The first half is errors. The second half is events. Both come down to a handful of mechanical tools.
 
 ## Defining your error type
 

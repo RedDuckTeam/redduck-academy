@@ -66,7 +66,7 @@ This is fine for the runtime, which only needs to execute the code. It is not fi
   <text x="405" y="230" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">the IDL</text>
   <text x="320" y="260" font-family="monospace" font-size="10">target/idl/</text>
   <text x="320" y="276" font-family="monospace" font-size="10">my_program.json</text>
-  <text x="320" y="298" font-family="monospace" font-size="9" fill="#565653">→ shipped with your client</text>
+  <text x="320" y="298" font-family="monospace" font-size="9" fill="#565653">→ bundled with your client</text>
   <line x1="510" y1="140" x2="550" y2="140" stroke="#565653" stroke-width="1.5" marker-end="url(#arrS32aR)"/>
   <line x1="510" y1="260" x2="550" y2="260" stroke="#565653" stroke-width="1.5" marker-end="url(#arrS32aR)"/>
   <rect x="555" y="100" width="125" height="80" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -80,7 +80,7 @@ This is fine for the runtime, which only needs to execute the code. It is not fi
   <rect x="40" y="340" width="640" height="80" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="360" y="362" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Two outputs from one build</text>
   <line x1="55" y1="370" x2="665" y2="370" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="60" y="390" font-family="monospace" font-size="10">The binary goes to the chain. The IDL stays in your repo and gets shipped with your client app.</text>
+  <text x="60" y="390" font-family="monospace" font-size="10">The binary goes to the chain. The IDL stays in your repo and gets bundled with your client app.</text>
   <text x="60" y="406" font-family="monospace" font-size="10">Validators do not need the IDL. Only humans and client code do.</text>
   <text x="360" y="450" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The IDL is a description of your program for everyone who isn't a validator.</text>
 </svg>

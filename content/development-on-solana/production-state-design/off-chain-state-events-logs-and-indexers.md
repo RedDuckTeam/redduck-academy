@@ -14,8 +14,8 @@ faq:
       so off-chain consumers can reconstruct full history later even for
       accounts that no longer exist.
   - question: Can one Solana program read another program's events or logs on chain?
-    answer: No. Account data is the only thing programs can read from each other;
-      there is no on-chain way to subscribe to another program's logs or events.
+    answer: No. Account data is the only thing programs can read from each other.
+      There is no on-chain way to subscribe to another program's logs or events.
       So if your program needs to react to something another program did, you
       read that program's account state. Logs and events exist purely for
       off-chain consumers like frontends, analytics, and indexers.
@@ -29,7 +29,7 @@ faq:
       data sovereignty, or when they want custom processing."
 ---
 
-> Your Solana program produces three kinds of output. Account data is what other programs read. Program logs are what off-chain consumers read. Transaction metadata records what happened. None of these are interchangeable. This lecture covers what each one is, why "emit an event for every important state change" is the rule, and how the data actually leaves the chain to reach your frontend.
+> Your Solana program produces three kinds of output. Account data is what other programs read. Program logs are what off-chain consumers read. Transaction metadata records what happened. None of these are interchangeable. The rule that ties them together is "emit an event for every important state change," which is how your data actually leaves the chain and reaches your frontend.
 
 ## The on-chain / off-chain boundary
 
@@ -51,7 +51,7 @@ These two facts together create a strict division of labor. State that other pro
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">How data leaves the chain</text>
   <rect x="40" y="80" width="640" height="100" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
   <rect x="40" y="80" width="640" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="98" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">On chain — what your program produces</text>
+  <text x="55" y="98" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">On chain: what your program produces</text>
   <text x="55" y="125" font-family="monospace" font-size="10">• Account data</text>
   <text x="200" y="125" font-family="monospace" font-size="10" fill="#565653">readable on demand, structured, costs rent to store</text>
   <text x="55" y="143" font-family="monospace" font-size="10">• Program logs</text>
@@ -87,7 +87,7 @@ These two facts together create a strict division of labor. State that other pro
   <text x="580" y="338" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">cheap to start</text>
   <text x="360" y="378" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">↓</text>
   <rect x="40" y="395" width="640" height="120" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="416" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">Off chain — what your application consumes</text>
+  <text x="360" y="416" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">Off chain: what your application consumes</text>
   <line x1="60" y1="428" x2="660" y2="428" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
   <text x="60" y="450" font-family="monospace" font-size="10">• Frontend UI showing user balances, recent activity, leaderboards</text>
   <text x="60" y="468" font-family="monospace" font-size="10">• Notifications when something the user cares about happens</text>

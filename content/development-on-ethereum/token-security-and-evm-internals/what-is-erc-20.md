@@ -14,7 +14,7 @@ faq:
       `decimals()` rather than assuming 18.
   - question: Why does ERC-20 need both approve and transferFrom instead of just a
       transfer?
-    answer: Smart contracts cannot start their own transactions; they can only react
+    answer: Smart contracts cannot start their own transactions. They can only react
       when called. So a contract like a decentralized exchange cannot reach into
       your wallet and take your tokens. Instead you call `approve` to authorize
       that contract to spend up to a certain amount, and the contract later
@@ -157,7 +157,7 @@ ERC-20 is the foundation of Ethereum's token economy, but it's not the only stan
 
 **ERC-1155** is a hybrid standard that supports both fungible and non-fungible tokens in a single contract. Game economies use it heavily: gold pieces are fungible, but each rare sword has its own ID. ERC-1155 is more gas-efficient for these mixed cases than running separate ERC-20 and ERC-721 contracts.
 
-**EIP-2612 (****`permit`****)** adds a function to ERC-20 tokens that lets users approve spending via a signed message instead of an on-chain transaction. USDC, DAI, and most modern tokens implement it; older tokens like WETH do not.
+**EIP-2612 (****`permit`****)** adds a function to ERC-20 tokens that lets users approve spending via a signed message instead of an on-chain transaction. USDC, DAI, and most modern tokens implement it. Older tokens like WETH do not.
 
 **ERC-4626** is the standard for tokenized vaults. A vault that takes ERC-20 deposits and issues shares as ERC-20 tokens itself, used by DeFi protocols like Aave, Yearn, and Morpho. Built on top of ERC-20 rather than replacing it.
 

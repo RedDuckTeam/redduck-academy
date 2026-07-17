@@ -10,7 +10,7 @@ faq:
       A blockchain is append-only, every record is public, and it is replicated
       across thousands of nodes with no single operator, which makes it far
       slower, more expensive, and less private than a normal database. Those
-      constraints are the whole product, not a flaw."
+      constraints are the whole product rather than a flaw."
   - question: Can you edit or delete data once it's on a blockchain?
     answer: No. A normal database supports create, read, update, and delete, but a
       blockchain only supports write and read. You cannot change or remove an
@@ -28,7 +28,7 @@ faq:
   - question: Is it safe to store private data like medical records on a public
       blockchain?
     answer: No. Every record on a public blockchain is readable by every node, and
-      through them by anyone in the world; there is no private mode and no way
+      through them by anyone in the world. There is no private mode and no way
       for an operator to hide some rows. The only thing shielding a user is that
       their address is a meaningless-looking string rather than a name. That
       makes a public chain a poor fit for medical records, internal company
@@ -141,11 +141,11 @@ Beyond those basics, the similarity ends. Almost every other property they have 
 
 Walk down the rows. Almost every cell on the database side describes flexibility, convenience, and speed. Almost every cell on the blockchain side describes constraint, public exposure, and the absence of a controlling party. These are not accidents. The constraints are the product.
 
-## Append-only is the rule, not an optimisation
+## Append-only is a hard rule
 
 In a normal database, the four basic operations are create, read, update, and delete. The update and delete are the dangerous ones, because they let you change or erase the past. They're also indispensable. You change a row when a user updates their profile. You delete a row when a user closes their account. The database doesn't keep an audit trail of every prior version unless you build one yourself.
 
-A blockchain has only two of those four operations. You can write new entries. You can read any entry, current or historical. You cannot update an entry. You cannot delete one. The full history is part of the system by design, not a feature you opt into.
+A blockchain has only two of those four operations. You can write new entries. You can read any entry, current or historical. You cannot update an entry. You cannot delete one. The full history is part of the system by design rather than a feature you opt into.
 
 This sounds limiting, and in most use cases it is. For the small set of use cases where the ability to prove "this happened, exactly this way, and has not been changed since" is more valuable than the ability to keep things tidy, append-only is the entire point. Once a record is in a block deep enough in the chain, no party in the system can convincingly claim it isn't.
 
@@ -169,7 +169,7 @@ This is a feature for some use cases and a non-starter for others. A public bloc
 
 A traditional database lives on one server or one cluster of servers, run by one party. Replication exists, but it's an optimisation that you opt into and configure yourself, with replicas that ultimately trust a primary.
 
-A blockchain has replication built into the structure. Every full node holds the entire history. There is no primary. There is no opt-in. If half the nodes in the network went offline tomorrow, the other half would continue running the chain and nothing would be lost. The data is durable because it exists in thousands of places at once, not because someone is paying for a backup tape.
+A blockchain has replication built into the structure. Every full node holds the entire history. There is no primary. There is no opt-in. If half the nodes in the network went offline tomorrow, the other half would continue running the chain and nothing would be lost. The data is durable because it exists in thousands of places at once, rather than because someone is paying for a backup tape.
 
 The price of this durability is that the network can never go faster than the slowest agreement step among its participants. Every node has to validate every block, every node has to store the whole chain, every node has to keep up with every new transaction. This is the deepest reason blockchains are slow and expensive compared to databases. The slowness is the cost of not trusting any one party.
 

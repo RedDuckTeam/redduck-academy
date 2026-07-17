@@ -63,7 +63,7 @@ For the lender this is risk-free. The worst case is the transaction reverts and 
   <line x1="190" y1="120" x2="190" y2="510" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
   <line x1="530" y1="120" x2="530" y2="510" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
   <rect x="80" y="140" width="560" height="320" fill="none" stroke="#000000" stroke-width="2" stroke-dasharray="6 4"/>
-  <text x="100" y="160" font-family="monospace" font-size="10" font-style="italic" fill="#565653">— inside ONE transaction —</text>
+  <text x="100" y="160" font-family="monospace" font-size="10" font-style="italic" fill="#565653">inside ONE transaction</text>
   <line x1="195" y1="184" x2="525" y2="184" stroke="#ed4937" stroke-width="2" marker-end="url(#arrFL1)"/>
   <text x="360" y="178" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">1. flashLoan(amount, params)</text>
   <line x1="525" y1="216" x2="195" y2="216" stroke="#ed4937" stroke-width="2" marker-end="url(#arrFL1)"/>
@@ -93,7 +93,7 @@ This is the only kind of loan that can exist this way. Off-chain finance has no 
 
 ## The borrower's side
 
-A contract that wants to take a flash loan implements a callback function (the exact name depends on the provider; Aave calls it `executeOperation`, Balancer calls it `receiveFlashLoan`, Uniswap V3 uses `uniswapV3FlashCallback`). The contract requests a loan, the provider sends the tokens and immediately calls back into the contract, and the contract has the duration of that callback to do whatever it wants. Before the callback returns, the contract must have approved (or pushed) enough tokens back to the provider to cover the loan plus the fee.
+A contract that wants to take a flash loan implements a callback function (the exact name depends on the provider: Aave calls it `executeOperation`, Balancer calls it `receiveFlashLoan`, Uniswap V3 uses `uniswapV3FlashCallback`). The contract requests a loan, the provider sends the tokens and immediately calls back into the contract, and the contract has the duration of that callback to do whatever it wants. Before the callback returns, the contract must have approved (or pushed) enough tokens back to the provider to cover the loan plus the fee.
 
 A minimal sketch in Solidity:
 
@@ -233,7 +233,7 @@ The numbers in the diagram are illustrative. The pattern is the same: borrow a l
 
 Why doesn't the manipulation cost the attacker more than they gain? Two reasons.
 
-The pool manipulation is *temporary*. The attacker swaps in, exploits, and then either reverses the swap, recovering most of what they "paid", or just lets arbitrageurs do the reversal a few blocks later. The net cost of the manipulation is mostly pool slippage and fees, not the full nominal amount they pushed through.
+The pool manipulation is *temporary*. The attacker swaps in, exploits, and then either reverses the swap, recovering most of what they "paid", or just lets arbitrageurs do the reversal a few blocks later. The net cost of the manipulation is mostly pool slippage and fees rather than the full nominal amount they pushed through.
 
 The exploit is *leveraged*. A 4x price distortion can let the attacker over-borrow far more than the slippage cost of creating that distortion, especially when LTV ratios on the downstream protocol allow large borrows against the inflated collateral. Even after slippage, the math comes out positive.
 

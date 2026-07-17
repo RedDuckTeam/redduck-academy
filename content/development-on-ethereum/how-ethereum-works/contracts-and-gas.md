@@ -15,7 +15,7 @@ faq:
       Ethereum?
     answer: Since the EIP-1559 upgrade in 2021, the gas price is split into two
       parts. The base fee is set by the protocol and moves up or down with
-      network congestion; it is burned, meaning it is destroyed and no one
+      network congestion. It is burned, meaning it is destroyed and no one
       receives it. The priority fee, or tip, is what you add on top to
       incentivize a validator to include your transaction faster, and it goes to
       the validator who produced the block.
@@ -23,7 +23,7 @@ faq:
       cancel it?
     answer: Yes. A pending transaction sits in a public waiting area called the
       mempool, and you can replace it by submitting a new transaction with the
-      same nonce and a higher fee; validators simply pick the more profitable
+      same nonce and a higher fee. Validators simply pick the more profitable
       one. Wallets expose this as a 'speed up' button, and you can 'cancel' a
       stuck transaction by sending a do-nothing transaction with the same nonce
       and a higher fee. Note that a later transaction cannot confirm until the
@@ -119,7 +119,7 @@ Pricing keeps the cost of computation fair, and limits stop execution from runni
 
 ## What you actually pay
 
-Every transaction includes two numbers related to gas. The first is the gas limit you already met — the maximum amount of gas the transaction may use. The second is the **gas price**, how much they're willing to pay per unit. The actual fee is `gas used × gas price`, paid in ETH.
+Every transaction includes two numbers related to gas. The first is the gas limit you already met, the maximum amount of gas the transaction may use. The second is the **gas price**, how much they're willing to pay per unit. The actual fee is `gas used × gas price`, paid in ETH.
 
 Gas prices are usually denominated in **gwei**, where one gwei is `10^-9` ETH, or one billionth of an ETH. A typical mainnet transaction in 2025 might pay something like 10 to 50 gwei per unit of gas. At current ETH prices, that translates to a fraction of a cent per gas unit. A simple transfer costs about 21,000 gas, so the total fee is small. A complex DeFi interaction might use 200,000 to 500,000 gas, which is where transaction costs start being something the user notices.
 
@@ -151,7 +151,7 @@ If a transaction's gas limit is too low, execution halts partway through. The tr
 
 When contract A calls contract B, A passes some of its remaining gas to B. If B runs out of gas, B reverts. A can choose to catch this revert and continue, or let it propagate and revert itself. This is composability at the gas level: one part of a transaction can fail without bringing the whole thing down, if the calling code chose to handle that case.
 
-## Two implications for the rest of the course
+## How gas shapes the code you write
 
 The first is that **storage is precious**. The most expensive opcode by a wide margin is the one that writes to a new storage slot. Every byte you store on Ethereum costs gas at deployment, and every subsequent change costs gas again. This shapes how Solidity code is written. Variables get packed into structs. State that doesn't need to be on chain stays off chain. Patterns like emitting events instead of storing values get used everywhere. You will spend a measurable share of your development time thinking about storage layout.
 

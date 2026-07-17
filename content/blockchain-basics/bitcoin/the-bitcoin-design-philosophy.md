@@ -12,7 +12,7 @@ faq:
       same digital coin twice in two places when there is no central server
       keeping the books. Bitcoin's contribution was a workable answer to that."
   - question: Why are Bitcoin blocks about ten minutes apart instead of instant?
-    answer: The ten-minute gap is a deliberate safety margin, not a speed limit. It
+    answer: The ten-minute gap is a deliberate safety margin rather than a speed limit. It
       gives each new block enough time to spread to most of the network before
       the next one is produced, so miners are all building on the same latest
       block. Faster block times would cause more accidental forks and more
@@ -26,9 +26,9 @@ faq:
       choice was wise is debated, but it is intentional and enforced by the
       code.
   - question: Why is Bitcoin so slow and hard to change compared to newer blockchains?
-    answer: Those limits are the cost of trustlessness, not accidents. Every node
+    answer: Those limits are the cost of trustlessness rather than accidents. Every node
       must validate every transaction and only so many fit in a block, which
-      makes Bitcoin slow and expensive at scale; its deliberately limited
+      makes Bitcoin slow and expensive at scale. Its deliberately limited
       scripting also can't run complex applications. And because no central
       party can update the rules, changes need broad agreement from node
       operators, who stay conservative to avoid breaking the very trustlessness
@@ -155,18 +155,18 @@ Now the constraints are the input and Bitcoin's design is the output. Each major
 
 **Validation is deterministic and simple.** Every transaction can be checked by running a small piece of code against the chain's state. The code is intentionally not Turing-complete. There are no loops. There is no recursion. There is no external state. This is the answer to public verifiability: every node, anywhere, running honest software, reaches the same answer on the same input.
 
-**Block times are slow on purpose.** Ten minutes between blocks is not a performance choice. It's a margin of safety for the network. A new block has to propagate to most of the planet before the next one is produced, so that everyone is building on the same most recent block — the tip of the chain. Faster block times mean more chain forks and more wasted work. This is the answer to convergence under delay.
+**Block times are slow on purpose.** Ten minutes between blocks is not a performance choice. It's a margin of safety for the network. A new block has to propagate to most of the planet before the next one is produced, so that everyone is building on the same most recent block, the tip of the chain. Faster block times mean more chain forks and more wasted work. This is the answer to convergence under delay.
 
 **The money supply is capped.** Twenty-one million bitcoins, ever. Block rewards halve every 210,000 blocks, which is about every four years, so the rate of new issuance slows over time and eventually stops. This is not a technical constraint of the underlying machinery. It's a deliberate economic choice, intended to make Bitcoin a credible store of value in a world where every other currency can be inflated by whoever issues it. Whether that choice was right is a debate for another time. That the choice is deliberate, and built into the protocol so that no one can change it, is what matters here.
 
 **The system changes slowly.** No central party can update the rules. Any change has to be accepted by the people who run nodes. They have strong reasons to be conservative. The system is intentionally hard to upgrade, and developers have a strong deference to backwards compatibility because anything else risks breaking the trustlessness that's the whole point.
 
-Every later lesson in this module is going to keep coming back to this list. Why does Bitcoin use a model where coins are tracked individually rather than as account balances? Survival under adversarial conditions and public verifiability. Why is Script intentionally limited? Public verifiability and validation simplicity. Why is the block reward halving? Permanence of the monetary policy. Once you have the constraints in your head, the answers stop being arbitrary.
+Every later lesson is going to keep coming back to this list. Why does Bitcoin use a model where coins are tracked individually rather than as account balances? Survival under adversarial conditions and public verifiability. Why is Script intentionally limited? Public verifiability and validation simplicity. Why is the block reward halving? Permanence of the monetary policy. Once you have the constraints in your head, the answers stop being arbitrary.
 
 ## What Bitcoin gave up
 
-The design has costs. They're worth naming up front because the rest of the module will not pretend they don't exist.
+The design has costs. They're worth naming up front because the lessons that follow will not pretend they don't exist.
 
 Bitcoin is slow. Settlement takes minutes for a payment and hours for high-value transactions. Bitcoin is expensive at scale, because every node has to validate every transaction and there's a hard limit on how many can fit in a block. Bitcoin is inflexible. The intentional restrictions on Script mean it can't be used to build the complex applications that later chains support. Bitcoin is conservative. Changes that other chains release in months take Bitcoin years, sometimes decades.
 
-These are not bugs. They are the cost of the trustlessness the whole system is built around. Other chains made different trades, and the rest of this course visits some of them. For the rest of this module, the question is how the specific Bitcoin design works, top to bottom.
+These are not bugs. They are the cost of the trustlessness the whole system is built around. Other chains made different trades, and the rest of this course visits some of them. From here, the question is how the specific Bitcoin design works, top to bottom.

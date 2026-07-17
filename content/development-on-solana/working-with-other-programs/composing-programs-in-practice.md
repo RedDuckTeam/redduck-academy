@@ -6,7 +6,7 @@ order: 6
 faq:
   - question: Why does a single swap transaction have to pass so many accounts?
     answer: On Solana every account that any layer of a call will read or write must
-      be listed in the outer transaction up front; inner programs never request
+      be listed in the outer transaction up front. Inner programs never request
       accounts dynamically. So when an aggregator calls a swap, which calls the
       Token Program, the transaction must include the pool state, the pool
       authority PDA, all the token accounts, and every program ID involved. This
@@ -27,15 +27,15 @@ faq:
       indices into full pubkeys before your handler runs, so your code still
       sees the complete AccountInfo for every account. The change is only on the
       client side, where you build a VersionedTransaction and supply the lookup
-      tables you're referencing. It's purely a wire-format optimization, not a
-      new programming model."
+      tables you're referencing. It's purely a wire-format optimization that
+      leaves the programming model unchanged."
 ---
 
-> The pieces in this module add up to one capability: a program on Solana can call another program, which can call another, with strict rules about authority and a complete accounting of which accounts each call touches. That capability is what makes Solana an ecosystem rather than a collection of isolated contracts. A swap calls the Token Program. A lending protocol calls the swap. An aggregator calls the lending protocol. The composition runs deep, and what reaches the chain is a single transaction that carries every account every layer needs. This closing lecture walks through a worked example, exposes the practical problem the composition pattern runs into, and explains why versioned transactions and address lookup tables exist as the answer.
+> The pieces you've been learning add up to one capability: a program on Solana can call another program, which can call another, with strict rules about authority and a complete accounting of which accounts each call touches. That capability is what makes Solana an ecosystem rather than a collection of isolated contracts. A swap calls the Token Program. A lending protocol calls the swap. An aggregator calls the lending protocol. The composition runs deep, and what reaches the chain is a single transaction that carries every account every layer needs. That single transaction runs into a practical limit as the composition deepens, and versioned transactions with address lookup tables are the answer.
 
 ## Composition is the whole point
 
-Every concept from the rest of this module exists to support composition. Cross-program invocation lets one program call another. PDA signing lets a program act on its own behalf inside that call. The Token Program standardizes the operation everyone calls into. Associated Token Accounts make the addresses of those operations predictable. Token-2022 widens the set of behaviors any of those programs can request. None of these pieces is interesting in isolation. They become interesting because they compose.
+Every concept covered so far exists to support composition. Cross-program invocation lets one program call another. PDA signing lets a program act on its own behalf inside that call. The Token Program standardizes the operation everyone calls into. Associated Token Accounts make the addresses of those operations predictable. Token-2022 widens the set of behaviors any of those programs can request. None of these pieces is interesting in isolation. They become interesting because they compose.
 
 A swap program is two hundred lines of code because the actual token movement happens in the Token Program through a CPI. A lending protocol can plug into multiple price oracles by making CPI calls into Pyth or Switchboard. An aggregator can route a single user trade across half a dozen DEXes by orchestrating CPIs into each one. Every protocol on Solana sits somewhere on a stack, with simpler programs below it doing primitive operations and more sophisticated programs above it stitching those primitives into product features.
 
@@ -202,10 +202,10 @@ For clients, the change is that you build a `VersionedTransaction` instead of a 
 
 The one operational concern with ALTs is that creating and activating a new lookup table takes some on-chain work and a slot or two before it is usable. Protocols that intend to use ALTs in their hot path create them at deployment time and reuse them indefinitely. Aggregators dynamically maintain a set of ALTs covering the venues they route to, refreshing them periodically as pool addresses change.
 
-## What the module added up to
+## Reading any program by its shape
 
-Every program on Solana has the same shape underneath. It defines accounts, accepts instructions, validates inputs with constraints, and uses CPI to delegate work it can't do alone. Composition is what turns that small primitive set into an ecosystem. A simple program at the bottom of the stack, like the Token Program, does one thing well and exposes a small instruction set. A more sophisticated program above it, like a swap, calls it through CPI to do the basic work and adds its own value through price calculation, pool state, and fees. A program above that, like an aggregator, orchestrates multiple swaps and adds another layer of value through route optimization, MEV protection, and gas savings. The layers can compose four or five deep before the practical limits become relevant.
+Every program on Solana has the same shape underneath. It defines accounts, accepts instructions, validates inputs with constraints, and uses CPI to delegate work it can't do alone. Composition is what turns that small primitive set into an ecosystem. A simple program at the bottom of the stack, like the Token Program, does one thing well and exposes a small instruction set. A more sophisticated program above it, like a swap, calls it through CPI to do the basic work and adds its own value through price calculation, pool state, and fees. A program above that, like an aggregator, orchestrates multiple swaps and adds another layer of value through route optimization, MEV protection, and fee savings. The layers can compose four or five deep before the practical limits become relevant.
 
-If you've followed the whole module, you can now read any program on Solana and recognize its shape. Where are its accounts defined. What constraints does each one carry. What CPIs does it make. Which of its accounts are signers, which are writable, which are PDAs that sign on its own behalf. The mechanics no longer feel like magic. They're a small set of patterns that compose in deep ways.
+By now you can read any program on Solana and recognize its shape. Where are its accounts defined. What constraints does each one carry. What CPIs does it make. Which of its accounts are signers, which are writable, which are PDAs that sign on its own behalf. The mechanics no longer feel like magic. They're a small set of patterns that compose in deep ways.
 
 Reading other programs is the fastest path from here. Open any open-source Solana protocol. The shape will be familiar. The patterns will be recognizable. The places where the protocol added its own clever thing on top of the primitives will be visible. That's what the whole track has been building toward: a working mental model that lets you read the chain rather than just write isolated examples on it.

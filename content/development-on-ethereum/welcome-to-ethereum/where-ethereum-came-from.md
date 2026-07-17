@@ -17,7 +17,7 @@ faq:
       roughly fifteen percent of all ETH at the time. It had a reentrancy bug:
       it sent a user their ETH before updating its records, so an attacker
       called the withdrawal repeatedly and drained about 3.6 million ETH. The
-      community hard-forked to reverse the theft; the minority who rejected the
+      community hard-forked to reverse the theft. The minority who rejected the
       fork kept the original chain, now called Ethereum Classic, while the
       majority continued as Ethereum."
   - question: When did Ethereum switch from proof of work to proof of stake?

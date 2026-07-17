@@ -88,7 +88,7 @@ The naive way to compute an average price over time is to store every observatio
 
 This is unworkable on chain. Each observation is a storage write. Active pools change price many times per block. Storing every observation would make every swap dramatically more expensive, and the contract would have to keep paying for unbounded storage.
 
-There's a better approach. Instead of storing each individual price, store a single running total: the integral of price over time — `priceCumulative`. Every time the pool's price changes, do one update: add `oldPrice × (now − lastUpdate)` to the accumulator, then set `lastUpdate = now`. That's one storage slot, one read, one write per change.
+There's a better approach. Instead of storing each individual price, store a single running total: the integral of price over time, `priceCumulative`. Every time the pool's price changes, do one update: add `oldPrice × (now − lastUpdate)` to the accumulator, then set `lastUpdate = now`. That's one storage slot, one read, one write per change.
 
 To compute the average price between two times T₁ and T₂, you don't need to know any of the prices in between. You only need the value of `priceCumulative` at those two times. The average is:
 
@@ -129,7 +129,7 @@ TWAP[T₁, T₂] = (priceCumulative(T₂) - priceCumulative(T₁)) / (T₂ - T�
   <text x="380" y="470" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">Two storage reads. The contract never has to remember each price along the way.</text>
 </svg>
 
-The geometric interpretation: each segment of the cumulative curve has a slope equal to the price during that segment. The average price between two times is the slope of the straight line connecting the two endpoints. The pool's `priceCumulative` works exactly like an odometer. The pool tells you "total price-time so far"; you sample it twice and divide to get average speed.
+The geometric interpretation: each segment of the cumulative curve has a slope equal to the price during that segment. The average price between two times is the slope of the straight line connecting the two endpoints. The pool's `priceCumulative` works exactly like an odometer. The pool tells you "total price-time so far". You sample it twice and divide to get average speed.
 
 To use it as an oracle, your contract has to do two things:
 
@@ -160,9 +160,9 @@ if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
 
 Two things worth noting in this code.
 
-First, the prices are stored in a fixed-point format called `UQ112x112` — an unsigned 224-bit number where the top 112 bits are the integer part and the bottom 112 bits are the fractional part. Solidity has no native decimals, and a price like 3500.84291 needs more precision than integer math gives. The UQ format encodes fractions as integers by scaling everything up by 2^112. Any contract reading these cumulatives has to know this and shift back down before interpreting the result.
+First, the prices are stored in a fixed-point format called `UQ112x112`, an unsigned 224-bit number where the top 112 bits are the integer part and the bottom 112 bits are the fractional part. Solidity has no native decimals, and a price like 3500.84291 needs more precision than integer math gives. The UQ format encodes fractions as integers by scaling everything up by 2^112. Any contract reading these cumulatives has to know this and shift back down before interpreting the result.
 
-Two cumulatives exist because each token in the pair can be priced in the other. `price0CumulativeLast` accumulates "how much of token1 a unit of token0 buys"; `price1CumulativeLast` is the inverse. Use whichever one points the direction you need.
+Two cumulatives exist because each token in the pair can be priced in the other. `price0CumulativeLast` accumulates "how much of token1 a unit of token0 buys". `price1CumulativeLast` is the inverse. Use whichever one points the direction you need.
 
 Second, this update only happens when `_update()` runs, which only happens when someone trades or modifies liquidity. If nobody touches the pair for ten minutes, the cumulative doesn't move during those ten minutes, but the price during those ten minutes is still the *last* price the pair recorded, and that price should have contributed to the cumulative as time passed.
 

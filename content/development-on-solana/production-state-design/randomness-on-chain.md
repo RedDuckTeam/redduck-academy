@@ -37,7 +37,7 @@ faq:
       reverts and you get no randomness."
 ---
 
-> Solana programs can't generate random numbers on their own. The reasons are structural rather than solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Magicblock VRF solves it cryptographically, and how to wire a consumer program to receive verified random numbers in production.
+> Solana programs can't generate random numbers on their own. The reasons are structural rather than solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. Real randomness has to come from an external source with a cryptographic proof, which is exactly what MagicBlock VRF provides and what a consumer program wires up to receive verified random numbers in production.
 
 ## Why a blockchain can't roll dice
 
@@ -100,7 +100,7 @@ In short: the oracle cannot choose or manipulate the output. Either it returns t
 
 VRF cannot be a single instruction call. The proof must be generated off chain by an entity holding the private key, and that work cannot happen inside a normal program execution. The pattern is asynchronous: your program submits a request in one transaction, and receives the result in a second transaction some slots later.
 
-<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two-transaction VRF request flow between your program, Magicblock VRF, and the oracle service</title><desc>In transaction 1, your program calls the Magicblock VRF program via CPI to request randomness, which writes a request PDA with a seed and callback target; the off-chain oracle service reads the request, signs the seed with its private VRF key, and produces bytes and a proof. In transaction 2, the oracle submits the bytes and proof, the VRF program verifies them against its on-chain public key, and calls back your program's handler to store the result.</desc>
+<svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two-transaction VRF request flow between your program, MagicBlock VRF, and the oracle service</title><desc>In transaction 1, your program calls the MagicBlock VRF program via CPI to request randomness, which writes a request PDA with a seed and callback target; the off-chain oracle service reads the request, signs the seed with its private VRF key, and produces bytes and a proof. In transaction 2, the oracle submits the bytes and proof, the VRF program verifies them against its on-chain public key, and calls back your program's handler to store the result.</desc>
   <defs>
     <marker id="arrM2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -111,7 +111,7 @@ VRF cannot be a single instruction call. The proof must be generated off chain b
   <rect x="60" y="80" width="160" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="140" y="103" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Your program</text>
   <rect x="280" y="80" width="160" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="100" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Magicblock VRF</text>
+  <text x="360" y="100" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">MagicBlock VRF</text>
   <text x="360" y="112" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">(on-chain program)</text>
   <rect x="500" y="80" width="160" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="580" y="100" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Oracle service</text>
@@ -151,9 +151,9 @@ The number of slots the oracle waits before fulfilling is short. Under normal lo
 
 ## Building a consumer program
 
-Your program needs two instructions: one to make the request, and one to receive the callback. The callback is a regular Anchor instruction with a specific signature that the Magicblock VRF program will invoke via CPI.
+Your program needs two instructions: one to make the request, and one to receive the callback. The callback is a regular Anchor instruction with a specific signature that the MagicBlock VRF program will invoke via CPI.
 
-Add the Magicblock VRF SDK to your `Cargo.toml`. A request instruction looks like this:
+Add the MagicBlock VRF SDK to your `Cargo.toml`. A request instruction looks like this:
 
 ```rust
 use anchor_lang::prelude::*;
@@ -180,7 +180,7 @@ pub mod lottery {
             ..Default::default()
         });
 
-        // CPI into the Magicblock VRF program
+        // CPI into the MagicBlock VRF program
         invoke(
             &ix,
             &[
@@ -203,7 +203,7 @@ pub struct RequestRandom<'info> {
     #[account(mut)]
     pub lottery: Account<'info, Lottery>,
 
-    /// CHECK: The Magicblock VRF program, address pinned
+    /// CHECK: The MagicBlock VRF program, address pinned
     #[account(address = VRF_PROGRAM_ID)]
     pub vrf_program: UncheckedAccount<'info>,
 
@@ -218,7 +218,7 @@ The important fields in `RequestRandomnessParams`:
 - `callback_discriminator`: the 8-byte Anchor discriminator of the instruction that should receive the randomness. The VRF program uses this to encode the right CPI on fulfillment.
 - `caller_seed`: 32 bytes of caller-supplied seed. Including the lottery PDA pubkey is a reasonable choice. The VRF service mixes this with its own entropy before signing, so the result is unpredictable to both sides.
 
-The callback handler is a normal instruction with one extra constraint: it can only be called by the Magicblock VRF program. Anchor's `Signer` constraint plus an address pin handles this:
+The callback handler is a normal instruction with one extra constraint: it can only be called by the MagicBlock VRF program. Anchor's `Signer` constraint plus an address pin handles this:
 
 ```rust
 pub fn receive_randomness(
@@ -242,7 +242,7 @@ pub fn receive_randomness(
 
 #[derive(Accounts)]
 pub struct ReceiveRandomness<'info> {
-    /// CHECK: The Magicblock VRF program signed this CPI via its PDA.
+    /// CHECK: The MagicBlock VRF program signed this CPI via its PDA.
     /// The address pin and Signer constraint together guarantee that
     /// only the VRF program can invoke this handler.
     #[account(signer, address = VRF_PROGRAM_ID)]
@@ -253,7 +253,7 @@ pub struct ReceiveRandomness<'info> {
 }
 ```
 
-The signer check on `vrf_program` is what enforces that only the Magicblock VRF program can invoke this callback. If anyone else tries to call `receive_randomness` directly, the constraint fails and the transaction reverts before reaching your code. You do not write that check manually. Anchor enforces it at handler entry based on the Accounts struct.
+The signer check on `vrf_program` is what enforces that only the MagicBlock VRF program can invoke this callback. If anyone else tries to call `receive_randomness` directly, the constraint fails and the transaction reverts before reaching your code. You do not write that check manually. Anchor enforces it at handler entry based on the Accounts struct.
 
 ## Working with the random number
 
@@ -277,6 +277,6 @@ The number is fully revealed on chain the moment the oracle delivers it. If your
 
 Two things production programs often get wrong.
 
-**The callback can fail.** If your `receive_randomness` handler runs out of compute units, or panics on a checked-arithmetic overflow, or hits any other Anchor constraint failure, the callback transaction reverts. The Magicblock VRF program records the failure, but your program does not receive the randomness. Keep callbacks minimal. Store the result and any cheap derived values. Save complex logic for a separate user-triggered instruction that reads from storage. A callback that reverts means you paid for the request and received no randomness.
+**The callback can fail.** If your `receive_randomness` handler runs out of compute units, or panics on a checked-arithmetic overflow, or hits any other Anchor constraint failure, the callback transaction reverts. The MagicBlock VRF program records the failure, but your program does not receive the randomness. Keep callbacks minimal. Store the result and any cheap derived values. Save complex logic for a separate user-triggered instruction that reads from storage. A callback that reverts means you paid for the request and received no randomness.
 
 **You cannot use the random number in the request transaction.** A common mistake is to write logic that requests a number and then immediately checks if the user won. There is no number yet. The check has to happen in the callback. The user either sends a follow-up transaction to claim their prize or the callback automatically settles the outcome.

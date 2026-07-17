@@ -1,0 +1,27 @@
+#!/bin/sh
+# RedDuck Academy — content pre-commit hook.
+#
+# When a commit touches content/, this validates the content and regenerates the per-course
+# outline (content/<course>/README.md), staging any that changed so the commit always stays
+# in sync. Contributors never edit those outlines by hand.
+#
+# Installed automatically by the root package.json "prepare" script, which points git at
+# this directory: `git config core.hooksPath .githooks`. To run it manually:
+#   yarn content:index
+#
+# A failed validation aborts the commit. To bypass in an emergency: `git commit --no-verify`
+# (CI still re-checks both the validation and the outline, so nothing stale reaches main).
+
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '^content/'; then
+  echo "[pre-commit] content/ changed — validating…"
+  node scripts/validate-content.mjs || exit 1
+
+  echo "[pre-commit] regenerating course outlines…"
+  node scripts/generate-course-index.mjs || exit 1
+
+  # Stage regenerated per-course outlines only (content/<course>/README.md).
+  # This pattern never matches the top-level content/README.md contributing guide.
+  git add -- content/*/README.md 2>/dev/null || true
+fi
+
+exit 0

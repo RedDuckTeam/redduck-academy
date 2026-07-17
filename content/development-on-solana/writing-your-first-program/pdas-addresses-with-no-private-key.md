@@ -20,7 +20,7 @@ faq:
       function find_program_address runs this search.
   - question: How do I compute a PDA address in my TypeScript client?
     answer: Use PublicKey.findProgramAddressSync from @solana/web3.js, passing the
-      same seeds and program ID your on-chain program uses; it returns a tuple
+      same seeds and program ID your on-chain program uses. It returns a tuple
       of the PDA and the canonical bump. The seed bytes must match exactly, so a
       wrong order or calling .toString() instead of .toBuffer() on a pubkey
       produces a different address and fails with a "seeds constraint violated"
@@ -64,7 +64,7 @@ The resolution is to invent a kind of address that nobody can sign for in the no
   <text x="195" y="167" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">private key</text>
   <text x="195" y="183" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">a random 256-bit number</text>
   <line x1="195" y1="205" x2="195" y2="230" stroke="#565653" stroke-width="1.5" marker-end="url(#arrS35aG)"/>
-  <text x="220" y="222" font-family="monospace" font-size="9" fill="#565653">ECDSA derivation</text>
+  <text x="220" y="222" font-family="monospace" font-size="9" fill="#565653">Ed25519 derivation</text>
   <rect x="80" y="235" width="230" height="55" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="195" y="257" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">public key</text>
   <text x="195" y="273" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">a point ON the curve</text>
@@ -102,7 +102,7 @@ Both halves of the diagram produce the same kind of artifact: a 32-byte address 
 
 ## The bump trick
 
-The derivation looks roughly like this. Take the seeds, append a single byte called the bump, append the program ID, append a tag string, and hash the whole thing with SHA-256. The result is 32 bytes. If those 32 bytes happen to land on the secp256k1 curve, the derivation could have a corresponding private key, and the whole point of PDAs would be broken. So if the result is on the curve, the derivation rejects it and tries again with a smaller bump byte.
+The derivation looks roughly like this. Take the seeds, append a single byte called the bump, append the program ID, append a tag string, and hash the whole thing with SHA-256. The result is 32 bytes. If those 32 bytes happen to land on the Ed25519 curve, the derivation could have a corresponding private key, and the whole point of PDAs would be broken. So if the result is on the curve, the derivation rejects it and tries again with a smaller bump byte.
 
 The bump starts at 255 and decreases. Roughly half of all 32-byte values land on the curve, so on average two or three tries are enough to find one that doesn't. The first off-curve result encountered, with the highest bump, is the **canonical PDA** for those seeds. The bump that produced it is the **canonical bump**.
 

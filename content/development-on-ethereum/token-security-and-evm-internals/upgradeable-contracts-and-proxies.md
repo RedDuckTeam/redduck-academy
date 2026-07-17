@@ -16,7 +16,7 @@ faq:
   - question: Why can't an upgradeable contract use a normal constructor?
     answer: A constructor runs once when a contract is deployed and only affects
       that contract's own storage. For a contract behind a proxy, the
-      constructor would run against the implementation's storage, not the
+      constructor would run against the implementation's storage rather than the
       proxy's, so whatever it set up would be invisible to the proxy. Instead,
       upgradeable contracts use an initializer function that is called
       separately after deployment, protected by an `initializer` modifier so it
@@ -47,7 +47,7 @@ faq:
 
 ## The problem
 
-Solidity contracts are deployed once. The bytecode at a contract address is the bytecode forever. There's no `git push` that updates the code. No deploy command that swaps the implementation. The code you ship is the code that runs until the contract is no longer used.
+Solidity contracts are deployed once. The bytecode at a contract address is the bytecode forever. There's no `git push` that updates the code. No deploy command that swaps the implementation. The code you release is the code that runs until the contract is no longer used.
 
 This causes three problems for any contract that needs to evolve.
 
@@ -119,7 +119,7 @@ When a user calls a function on the proxy, the EVM looks at the first 4 bytes of
 
 Now consider this scenario. The proxy has a function `upgrade(address)`. Its selector is some specific 4-byte value. By coincidence, the implementation has a function that hashes to the SAME 4-byte selector. A user wants to call that function on the implementation. They send a transaction with the colliding selector. The proxy's dispatcher matches the selector against its own `upgrade` function and routes the call to the proxy itself. The implementation's function is never reached.
 
-Worse: the user thought they were calling the implementation. They might be calling `upgrade` with arguments that the implementation's function would have accepted but that the proxy interprets completely differently. This is a real security issue, not just an annoyance.
+Worse: the user thought they were calling the implementation. They might be calling `upgrade` with arguments that the implementation's function would have accepted but that the proxy interprets completely differently. This is a real security issue rather than a mere annoyance.
 
 Two patterns solve the collision problem in different ways. They're both production-grade and you should always use one of them rather than writing your own proxy.
 
@@ -139,9 +139,9 @@ The cost is that the admin can't use the contract like a normal user. If you're 
 
 ## UUPS proxy
 
-UUPS stands for Universal Upgradeable Proxy Standard. It takes a different approach: all the upgrade logic lives in the implementation, not in the proxy. The proxy is minimal. It does nothing except `delegatecall`. It has no admin functions at all.
+UUPS stands for Universal Upgradeable Proxy Standard. It takes a different approach: all the upgrade logic lives in the implementation rather than in the proxy. The proxy is minimal. It does nothing except `delegatecall`. It has no admin functions at all.
 
-The implementation contract inherits from a base contract that provides upgrade machinery. The upgrade function looks something like `upgradeTo(address newImplementation)`, and it's a function on the implementation, not the proxy. When you want to upgrade, you call `upgradeTo` on the proxy, which is the user-facing address, which delegatecalls into the implementation's `upgradeTo` function. The implementation, executing in the proxy's storage context, updates the proxy's stored implementation pointer.
+The implementation contract inherits from a base contract that provides upgrade machinery. The upgrade function looks something like `upgradeTo(address newImplementation)`, and it's a function on the implementation rather than the proxy. When you want to upgrade, you call `upgradeTo` on the proxy, which is the user-facing address, which delegatecalls into the implementation's `upgradeTo` function. The implementation, executing in the proxy's storage context, updates the proxy's stored implementation pointer.
 
 This is more compact than the transparent proxy because the proxy contract itself contains only the fallback. Deploying a UUPS proxy is cheaper. When you're deploying many copies of the same proxy, common in account abstraction wallets where each user gets their own proxy, the cumulative gas savings are significant.
 
@@ -207,7 +207,7 @@ OpenZeppelin's proxy contracts use EIP-1967 slots automatically. You don't have 
 
 Now for the rules you have to follow when authoring a contract that will live behind a proxy.
 
-**No constructors.** A constructor runs once at deployment time and only affects the contract being deployed. If your implementation contract has a constructor, it runs when the implementation is deployed, but it runs in the implementation's storage context, not the proxy's. The proxy never sees the result. Whatever the constructor was supposed to set up never gets set up in the proxy.
+**No constructors.** A constructor runs once at deployment time and only affects the contract being deployed. If your implementation contract has a constructor, it runs when the implementation is deployed, but it runs in the implementation's storage context rather than the proxy's. The proxy never sees the result. Whatever the constructor was supposed to set up never gets set up in the proxy.
 
 Instead of constructors, upgradeable contracts use **initializer functions**. An initializer is a regular function that does what a constructor would do, but it's called separately after deployment. To prevent it from being called more than once, OpenZeppelin provides an `initializer` modifier that tracks whether the function has been called and reverts on subsequent calls.
 
@@ -286,7 +286,7 @@ The plugin deploys the new implementation, checks that the storage layout is com
 
 One more pattern worth knowing exists, even though we won't use it. The diamond pattern (EIP-2535) is a more advanced proxy structure where instead of one implementation, you have many. The proxy routes each function call to whichever implementation contract handles that function. This is used when a single contract's logic exceeds the 24KB bytecode size limit, or when you want different parts of a system to be upgradeable independently.
 
-Diamond proxies are complex and not what you'd reach for first. The transparent and UUPS patterns cover the vast majority of upgrade needs. It is worth knowing it exists in case you encounter it in a real project; ignore it until you have a specific reason to use it.
+Diamond proxies are complex and not what you'd reach for first. The transparent and UUPS patterns cover the vast majority of upgrade needs. It is worth knowing it exists in case you encounter it in a real project. Ignore it until you have a specific reason to use it.
 
 ## Use the tooling, don't write your own
 

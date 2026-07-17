@@ -138,7 +138,7 @@ Chainlink price feeds attack the problem at three independent levels.
 
 The OCR step (Off-Chain Reporting) is the part that matters for cost. Without it, every node would have to write its own answer on chain, paying gas, and your contract would have to read all of them and compute the median itself. OCR lets the nodes do the median calculation off chain via a peer-to-peer protocol, agree on a single answer, and have one of them write that answer to the aggregator in one transaction. The on-chain footprint is a single write per update, regardless of how many nodes participated.
 
-The on-chain side is split into two contracts: an **aggregator** that does the actual storage and verification, and a **proxy** that consumers point at. The proxy address never changes. The aggregator behind it can be swapped out for upgrades. This is why production code always reads from the proxy address, not the aggregator directly. The full list of proxy addresses per network is on the [supported networks page](https://docs.chain.link/data-feeds/price-feeds/addresses).
+The on-chain side is split into two contracts: an **aggregator** that does the actual storage and verification, and a **proxy** that consumers point at. The proxy address never changes. The aggregator behind it can be swapped out for upgrades. This is why production code always reads from the proxy address rather than the aggregator directly. The full list of proxy addresses per network is on the [supported networks page](https://docs.chain.link/data-feeds/price-feeds/addresses).
 
 ## Reading a feed
 
@@ -173,11 +173,11 @@ contract PriceConsumer {
 
 The [`latestRoundData()`](https://docs.chain.link/data-feeds/api-reference) function returns five values:
 
-- `roundId` — identifier for this round of data
-- `answer` — the price itself, as a signed integer
-- `startedAt` — when the round was first reported
-- `updatedAt` — when the round was last updated
-- `answeredInRound` — deprecated, ignore it
+- `roundId`: identifier for this round of data
+- `answer`: the price itself, as a signed integer
+- `startedAt`: when the round was first reported
+- `updatedAt`: when the round was last updated
+- `answeredInRound`: deprecated, ignore it
 
 Most consumers only need `answer` and `updatedAt`. The example above ignores everything else for clarity, but production code should always read `updatedAt` (see the staleness section below).
 

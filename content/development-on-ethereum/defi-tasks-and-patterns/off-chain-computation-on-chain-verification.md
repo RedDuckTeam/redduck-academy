@@ -12,7 +12,7 @@ faq:
       user submits their data plus a short 'proof' of sibling hashes, and the
       contract recombines them to recompute the root and checks it matches the
       stored one. Storing the full list of 10,000 addresses could cost around
-      0.66 ETH in gas, while the root fits in one storage slot and each claim
+      6.6 ETH in gas, while the root fits in one storage slot and each claim
       only does about 14 hashes of verification.
   - question: If the user computes the answer off chain, what stops them from lying
       to the contract?
@@ -22,7 +22,7 @@ faq:
       Merkle proof, a multiplication, a signature recovery) the transaction
       simply reverts and no state changes. The only cost of a failed lie is the
       gas the liar wasted. The one real requirement is that the verification
-      itself must be correct; a buggy verifier that accepts bad inputs is a
+      itself must be correct. A buggy verifier that accepts bad inputs is a
       serious vulnerability, which is why battle-tested libraries like
       OpenZeppelin's MerkleProof and ECDSA are preferred.
   - question: When does the off-chain-compute, on-chain-verify pattern not work?
@@ -44,7 +44,7 @@ The EVM charges gas for every operation. A storage read costs around 2,100 gas t
 
 This pricing is fine for short, deterministic computation. It becomes a problem in three situations.
 
-First, when the work is unbounded. A loop over a dynamic array can run forever. If the array is attacker-controlled, an attacker can fill it until any function that iterates over it exceeds the block gas limit and reverts. The contract becomes unusable. This is denial-of-service through unbounded iteration, the same class of bug you saw in an earlier lesson. (Replace the empty `[previous lessons]()` link with a link to the specific lesson, and add the missing period.)
+First, when the work is unbounded. A loop over a dynamic array can run forever. If the array is attacker-controlled, an attacker can fill it until any function that iterates over it exceeds the block gas limit and reverts. The contract becomes unusable. This is denial-of-service through unbounded iteration, the same class of bug you saw in an earlier lesson.
 
 Second, when the work is large but bounded. Iterating over 10,000 known elements doesn't risk DoS but costs hundreds of thousands of gas. Real users won't pay that for a single transaction.
 
@@ -66,7 +66,7 @@ The important property: the contract never trusts the user's claim blindly. The 
 
 ## Worked example 1: Merkle proofs for airdrop eligibility
 
-Suppose you want to airdrop tokens to 10,000 users. Storing 10,000 addresses on chain costs about 22 million gas just for the storage writes, plus the deployment cost of the contract code that handles them. At 30 gwei per gas, that's about 0.66 ETH spent on storage alone — an unreasonable cost for what is just a list of addresses.
+Suppose you want to airdrop tokens to 10,000 users. Storing 10,000 addresses on chain costs about 220 million gas just for the storage writes, since each new storage slot costs roughly 22,000 gas, plus the deployment cost of the contract code that handles them. At 30 gwei per gas, that's about 6.6 ETH spent on storage alone, an unreasonable cost for what is just a list of addresses.
 
 The off-chain trick: build a Merkle tree of the 10,000 addresses off-chain. The tree's root is a single 32-byte hash. Store only the root in the contract. When a user wants to claim their airdrop, they prove they're in the tree by submitting their address and the path of sibling hashes that connect their address to the root.
 
@@ -208,8 +208,6 @@ This is the shape. Learn to recognize it. Much of non-trivial Solidity engineeri
 A natural concern: if the user is computing the answer, what stops them from lying? The answer is that they're free to lie, but lying doesn't help them.
 
 A lie has to pass verification. The verification logic is the contract's own code, running deterministically on the chain. The user can't influence it. They can only submit inputs, and whatever they submit gets fed into the verification function. If the inputs don't produce a passing result, the contract reverts.
-
-Cut this paragraph. The same point — a failed verification reverts and changes nothing, so a lie only costs the liar gas — is already made in "The reframe," in worked example 1, and in worked example 2. Keep only the new content that follows: the model holds only if the verification itself is correct.
 
 The security model only works if the verification is correct. A buggy Merkle verification that accepts invalid proofs is a disaster. A buggy sqrt verification that accepts wrong roots silently corrupts whatever consumes the root. The verification step is the security boundary, and it has to be airtight.
 

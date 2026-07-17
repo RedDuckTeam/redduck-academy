@@ -14,7 +14,7 @@ faq:
       eliminated the trade-off entirely.
   - question: What is the difference between Layer 1 and Layer 2 in blockchain?
     answer: A Layer 1 (L1) is a base blockchain that runs by itself and does not
-      depend on another chain for security; Bitcoin, Ethereum, and Solana are
+      depend on another chain for security. Bitcoin, Ethereum, and Solana are
       all L1s. A Layer 2 (L2) is a system built on top of an L1 that handles
       transactions separately, then periodically writes its state back down to
       the L1 to inherit its security. An L2 is not a standalone chain, since it

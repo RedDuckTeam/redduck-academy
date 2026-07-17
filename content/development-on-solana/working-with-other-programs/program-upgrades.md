@@ -13,7 +13,7 @@ faq:
       using a program is really trusting whoever controls that upgrade
       authority.
   - question: Does upgrading a Solana program erase user balances or stored data?
-    answer: No. User data lives in separate accounts, not inside the program's
+    answer: No. User data lives in separate accounts, outside the program's
       bytecode, so replacing the code leaves all of that state untouched. There
       is no migration and no need to move to a new address. The only requirement
       is that the new code stays compatible with the existing account layouts,
@@ -24,7 +24,7 @@ faq:
       changed by anyone again. This is irreversible, so some teams do it on
       purpose as a promise that the rules will not change. Most production
       protocols instead keep the authority on a team multisig or hand it to
-      governance so they can still ship bug fixes.
+      governance so they can still release bug fixes.
   - question: How can I check that a Solana program's on-chain code matches its
       published source?
     answer: Look for a verifiable build. If a project publishes its source on
@@ -34,7 +34,7 @@ faq:
       the code you are reading is the code actually running.
 ---
 
-> On Solana, a program isn't a special kind of thing. It's just an account, like any other, with a flag that says "this account holds executable code." That fact has a useful consequence: you can replace the code without disturbing anything else. This lecture covers what program upgrades are, who is allowed to do them, and what it means for the people using your program.
+> On Solana, a program isn't a special kind of thing. It's just an account, like any other, with a flag that says "this account holds executable code." That fact has a useful consequence: you can replace the code without disturbing anything else. A program upgrade is exactly that replacement. Only the holder of the upgrade authority can perform it, and that authority is what everyone using the program ultimately trusts.
 
 ## Code is just another account
 
@@ -114,7 +114,7 @@ That last option is important. **Setting the upgrade authority to ****`None`****
 
 Most production protocols don't do this, at least not initially. They keep the upgrade authority on a multisig controlled by the team, so they can release bug fixes if something goes wrong. Some transfer it to a governance program later, so the community votes on upgrades instead of the team deciding unilaterally. The choice is a trust signal to users.
 
-## What this means for users
+## The three things to check before trusting a program
 
 When you're using a Solana program, you're trusting whoever holds its upgrade authority. They can change the rules. They can fix bugs. They can also, in theory, deploy code that drains the vault.
 

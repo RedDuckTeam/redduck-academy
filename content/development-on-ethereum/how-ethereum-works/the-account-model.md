@@ -156,8 +156,8 @@ In Ethereum, a transaction is "send 3 ETH from Alice to Bob." If someone rebroad
 
 The nonce also enforces ordering. If Alice broadcasts transactions with nonces 5, 6, and 7, the network will include them in that order regardless of when they arrive. Transaction 6 can't be processed until transaction 5 is in a block. This matters for contracts that depend on a specific sequence of calls.
 
-## What this means for the rest of the course
+## Where the account model shows up in your code
 
 Most of the code you write in this course will assume the account model without naming it. When a token contract does `balances[alice] -= 3` and `balances[bob] += 3`, that's the account model at work, inside a contract. When a transaction reverts halfway through and the chain rolls back the state, that's the account model at work, at the protocol level. When you debug why a transaction "stuck" with the wrong nonce, that's the account model at work, at the wallet level.
 
-The UTXO model produces a kind of cryptocurrency that's good at being money. The account model produces a kind of cryptocurrency that's good at being a platform for running arbitrary programs. Ethereum picked the second one. The rest of this module is what follows from that choice.
+The UTXO model produces a kind of cryptocurrency that's good at being money. The account model produces a kind of cryptocurrency that's good at being a platform for running arbitrary programs. Ethereum picked the second one. Every contract you build sits on top of that choice.

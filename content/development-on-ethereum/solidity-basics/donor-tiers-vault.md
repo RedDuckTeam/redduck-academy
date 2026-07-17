@@ -7,7 +7,7 @@ order: 10
 
 ### Donor Tiers Vault
 
-**The Scenario** You're writing the contract layer for a charity platform. Anyone can send ETH along with a short message; the contract classifies each donor by their total contributed amount and lets the frontend query each donor's full history.
+**The Scenario** You're writing the contract layer for a charity platform. Anyone can send ETH along with a short message. The contract classifies each donor by their total contributed amount and lets the frontend query each donor's full history.
 
 **What You'll Build** A single contract called `DonorVault` that records every donation as a struct, classifies donors into a tier enum based on cumulative amount, tracks the unique donor count, and exposes the view functions the frontend needs.
 

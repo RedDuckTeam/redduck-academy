@@ -13,11 +13,11 @@ faq:
   - question: Do I still pay Solana fees if my transaction fails?
     answer: Yes. Both the base fee and the priority fee are charged up front, before
       the transaction runs. If it succeeds, the fees are kept and your changes
-      commit; if it fails, the fees are still kept and the changes roll back.
+      commit. If it fails, the fees are still kept and the changes roll back.
       You pay for the attempt regardless of the outcome.
   - question: Why does my Solana transaction pay priority fee on compute units it
       never used?
-    answer: The priority fee is calculated from the CU limit you reserved, not from
+    answer: The priority fee is calculated from the CU limit you reserved, rather than from
       the compute units your program actually spent. If you set a 200,000 CU
       limit but only use 60,000, you still pay on all 200,000, because the
       leader had to plan for the full cap. The fix is to simulate the
@@ -27,7 +27,7 @@ faq:
     answer: "Use the built-in Compute Budget program: add a SetComputeUnitLimit
       instruction to cap the compute units and a SetComputeUnitPrice instruction
       to set the per-unit rate in micro-lamports. Set the limit too high and you
-      overpay and dilute your effective bid; set it too low and the transaction
+      overpay and dilute your effective bid. Set it too low and the transaction
       reverts with a compute budget exceeded error while still charging you."
 ---
 
@@ -96,7 +96,7 @@ The **CU limit** is the cap your transaction declares for itself. It is the maxi
 
 The **CU price** is how many micro-lamports you are willing to pay per compute unit of that budget. A micro-lamport is one millionth of a lamport, so the formula divides by a million to turn it back into whole lamports: `priority_fee = CU_price × CU_limit / 1,000,000`.
 
-The priority fee is computed from the CU **limit**, the cap you reserved, not from the CU **usage**, what the program actually spent. If you reserve 200,000 CU and your program only uses 60,000, you still pay priority fee on all 200,000. The leader treats the cap as the resource you locked up, since they had to plan for it being used.
+The priority fee is computed from the CU **limit**, the cap you reserved, rather than from the CU **usage**, what the program actually spent. If you reserve 200,000 CU and your program only uses 60,000, you still pay priority fee on all 200,000. The leader treats the cap as the resource you locked up, since they had to plan for it being used.
 
 <svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Compute units: budget vs actual, priority fee charged on the 200,000 CU cap</title><desc>The diagram compares a 200,000 CU compute budget with the 60,000 CU the program actually used, leaving 140,000 CU unused but still reserved. It shows the priority fee is charged on the full 200,000 CU cap, with an example: at 1,000 microlamports per CU, the fee is 200,000 lamports.</desc>
   <defs>
@@ -205,9 +205,9 @@ Alice's priority fee comes out to 1,000 lamports. Bob's is twenty lamports. Caro
   <text x="360" y="500" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">When the network is quiet, even 0 µL/CU lands quickly. When it's congested, the fee market wakes up.</text>
 </svg>
 
-A major congestion event in September 2021 forced the network to fix this. Before priority fees existed, the leader had no way to tell transactions apart — every one was treated equally. When the network got flooded with low-value bot traffic, important transactions had no way to bid for inclusion ahead of the noise. Adding the priority fee market gave users a tool to express urgency and gave validators a signal for which transactions to favor. It is now the central mechanism the network uses to stay responsive during congestion.
+A major congestion event in September 2021 forced the network to fix this. Before priority fees existed, the leader had no way to tell transactions apart. Every one was treated equally. When the network got flooded with low-value bot traffic, important transactions had no way to bid for inclusion ahead of the noise. Adding the priority fee market gave users a tool to express urgency and gave validators a signal for which transactions to favor. It is now the central mechanism the network uses to stay responsive during congestion.
 
-## What this means when you write code
+## Budget compute on every transaction
 
 When you build a transaction client-side, you add two compute-budget instructions at the start: one to set the CU limit, one to set the CU price. The limit comes from simulating your transaction and adding a safety margin. The price comes from looking at what the network is currently paying for prompt inclusion, which you fetch from your RPC provider or estimate from recent blocks.
 

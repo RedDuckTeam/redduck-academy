@@ -92,8 +92,8 @@ The clearest way to think about ERC-4626 is as a bank account that issues transf
 
 Two pieces of state matter for the math:
 
-- `totalAssets()` — how much of the underlying asset the vault is currently managing. For a USDC vault, this is the USDC balance of the vault contract, plus any USDC the vault has loaned out or staked elsewhere that still belongs to it.
-- `totalSupply()` — how many shares have been issued (inherited from the ERC-20 implementation, since shares are themselves an ERC-20).
+- `totalAssets()` returns how much of the underlying asset the vault is currently managing. For a USDC vault, this is the USDC balance of the vault contract, plus any USDC the vault has loaned out or staked elsewhere that still belongs to it.
+- `totalSupply()` returns how many shares have been issued (inherited from the ERC-20 implementation, since shares are themselves an ERC-20).
 
 The ratio between these two values is the share price. If the vault holds 1,000 USDC and has minted 100 shares total, each share is worth 10 USDC. If the vault later generates 100 USDC of yield without any new deposits, totalAssets becomes 1,100 and shares stay at 100, so each share is now worth 11 USDC. Same number of shares, more underlying value per share. This is exactly the same pattern as Uniswap V2 LP tokens.
 
@@ -177,7 +177,7 @@ And the reverse:
 assets = (shares × totalAssets) / totalSupply
 ```
 
-Both are integer arithmetic in Solidity, which means the result is truncated (rounded down) at the division. The direction of rounding matters for security. The standard's general principle: round in the direction that favors the vault, not the user. A user depositing assets gets shares rounded down, so they never get more shares than their assets are worth. A user redeeming shares gets assets rounded down, so they never extract more than their shares are worth. Rounding the other direction would let users systematically extract tiny amounts each operation.
+Both are integer arithmetic in Solidity, which means the result is truncated (rounded down) at the division. The direction of rounding matters for security. The standard's general principle: round in the direction that favors the vault rather than the user. A user depositing assets gets shares rounded down, so they never get more shares than their assets are worth. A user redeeming shares gets assets rounded down, so they never extract more than their shares are worth. Rounding the other direction would let users systematically extract tiny amounts each operation.
 
 OpenZeppelin's reference implementation uses a `Math.mulDiv` helper with an explicit `Rounding` argument so the direction is clear at every call site.
 
@@ -237,7 +237,7 @@ The math above has a problem when the vault is freshly deployed and nearly empty
 The four steps:
 
 1. The attacker is the first to deposit. They put in 1 wei of the asset and receive 1 share. The vault now has totalAssets = 1, totalSupply = 1.
-2. The attacker transfers 10,000 USDC directly to the vault's address using a plain ERC-20 transfer, not a deposit call. The vault's contract has no idea this happened from the standpoint of share accounting. Its totalSupply stays at 1, but its balance (and therefore totalAssets) jumps to 10,001.
+2. The attacker transfers 10,000 USDC directly to the vault's address using a plain ERC-20 transfer rather than a deposit call. The vault's contract has no idea this happened from the standpoint of share accounting. Its totalSupply stays at 1, but its balance (and therefore totalAssets) jumps to 10,001.
 3. The share price is now 10,001 USDC per share. A victim deposits 5,000 USDC and the contract calculates shares = 5,000 × 1 / 10,001 ≈ 0.4999. Solidity rounds down. The victim receives **zero shares**. Their 5,000 USDC is sitting in the vault, but they have no on-chain claim to it.
 4. The attacker redeems their 1 share. The vault now holds 15,001 USDC and has 1 share outstanding. The attacker gets all 15,001 USDC back. They invested 10,001. They walked away with 15,001. Net profit: 5,000 USDC, taken directly from the victim.
 
@@ -257,7 +257,7 @@ The `+ 1` and `+ 10^offset` are the virtual amounts. They're tiny in normal use,
 
 To see why, redo the attack with the virtual amounts using offset = 0:
 
-- Attacker deposits 1 wei. Vault has totalAssets = 1 + virtual 1 = 2 effective, totalSupply = 1 + virtual 1 = 2 effective. The 1 share they get is now worth ~half the vault, not the whole thing.
+- Attacker deposits 1 wei. Vault has totalAssets = 1 + virtual 1 = 2 effective, totalSupply = 1 + virtual 1 = 2 effective. The 1 share they get is now worth ~half the vault rather than the whole thing.
 - Attacker transfers 10,000 USDC directly. Effective totalAssets = 10,002, effective totalSupply still = 2 share-equivalents.
 - Victim deposits 5,000. Shares received = 5,000 × 2 / 10,002 = ~0.9998, still rounds to 0.
 
@@ -306,7 +306,7 @@ A protocol should expose an ERC-4626 interface when it manages an ERC-20 on beha
 
 It's the wrong choice when:
 
-- The pool holds multiple assets, not one (an AMM pool holds two assets, so ERC-4626 doesn't fit; Uniswap V2 LP tokens are similar in spirit but use their own interface)
+- The pool holds multiple assets rather than one (an AMM pool holds two assets, so ERC-4626 doesn't fit, and Uniswap V2 LP tokens are similar in spirit but use their own interface)
 - The user's claim isn't fungible (a lending position with a custom interest rate isn't a clean share of a pool)
 - The shares are non-transferable by design (governance staking with a lockup isn't naturally ERC-4626)
 

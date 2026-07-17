@@ -77,11 +77,17 @@ reading order comes from the `order:` field, not the file name.
 content/
   blockchain-basics/              # course slug
     _course.md                    # course metadata (its body is the course description)
+    README.md                     # auto-generated course outline — do not edit
     cryptography/                 # module slug
       _module.md                  # module metadata
       hashing.md                  # a lesson
       encoding.md
 ```
+
+Each course folder also carries an auto-generated **`README.md`** outline: its modules and
+lessons in reading order, with links. Don't edit it by hand. A pre-commit hook regenerates
+and stages it whenever you change content, and CI verifies it, so it always matches the
+files. To refresh it yourself, run `yarn content:index`.
 
 ## Frontmatter
 

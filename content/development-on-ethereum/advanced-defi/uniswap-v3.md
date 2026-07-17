@@ -7,8 +7,8 @@ faq:
   - question: What is concentrated liquidity and why does it make Uniswap V3 more
       capital efficient than V2?
     answer: In Uniswap V2 your deposit is spread across every possible price from
-      zero to infinity, so most of it sits idle at prices that will never trade;
-      empirically often under 5% is active near the current price. V3 lets you
+      zero to infinity, so most of it sits idle at prices that will never trade.
+      Empirically, often under 5% is active near the current price. V3 lets you
       concentrate your capital in a chosen price range, say $3,000 to $4,000, so
       all of it provides depth where trading actually happens. The same $10,000
       in a tight V3 range can provide the depth of roughly $100,000 or more in
@@ -19,14 +19,14 @@ faq:
       relative to the current price, because the pool sells whichever token the
       market is buying. If your whole range is above the current price, the
       price must rise through it, meaning the pool will be selling that token
-      the entire time, so you deposit only that token; if your range is entirely
+      the entire time, so you deposit only that token. If your range is entirely
       below, you deposit only the other token. Only a range that straddles the
       current price needs both tokens. At the lower boundary a position holds
       100% of one token and at the upper boundary 100% of the other.
   - question: Can I place a limit order on Uniswap V3?
     answer: Yes, using a 'range order', which exploits the single-sided deposit
       behavior. To sell ETH at $4,000 you create a tight position just above the
-      current price and deposit only ETH; if the price passes through that
+      current price and deposit only ETH. If the price passes through that
       narrow range your ETH is swapped to USDC, and by the time the price exits
       the top your position is all USDC at roughly your target. It isn't an
       exact fill, since the execution price is an average across the range, but
@@ -57,7 +57,7 @@ Empirically, in a V2 ETH/USDC pool, an LP's capital that's "active" within any r
 
 V3 lets an LP say: "I think ETH will trade between $3,000 and $4,000. Concentrate all my capital in that range." The LP picks a lower price `Pl` and an upper price `Pu`. Their capital provides depth only in `[Pl, Pu]`. If trades happen inside that range, they earn fees. If price moves outside their range, their position earns nothing until either the price comes back or the LP repositions.
 
-<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Uniswap V2 liquidity spread across all prices vs V3 concentrated in $3,000–$4,000</title><desc>Two bar charts compare a $10,000 deposit: in Uniswap V2 it spreads evenly across every price from $0 to infinity, while in Uniswap V3 the same $10,000 concentrates only between $3,000 and $4,000. A boxed note states the tradeoff: if price leaves the V3 range, the position earns zero fees until it re-enters or the LP repositions.</desc>
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Uniswap V2 liquidity spread across all prices vs V3 concentrated in $3,000 to $4,000</title><desc>Two bar charts compare a $10,000 deposit: in Uniswap V2 it spreads evenly across every price from $0 to infinity, while in Uniswap V3 the same $10,000 concentrates only between $3,000 and $4,000. A boxed note states the tradeoff: if price leaves the V3 range, the position earns zero fees until it re-enters or the LP repositions.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">V2 spreads your capital across every price. V3 lets you concentrate it.</text>
   <text x="40" y="84" font-family="monospace" font-size="11" font-weight="bold">Uniswap V2: same $10,000 deposit spread across all prices</text>
@@ -207,18 +207,16 @@ Tick spacing controls granularity. A pool with tick spacing 60 only allows posit
 
 V2 had one fee: 0.30%. V3 has four, each with its own pool and tick spacing:
 
-- **0.01%** — for pairs that should trade at almost identical prices, like two stablecoins. Tick spacing 1 (most granular).
-- **0.05%** — for correlated assets that move closely together, like ETH and a liquid staked ETH derivative. Tick spacing 10.
-- **0.30%** — the V2 standard, used for typical volatile pairs like ETH/USDC. Tick spacing 60.
-- **1.00%** — for exotic pairs with high volatility. Tick spacing 200.
+- **0.01%**: for pairs that should trade at almost identical prices, like two stablecoins. Tick spacing 1 (most granular).
+- **0.05%**: for correlated assets that move closely together, like ETH and a liquid staked ETH derivative. Tick spacing 10.
+- **0.30%**: the V2 standard, used for typical volatile pairs like ETH/USDC. Tick spacing 60.
+- **1.00%**: for exotic pairs with high volatility. Tick spacing 200.
 
 Each fee tier is a separate pool. So when you talk about "the ETH/USDC pool" on V3, you actually have to specify which one of three or four pools you mean. Liquidity is split across these tiers, which is a real downside: thin markets fragment further. The Uniswap router handles this by routing trades through whichever pool gives the best execution.
 
 LPs choose a fee tier based on the volatility they expect. Higher volatility means higher fee income but also more risk of price moving out of range. The coarser tick spacing for higher fee tiers reflects that fine-grained ranges are less useful for assets that move a lot.
 
 ## Three position types: where single-sided liquidity comes from
-
-(Remove this sentence. The section heading already names the topic, and the following paragraph opens the explanation directly.)
 
 In V2, you always deposit both tokens, in the ratio set by the current pool price. There's no other option. In V3, the ratio depends on where your chosen range sits relative to the current price. Sometimes you deposit both tokens. Sometimes only one. And it's not up to you which case applies. The range you pick forces the composition.
 
@@ -348,4 +346,4 @@ V3's weaknesses:
 - Tick math, NFT positions, and per-position fee accounting make the codebase and integrations more complex
 - Less suitable for pairs where price has no natural "center" the LP can target
 
-V2's design is still a reasonable choice for some applications: assets with extreme volatility where any chosen range becomes irrelevant quickly, passive LPs who can't or won't monitor positions, simple integrations where V2's fungible LP tokens make the rest of the contract design cleaner. V2 isn't deprecated; it coexists with V3 because the tradeoffs go different ways for different use cases.
+V2's design is still a reasonable choice for some applications: assets with extreme volatility where any chosen range becomes irrelevant quickly, passive LPs who can't or won't monitor positions, simple integrations where V2's fungible LP tokens make the rest of the contract design cleaner. V2 isn't deprecated. It coexists with V3 because the tradeoffs go different ways for different use cases.

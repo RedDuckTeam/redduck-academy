@@ -5,8 +5,8 @@ type: lecture
 order: 4
 faq:
   - question: What does it actually mean when people say Bitcoin is secured by energy?
-    answer: "It is a literal statement, not a metaphor. Bitcoin's security comes
-      from cost, not from cryptography being unbreakable: rewriting past
+    answer: "It is a literal statement rather than a metaphor. Bitcoin's security comes
+      from cost rather than from cryptography being unbreakable: rewriting past
       transactions would force an attacker to redo an enormous amount of
       proof-of-work using real electricity and specialized hardware. Because
       building the chain forward is cheap but rewriting it is enormously
@@ -37,7 +37,7 @@ faq:
       the largest miners are usually the most invested in Bitcoin's health.
 ---
 
-The previous lesson explained what miners do. This one explains why they do it, and what their work gets the rest of the network. Both questions have economic answers. Mining is a competitive market where participants spend real electricity in the hope of winning block rewards, and the security of every transaction that has ever happened on Bitcoin rests on the fact that overwriting history is much more expensive than the alternative. By the end of this lesson, you should understand where Bitcoin's security guarantee actually comes from, what a 51% attack can and cannot do, and why "Bitcoin is secured by energy" is a literal statement, not a metaphor.
+The previous lesson explained what miners do. This one explains why they do it, and what their work gets the rest of the network. Both questions have economic answers. Mining is a competitive market where participants spend real electricity in the hope of winning block rewards, and the security of every transaction that has ever happened on Bitcoin rests on the fact that overwriting history is much more expensive than the alternative. By the end of this lesson, you should understand where Bitcoin's security guarantee actually comes from, what a 51% attack can and cannot do, and why "Bitcoin is secured by energy" is a literal statement rather than a metaphor.
 
 ## Mining is a market
 
@@ -51,7 +51,7 @@ Second, electricity is the biggest cost, and electricity prices vary a lot. A mi
 
 Over time, this competition produces a predictable pattern. When the bitcoin price goes up or transaction fees rise, mining becomes more profitable, and more miners turn on their machines. Hashrate grows. The difficulty adjustment from the previous lesson happens every two weeks and tightens the puzzle so blocks still take ten minutes. When the price falls or fees shrink, less-efficient miners switch off, hashrate falls, and the difficulty loosens again. Block times stay at ten minutes through it all.
 
-There's one consequence of this market structure that matters for the rest of the lesson. At every point in time, there is a miner just barely breaking even — one who would shut down tomorrow if their electricity bill went up by 5%. So the total amount of electricity being spent on mining is always close to the total reward being paid out, because anyone whose costs were much lower than their reward would attract competitors until prices equalised again.
+There's one consequence of this market structure that matters for the rest of the lesson. At every point in time, there is a miner just barely breaking even, one who would shut down tomorrow if their electricity bill went up by 5%. So the total amount of electricity being spent on mining is always close to the total reward being paid out, because anyone whose costs were much lower than their reward would attract competitors until prices equalised again.
 
 In plain terms: the network spends roughly as much on mining as mining pays out. That sounds boring but it's the setup for the entire security argument.
 
@@ -168,7 +168,7 @@ This means two things have to happen at once. The attacker has to redo all the p
 
 Concretely: to credibly reverse a transaction that's six blocks deep, an attacker would have to redo about an hour of the entire global network's effort, *while* matching the rest of the network's pace going forward. At Bitcoin's current scale, that requires assembling and running a fleet of specialized hardware comparable to the entire honest network. The hardware alone costs in the billions of dollars, much of it is already concentrated in the hands of large public mining companies, and the electricity to run it for the duration of the attack adds substantially to the bill.
 
-This is what people mean when they say "Bitcoin is secured by energy." The security comes from cost, not from cryptography being unbreakable. The cost of rewriting history is enormous, and that cost is paid in real-world resources an attacker would have to actually go out and buy. Forging the chain remains theoretically possible but practically *unprofitable*, and Bitcoin's whole security model rests on that gap.
+This is what people mean when they say "Bitcoin is secured by energy." The security comes from cost rather than from cryptography being unbreakable. The cost of rewriting history is enormous, and that cost is paid in real-world resources an attacker would have to actually go out and buy. Forging the chain remains theoretically possible but practically *unprofitable*, and Bitcoin's whole security model rests on that gap.
 
 ## What a 51% attack can and cannot do
 
@@ -228,4 +228,4 @@ The deepest reason 51% attacks against Bitcoin are rare is economic. An attacker
 
 The lesson on consensus made the argument abstractly. You need a way to prevent Sybil attacks without using identity, and the way to do that is to make participation costly. Proof of work is one specific instantiation of that principle: the cost is electricity, and the "vote" is hashrate. The energy is not a side-effect or a waste product. The energy *is* the security mechanism. To remove the energy expenditure would be to remove the very thing that makes attacks economically irrational.
 
-Whether that tradeoff is the right one is a real question, and other approaches make different ones. The closing lesson of this module returns to that comparison. The narrow point of this lesson is that within Bitcoin's chosen design, the energy use is doing real work. It makes rewriting history vastly more expensive than leaving it alone, to the point where no rational actor attempts it.
+Whether that tradeoff is the right one is a real question, and other approaches make different ones. A later lesson returns to that comparison. The narrow point of this lesson is that within Bitcoin's chosen design, the energy use is doing real work. It makes rewriting history vastly more expensive than leaving it alone, to the point where no rational actor attempts it.

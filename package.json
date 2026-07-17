@@ -61,6 +61,7 @@
     "typescript": "^5.7.2"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "solc-utils:build-stdlib": "yarn workspace @redduck/solc-utils build:stdlib",
     "payload-config:generate": "yarn workspace @redduck/payload-config generate",
     "admin:build": "yarn workspace admin build",

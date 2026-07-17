@@ -32,7 +32,7 @@ faq:
     answer: "The sizes are fixed and easy to memorize: a Pubkey is 32 bytes, a bool
       is 1 byte (Borsh does not pack bits), and fixed-width integers are their
       bit count divided by 8 (so a u64 is 8 bytes). An Option<T> adds 1 byte for
-      a Some/None flag, and an array [T; N] is exactly N copies of T. In
+      a Some/None flag, and an array `[T; N]` is exactly N copies of T. In
       practice you rarely add these up by hand, since #[derive(InitSpace)]
       computes an INIT_SPACE constant for you and you write space = 8 +
       YourStruct::INIT_SPACE."
@@ -237,7 +237,7 @@ In practice, you get one chance to pick the layout, and that decision is permane
 
 If a serious migration is unavoidable, the standard pattern is to deploy a new program version with a new account type, write a migration instruction that takes an old account and a fresh new account, copies the relevant data across, and closes the old account to refund its rent. The migration runs once per account, paid for by either the user or the protocol depending on the situation. It's tedious enough that you want to design the original layout carefully to make sure you never have to do it.
 
-## What you actually do day to day
+## Let InitSpace do the arithmetic
 
 For most accounts you'll write, the workflow is short. Define your `#[account]` struct. Add `#[derive(InitSpace)]` above it so the macro computes the size for you. For any `String` or `Vec`, add `#[max_len(N)]` with a bound you've thought about. In your init instruction, set `space = 8 + YourStruct::INIT_SPACE`. The compiler does the arithmetic, the runtime allocates the bytes, and your account is the right size.
 

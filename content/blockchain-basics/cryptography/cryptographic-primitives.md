@@ -50,7 +50,7 @@ Alice signed a message with her private key last week. Today she sends you the s
 - [ ] Yes. Signing the same message again always produces a visibly different signature, so a resent one would be obvious.  <!-- a:6a0b994bf4c0093cef271010 -->
 - [ ] Yes. Every signature embeds a timestamp set by the wallet at signing time.  <!-- a:6a0b994ff4c0093cef271011 -->
 - [ ] Yes, if she also sends you part of her private key so you can confirm she still holds it.  <!-- a:6a0b9953f4c0093cef271012 -->
-- [x] No. A signature proves who signed a message, not when. It carries no time information.  <!-- a:6a0b9962f4c0093cef271013 -->
+- [x] No. A signature proves who signed a message rather than when. It carries no time information.  <!-- a:6a0b9962f4c0093cef271013 -->
 
 <!-- q:6a0b9dcbf4c0093cef271014 -->
 Ten of the twelve words in your seed phrase leak. Is that wallet still safe?

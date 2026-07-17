@@ -24,7 +24,7 @@ faq:
     answer: "An externally owned account (EOA) is a regular user account controlled
       by a private key, holding only an ETH balance and a nonce, and you sign
       transactions with the key to spend ETH or call contracts. A smart contract
-      account is controlled by code, not a key: its code deploys to an address and
+      account is controlled by code rather than a key: its code deploys to an address and
       stays there as long as the chain runs, and when anyone sends it a transaction the code runs, reads and
       writes its own storage, and can move ETH or call other contracts."
   - question: If a transaction runs out of gas halfway, do I lose the gas I already paid?
@@ -53,7 +53,7 @@ Two kinds of things have addresses on Ethereum and can hold state.
 
 The first is a regular user account, called an **externally owned account** or EOA. It's controlled by a private key, exactly like a Bitcoin address. You sign transactions with the key to spend your ETH or call a smart contract (the second account type, described next). EOAs hold a balance of ETH and a counter called a nonce. Nothing else.
 
-The second is a **smart contract** account. It's controlled by code, not by a private key. When a contract is created, its code gets deployed to a new address on the chain. That code stays at that address for as long as the chain runs, and no one else can change it or take it down. The one historical exception is selfdestruct: for years a contract could erase its own code with that operation, though a later change to the protocol has since removed almost all of its effect. Anyone can send a transaction to a contract's address. When they do, the contract's code runs. It can read and write its own storage, send ETH around, and call other contracts. The result of the code's execution becomes part of the global state.
+The second is a **smart contract** account. It's controlled by code rather than a private key. When a contract is created, its code gets deployed to a new address on the chain. That code stays at that address for as long as the chain runs, and no one else can change it or take it down. The one historical exception is selfdestruct: for years a contract could erase its own code with that operation, though a later change to the protocol has since removed almost all of its effect. Anyone can send a transaction to a contract's address. When they do, the contract's code runs. It can read and write its own storage, send ETH around, and call other contracts. The result of the code's execution becomes part of the global state.
 
 The state of Ethereum at any moment is the combined state of every account, EOA and contract, that has ever existed on the chain. Balances, nonces, contract code, contract storage. Every node holds this state, updates it as new blocks arrive, and rejects any block whose transactions don't transition the state correctly.
 
@@ -86,7 +86,7 @@ None of this is possible on Bitcoin's protocol, by design. Bitcoin keeps its scr
 
 ## Where this fits
 
-Ethereum is one specific design for a smart-contract chain, not the only one. Solana, Aptos, Sui, Sei, Avalanche, BNB Chain, and many others are also smart-contract chains, each with different choices about account models, consensus, gas pricing, throughput, and developer experience.
+Ethereum is one specific design for a smart-contract chain among many. Solana, Aptos, Sui, Sei, Avalanche, BNB Chain, and many others are also smart-contract chains, each with different choices about account models, consensus, gas pricing, throughput, and developer experience.
 
 Ethereum matters disproportionately for two reasons. It got there first as a general-purpose smart-contract chain, which is why the design vocabulary the whole industry uses is mostly Ethereum's. And it's where the most valuable applications live by a wide margin: at the time of writing, hundreds of billions of dollars sit in contracts on Ethereum or on chains that copied Ethereum's execution model. Those copies are what people mean when they say "EVM-compatible." When you learn Ethereum, you learn a model that runs on dozens of other chains too, with small variations.
 
