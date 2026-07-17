@@ -11,12 +11,19 @@ import { readFile, readdir } from 'node:fs/promises'
 import { dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import yaml from 'yaml'
+import { parseTestQuestions, TEST_ID_RE, MULTI_CUE_RE } from './lib/tests-md.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CONTENT = join(ROOT, 'content')
 const SKIP = new Set(['README.md', 'TEMPLATE.md'])
 const LESSON_TYPES = ['lecture', 'test', 'coding_task', 'review_task']
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+// A test lesson's questions live in its body (see scripts/lib/tests-md.mjs for the parser).
+// `<!-- q -->` starts a question; each option is a GitHub task-list line (`- [x]` correct / `- [ ]`
+// not). Ids in trailing `<!-- q:ID -->` / `<!-- a:ID -->` comments are the join key into learners'
+// stored answers, so any present id must be globally unique — but a contributor may omit them, and
+// the DB sync assigns them on merge. Multi-answer questions must cue it in the stem (matches the
+// runtime's `isMultipleChoices = correctCount > 1`).
 const ALLOWED = {
   course: ['id', 'title', 'order', 'isHidden'],
   module: ['id', 'title', 'order', 'isHidden'],
@@ -99,15 +106,15 @@ function validate(file, raw, meta, sets) {
   optType('id', 'number')
   optType('isHidden', 'boolean')
 
-  // `id` is the stable link to the CMS row. It must be a positive integer and unique
-  // among files of the same kind (courses, modules, and lessons each have their own id
-  // sequence in the CMS), so two of them can never claim the same DB row.
+  // `id` is the stable link to the CMS row. It's optional for a new file — one is assigned and
+  // committed on merge — but if present it must be a positive integer and unique among files of the
+  // same kind (courses, modules, and lessons each have their own id sequence in the CMS).
   if (typeof data.id === 'number') {
     if (!Number.isInteger(data.id) || data.id <= 0) err('id: must be a positive integer')
     const rel = relative(ROOT, file)
     const others = (sets.idOwners.get(`${c.role}:${data.id}`) ?? []).filter((o) => o !== rel)
     if (others.length) {
-      err(`id ${data.id} is already used by another ${c.role} (${others.join(', ')}) — pick a fresh one with \`node scripts/new-id.mjs\``)
+      err(`id ${data.id} is already used by another ${c.role} (${others.join(', ')}) — remove it (a fresh one is assigned on merge) or change it`)
     }
   }
 
@@ -138,6 +145,47 @@ function validate(file, raw, meta, sets) {
     const open = (body.match(/<svg\b/gi) ?? []).length
     const close = (body.match(/<\/svg>/gi) ?? []).length
     if (open !== close) err(`unbalanced <svg> tags: ${open} opening, ${close} closing`)
+
+    if (data.type === 'test') {
+      const { questions, parseErrors } = parseTestQuestions(body)
+      for (const pe of parseErrors) err(pe)
+      if (questions.length === 0) err('test has no questions — add at least one `<!-- q -->` block with options')
+
+      const rel = relative(ROOT, file)
+      const localIds = new Map() // id -> count in this file, for intra-file duplicate detection
+      questions.forEach((q, qi) => {
+        const at = `question ${qi + 1}${q.id ? ` (id ${q.id})` : ''}`
+        // Ids are optional in the source — the sync assigns them on merge — but a present one must
+        // be well-formed (it's the primary key and the join into learners' stored answers).
+        if (q.id && !TEST_ID_RE.test(q.id)) err(`${at}: invalid question id "${q.id}"`)
+        if (!q.stem) err(`${at}: empty question stem`)
+        if (q.options.length < 2) err(`${at}: needs at least 2 options (found ${q.options.length})`)
+
+        const correct = q.options.filter((o) => o.correct)
+        if (q.options.length > 0 && correct.length === 0) err(`${at}: no correct option is marked (use \`- [x]\`)`)
+        if (correct.length > 1 && !MULTI_CUE_RE.test(q.stem)) {
+          err(`${at}: ${correct.length} options are marked correct but the stem has no "select all that apply" cue`)
+        }
+
+        const seenLabels = new Set()
+        for (const o of q.options) {
+          if (!o.label) err(`${at}: an option has an empty label`)
+          if (o.id && !TEST_ID_RE.test(o.id)) err(`${at}: option "${o.label.slice(0, 30)}" has an invalid id "${o.id}"`)
+          const labelKey = o.label.toLowerCase()
+          if (seenLabels.has(labelKey)) err(`${at}: duplicate option "${o.label.slice(0, 40)}"`)
+          seenLabels.add(labelKey)
+        }
+
+        for (const id of [q.id, ...q.options.map((o) => o.id)].filter(Boolean)) {
+          localIds.set(id, (localIds.get(id) ?? 0) + 1)
+          const others = [...(sets.testIdOwners.get(id) ?? [])].filter((o) => o !== rel)
+          if (others.length) err(`id "${id}" is also used in ${others.join(', ')} — every question/option id must be unique`)
+        }
+      })
+      for (const [id, count] of localIds) {
+        if (count > 1) err(`id "${id}" appears ${count} times in this file — each question and option needs its own id`)
+      }
+    }
   }
 
   return { errors, warn }
@@ -146,20 +194,32 @@ function validate(file, raw, meta, sets) {
 async function main() {
   const all = (await mdFiles(CONTENT)).sort()
   // Build the set of existing course/module metadata for parent checks.
-  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map() }
+  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map(), testIdOwners: new Map() }
   for (const f of all) {
     const c = classify(relative(CONTENT, f))
     if (c.role === 'course') sets.courses.add(c.course)
     if (c.role === 'module') sets.modules.add(`${c.course}/${c.module}`)
+    const { data, body } = parseFrontmatter(await readFile(f, 'utf8'))
     // Collect declared ids per role. Payload gives each collection its own id sequence,
     // so a course, a module, and a lesson may legitimately share a number — only a clash
     // within the same role means two files point at the same DB row.
-    const { data } = parseFrontmatter(await readFile(f, 'utf8'))
     if (data && typeof data.id === 'number' && c.role !== 'unknown') {
       const key = `${c.role}:${data.id}`
       const owners = sets.idOwners.get(key) ?? []
       owners.push(relative(ROOT, f))
       sets.idOwners.set(key, owners)
+    }
+    // Collect every question/option id so we can flag a collision across tests (they are primary
+    // keys, so a duplicate would fail the DB insert). All test-element ids share one namespace.
+    if (c.role === 'lesson' && data?.type === 'test' && body) {
+      const rel = relative(ROOT, f)
+      for (const q of parseTestQuestions(body).questions) {
+        for (const id of [q.id, ...q.options.map((o) => o.id)].filter(Boolean)) {
+          const owners = sets.testIdOwners.get(id) ?? new Set()
+          owners.add(rel)
+          sets.testIdOwners.set(id, owners)
+        }
+      }
     }
   }
 
