@@ -40,7 +40,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v5
+      # setup-node@v4 (matching content-verify.yml): v5's env-details step runs `yarn cache dir`
+      # before corepack is enabled, which fails against the pinned Yarn 4 (packageManager field).
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
 
