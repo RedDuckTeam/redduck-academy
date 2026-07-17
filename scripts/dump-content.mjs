@@ -8,8 +8,14 @@
 // present in the corpus. This serializer mirrors apps/web/src/lib/lexical-to-markdown.ts (the
 // runtime fallback); keep the two in sync when either changes.
 //
-//   node scripts/dump-content.mjs                      # -> content/  (local DB)
-//   node scripts/dump-content.mjs --out /tmp/review    # -> review dir
+//   node scripts/dump-content.mjs                      # -> content/  (local DB), full tree
+//   node scripts/dump-content.mjs --out=/tmp/review    # -> review dir
+//   node scripts/dump-content.mjs --tests-only         # ONE-TIME seed: only (re)writes test
+//                                                       #   lesson files with their questions and
+//                                                       #   leaves every other file untouched (no
+//                                                       #   tree clear). Use to move DB-authored
+//                                                       #   tests into the files once; after that
+//                                                       #   the files are the source of truth.
 //   DATABASE_URL=postgres://... node scripts/dump-content.mjs   # prod, final run
 //
 // Reads only. Never writes to the DB.
@@ -24,6 +30,10 @@ const toYaml = yaml.stringify;
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outArg = process.argv.find((a) => a.startsWith('--out='));
 const OUT = outArg ? outArg.slice('--out='.length) : join(ROOT, 'content');
+// One-time seed mode: (re)write only test lesson files (frontmatter + intro + questions), never
+// clearing the tree or touching lectures/courses/modules. Safe because a test file's intro comes
+// from the DB and hasn't been file-edited, so this only adds the questions.
+const TESTS_ONLY = process.argv.includes('--tests-only');
 const SCHEMA = 'payload'
 
 // lesson id -> public path, populated in main(); used to resolve Lexical internal
@@ -148,6 +158,26 @@ function lexicalToMd(content) {
   return md.replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// ---- Test questions -> Markdown ----
+// Stems can be multi-block (paragraphs + a code block), so they reuse the full block serializer.
+// Option labels are always a single paragraph of inline content across the whole corpus, so each
+// renders as one GitHub task-list line (`- [x]` correct, `- [ ]` incorrect). The stable question
+// and option ids ride along in trailing HTML comments so the DB sync matches rows by id and never
+// churns a learner's stored answers (which are keyed by those ids).
+function optionLabelToMd(label) {
+  const para = (label?.root?.children ?? []).find((n) => n.type === 'paragraph');
+  return inline(para?.children ?? []).replace(/\s+/g, ' ').trim();
+}
+function testQuestionsToMd(questions, optionsByQuestion) {
+  return questions
+    .map((qq) => {
+      const opts = optionsByQuestion.get(qq.id) ?? [];
+      const lines = opts.map((o) => `- [${o.is_correct ? 'x' : ' '}] ${optionLabelToMd(o.label)}  <!-- a:${o.id} -->`);
+      return `<!-- q:${qq.id} -->\n${lexicalToMd(qq.question)}\n\n${lines.join('\n')}`;
+    })
+    .join('\n\n');
+}
+
 // ---- File emission ----
 
 function frontmatter(obj) {
@@ -174,12 +204,28 @@ async function main() {
   const modules = await q(`select id, title, slug, "order", is_hidden, course_id from ${SCHEMA}.modules order by "order", id`);
   const lessons = await q(`select id, title, slug, "order", type, is_hidden, module_id, content from ${SCHEMA}.lessons order by "order", id`);
   const faqRows = await q(`select _parent_id, _order, question, answer from ${SCHEMA}.lessons_faq order by _parent_id, _order`);
+  const questionRows = await q(`select _parent_id, _order, id, question from ${SCHEMA}.lessons_questions order by _parent_id, _order`);
+  const optionRows = await q(
+    `select _parent_id, _order, id, label, is_correct from ${SCHEMA}.lessons_questions_options order by _parent_id, _order`,
+  );
   await client.end();
 
   const faqByLesson = new Map();
   for (const r of faqRows) {
     if (!faqByLesson.has(r._parent_id)) faqByLesson.set(r._parent_id, []);
     faqByLesson.get(r._parent_id).push({ question: r.question, answer: r.answer });
+  }
+  // Questions are parented to their lesson; options to their question. Both come back already
+  // ordered by `_order`, so pushing in query order preserves the authored sequence.
+  const questionsByLesson = new Map();
+  for (const r of questionRows) {
+    if (!questionsByLesson.has(r._parent_id)) questionsByLesson.set(r._parent_id, []);
+    questionsByLesson.get(r._parent_id).push(r);
+  }
+  const optionsByQuestion = new Map();
+  for (const r of optionRows) {
+    if (!optionsByQuestion.has(r._parent_id)) optionsByQuestion.set(r._parent_id, []);
+    optionsByQuestion.get(r._parent_id).push(r);
   }
   const modulesByCourse = new Map();
   for (const m of modules) {
@@ -202,31 +248,38 @@ async function main() {
   }
 
   // Clear previously generated content, but keep the hand-maintained docs the validator skips
-  // (content/README.md and content/TEMPLATE.md).
-  const KEEP_FILES = new Set(['README.md', 'TEMPLATE.md']);
-  try {
-    for (const name of await readdir(OUT)) {
-      if (KEEP_FILES.has(name)) continue;
-      await rm(join(OUT, name), { recursive: true, force: true });
-    }
-  } catch { /* OUT does not exist yet */ }
+  // (content/README.md and content/TEMPLATE.md). Skipped in --tests-only, which only appends.
+  if (!TESTS_ONLY) {
+    const KEEP_FILES = new Set(['README.md', 'TEMPLATE.md']);
+    try {
+      for (const name of await readdir(OUT)) {
+        if (KEEP_FILES.has(name)) continue;
+        await rm(join(OUT, name), { recursive: true, force: true });
+      }
+    } catch { /* OUT does not exist yet */ }
+  }
 
   // File/dir names are pure slugs so the path mirrors the lesson route
   // (/courses/<course>/<module>/<lesson>); `order` lives in frontmatter.
   let nc = 0, nm = 0, nl = 0, withFaq = 0, emptyBody = 0;
   for (const c of courses) {
     const cDir = join(OUT, c.slug);
-    const cFm = frontmatter({ id: c.id, title: c.title, order: Number(c.order), isHidden: c.is_hidden || undefined });
-    await writeFileAt(join(cDir, '_course.md'), cFm + (c.description ? `\n${c.description.trim()}\n` : ''));
-    nc++;
+    if (!TESTS_ONLY) {
+      const cFm = frontmatter({ id: c.id, title: c.title, order: Number(c.order), isHidden: c.is_hidden || undefined });
+      await writeFileAt(join(cDir, '_course.md'), cFm + (c.description ? `\n${c.description.trim()}\n` : ''));
+      nc++;
+    }
 
     for (const m of modulesByCourse.get(c.id) ?? []) {
       const mDir = join(cDir, m.slug);
-      const mFm = frontmatter({ id: m.id, title: m.title, order: Number(m.order), isHidden: m.is_hidden || undefined });
-      await writeFileAt(join(mDir, '_module.md'), mFm);
-      nm++;
+      if (!TESTS_ONLY) {
+        const mFm = frontmatter({ id: m.id, title: m.title, order: Number(m.order), isHidden: m.is_hidden || undefined });
+        await writeFileAt(join(mDir, '_module.md'), mFm);
+        nm++;
+      }
 
       for (const l of lessonsByModule.get(m.id) ?? []) {
+        if (TESTS_ONLY && l.type !== 'test') continue;
         const faq = faqByLesson.get(l.id);
         if (faq) withFaq++;
         const fm = frontmatter({
@@ -237,8 +290,17 @@ async function main() {
           isHidden: l.is_hidden || undefined,
           faq: faq || undefined,
         });
-        const body = lexicalToMd(l.content);
+        let body = lexicalToMd(l.content);
         if (!body) emptyBody++;
+        // Test lessons carry their questions after the intro body. Everything before the first
+        // `<!-- q: -->` marker is the intro (the lesson `content`); the sync/validator split there.
+        if (l.type === 'test') {
+          const qs = questionsByLesson.get(l.id) ?? [];
+          if (qs.length) {
+            const questionsMd = testQuestionsToMd(qs, optionsByQuestion);
+            body = body ? `${body}\n\n${questionsMd}` : questionsMd;
+          }
+        }
         await writeFileAt(join(mDir, `${l.slug}.md`), fm + (body ? `\n${body}\n` : ''));
         nl++;
       }

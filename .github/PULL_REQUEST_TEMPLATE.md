@@ -8,7 +8,7 @@
 
 - [ ] `node scripts/validate-content.mjs` passes locally
 - [ ] I left the `---` frontmatter block intact
-- [ ] New file? I generated its `id` with `node scripts/new-id.mjs`
-- [ ] New lessons are `type: lecture`
+- [ ] New file? I left out `id` — it's assigned automatically on merge
+- [ ] New lessons are `type: lecture` or `type: test`
 
 <!-- Purely a code change? Delete the content checklist above. -->

@@ -15,21 +15,42 @@ file, open a PR, and once it's merged the site rebuilds with your change.
 
 ## Add a new lesson
 
-New lessons must be **lectures**. Tests and coding tasks are set up in the CMS first,
-because they need answer keys and graders that don't live in these files.
-
 1. **Copy the template.** Copy [`TEMPLATE.md`](./TEMPLATE.md) to
    `content/<course>/<module>/<your-lesson-slug>.md`. The file name becomes the URL slug, so
    keep it lowercase-with-hyphens.
-2. **Generate an id** and paste it into the frontmatter:
-   ```bash
-   node scripts/new-id.mjs
-   ```
-3. **Fill in the frontmatter** (`title`, `type: lecture`, `order`) and write the lesson.
-4. **Open a pull request.**
+2. **Fill in the frontmatter** (`title`, `type`, `order`) and write the lesson. Leave out
+   `id` — one is assigned automatically when your PR is merged.
+3. **Open a pull request.**
 
 Adding a whole new module or course? Same idea: create the folder and give it a `_module.md`
-or `_course.md` (copy the shape of an existing one), each with its own generated id.
+or `_course.md` (copy the shape of an existing one). No id needed.
+
+## Add or edit a test
+
+A `type: test` lesson keeps its questions right in the file, below the frontmatter. Each
+question starts with a `<!-- q -->` marker; each option is a task-list line — `- [x]` for a
+correct answer, `- [ ]` for a wrong one:
+
+```markdown
+<!-- q -->
+What does `keccak256` return?
+
+- [x] A 32-byte hash
+- [ ] A 20-byte address
+- [ ] The input, unchanged
+
+<!-- q -->
+Select every value type. (Select all that apply.)
+
+- [x] `bool`
+- [x] `uint256`
+- [ ] `string`
+```
+
+The stem is normal Markdown and may include a fenced code block. A question with more than
+one correct option must cue it in the stem (for example "select all that apply"). You don't
+write ids — they're assigned to each question and option automatically on merge, so the site
+can match a learner's saved answers even as the test is edited.
 
 ## Check it before you push (optional)
 
@@ -76,7 +97,7 @@ Every file starts with a YAML frontmatter block between `---` fences.
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | ✅ | CMS row id. Keep it when editing. For a **new** course, run `node scripts/new-id.mjs`. |
+| `id` | auto | CMS row id, assigned on merge. Keep it when editing an existing file; omit it for a **new** course. |
 | `title` | ✅ | |
 | `order` | ✅ | Number. Position among courses. |
 | `isHidden` | optional | `true` hides it; omit otherwise. |
@@ -85,7 +106,7 @@ Every file starts with a YAML frontmatter block between `---` fences.
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | ✅ | Keep it when editing. For a **new** module, run `node scripts/new-id.mjs`. |
+| `id` | auto | Assigned on merge. Keep it when editing an existing file; omit it for a **new** module. |
 | `title` | ✅ | |
 | `order` | ✅ | Number. Position within the course. |
 | `isHidden` | optional | |
@@ -94,16 +115,16 @@ Every file starts with a YAML frontmatter block between `---` fences.
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | ✅ | Keep it when editing. For a **new** lesson, run `node scripts/new-id.mjs`. |
+| `id` | auto | Assigned on merge. Keep it when editing an existing file; omit it for a **new** lesson. |
 | `title` | ✅ | |
-| `type` | ✅ | `lecture` \| `test` \| `coding_task` \| `review_task`. New files must be `lecture`. |
+| `type` | ✅ | `lecture` \| `test` \| `coding_task` \| `review_task`. New files can be `lecture` or `test`. |
 | `order` | ✅ | Number. Position within the module. Use gaps (10, 20, 30) to leave room. |
 | `isHidden` | optional | |
 | `faq` | optional | Lectures only. List of `{ question, answer }` — short Q&As for search/AI, **not** shown on the page. |
 
-> Course `tags`, `coverImage`, `durationHours`, `prerequisiteCourse`, publish state, and all
-> lesson **assessment data** (quiz questions/answers, coding tests, grading criteria) are
-> managed in the CMS, not here.
+> Course `tags`, `coverImage`, `durationHours`, `prerequisiteCourse`, and publish state are
+> managed in the CMS, not here. Test questions live in the test file (see above); coding-task
+> and review-task graders and criteria are still set up in the CMS.
 
 ## What you can write
 
@@ -119,14 +140,14 @@ The body is standard Markdown. Supported:
 
 ## Rules
 
-- **A lesson body is only the lesson prose.** For non-lecture lessons (`test`,
-  `coding_task`, `review_task`) the body is still just the intro/description — their
-  questions, test cases, and grading criteria live in the CMS.
-- **New lessons you add must be `type: lecture`.** New tests and tasks are authored in the
-  CMS first (they need assessment data), then their prose appears here.
-- **Keep the `id`** when editing an existing file. For anything new, generate one with
-  `node scripts/new-id.mjs`. Every id must be unique among files of the same kind, and the
-  validator rejects duplicates.
+- **A lesson body is the lesson prose** — plus, for a `test`, its questions. For
+  `coding_task` and `review_task` the body is just the intro; their test cases and grading
+  criteria live in the CMS.
+- **New lessons you add are `type: lecture` or `type: test`.** Coding and review tasks are
+  set up in the CMS first (they need graders), then their prose appears here.
+- **Keep the `id`** when editing an existing file. For a new file, leave it out — one is
+  assigned and committed automatically on merge. If you do set an id it must be unique among
+  files of the same kind, and the validator rejects duplicates.
 - **Renaming a file or folder renames the slug** (and the lesson URL), so do it
   deliberately.
 
