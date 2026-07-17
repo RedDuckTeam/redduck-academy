@@ -2,11 +2,10 @@
 # HOW TO USE THIS TEMPLATE — full guide in README.md
 #   1. Copy this file to  content/<course>/<module>/<your-lesson-slug>.md
 #      (the file name becomes the lesson's URL slug: lowercase, hyphens).
-#   2. Run  node scripts/new-id.mjs  and paste the number below.
-#   3. Delete these comment lines, then fill in the rest.
-id: 0 # ← replace with the number from `node scripts/new-id.mjs`
+#   2. Delete these comment lines, then fill in the rest.
+# No `id` needed — one is assigned automatically when your PR is merged.
 title: Your lesson title
-type: lecture # lecture | test | coding_task | review_task — new files must be "lecture"
+type: lecture # lecture | test — see README.md for the test-question format
 order: 10 # position within the module; gaps (10, 20, 30) leave room to insert later
 # isHidden: true # uncomment to hide this lesson from the site
 # faq: # optional, lectures only — 2–4 short Q&As for search/AI, never shown on the page
