@@ -12,7 +12,7 @@ faq:
       user submits their data plus a short 'proof' of sibling hashes, and the
       contract recombines them to recompute the root and checks it matches the
       stored one. Storing the full list of 10,000 addresses could cost around
-      0.66 ETH in gas, while the root fits in one storage slot and each claim
+      6.6 ETH in gas, while the root fits in one storage slot and each claim
       only does about 14 hashes of verification.
   - question: If the user computes the answer off chain, what stops them from lying
       to the contract?
@@ -66,7 +66,7 @@ The important property: the contract never trusts the user's claim blindly. The 
 
 ## Worked example 1: Merkle proofs for airdrop eligibility
 
-Suppose you want to airdrop tokens to 10,000 users. Storing 10,000 addresses on chain costs about 22 million gas just for the storage writes, plus the deployment cost of the contract code that handles them. At 30 gwei per gas, that's about 0.66 ETH spent on storage alone, an unreasonable cost for what is just a list of addresses.
+Suppose you want to airdrop tokens to 10,000 users. Storing 10,000 addresses on chain costs about 220 million gas just for the storage writes, since each new storage slot costs roughly 22,000 gas, plus the deployment cost of the contract code that handles them. At 30 gwei per gas, that's about 6.6 ETH spent on storage alone, an unreasonable cost for what is just a list of addresses.
 
 The off-chain trick: build a Merkle tree of the 10,000 addresses off-chain. The tree's root is a single 32-byte hash. Store only the root in the contract. When a user wants to claim their airdrop, they prove they're in the tree by submitting their address and the path of sibling hashes that connect their address to the root.
 
