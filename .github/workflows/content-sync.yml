@@ -1,24 +1,31 @@
 name: Sync content to database
 
-# On merge to main, inserts DB rows for any NEW course/module/lesson files (matched by the
-# id declared in their frontmatter). INSERT-ONLY and idempotent — it never updates or
-# deletes, and re-running inserts nothing. See scripts/sync-content-db.ts.
+# On merge to main (or manual dispatch), reconciles the content files with the Payload database:
+#   1. Assigns ids to any id-less course/module/lesson/question/option files and commits them back,
+#      so a stable id lands in the repo *before* the DB write (a later run can't mint a duplicate).
+#   2. Inserts new course/module/lesson rows (insert-only; see scripts/sync-content-db.ts).
+#   3. Upserts test questions/options and prunes learners' answers (see scripts/sync-tests.mjs).
 #
-# Rendering does not depend on this (the site is files-first); the DB rows exist so user
-# progress and the CMS know about new lessons.
+# The id-commit uses the built-in GITHUB_TOKEN, which by design does NOT re-trigger this workflow, so
+# there's no loop. It runs only on push to main (post-merge, already reviewed); fork PRs never get a
+# write token. If the push is ever rejected, the job fails here — before any DB write — so no id-less
+# content is inserted with an unpersisted id (no duplicates).
 #
-# Requires one repository secret: DATABASE_URL (the production Postgres connection). An
-# optional DATABASE_CONNECTION_POOL_URL is used in preference when set.
+# Requirements:
+#   • `main` is NOT a protected branch (GITHUB_TOKEN can't push to a protected branch).
+#   • Settings → Actions → General → Workflow permissions = "Read and write permissions".
+#   • Repository secret DATABASE_URL (production Postgres); DATABASE_CONNECTION_POOL_URL used in
+#     preference when set.
 
 on:
   push:
     branches: [main]
     paths:
       - 'content/**'
-  workflow_dispatch: {} # manual full re-sync (e.g. to backfill a missed insert)
+  workflow_dispatch: {} # manual full re-sync
 
 permissions:
-  contents: read
+  contents: write # the id write-back commit; nothing else
 
 concurrency:
   group: content-db-sync
@@ -26,48 +33,40 @@ concurrency:
 
 jobs:
   sync:
-    name: Insert new content rows
+    name: Assign ids, then sync
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0 # need history to diff the push for newly added files
-
-      - name: Detect newly added content files
-        id: detect
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual run — syncing all content."
-            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          before='${{ github.event.before }}'
-          if [ -z "$before" ] || ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
-            echo "No usable base commit — running full sync."
-            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          added=$(git diff --diff-filter=A --name-only "$before" "${{ github.sha }}" -- content | grep -E '\.md$' || true)
-          if [ -n "$added" ]; then
-            echo "New content files added:"; echo "$added"
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No new content files added — skipping DB sync."
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
-        if: steps.detect.outputs.run == 'true'
         with:
           node-version: 22
 
-      - if: steps.detect.outputs.run == 'true'
-        run: corepack enable
+      - run: corepack enable
+      - run: yarn install --immutable
 
-      - if: steps.detect.outputs.run == 'true'
-        run: yarn install --immutable
+      # Assign ids to id-less files and commit them back BEFORE any DB write. If the push is rejected
+      # (e.g. main is still protected), the job fails here and never reaches the DB step, so no
+      # id-less content is ever inserted with an unpersisted id.
+      - name: Assign & commit content ids
+        run: |
+          yarn content:assign-ids
+          if [ -n "$(git status --porcelain content)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add content
+            git commit -m "chore: assign content ids [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "No ids to assign."
+          fi
 
-      - name: Insert new rows
-        if: steps.detect.outputs.run == 'true'
+      - name: Sync to database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_CONNECTION_POOL_URL: ${{ secrets.DATABASE_CONNECTION_POOL_URL }}
-        run: yarn content:db-sync
+        run: |
+          yarn content:db-sync
+          yarn content:sync-tests

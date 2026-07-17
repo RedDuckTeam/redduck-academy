@@ -77,6 +77,8 @@
     "contracts:compile": "yarn workspace contracts compile",
     "content:validate": "node scripts/validate-content.mjs",
     "content:db-sync": "tsx scripts/sync-content-db.ts",
+    "content:sync-tests": "node scripts/sync-tests.mjs",
+    "content:assign-ids": "tsx scripts/sync-content-db.ts --assign-ids && node scripts/sync-tests.mjs --assign-ids",
     "content:dump": "node scripts/dump-content.mjs",
     "heroku-postbuild": "yarn workspace backend build && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   }

@@ -33,8 +33,8 @@ don't need any of this to contribute lectures.
 
 - Keep the change focused: one topic per PR.
 - The PR template has a short checklist for content changes.
-- For a new lesson file, generate its id with `node scripts/new-id.mjs` and leave the `---`
-  frontmatter block intact.
+- For a new lesson file, leave out the `id` — one is assigned automatically on merge — and
+  keep the `---` frontmatter block intact.
 
 ## Licensing of contributions
 
