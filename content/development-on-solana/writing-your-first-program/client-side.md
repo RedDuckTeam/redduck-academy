@@ -22,7 +22,7 @@ faq:
     answer: Create a Connection to an RPC node, then build a Transaction by adding
       one or more instructions (for example SystemProgram.transfer to move SOL).
       Finally call sendAndConfirmTransaction with the connection, the
-      transaction, and an array of signer keypairs; that single convenience
+      transaction, and an array of signer keypairs. That single convenience
       function signs, sends, and waits for confirmation.
   - question: Why is on-chain account data a raw Buffer when I read it, and how do I
       decode it?
@@ -33,7 +33,7 @@ faq:
       can read something like counter.value directly."
 ---
 
-> Writing the program is half the work. The other half is the code that talks to it: building transactions, sending them to the network, fetching account data, and connecting users' wallets. This lecture is a tour of the client side of Solana development. We'll use TypeScript throughout the course, since that's where the most mature libraries and the most production code live. By the end of this lecture you should know which library does what, what a client transaction looks like, and how to recognize the building blocks you'll see in every Solana frontend.
+> Writing the program is half the work. The other half is the code that talks to it: building transactions, sending them to the network, fetching account data, and connecting users' wallets. That client code is TypeScript, where the most mature libraries and the most production code live. A small set of libraries covers all of it, a client transaction always takes the same shape, and the same building blocks appear in every Solana frontend.
 
 ## The libraries you'll be working with
 
@@ -43,7 +43,7 @@ The Solana client ecosystem in TypeScript revolves around a handful of packages.
 
 **`@solana/kit`** is the newer modular successor to web3.js. Same idea, smaller and more tree-shakeable, with a slightly different API. You can think of it as web3.js v2: solid, growing in adoption, but most existing tutorials and codebases still use the older library. For this course we'll mostly stick with `@solana/web3.js` because that's what the tooling around Anchor and bankrun expects, but you should recognize `@solana/kit` when you see it in newer projects.
 
-**`@coral-xyz/anchor`** is the client SDK for Anchor. If your program was written in Anchor (and most are), this library wraps web3.js with a higher-level API that reads your program's IDL — a JSON description of the program's interface — and gives you typed methods for every instruction. Instead of constructing raw `TransactionInstruction` objects by hand, you write `program.methods.deposit(amount).accounts({...}).rpc()`. Everything is typed end-to-end.
+**`@coral-xyz/anchor`** is the client SDK for Anchor. If your program was written in Anchor (and most are), this library wraps web3.js with a higher-level API that reads your program's IDL, a JSON description of the program's interface, and gives you typed methods for every instruction. Instead of constructing raw `TransactionInstruction` objects by hand, you write `program.methods.deposit(amount).accounts({...}).rpc()`. Everything is typed end-to-end.
 
 **`@solana/wallet-adapter`** is the standard library for connecting browser wallets like Phantom, Backpack, and Solflare to your frontend. It abstracts over which wallet the user installed, so your code is the same regardless of their choice.
 

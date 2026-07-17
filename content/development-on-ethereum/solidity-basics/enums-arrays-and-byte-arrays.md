@@ -9,7 +9,7 @@ faq:
       enums are stored internally as small integers starting at 0 and every
       unset value in Solidity reads as zero. So for enum Status { Pending, Paid,
       Shipped }, a fresh Status variable equals Status.Pending. Order your enum
-      members so the natural starting state comes first; accidentally putting a
+      members so the natural starting state comes first. Accidentally putting a
       finished state first means every new item starts in that finished state.
   - question: What is the difference between a fixed-size and a dynamic array in
       Solidity?
@@ -20,7 +20,7 @@ faq:
       use zero-based indexing and revert if you access an index out of bounds.
   - question: Why does bytes(myString).length not return the number of characters?
     answer: Casting a string to bytes and reading .length gives the number of UTF-8
-      bytes, not the number of visible characters. A Latin letter is one byte,
+      bytes rather than the number of visible characters. A Latin letter is one byte,
       but a Cyrillic letter takes two and an emoji can take four, so the
       six-letter word 'привіт' reports a length of 12. If you truly need
       character counts on international text, do that work off chain.
@@ -29,7 +29,7 @@ faq:
       length 2 whose elements are each a uint256[3], so the outer length is 2
       and the inner length is 3. Confusingly, the access expression reads the
       opposite way, left to right, so grid[outer][inner] uses the outer index
-      first. Real bugs have shipped because someone declared [5][10] expecting 5
+      first. Real bugs have reached production because someone declared [5][10] expecting 5
       rows of 10 and actually got 10 rows of 5, so double-check every nested
       declaration."
 ---
@@ -188,7 +188,7 @@ contract MemoryArrays {
 
 Two things to flag. First, the `new T[](size)` syntax is mandatory for memory arrays, and the size must be specified at allocation. There's no equivalent of `push()` for memory arrays. Their length is fixed once they're allocated. If you need to "grow" a memory array, you allocate a new one of the larger size and copy.
 
-Second, the size argument can be a variable, not just a constant. So `new uint256[](msg.value / 100)` is valid and will allocate an array sized at runtime based on the incoming ETH. This is one of the few places in Solidity where you allocate memory whose size depends on runtime inputs.
+Second, the size argument can be a variable rather than only a constant. So `new uint256[](msg.value / 100)` is valid and will allocate an array sized at runtime based on the incoming ETH. This is one of the few places in Solidity where you allocate memory whose size depends on runtime inputs.
 
 Returning a memory array from a function uses the type `T[] memory`, as shown in the example. The function caller receives a copy. This is how you produce dynamic-sized result data, for example a list of token IDs owned by an address.
 
@@ -236,7 +236,7 @@ contract StringLength {
 
 The Cyrillic example has 6 visible characters but takes 12 bytes because each Cyrillic letter is 2 bytes in UTF-8. An emoji can take 4 bytes. A flag emoji can take 8.
 
-The takeaway: `bytes(s).length` is the byte count, not the character count. Use it knowingly. If you need character counts on internationalized text, the answer is to do that work off-chain.
+The takeaway: `bytes(s).length` is the byte count rather than the character count. Use it knowingly. If you need character counts on internationalized text, the answer is to do that work off-chain.
 
 The `unicode""` literal in the example is required when the string contains non-ASCII characters. Plain `"..."` literals reject them at compile time. This is Solidity's way of making you opt into the encoding question.
 

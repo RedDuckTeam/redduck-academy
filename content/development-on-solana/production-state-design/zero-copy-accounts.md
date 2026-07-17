@@ -23,7 +23,7 @@ faq:
       only works if the struct's memory layout exactly matches the bytes on
       disk. That requires Plain Old Data (POD): fixed field order, fixed sizes,
       and no dynamic types. Vec and String have variable length, and bool is
-      rejected because only the bit patterns 0 and 1 are valid; use fixed-size
+      rejected because only the bit patterns 0 and 1 are valid. Use fixed-size
       arrays and a u8 flag instead, and manage counts yourself with a len or
       head/tail field."
   - question: What's the difference between Account, Box<Account>, and AccountLoader
@@ -117,7 +117,7 @@ The cost of this is discipline. The runtime cannot just cast a byte buffer to an
 To use zero-copy on a struct, the struct must satisfy the `bytemuck::Pod` and `bytemuck::Zeroable` traits. Anchor expresses this through `#[account(zero_copy)]` and enforces it at compile time. In practice, Pod requires:
 
 - `#[repr(C)]` on the struct, so the compiler doesn't reorder fields.
-- Every field type is itself Pod: primitive integers, fixed-size arrays of Pod types, other `#[repr(C)]` structs of Pod fields. `Pubkey` counts as Pod. `bool` does not — only bit patterns 0 and 1 are valid, which violates the `bytemuck::Pod` requirement that all bit patterns are valid. Use `u8` instead and document the meaning.
+- Every field type is itself Pod: primitive integers, fixed-size arrays of Pod types, other `#[repr(C)]` structs of Pod fields. `Pubkey` counts as Pod. `bool` does not. Only bit patterns 0 and 1 are valid, which violates the `bytemuck::Pod` requirement that all bit patterns are valid. Use `u8` instead and document the meaning.
 - No `Vec`, no `String`, no `HashMap`, no `Option<T>` where the niche optimization changes layout.
 - No enum with payload. A fieldless enum is debatable, and the safest path is to use a plain `u8` and document the meaning.
 - No references, no boxed pointers, no heap allocation of any kind.
@@ -368,7 +368,7 @@ Everything else, including the body of the handler, is unchanged. `state.positio
 
 This is the option most programs reach for first when they hit a stack overflow. If `Box<Account<T>>` still gives unacceptable CU costs, then it's time to migrate to zero-copy and live with the Pod constraints. The order is: default → Box → zero-copy, and you only move to the next step when measurements force you to.
 
-## What you actually do day to day
+## Choosing between Account, Box, and zero-copy
 
 For 90% of accounts you'll write, the default `Account<'info, T>` is correct and you never think about this. For accounts large enough to stack-overflow but small enough that the copy is cheap, wrap in `Box`. For accounts that are both large and on a hot path, reach for `AccountLoader<'info, T>` with a Pod struct.
 

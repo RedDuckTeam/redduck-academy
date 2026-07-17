@@ -7,7 +7,7 @@ faq:
   - question: Should I use ERC-721 or ERC-1155 for my NFT project?
     answer: "Use ERC-721 when each token is a unique item and the project is one
       collection of similar but distinct things, such as a profile-picture
-      collection or a one-of-one artwork; it stores one owner per token ID and
+      collection or a one-of-one artwork. It stores one owner per token ID and
       gives rich per-token metadata. Use ERC-1155 when you have several token
       types from the start or need batch operations, such as a game with
       currencies, weapons, and consumables in one contract. A simple test: if
@@ -27,7 +27,7 @@ faq:
       holder, so an ID minted in the millions and spread across many wallets
       behaves like a fungible currency, an ID with a supply of exactly one is a
       unique non-fungible item, and an ID with a small supply like 50 is
-      'semi-fungible.' The contract does not enforce these categories; the label
+      'semi-fungible.' The contract does not enforce these categories. The label
       just emerges from how many of each ID you mint. The same code path moves
       all of them.
   - question: Why did my transfer of an NFT to a smart contract revert?
@@ -76,7 +76,7 @@ interface IERC721 {
 }
 ```
 
-A few things to notice. `balanceOf` exists, but it returns a count of how many tokens this address owns, not the IDs themselves. There's no built-in way to ask "what tokens does Alice own?" The optional `ERC721Enumerable` extension adds that, but it costs storage gas on every mint and transfer to maintain the index.
+A few things to notice. `balanceOf` exists, but it returns a count of how many tokens this address owns rather than the IDs themselves. There's no built-in way to ask "what tokens does Alice own?" The optional `ERC721Enumerable` extension adds that, but it costs storage gas on every mint and transfer to maintain the index.
 
 `tokenURI(tokenId)` returns a URI pointing at the token's metadata. The metadata is typically a JSON document at that URI, hosted off-chain or on IPFS. ERC-721's convention is one URI per token. That gives you per-token flexibility but means most production contracts implement a base URI plus a tokenId suffix to avoid storing thousands of strings on chain.
 
@@ -258,7 +258,7 @@ ERC-1155 is sometimes described as supporting fungible, non-fungible, and semi-f
   <text x="360" y="346" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Fungibility in ERC-1155 emerges from supply alone.</text>
 </svg>
 
-A tokenId with a supply in the millions, spread across many holders, behaves like a fungible token. The id might be in-game currency or a stablecoin equivalent. Holders care about the total amount they hold, not which units they hold.
+A tokenId with a supply in the millions, spread across many holders, behaves like a fungible token. The id might be in-game currency or a stablecoin equivalent. Holders care about the total amount they hold rather than which units they hold.
 
 A tokenId with a supply of exactly one is non-fungible. There's only one of it in existence, and only one address can hold it at a time. The id might be a unique artifact, a one-of-a-kind item, a deed.
 

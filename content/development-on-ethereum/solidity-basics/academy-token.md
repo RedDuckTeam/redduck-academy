@@ -21,7 +21,7 @@ The contract is small. Around 80-120 lines depending on how concise your code is
 
 ## The one rule
 
-**Don't look up someone else's implementation.** Not OpenZeppelin, not Solmate, not Solady, not a tutorial blog. Not "just to understand the structure." Not for five seconds while you're stuck.
+**Don't look up someone else's implementation.** Not OpenZeppelin. Not Solmate. Not Solady. Not a tutorial blog. Not "just to understand the structure." Not for five seconds while you're stuck.
 
 The reason isn't moral. It's that every line you copy from an existing implementation is a line you don't understand. When you later have to debug a token contract in production, modify one for a specific use case, or audit one written by someone else, you'll need to actually know how every piece works. The OpenZeppelin implementation is excellent code. It's also written by people who already understood the standard before they wrote it. You're trying to become one of those people. Copying skips the only step that matters.
 

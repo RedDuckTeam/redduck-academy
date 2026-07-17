@@ -6,7 +6,7 @@ order: 1
 faq:
   - question: I finished the Solana track. What should I learn next?
     answer: The natural next step is the Ethereum track, where you write Solidity
-      against a different account model and execution environment; most of your
+      against a different account model and execution environment. Most of your
       Solana security instincts carry over, since reentrancy on Ethereum follows
       the same shape as CPI misuse on Solana. If you would rather stay on
       Solana, pick a protocol you like and read its on-chain program end to end,
@@ -28,7 +28,7 @@ Take a moment to appreciate what you've built. Everything you learned here is th
 
 ## What's next
 
-The Ethereum track is the natural next step if you haven't taken it yet. You'll write Solidity against a different account model and a different execution environment. Most of the security instincts you built here transfer. Reentrancy on Ethereum follows the same pattern as CPI misuse on Solana — the mechanics differ, but the underlying vulnerability is the same. The EVM's storage layout is easier to understand once you have already worked through rent and zero-copy.
+The Ethereum track is the natural next step if you haven't taken it yet. You'll write Solidity against a different account model and a different execution environment. Most of the security instincts you built here transfer. Reentrancy on Ethereum follows the same pattern as CPI misuse on Solana. The mechanics differ, but the underlying vulnerability is the same. The EVM's storage layout is easier to understand once you have already worked through rent and zero-copy.
 
 If you have already completed the Ethereum track or are not interested in learning another platform, keep building on Solana. Pick a protocol you like and read its on-chain program end to end. Read Jupiter's router. Read a Drift or Kamino vault. Build something of your own. Apply for an audit role. There's plenty of work for the kind of person who can do what you can now do.
 

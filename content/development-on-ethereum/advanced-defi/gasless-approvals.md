@@ -58,9 +58,9 @@ It also makes dApp UX worse. A DEX swap on Uniswap, for example, requires the us
   <rect x="40" y="80" width="310" height="210" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="195" y="105" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">Classic approve + transferFrom</text>
   <line x1="60" y1="115" x2="330" y2="115" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="60" y="140" font-family="monospace" font-size="10" font-weight="bold">TX 1 — Owner pays gas:</text>
+  <text x="60" y="140" font-family="monospace" font-size="10" font-weight="bold">TX 1. Owner pays gas:</text>
   <text x="60" y="158" font-family="monospace" font-size="10" fill="#565653">  token.approve(spender, 100)</text>
-  <text x="60" y="190" font-family="monospace" font-size="10" font-weight="bold">TX 2 — Spender pays gas:</text>
+  <text x="60" y="190" font-family="monospace" font-size="10" font-weight="bold">TX 2. Spender pays gas:</text>
   <text x="60" y="208" font-family="monospace" font-size="10" fill="#565653">  token.transferFrom(owner, ..., 100)</text>
   <rect x="60" y="232" width="270" height="48" fill="#e0deda" stroke="#ed4937" stroke-width="1.5"/>
   <text x="195" y="252" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ed4937">Owner needs ETH for TX 1</text>
@@ -68,9 +68,9 @@ It also makes dApp UX worse. A DEX swap on Uniswap, for example, requires the us
   <rect x="370" y="80" width="310" height="210" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="525" y="105" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">permit + transferFrom</text>
   <line x1="390" y1="115" x2="660" y2="115" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="390" y="140" font-family="monospace" font-size="10" font-weight="bold">Off-chain — Owner pays NOTHING:</text>
+  <text x="390" y="140" font-family="monospace" font-size="10" font-weight="bold">Off-chain. Owner pays NOTHING:</text>
   <text x="390" y="158" font-family="monospace" font-size="10" fill="#565653">  signs a message in their wallet</text>
-  <text x="390" y="190" font-family="monospace" font-size="10" font-weight="bold">TX 1 — Anyone can pay the gas:</text>
+  <text x="390" y="190" font-family="monospace" font-size="10" font-weight="bold">TX 1. Anyone can pay the gas:</text>
   <text x="390" y="208" font-family="monospace" font-size="10" fill="#565653">  token.permit(...) + transferFrom(...)</text>
   <rect x="390" y="232" width="270" height="48" fill="#e0deda" stroke="#ed4937" stroke-width="1.5"/>
   <text x="525" y="252" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ed4937">Owner needs no ETH at all</text>
@@ -92,7 +92,7 @@ The core idea: separate the authorization (who agrees) from the execution (who s
 
 To make this work, the owner has to sign something. A naive approach: sign `keccak256("approve Bob 100")` as raw bytes. There are two problems with that.
 
-First, **the wallet has no idea what the user is signing.** All it sees is an opaque hash. The display reads "Sign message: 0x9a73f2c8..." and the user has no way to verify what that hash means. Malicious dApps have exploited this by tricking users into signing hashes that secretly authorize transfers to attacker-controlled addresses. The user thinks they're signing a login token; they're actually approving an unlimited token allowance.
+First, **the wallet has no idea what the user is signing.** All it sees is an opaque hash. The display reads "Sign message: 0x9a73f2c8..." and the user has no way to verify what that hash means. Malicious dApps have exploited this by tricking users into signing hashes that secretly authorize transfers to attacker-controlled addresses. The user thinks they're signing a login token. They're actually approving an unlimited token allowance.
 
 Second, **signatures are cross-application by default.** A signature for "approve Bob 100" on the USDC contract on Ethereum mainnet would also be valid on a clone of USDC on Polygon, or on a different token contract with the same logic, or replayed in a different chain entirely. There's nothing in the bare signature that ties it to a specific contract, chain, or even application.
 
@@ -201,7 +201,7 @@ function nonces(address owner) external view returns (uint256);
 function DOMAIN_SEPARATOR() external view returns (bytes32);
 ```
 
-`nonces(owner)` returns the next valid nonce for that owner. Every successful permit increments this counter, which is how the contract prevents a signature from being submitted twice. `DOMAIN_SEPARATOR()` returns the precomputed hash of the domain — the token's name, version, chain ID, and contract address — so off-chain code can build the correct digest directly.
+`nonces(owner)` returns the next valid nonce for that owner. Every successful permit increments this counter, which is how the contract prevents a signature from being submitted twice. `DOMAIN_SEPARATOR()` returns the precomputed hash of the domain (the token's name, version, chain ID, and contract address) so off-chain code can build the correct digest directly.
 
 ## How the on-chain side works
 
@@ -285,7 +285,7 @@ If all checks pass, the function calls `_approve(owner, spender, value)`, which 
 
 <!-- Off-chain section label -->
 
-<text x="360" y="78" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">— off-chain, no gas, no chain interaction —</text>
+<text x="360" y="78" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">off-chain, no gas, no chain interaction</text>
 
 <!-- Step 1 -->
 
@@ -319,7 +319,7 @@ If all checks pass, the function calls `_approve(owner, spender, value)`, which 
 
 <line x1="40" y1="270" x2="680" y2="270" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
 
-<text x="360" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">— on chain, in one transaction —</text>
+<text x="360" y="288" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">on chain, in one transaction</text>
 
 <!-- Step 3 -->
 
@@ -427,7 +427,7 @@ const v = parseInt(signature.slice(130, 132), 16);
 
 Every field in `domain` must match exactly what the contract uses, byte for byte. A wrong name, wrong version, or wrong chain ID will produce a signature that the contract will reject as invalid, with no helpful error message about what went wrong. Mismatches here are a common cause of permit failures, and the contract gives no indication of which field was wrong.
 
-Viem's `signTypedData` — and equivalents in other wallet libraries — takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method; the helper handles the `\x19\x01` prefixing, the canonical JSON encoding, and the domain separator calculation correctly.
+Viem's `signTypedData`, and equivalents in other wallet libraries, takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method. The helper handles the `\x19\x01` prefixing, the canonical JSON encoding, and the domain separator calculation correctly.
 
 ## Security considerations
 

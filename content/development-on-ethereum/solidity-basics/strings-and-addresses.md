@@ -5,7 +5,7 @@ type: lecture
 order: 3
 faq:
   - question: Why can't I compare two strings with == in Solidity?
-    answer: "A Solidity string is a sequence of UTF-8 bytes, not a simple character
+    answer: "A Solidity string is a sequence of UTF-8 bytes rather than a simple character
       array, and the language deliberately omits ==, .length, indexing, and +
       concatenation on strings because the 'right' answer depends on what you
       mean by a character. When you genuinely need to compare two strings, hash
@@ -29,10 +29,10 @@ faq:
       amount}(""); require(ok, "send failed");'
   - question: Why does sending ETH to my contract revert?
     answer: A contract only accepts incoming ETH if it has at least one function
-      marked payable; without one, every ETH transfer to it reverts. The payable
+      marked payable. Without one, every ETH transfer to it reverts. The payable
       keyword signals to the compiler and the EVM that the function may receive
       attached value, which then shows up as msg.value in wei. If you control
-      the contract, expose a payable function to accept deposits; if you do not,
+      the contract, expose a payable function to accept deposits. If you do not,
       it simply cannot receive the transfer.
 ---
 
@@ -118,7 +118,7 @@ contract Example {
 
 Addresses are written as hex literals without quotes. They are not strings, and they are not interchangeable with `bytes20` despite being the same size in bytes. The `.balance` property reads the current balance of any address in wei, the smallest ETH denomination. One ETH equals `10**18` wei. ETH amounts are stored in `uint256`, the EVM's native 256-bit word.
 
-All balance data on Ethereum is public, which is why you can query any address's balance, not just one your contract owns. The `view` keyword on these functions is a promise that they don't modify state, which lets them be called for free without sending a transaction.
+All balance data on Ethereum is public, which is why you can query any address's balance, including ones your contract does not own. The `view` keyword on these functions is a promise that they don't modify state, which lets them be called for free without sending a transaction.
 
 One implementation detail worth knowing. Even though an address is 20 bytes logically, on the EVM stack it occupies a full 32-byte word with the top 12 bytes zeroed. This is why you'll occasionally see code cast between `address` and `uint160`. The cast is well-defined because `uint160` is exactly the bit width an address fits into.
 
@@ -246,7 +246,7 @@ A few patterns to internalize.
 
 **Trying to compare strings with ****`==`****.** Compile error. Use `keccak256(bytes(a)) == keccak256(bytes(b))` when comparison is genuinely needed, but first ask whether the comparison should happen off-chain.
 
-**Storing large strings on-chain when an off-chain pointer would do.** Storage is expensive. NFT metadata, large configs, anything text-heavy: store a URI to off-chain data, not the data itself.
+**Storing large strings on-chain when an off-chain pointer would do.** Storage is expensive. NFT metadata, large configs, anything text-heavy: store a URI to off-chain data rather than the data itself.
 
 **Calling ****`.transfer()`**** on a plain ****`address`****.** Compile error. Either declare the field as `address payable` or cast at the call site with `payable(addr)`.
 

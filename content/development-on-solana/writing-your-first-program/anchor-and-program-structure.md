@@ -165,7 +165,7 @@ The accounts struct is the function signature. It declares what the instruction 
 
 The struct fields can be more than just account references. They can be types that carry validation rules. `Signer<'info>` means "this account must have signed the transaction." `Account<'info, Vault>` means "this account must be owned by the program, and its data must deserialize cleanly into the `Vault` struct." `Program<'info, System>` means "this account must be the System Program." These types are checked by Anchor before your handler runs, and any failure produces a clear error rather than a runtime panic in the middle of your logic.
 
-## What's next inside this skeleton
+## Fill in the skeleton
 
 The shape above is the whole frame. To turn it into a real program, you need to know what types you can put inside an accounts struct, what constraints you can attach to fields, how to define your own account data structures, how to compute the address of an account derived from a seed, and how to return useful errors. Each of those is a piece of detail that fits into the skeleton you've already seen.
 

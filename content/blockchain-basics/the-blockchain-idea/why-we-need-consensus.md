@@ -22,12 +22,12 @@ faq:
     answer: They use a consensus mechanism that makes participation cost something
       real, so buying enough influence to attack the network costs more than the
       attack could earn. Proof of work ties each vote to wasted computation and
-      its energy bill; proof of stake ties it to currency you lock up and lose
+      its energy bill. Proof of stake ties it to currency you lock up and lose
       if you cheat. Once voting is expensive, honest agreement can hold
       indefinitely with no operator and no trusted referee.
   - question: What is the Byzantine Generals problem?
     answer: It's a 1982 thought experiment where several generals surrounding a city
-      must all agree to either attack or retreat; any split outcome is a
+      must all agree to either attack or retreat. Any split outcome is a
       disaster. They can only send messengers, and some generals are traitors
       who lie to make the plan fail. The generals stand in for network nodes,
       the traitors for malicious participants, and the core difficulty is that
@@ -139,6 +139,6 @@ A consensus mechanism with a real participation cost gives the network three pro
 
 Those three properties, together, are what a blockchain is actually selling. Cryptography gives it a tamper-evident structure. Consensus gives it the ability to operate that structure without an operator. Without either piece, the other is useless.
 
-## Where this goes next
+## The agreement mechanism you now understand
 
-You now have the agreement mechanism that keeps a blockchain running. What you don't yet have is a clear picture of the participants. A blockchain is full of references to "nodes" doing things, "nodes" agreeing or disagreeing, "nodes" holding copies of the chain. The next lesson zooms in on what a node actually is, what kinds of nodes exist, and how they communicate with each other across the open internet to keep the system synchronised. Everything in this module so far has assumed nodes exist and do their job. The next lesson finally describes them.
+You now have the agreement mechanism that keeps a blockchain running: a way for mutually untrusted strangers to converge on one shared history by making dishonest participation cost more than it can earn. That is the piece that lets the tamper-evident structure from cryptography operate with no operator and no trusted referee.

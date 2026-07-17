@@ -17,7 +17,7 @@ faq:
     answer: Data lives in the stack, memory, storage, or calldata. The stack is the
       scratch surface for arithmetic, memory is a temporary buffer that is wiped
       when the call ends, and calldata is the read-only input sent with the
-      transaction; all three last only for a single call and are cheap. Storage
+      transaction. All three last only for a single call and are cheap. Storage
       is the contract's permanent state that survives forever, and it is by far
       the most expensive place to put data.
   - question: Will the same Solidity contract run on other chains like Polygon or
@@ -29,7 +29,7 @@ faq:
       small differences in opcode behavior or gas pricing.
   - question: When one contract calls another, what does msg.sender point to?
     answer: Each call gets a fresh execution context, and msg.sender is the address
-      that made the current call, not the original user. If contract A calls
+      that made the current call rather than the original user. If contract A calls
       contract B, then inside B the value of msg.sender is A, and the original
       wallet that started the transaction is invisible from inside B. If B then
       calls C, then C sees B as its msg.sender, so the chain of msg.sender
@@ -166,7 +166,7 @@ After applying every transaction in the block, the node has a new state. It comp
 
 This is what makes the EVM's determinism so important. If your node and my node disagree about what the EVM did with a particular transaction, our state roots after the block will be different, and we'll end up on different chains. The whole system rests on every node's EVM producing exactly the same answer on exactly the same input. A bug in one client's EVM implementation that diverges from the others can fork the network, which has happened in the past and is treated as a critical incident by the client teams.
 
-## What this means for the rest of the course
+## Three reflexes to carry into your Solidity
 
 You won't write EVM bytecode directly in this course. You'll write Solidity. But understanding the machine your code compiles to changes how you write that code.
 

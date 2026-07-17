@@ -36,7 +36,7 @@ faq:
       keeps the network honest over time.
 ---
 
-> Every lesson in this module so far has referenced "nodes" doing things. Nodes hold copies of the chain. Nodes agree or disagree. Nodes vote in consensus. The word has appeared constantly without ever being defined. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like one sentence opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running anything at all.
+> Every lesson so far has referenced "nodes" doing things. Nodes hold copies of the chain. Nodes agree or disagree. Nodes vote in consensus. The word has appeared constantly without ever being defined. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like one sentence opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running anything at all.
 
 ## What a node is
 
@@ -133,7 +133,7 @@ A node starting up for the first time has a problem. It doesn't know any other n
 
 The answer is that most chains include a small list of well-known **bootstrap nodes** in their software, run by the project's developers or core community. When you start a node for the first time, it connects to one or more of those bootstraps and asks "who else is on the network?" The bootstrap responds with a list of peers it knows about. The new node picks some, connects to them, and asks them the same question. Within a few seconds, the new node has discovered dozens or hundreds of peers and the bootstrap is no longer needed.
 
-This is the same pattern peer-to-peer networks have used for decades. The bootstrap is a starting point, not a hub. Once a node is up and running, it doesn't depend on the bootstrap at all. The network is genuinely decentralised in steady state.
+This is the same pattern peer-to-peer networks have used for decades. The bootstrap is a starting point rather than a hub. Once a node is up and running, it doesn't depend on the bootstrap at all. The network is genuinely decentralised in steady state.
 
 ## How nodes talk
 
@@ -155,6 +155,6 @@ Three reasons cover most operators.
 
 **Trust-minimising users** run nodes because they want maximum certainty that the chain they're seeing is correct. A user who runs their own full node trusts nobody else's interpretation of the rules. This is a minority of users in absolute numbers, but it's the population that keeps the network honest in steady state. If anyone tried to push a rule change, the trust-minimising operators would notice and refuse to accept it.
 
-## Where this goes next
+## What you now know about nodes
 
-You now know what a node is, what kinds exist, how they find each other, and how they share information. You also have, from previous lessons, the cryptographic primitives, the blockchain's structure, and the consensus mechanism that keeps it all honest. The next lesson is the synthesis. It walks through the entire flow of how a change to a blockchain actually happens, step by step, from a user signing something in their wallet to that change being part of the chain's permanent record. Every component referenced in the walkthrough is something you already understand in detail. The lesson is where they finally all snap together into one working picture.
+You now know what a node is, what kinds exist, how they find each other, and how they share information. Together with the cryptographic primitives, the blockchain's structure, and the consensus mechanism from earlier lessons, you now hold every component a blockchain runs on. What was an abstract word, "nodes," is now a concrete population of machines with distinct roles and real reasons to participate.

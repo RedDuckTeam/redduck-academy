@@ -20,7 +20,7 @@ faq:
       ETH (interactions). By updating state before the external call, any code
       that calls back into your contract sees the operation as already finished,
       so reentrancy has nothing to exploit. This is the cheapest defense and
-      should be your default; adding a reentrancy guard modifier on top gives
+      should be your default. Adding a reentrancy guard modifier on top gives
       defense in depth."
   - question: Can a single malicious user block a refund or payout function for
       everyone else?
@@ -39,7 +39,7 @@ faq:
       and denial-of-service. But it also blocks legitimate users on multisigs
       and smart-contract wallets, and account abstraction (ERC-4337) makes more
       and more real users into contracts. Treat it as a minor extra measure at
-      best; rely on checks-effects-interactions and reentrancy guards as your
+      best. Rely on checks-effects-interactions and reentrancy guards as your
       real protection.
 ---
 
@@ -184,7 +184,7 @@ If your fix added a modifier like `nonReentrant`, this is what you did. The firs
 
 OpenZeppelin's `ReentrancyGuard` is the production-quality version of this. It uses a `uint256` instead of a `bool` for gas efficiency, since the storage slot transitions are cheaper, and exposes the modifier as `nonReentrant`. Most production contracts that hold value inherit from it.
 
-**Use both defenses, not just one.** Reentrancy guards catch cases where checks-effects-interactions was missed, and the ordering discipline means you never have to depend on the guards alone. Defense in depth is the right approach when funds are at risk.
+**Use both defenses together.** Reentrancy guards catch cases where checks-effects-interactions was missed, and the ordering discipline means you never have to depend on the guards alone. Defense in depth is the right approach when funds are at risk.
 
 ## Cross-function and read-only reentrancy
 
@@ -285,7 +285,7 @@ contract Vault {
 }
 ```
 
-If your fix restructured `emergencyRefundAll` to mark balances claimable and added a separate `claimRefund` function, this is what you did. The vault never tries to push ETH to anyone during the batch. It marks each user's owed amount internally, and users call `claimRefund` to pull their own funds. John's malicious `receive` only blocks John from claiming, and that's John's problem, not the vault's. Everyone else can claim normally.
+If your fix restructured `emergencyRefundAll` to mark balances claimable and added a separate `claimRefund` function, this is what you did. The vault never tries to push ETH to anyone during the batch. It marks each user's owed amount internally, and users call `claimRefund` to pull their own funds. John's malicious `receive` only blocks John from claiming, and that stays John's problem while the vault keeps working. Everyone else can claim normally.
 
 This is the same pull-over-push pattern that came up in the loops and hashing lesson. It applies any time a contract needs to distribute value to many recipients. The work moves from the contract to the recipients, which sidesteps the gas-limit and DoS problems together.
 
@@ -319,7 +319,7 @@ This is a hybrid pattern: push by default, fall back to pull only for failures. 
 
 ## The `tx.origin` defense and its limits
 
-You'll sometimes see contracts try to prevent attacks by requiring that the caller be an externally owned account, not a contract:
+You'll sometimes see contracts try to prevent attacks by requiring that the caller be an externally owned account rather than a contract:
 
 ```solidity
 require(tx.origin == msg.sender, "no contracts allowed");

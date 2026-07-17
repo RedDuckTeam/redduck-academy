@@ -34,7 +34,7 @@ faq:
   - question: What are fixtures and why should I use them in contract tests?
     answer: A fixture is a setup function that puts the chain into a known state,
       such as deploying contracts and funding accounts. The first time it runs
-      it executes normally; after that, the test framework snapshot-restores the
+      it executes normally. After that, the test framework snapshot-restores the
       chain to that state instead of re-running the setup, which is faster and
       guaranteed identical. In Hardhat you load one with
       `networkHelpers.loadFixture(deployFn)`. This avoids slow repeated setup
@@ -408,10 +408,10 @@ The Arrange-Act-Assert pattern is a useful shape for each test. Arrange the stat
 Real test suites include patterns we won't touch in this lesson. Some are worth naming briefly so you recognize the words when you encounter them:
 
 - **Fuzz testing** runs your test with random inputs to find edge cases you didn't write tests for. Foundry calls it `testFuzz_`. Viem-based projects can use the same pattern.
-- **Invariant testing** asserts properties that should hold across any sequence of operations, not just specific test scenarios.
+- **Invariant testing** asserts properties that should hold across any sequence of operations rather than just specific test scenarios.
 - **Coverage analysis** measures which lines and branches of your contract are exercised by your tests. The output tells you where the gaps are.
 - **Gas profiling and snapshots** track how much gas each function uses across changes to your contract, so optimizations can be measured and regressions caught.
 - **Mocking** replaces external dependencies with stub contracts that return controlled values, useful when testing integrations with oracles or other protocols.
 - **Mainnet forking** runs your tests against a snapshot of mainnet state, so you can test interactions with real deployed contracts like Uniswap or Aave.
 
-Each of these has its own pedagogical depth. We'll cover them in follow-up lessons. For now, you have enough to write thorough tests for any contract in this course.
+Each of these has its own depth to reach for when a project calls for it. For now, you have enough to write thorough tests for any contract in this course.

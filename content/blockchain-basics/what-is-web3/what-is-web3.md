@@ -47,14 +47,14 @@ What if the internet had a way for users to actually own things again?
 
 ## Web3: the read-write-own internet
 
-Web3 is the answer being built. The single most important difference from web2 is that **ownership is in the protocol, not in the platform**. When you hold a digital asset in your wallet, no platform sitting between you and the network can quietly take it away, demonetise your account, or change the rules under you the way a web2 service can. When you connect your wallet to a new application, you bring your identity and your history with you, the same way you bring your laptop from one office to another. When you publish, you publish to a network nobody controls, not to a platform that can change its mind.
+Web3 is the answer being built. The single most important difference from web2 is that **ownership lives in the protocol rather than the platform**. When you hold a digital asset in your wallet, no platform sitting between you and the network can quietly take it away, demonetise your account, or change the rules under you the way a web2 service can. When you connect your wallet to a new application, you bring your identity and your history with you, the same way you bring your laptop from one office to another. When you publish, you publish to a network nobody controls, rather than to a platform that can change its mind.
 
 This is not a thought experiment. The infrastructure has been live for a while now and the numbers are concrete:
 
 - More than **$300 billion** in stablecoin value, regularly moving through wallets and settling trillions of dollars of transfers each year.
 - Around **$100 billion** locked into decentralised financial protocols, providing lending, trading, and yield without any bank or broker involved.
 - Tens of millions of active wallet addresses transacting every month.
-- Developer activity in web3 has grown steadily for ten years, even through bear markets — long stretches of falling prices — when the price headlines suggested otherwise. The people building have not gone away.
+- Developer activity in web3 has grown steadily for ten years, even through bear markets, long stretches of falling prices, when the price headlines suggested otherwise. The people building have not gone away.
 - Major companies, including ones you've heard of in every consumer category, are integrating with this infrastructure for payments, identity, and asset transfer.
 
 The infrastructure works. Real people use it for real things. The reason most developers haven't released anything on it yet is mostly that the tooling, the languages, and the mental models are different enough from web2 that getting started takes some work. Getting started is what this course is for.
@@ -71,6 +71,6 @@ The technology is also unusually open. Most major chains are open source. Most m
 
 ## What's in this course
 
-By the end of this course you'll understand what a blockchain actually is, how the cryptographic primitives underneath it work, why Bitcoin in particular is the most-discussed example of all this, and where to go next if you want to build on Ethereum, Solana, or other chains built on the same ideas. The course focuses on ideas that apply to all blockchains, not one specific chain. The ideas you learn here will hold up regardless of which chain you specialise in afterwards.
+This course covers what a blockchain actually is, how the cryptographic primitives underneath it work, why Bitcoin in particular is the most-discussed example of all this, and where to go next if you want to build on Ethereum, Solana, or other chains built on the same ideas. It focuses on ideas that apply to all blockchains rather than one specific chain. What you learn here will hold up regardless of which chain you specialise in afterwards.
 
 The next lesson introduces web3 as a layered ecosystem and zooms in on where blockchains specifically sit within it. Everything you've ever seen described as web3, from wallets to DeFi to NFTs to decentralised social networks, sits on top of blockchain infrastructure. The lesson after that, and the rest of the course, is about what that infrastructure actually is.

@@ -15,7 +15,7 @@ faq:
       premium.
   - question: Why does performUpkeep have to re-check the condition if checkUpkeep
       already verified it?
-    answer: checkUpkeep runs off-chain and its result is a hint, not a guarantee. By
+    answer: checkUpkeep runs off-chain and its result is only a hint rather than a guarantee. By
       the time a node builds and mines the performUpkeep transaction, two or
       three blocks have passed and prices or balances may have changed. If
       performUpkeep trusted the stale result, it could act on a condition that

@@ -29,7 +29,7 @@ faq:
       it gained by choosing that way, and what it accepted losing."
 ---
 
-Every design choice is a trade. Bitcoin made specific choices about what to optimise for, and those choices closed certain doors permanently while opening others. To finish this module honestly, we need to name both halves of the trade. What did Bitcoin sacrifice to become what it is? What did it get in return? And what does the rest of the blockchain world look like when you sit at a different point in the same design space? This lesson is the synthesis. By the end you'll have a working framework for thinking about any chain you meet later in the course, including the ones that chose almost the opposite of what Bitcoin chose.
+Every design choice is a trade. Bitcoin made specific choices about what to optimise for, and those choices closed certain doors permanently while opening others. To finish the Bitcoin story honestly, we need to name both halves of the trade. What did Bitcoin sacrifice to become what it is? What did it get in return? And what does the rest of the blockchain world look like when you sit at a different point in the same design space? This lesson is the synthesis. By the end you'll have a working framework for thinking about any chain you meet later in the course, including the ones that chose almost the opposite of what Bitcoin chose.
 
 ## What Bitcoin gave up
 
@@ -41,11 +41,11 @@ The honest list is short and consequential.
 
 **Feature velocity.** Bitcoin upgrades on a four-year cadence at best. The discussion that produced Taproot started in 2018, and the upgrade activated in late 2021. Other chains release comparable features in months. Bitcoin's slowness is the source of its stability, but the cost is that ideas which could improve the system either wait years to be released or end up released on other chains first.
 
-**Programmability of state.** Bitcoin tracks coins, not arbitrary state. There's no concept of a contract that has its own balance and code that other transactions can call. The decentralised-finance applications already mentioned above exist on chains with a different state model, because Bitcoin's design intentionally rules out contracts that hold their own state.
+**Programmability of state.** Bitcoin tracks coins rather than arbitrary state. There's no concept of a contract that has its own balance and code that other transactions can call. The decentralised-finance applications already mentioned above exist on chains with a different state model, because Bitcoin's design intentionally rules out contracts that hold their own state.
 
 **Privacy by default.** Every Bitcoin transaction is permanently visible to anyone with internet access. Tools and patterns (CoinJoin, Lightning, fresh addresses) can improve privacy, but the base layer is public. Some chains made privacy a first-class design goal. Bitcoin did not.
 
-None of these are accidents. Each one is the direct consequence of a design choice from earlier in this module. Throughput is bounded by the conservative block time. Expressiveness is bounded by Script's deliberate limits. Feature velocity is bounded by Bitcoin's social conservatism around upgrades. And so on. To get the things Bitcoin lacks, you have to make different choices than the ones Bitcoin made.
+None of these are accidents. Each one is the direct consequence of a design choice from earlier lessons. Throughput is bounded by the conservative block time. Expressiveness is bounded by Script's deliberate limits. Feature velocity is bounded by Bitcoin's social conservatism around upgrades. And so on. To get the things Bitcoin lacks, you have to make different choices than the ones Bitcoin made.
 
 ## What Bitcoin gained
 
@@ -115,11 +115,11 @@ Bitcoin sits at one specific point in a design space with several axes. Other ch
 
 **Feature velocity vs predictability.** Bitcoin moves slowly and changes very little. Other chains release new features regularly and accept that their rules will evolve. Both approaches are defensible. They optimise for different users.
 
-**Issuance schedule.** Bitcoin's fixed supply is a choice, not a law of nature. Other chains have continuous low inflation, deflationary mechanisms, dynamic issuance keyed to network activity, or no native token at all. Each model implies different assumptions about who should be compensated for securing the chain and how.
+**Issuance schedule.** Bitcoin's fixed supply is a choice rather than a law of nature. Other chains have continuous low inflation, deflationary mechanisms, dynamic issuance keyed to network activity, or no native token at all. Each model implies different assumptions about who should be compensated for securing the chain and how.
 
 **Consensus mechanism.** Bitcoin chose proof of work and bought security through energy expenditure. Proof-of-stake chains buy similar properties (often less of them, often more efficiently) through bonded capital. The argument over which mechanism is "better" is really an argument about which costs and risks you'd rather pay.
 
-These axes are the framework you'll take with you into the rest of the course. When you meet a new chain in a later module, ask: where does it sit on each of these? What did it gain by choosing as it did? What did it accept losing?
+These axes are the framework you'll take with you into the rest of the course. When you meet a new chain later, ask: where does it sit on each of these? What did it gain by choosing as it did? What did it accept losing?
 
 ## Why Bitcoin still matters
 

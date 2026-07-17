@@ -15,7 +15,7 @@ faq:
       turn that hidden advantage into an open market with clear rules.
   - question: What is a Jito tip, and how is it different from a priority fee?
     answer: A Jito tip is just a plain SOL transfer to one of eight special Jito
-      accounts, added to your transaction; leaders running the Jito-Solana
+      accounts, added to your transaction. Leaders running the Jito-Solana
       client watch for these and include higher-tipped transactions earlier. It
       is separate from a priority fee, which is set via the ComputeBudget
       program and reaches the leader through normal fee processing. A
@@ -27,7 +27,7 @@ faq:
       includes together in the exact order you specify, all-or-nothing: if any
       one fails, none of them land. Atomicity matters for sequences that only
       make sense together, such as arbitrage where you buy a token on one DEX
-      and sell it on another; landing only half would leave you stuck holding
+      and sell it on another. Landing only half would leave you stuck holding
       tokens or short the ones you needed to sell. Searchers submit bundles to
       Jito's off-chain block engine, which runs an auction by tip size,
       simulates the winners, and forwards them to the current Jito-Solana
@@ -44,7 +44,7 @@ faq:
       expected."
 ---
 
-> When a leader produces a block, they choose which transactions to include and in what order. That choice has value, because the right ordering can capture real profit from things like DEX arbitrage. The name for this profit is MEV: maximum extractable value. Jito is the system most of the Solana network uses to organize how MEV gets captured. This lecture covers MEV in plain terms, then walks through the two things Jito introduced: tips and bundles.
+> When a leader produces a block, they choose which transactions to include and in what order. That choice has value, because the right ordering can capture real profit from things like DEX arbitrage. The name for this profit is MEV: maximum extractable value. Jito is the system most of the Solana network uses to organize how MEV gets captured. It does this through two mechanisms, tips and bundles.
 
 ## What MEV actually is
 
@@ -139,12 +139,12 @@ Two things to know about bundles:
 
 **The order is fixed.** When you submit a bundle, you specify the exact order the transactions should appear in. The leader respects that order. This is what makes patterns like "do my buy right before this user's swap" possible.
 
-## What this means for an everyday developer
+## Where Jito touches the transactions you submit
 
 You probably won't submit a bundle yourself. Bundles are mostly used by trading firms and MEV bots. But Jito affects every Solana developer, because tips have become the standard way transactions get prioritized on the network.
 
 **Your users' transactions need tips to land reliably during busy periods.** When the network is calm, a normal transaction with a small priority fee lands easily. When the network is busy, transactions without tips often get dropped while tipped ones go through. If you build a frontend that submits user transactions, you probably want to attach a Jito tip. Most wallet SDKs and transaction-building libraries support this directly.
 
-**Your users get protected from MEV through Jito.** When a user does a large swap on a DEX, MEV bots can profit by placing their own transactions around it — buying just before the swap drives the price up, then selling right after — exactly the pattern described at the start of this lesson. The defense is to route the user's transaction through Jito, often as part of a bundle that includes a "protection" component preventing other transactions from being inserted nearby. Aggregators like Jupiter do this automatically when MEV protection is enabled. The user pays a small tip and gets a fair price.
+**Your users get protected from MEV through Jito.** When a user does a large swap on a DEX, MEV bots can profit by placing their own transactions around it, buying just before the swap drives the price up, then selling right after, exactly the pattern described at the start of this lesson. The defense is to route the user's transaction through Jito, often as part of a bundle that includes a "protection" component preventing other transactions from being inserted nearby. Aggregators like Jupiter do this automatically when MEV protection is enabled. The user pays a small tip and gets a fair price.
 
 You don't have to integrate any of this directly. Most developers get it for free by using a wallet adapter or aggregator that already handles tips internally. But knowing the mechanism is what makes you able to debug "why isn't my transaction landing" and "why did my user get a worse price than expected." The answer to both involves Jito, and now you know what to look for.

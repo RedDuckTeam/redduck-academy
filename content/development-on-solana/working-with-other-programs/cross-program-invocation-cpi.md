@@ -24,7 +24,7 @@ faq:
     answer: invoke forwards the signers that already exist in your transaction down
       into the called program, such as a user's signature used to move their own
       tokens. invoke_signed does the same but additionally lets your program
-      sign as a PDA it controls by passing that PDA's seeds; the runtime
+      sign as a PDA it controls by passing that PDA's seeds. The runtime
       re-derives the address, confirms it belongs to your program, and treats it
       as a signer. This PDA-signing ability is the one exception to the rule
       that CPIs can't add new signers.

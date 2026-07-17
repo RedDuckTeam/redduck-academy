@@ -133,13 +133,13 @@ Each pattern shifts the work somewhere different. Pagination spreads it across m
 
 Solidity has three places where values can live during execution. You've already seen all three in earlier lessons, written as data-location keywords on function parameters. Now we'll be explicit about what they mean.
 
-**Storage** is the contract's permanent state. Every state variable lives in storage. Anything written to storage persists across transactions. Storage is expensive — the same per-slot read and write costs from the loops section apply: a fresh write costs far more than an update, and the first read of a slot costs more than later reads in the same transaction.
+**Storage** is the contract's permanent state. Every state variable lives in storage. Anything written to storage persists across transactions. Storage is expensive. The same per-slot read and write costs from the loops section apply: a fresh write costs far more than an update, and the first read of a slot costs more than later reads in the same transaction.
 
 **Memory** is per-transaction scratch space. It's allocated when a function starts, used during execution, and discarded when the transaction ends. Memory is cheap: a typical read or write costs a few gas, with memory expansion costing more as you allocate larger regions.
 
 **Calldata** is the raw inbound transaction data. When you call an external function, the arguments arrive as a sequence of bytes in calldata. Calldata is read-only and even cheaper than memory because the bytes are already there. You can't modify calldata, only read from it.
 
-For value types like `uint256`, `bool`, and `address`, the location is implicit and you don't write it anywhere. State variables live in storage automatically. Local variables of value types live on the stack, not in memory, and the compiler manages them for you. Function parameters of value types are read from calldata.
+For value types like `uint256`, `bool`, and `address`, the location is implicit and you don't write it anywhere. State variables live in storage automatically. Local variables of value types live on the stack rather than in memory, and the compiler manages them for you. Function parameters of value types are read from calldata.
 
 For reference types like arrays, structs, strings, and bytes, you must specify the location explicitly when they appear as function parameters or local variables.
 
@@ -232,7 +232,7 @@ bytes32 b = keccak256(abi.encodePacked("hellow", "orld"));
 // a == b
 ```
 
-Both inputs produce the same byte sequence `helloworld`, so they hash to the same value. This is a real collision, not a cryptographic accident. It happens because `encodePacked` doesn't insert any delimiter or length prefix between adjacent dynamic values.
+Both inputs produce the same byte sequence `helloworld`, so they hash to the same value. This is a real collision rather than a cryptographic accident. It happens because `encodePacked` doesn't insert any delimiter or length prefix between adjacent dynamic values.
 
 If your contract uses `keccak256(abi.encodePacked(...))` as an identifier or as part of a signature scheme, an attacker who can choose the inputs may be able to construct two different argument sets that hash to the same value. Real exploits have been published against contracts that used this pattern naively.
 

@@ -50,7 +50,7 @@ Return to your most recent lesson anytime with the Continue button on the home p
 
 - Difficulty increases gradually. Don't skip ahead.
 - Stuck on a coding task? Re-read the lecture above it. The answer is usually there.
-- Take your time. This is built to be learned, not rushed.
+- Take your time. This is built to be learned rather than rushed.
 - Pull the engineering principle out of each lesson. The exact API matters less than the reason it works this way.
 - Ask why something works this way and not another. That contrast is usually where the understanding is.
 - An AI assistant helps with both. Ask one to name the principle behind a lesson, or to check your reasoning about why it works.

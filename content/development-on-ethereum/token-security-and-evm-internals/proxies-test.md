@@ -14,7 +14,7 @@ In the off-chain-compute pattern, a user computes a value off-chain and submits 
 - [x] The verification step runs deterministically on the chain. A wrong value fails verification.  <!-- a:6a11eaa47cdfe4cdf9b09e48 -->
 
 <!-- q:6a11eeaf7cdfe4cdf9b09e49 -->
-A UUPS implementation has a function that calls `selfdestruct(payable(msg.sender))` under certain conditions. An attacker manages to trigger this on the implementation contract directly (calling it at its own address, not through the proxy). The implementation contract is destroyed. What happens to the proxy?
+A UUPS implementation has a function that calls `selfdestruct(payable(msg.sender))` under certain conditions. An attacker manages to trigger this on the implementation contract directly (calling it at its own address rather than through the proxy). The implementation contract is destroyed. What happens to the proxy?
 
 - [x] The proxy is permanently bricked. The implementation address still points to a destroyed contract, and the upgrade function is no longer callable through the proxy.  <!-- a:6a11eebd7cdfe4cdf9b09e4a -->
 - [ ] The proxy automatically points to address(0) and reverts all calls until reconfigured by the admin.  <!-- a:6a11f4b17cdfe4cdf9b09e4b -->

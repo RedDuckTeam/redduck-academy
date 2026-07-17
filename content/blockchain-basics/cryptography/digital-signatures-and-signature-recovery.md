@@ -47,7 +47,7 @@ For this to work, the signature scheme must guarantee three things:
 2. **Anyone with the public key can verify** that a given signature was produced for that message by that private key.
 3. **The signature is tied to the exact message.** Change one bit of the transaction and the same signature no longer verifies. There is no replaying old signatures on different transactions.
 
-These three properties are exactly what the public-key math from earlier in the module can deliver. The same key-pair construction that powered the encryption examples works in the opposite direction: instead of encrypting *to* the public key, you sign *with* the private key, and anyone verifies against the public key. Different goal, same underlying mathematical asymmetry.
+These three properties are exactly what the public-key math from earlier can deliver. The same key-pair construction that powered the encryption examples works in the opposite direction: instead of encrypting *to* the public key, you sign *with* the private key, and anyone verifies against the public key. Different goal, same underlying mathematical asymmetry.
 
 ## How sign and verify work
 
@@ -113,7 +113,7 @@ A signature scheme has two operations.
   <polygon points="612,235 622,240 612,245" fill="#565653"/>
 </svg>
 
-Verifying does not require the private key. This is the entire point. The wallet that sent the transaction holds the private key; every node in the world that validates the transaction has only the public key, the message, and the signature; the protocol works because verification with just those three values is enough.
+Verifying does not require the private key. This is the entire point. The wallet that sent the transaction holds the private key. Every node in the world that validates the transaction has only the public key, the message, and the signature. The protocol works because verification with just those three values is enough.
 
 The most common signature scheme on the chains you'll meet is **ECDSA**, the Elliptic Curve Digital Signature Algorithm, used with the same secp256k1 curve that produces the key pairs. ECDSA does most of the signing work: every transaction on the largest chain families produces one. **Ed25519** has its own integrated signing scheme (technically called EdDSA) and is used by some newer chains.
 
@@ -170,10 +170,10 @@ Three properties are now real to you instead of abstract.
 
 **Authentication on a blockchain works without identity in the traditional sense.** No usernames, no central registry of who-is-who. Just private keys, signatures, and recovered public keys. If the math checks out, the transaction is yours.
 
-**Signatures bind to exact messages.** You cannot reuse a signature on a different transaction. You cannot tamper with a transaction without invalidating its signature. The integrity comes from the math, not from a trusted intermediary.
+**Signatures bind to exact messages.** You cannot reuse a signature on a different transaction. You cannot tamper with a transaction without invalidating its signature. The integrity comes from the math rather than from a trusted intermediary.
 
 **Recovery is the trick that makes the protocol-level math practical.** Without it, every transaction would need to carry a public key. With it, the network derives the signer's identity from the signature itself. This is the operational primitive that the next two lessons (and effectively every chain you'll touch) build on.
 
-## Where this goes next
+## The cryptographic toolkit you now have
 
-You've now seen the four building blocks the rest of the course will keep returning to: hash functions, encoding schemes, public-key cryptography, and digital signatures with recovery. The remaining lessons in this module combine these into the practical structures real wallets and chains use: derivation paths, Merkle trees, and a brief note on the quantum threat to all of the above.
+You've now seen the four cryptographic building blocks that the rest of blockchain rests on: hash functions, encoding schemes, public-key cryptography, and digital signatures with recovery. With these, you can explain how a wallet authorises a transaction, how a network verifies it without trusting anyone, and how an address ties back to a key. Every structure real chains use, from derivation paths to Merkle trees, is these four primitives combined.

@@ -9,7 +9,7 @@ faq:
       rent-exempt, meaning it holds a one-time minimum lamport deposit sized to
       its data and stays on the chain for free after that. The old mode of
       paying rent each epoch until the account ran out was deprecated, so when
-      developers say rent they now mean this single up-front deposit, not an
+      developers say rent they now mean this single up-front deposit rather than an
       ongoing fee.
   - question: Can I get back the SOL I paid to create a Solana account?
     answer: "Yes. The rent deposit works like a security deposit: you pay it when
@@ -77,7 +77,7 @@ The conversion is exact. One SOL is one billion lamports. Half a SOL is five hun
 
 Every byte of data on the chain has to be held in memory by every validator on the network. Holding data has a cost, and the chain charges for it. The name for that charge is **rent**.
 
-Solana originally had two ways to pay for account storage. Accounts could pay a small amount each epoch out of their lamports balance until they ran out and got deleted, or they could deposit enough lamports up front to cover roughly two years of rent in advance and stop being charged. The first mode was deprecated, and only rent-exemption remains. Every account on Solana today is rent-exempt, meaning it holds a minimum lamport balance proportional to its size that stays locked for as long as the account exists. The language around rent has shifted accordingly. When a developer says "rent" they mean this one-time deposit, not an ongoing fee.
+Solana originally had two ways to pay for account storage. Accounts could pay a small amount each epoch out of their lamports balance until they ran out and got deleted, or they could deposit enough lamports up front to cover roughly two years of rent in advance and stop being charged. The first mode was deprecated, and only rent-exemption remains. Every account on Solana today is rent-exempt, meaning it holds a minimum lamport balance proportional to its size that stays locked for as long as the account exists. The language around rent has shifted accordingly. When a developer says "rent" they mean this one-time deposit rather than an ongoing fee.
 
 The size of the deposit scales with the bytes the account holds. A bigger account needs a bigger deposit. The math is fixed: roughly 6,960 lamports per byte, plus 128 bytes of overhead per account. An empty wallet costs about 890,000 lamports. A 165-byte token account costs about 2,040,000 lamports. A 200-kilobyte program account costs about 1.4 SOL.
 
@@ -206,7 +206,7 @@ Every account on the chain follows the same three-stage life. It gets created, i
 
 The refund part is more useful than it looks at first. It means applications that ask users to deposit funds, like a staking program or a raffle, can give the deposit back when the user exits. The user's net storage cost is zero. They paid to hold space while they were using the application, and when they were done, the space went back to the pool and their money went back to their wallet.
 
-## What this means when you write code
+## Size accounts and close them when done
 
 When your program creates an account, somebody has to pay the deposit. That somebody is one of the accounts listed in the transaction, marked as the payer. Almost always it is the user whose action triggered the creation, since the user is the one who benefits from the new account existing. Your program does not pay out of its own balance.
 

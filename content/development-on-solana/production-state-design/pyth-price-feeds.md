@@ -21,7 +21,7 @@ faq:
   - question: What is Pyth's confidence interval and why should I check it?
     answer: Alongside each price, Pyth reports a confidence interval in the same
       units, which reflects how much the many publishers disagree. In a calm
-      market they converge and the interval is tight; during a flash crash or an
+      market they converge and the interval is tight. During a flash crash or an
       exchange outage they diverge and it widens, signaling the price may not
       reflect one coherent market. A risk-conscious program rejects any price
       whose confidence is wider than a threshold like one percent, so it does
@@ -36,7 +36,7 @@ faq:
       the value reaches your program."
 ---
 
-> Solana programs are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. This lecture covers what oracles actually are, why they matter for any serious DeFi protocol, how Pyth's first-party publisher architecture solves the trust problem, and how to consume a feed safely from a Solana program.
+> Solana programs are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. That makes the oracle a trust problem: your protocol acts on numbers it did not produce and cannot recompute. Pyth's first-party publisher architecture is built to make those numbers trustworthy, which is what lets you consume a feed safely from a Solana program.
 
 ## The oracle problem
 

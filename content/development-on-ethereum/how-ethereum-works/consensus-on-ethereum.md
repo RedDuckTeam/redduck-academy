@@ -32,7 +32,7 @@ faq:
       has economic finality: after about 12.8 minutes the protocol guarantees a
       block stays unless attackers deliberately destroy at least a third of all
       staked ETH, which is tens of billions of dollars. The first kind of
-      finality is statistical; the second is closer to a contractual guarantee."
+      finality is statistical. The second is closer to a contractual guarantee."
 ---
 
 > Ethereum doesn't use proof of work anymore. Since September 2022, it has used proof of stake. Validators put up 32 ETH as collateral, take turns proposing blocks, and lose part of their stake if they cheat. The mechanics are different from Bitcoin in almost every detail, but the goal is the same. Get a network of independent nodes to agree on which blocks count, without anyone in charge.
@@ -160,7 +160,7 @@ This is similar in spirit to Bitcoin's "longest chain wins" rule, but the unit o
 
 In current Ethereum, the validator selected as proposer almost never builds the block themselves. The block-building process is split between two actors through a system called **proposer-builder separation**, or PBS. Specialized **builders** assemble blocks, typically optimizing them to extract maximum value from the transactions they include. The proposer, when their slot arrives, picks the highest-paying block from the builders and signs it. The proposer earns the priority fees plus a payment from the chosen builder.
 
-This split exists because building an optimal block is a hard problem: it means simulating thousands of transactions, finding the most profitable ordering of them — known as MEV, or maximal extractable value — and offering a higher price than other builders. Hobbyist validators can't compete with professional builder operations. Rather than let block-building centralize into a few large validators, the protocol effectively lets validators stay decentralized while specialized builders handle the optimization. The mechanism that makes this work in practice is software called **MEV-Boost**, run by most validators, which relays builder blocks to the proposer for selection.
+This split exists because building an optimal block is a hard problem. It means simulating thousands of transactions, finding the most profitable ordering of them, and offering a higher price than other builders. That most profitable ordering is known as MEV, or maximal extractable value. Hobbyist validators can't compete with professional builder operations. Rather than let block-building centralize into a few large validators, the protocol effectively lets validators stay decentralized while specialized builders handle the optimization. The mechanism that makes this work in practice is software called **MEV-Boost**, run by most validators, which relays builder blocks to the proposer for selection.
 
 ## What this means in practice
 

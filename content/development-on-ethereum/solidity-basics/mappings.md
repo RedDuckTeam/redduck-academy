@@ -12,7 +12,7 @@ faq:
       entries, you maintain your own parallel array of keys and push each new
       key onto it the first time you see it.
   - question: What happens when I read a mapping key that was never set?
-    answer: "Reading an unset key never throws an error; it returns the zero value
+    answer: "Reading an unset key never throws an error. It returns the zero value
       of the value type, which is 0 for a uint, false for a bool, the zero
       address for an address, and the empty string for a string. Because writing
       zero looks identical to never writing at all, you cannot tell a
@@ -31,7 +31,7 @@ faq:
       anyone query any key, and even marking it private only removes that
       convenience getter. On a public chain, all storage is readable by anyone
       who knows how the slot is derived, so no on-chain mapping data is ever
-      truly secret. Use private only to hide the getter, not to protect
+      truly secret. Use private only to hide the getter rather than to protect
       confidential information.
 ---
 

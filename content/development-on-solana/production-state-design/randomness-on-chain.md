@@ -37,7 +37,7 @@ faq:
       reverts and you get no randomness."
 ---
 
-> Solana programs can't generate random numbers on their own. The reasons are structural rather than solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how MagicBlock VRF solves it cryptographically, and how to wire a consumer program to receive verified random numbers in production.
+> Solana programs can't generate random numbers on their own. The reasons are structural rather than solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. Real randomness has to come from an external source with a cryptographic proof, which is exactly what MagicBlock VRF provides and what a consumer program wires up to receive verified random numbers in production.
 
 ## Why a blockchain can't roll dice
 

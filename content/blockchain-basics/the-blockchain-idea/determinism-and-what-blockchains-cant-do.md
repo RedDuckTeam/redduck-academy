@@ -24,14 +24,14 @@ faq:
       like an asset price or a sports result, and submits transactions that
       write that data into a smart contract's on-chain state. Contracts then
       read the value from that contract instead of fetching it themselves, and
-      by the time they read it, consensus has already agreed on it. The catch is
+      by the time they read it, consensus has already agreed on it. The limitation is
       that a contract is only as trustworthy as its oracle, which is an
       off-chain party with the usual off-chain risks.
   - question: What does it mean that a blockchain has to be 'deterministic'?
     answer: It means the same code with the same inputs must produce exactly the
       same output on every node, every time. This is required because each node
       independently validates every block and they must all reach the same
-      answer; any variation would immediately fork the chain. This one rule is
+      answer. Any variation would immediately fork the chain. This one rule is
       why on-chain code can't use external APIs, the wall clock, true
       randomness, or the local file system.
 ---
@@ -125,6 +125,6 @@ That's the deal. You get a programmable settlement layer that no one controls. A
 
 This is the constraint at the bottom of everything. Every smart contract you'll ever write, on any chain, lives inside this rule. Every weird design choice in smart contract languages, every reason "just call an API" doesn't work, every pattern you'll learn for handling external data, all of it traces back to one requirement. Every node must compute the same result from the same input. The chain can do nothing else, ever.
 
-## Where this goes next
+## The complete picture you now hold
 
-You have a complete conceptual picture of how a blockchain operates: the structure, the comparison to traditional systems, the consensus mechanism, the nodes and the network, the operation loop that ties everything together, the way the network handles temporary and permanent disagreement, and the deepest constraint on what on-chain code can do. The next module starts the chain-specific work. The first chain you'll meet is the original one, the one that proved all the abstract pieces from this module can actually be assembled into a working system. The cryptographic primitives you've already learned and the consensus mechanism you've already learned are about to meet a specific design that uses them in a specific way.
+You have a complete conceptual picture of how a blockchain operates: the structure, the comparison to traditional systems, the consensus mechanism, the nodes and the network, the operation loop that ties everything together, the way the network handles temporary and permanent disagreement, and the deepest constraint on what on-chain code can do. Every real chain is a specific set of choices layered on top of these same pieces, and you now have the vocabulary to take any of them apart.

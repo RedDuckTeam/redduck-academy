@@ -70,7 +70,7 @@ contract Vault is Ownable {
 
 The four visibility levels from the functions lesson interact with inheritance directly. `public` and `internal` members are accessible from child contracts. `private` members are not. `external` functions can be called by child contracts, but only via `this.functionName()`. That's the same restriction as calling them from the same contract.
 
-A child contract cannot declare a state variable with the same name as one in a parent. This is a compile error, not silent shadowing. If `Ownable` declares `address public owner`, then `Vault` cannot also declare `address public owner` even if it intends to. The variable exists in the inheritance chain exactly once.
+A child contract cannot declare a state variable with the same name as one in a parent. This is a compile error rather than silent shadowing. If `Ownable` declares `address public owner`, then `Vault` cannot also declare `address public owner` even if it intends to. The variable exists in the inheritance chain exactly once.
 
 ## Passing arguments to a parent constructor
 
@@ -261,7 +261,7 @@ function transferOwnership(address newOwner) external override {
 }
 ```
 
-`super` calls the **next** function in the linearization order, not necessarily the immediate parent of the contract you're writing. This distinction matters in diamond inheritance, where a contract has multiple parents that themselves share a common ancestor.
+`super` calls the **next** function in the linearization order, which is not necessarily the immediate parent of the contract you're writing. This distinction matters in diamond inheritance, where a contract has multiple parents that themselves share a common ancestor.
 
 Consider:
 
@@ -283,7 +283,7 @@ contract D is B, C {
 }
 ```
 
-When `D.f()` runs, `super.f()` calls `C.f()` because `C` comes after `D` in the linearization. `C.f()`'s `super.f()` then calls `B.f()`. `B.f()`'s `super.f()` finally calls `A.f()`. The call chain is `D → C → B → A`, not the visually-suggested `D → B → A` followed by `D → C → A`. The C3 linearization guarantees each ancestor runs at most once.
+When `D.f()` runs, `super.f()` calls `C.f()` because `C` comes after `D` in the linearization. `C.f()`'s `super.f()` then calls `B.f()`. `B.f()`'s `super.f()` finally calls `A.f()`. The call chain is `D → C → B → A` rather than the visually-suggested `D → B → A` followed by `D → C → A`. The C3 linearization guarantees each ancestor runs at most once.
 
 This is the pattern behind composable extensions: each layer adds its behavior, calls `super.f()` to chain to the next, and the linearization ensures all layers run in a well-defined order. OpenZeppelin's ERC-20 and ERC-721 implementations rely on this pattern so each extension module can add behavior to the same function.
 

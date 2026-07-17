@@ -106,6 +106,6 @@ A **hard fork** changes the rules in a way that's not backwards-compatible. Some
 
 Hard forks are how rule changes that the community can't agree on play out in the open. Each side runs their own version of the software, and the market decides which one accumulates value. Several well-known blockchain projects exist today as the surviving side of a hard fork that split the original community.
 
-## Where this goes next
+## The full operational picture
 
-You now have the full operational picture of a blockchain, including the cases where things do not go smoothly. The last lesson in this module steps back from network behaviour and looks at a constraint that runs through every layer you've seen so far. Every node has to compute the same result from the same input, or the whole system falls apart. That constraint has consequences for what kinds of programs can run on a blockchain and what kinds cannot. The next lesson is about determinism.
+You now have the full operational picture of a blockchain, including the cases where things do not go smoothly. You can explain why two valid blocks can appear at once, how the longest-chain rule resolves the split, why a transaction becomes harder to reverse as blocks pile on top of it, and how soft and hard forks differ. Temporary disagreement is normal, and the network is built to converge on a single shared history without anyone in charge.

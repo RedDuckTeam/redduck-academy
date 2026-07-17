@@ -32,7 +32,7 @@ faq:
       struct and let the macro tie it to the right thing.
 ---
 
-> Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. This lecture walks through what the borrow checker is actually doing, the two rules it enforces, what the `'info` lifetime in every Anchor account means, and the three specific borrow patterns that trip up almost every new Solana developer. If you understand what's in this lecture, the compiler error messages will start making sense and you'll spend fewer hours fighting the compiler.
+> Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. Underneath, it enforces just two rules, and the `'info` lifetime on every Anchor account is a direct consequence of them. A handful of borrow patterns trip up almost every new Solana developer, and each one traces back to those same two rules. Once you see what the checker is actually doing, the compiler error messages start making sense and you spend fewer hours fighting the compiler.
 
 ## What the borrow checker is for
 

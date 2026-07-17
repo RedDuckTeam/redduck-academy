@@ -73,11 +73,11 @@ The blockchain isn't doing anything magical. It's doing a small number of very s
 
 **Programmable money.** Money in web2 is database entries at a bank, governed by software you can't read, run by people you can't audit, and bound by banking hours, settlement windows, and rules that change every few years. Money on a public blockchain is a number in a shared ledger, transferable in seconds at any hour, controlled by smart-contract code anyone can read. A trade that would take a bank settlement system three working days happens in seconds or minutes. A loan that would take a credit check, a meeting, and a signature can be issued by a smart contract in one transaction. None of this is hypothetical. It's the everyday substrate of an industry that already moves trillions of dollars a year in on-chain settlement volume.
 
-**No deplatforming.** A YouTuber can be demonetised. A Twitter account can be banned. A merchant can be cut off by their payment processor. A protest can be debanked. The web2 version of every one of these systems has a central operator who decides who is allowed to participate. The web3 version doesn't have an operator at all. The protocol runs itself, and your access to it comes from holding the right keys, not from being on a list someone curates.
+**No deplatforming.** A YouTuber can be demonetised. A Twitter account can be banned. A merchant can be cut off by their payment processor. A protest can be debanked. The web2 version of every one of these systems has a central operator who decides who is allowed to participate. The web3 version doesn't have an operator at all. The protocol runs itself, and your access to it comes from holding the right keys rather than from being on a list someone curates.
 
 **Global by default.** A new app on a public blockchain is reachable on day one by a teenager in Lagos, a developer in Buenos Aires, a small business in Manila, and a fund manager in Singapore. There is no rollout, no per-country negotiation, no banking partner per region, no compliance manager flying around closing deals to make the app legal. The chain doesn't ask where you are. Everyone with an internet connection gets the same product.
 
-Taken individually, each of these properties is incremental. Taken together — and built into the layer where apps live, rather than promised by an app that can take them away at any moment — they enable categories of products that could not exist before.
+Taken individually, each of these properties is incremental. Taken together, and built into the layer where apps live, rather than promised by an app that can take them away at any moment, they enable categories of products that could not exist before.
 
 ## Why this layer is the right thing to learn first
 
@@ -85,4 +85,4 @@ The pattern across every era of the internet has been the same. The biggest fort
 
 A web3 developer who only knows the framework on top is competing with everyone else who only knows the framework on top. A web3 developer who understands the layer below the framework is solving problems the framework wasn't designed for and will be the one writing the next framework.
 
-That's the whole reason this course exists. The next module gets into the cryptography that makes the blockchain layer possible at all. Hashes, keys, signatures, the actual mathematics of "no one can fake this." It's the most technically dense part of the course, but it's also the most rewarding, because by the end of it the rest of the stack starts looking like ordinary software again.
+That's the whole reason this course exists. Next comes the cryptography that makes the blockchain layer possible at all. Hashes, keys, signatures, the actual mathematics of "no one can fake this." It's the most technically dense part of the course, but it's also the most rewarding, because by the end of it the rest of the stack starts looking like ordinary software again.

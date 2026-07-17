@@ -23,9 +23,9 @@ faq:
       state costs gas and takes seconds.
   - question: Why can't my frontend read the value returned by a function that
       changes state?
-    answer: This is a property of how Ethereum transactions work, not a Solidity
+    answer: This is a property of how Ethereum transactions work rather than a Solidity
       limitation. When a state-changing transaction is mined, the network only
-      records that it succeeded or reverted, not what it returned, so off-chain
+      records whether it succeeded or reverted, so off-chain
       code never sees the return value. To send results back to a frontend, the
       contract emits an event, which is written to the transaction receipt where
       wallets and indexers can read it.
@@ -39,7 +39,7 @@ faq:
       receive().
 ---
 
-This lesson walks through the function declaration form piece by piece. After this, you'll be able to read any function signature in a Solidity contract and predict its cost model, who can call it, and whether it touches state.
+A Solidity function signature is dense. Every keyword in it, from visibility to mutability to data location, decides who can call the function, whether it can touch state, and what it costs to run. Once you can read those keywords, you can predict any function's behavior from its declaration alone.
 
 ## The shape of a function
 
@@ -128,7 +128,7 @@ A function that modifies state can't work that way. To change the chain's state,
 
 The practical consequence: calling `getCount` from your frontend is free, instant, and doesn't need a connected wallet. Calling `increment` costs gas, requires a signed transaction, and takes a few seconds to be mined. The mutability annotation `view` or `pure` is the signal that switches between these two worlds.
 
-The same function can be called either way from contract code. When contract A calls `B.getCount()` from inside its own state-mutating function, it costs gas as part of A's transaction. When the same function is called from a frontend's `eth_call`, it's free. The cost depends on the calling context, not the function itself.
+The same function can be called either way from contract code. When contract A calls `B.getCount()` from inside its own state-mutating function, it costs gas as part of A's transaction. When the same function is called from a frontend's `eth_call`, it's free. The cost depends on the calling context rather than the function itself.
 
 ## Return values
 
@@ -167,7 +167,7 @@ function getCount() external view returns (uint256 result) {
 
 The two forms produce the same compiled output. Named returns can be useful when the function has multiple exit points and you want to set the return value in one place. Explicit `return` statements are clearer for short functions. Both are used in production code.
 
-One subtle but important point about state-mutating functions. They can declare return values, and other contracts calling them can read those return values. But **off-chain callers cannot read the return value of a state-mutating transaction**. This is a property of how Ethereum transactions work, not of Solidity. At the moment a transaction is signed and broadcast, its eventual return value is unknown. By the time the transaction is mined, the network only records that it succeeded or reverted, not what it returned. To communicate results from state-mutating functions to off-chain code, contracts emit events, which are written to the transaction receipt and are readable by frontends and indexers.
+One subtle but important point about state-mutating functions. They can declare return values, and other contracts calling them can read those return values. But **off-chain callers cannot read the return value of a state-mutating transaction**. This is a property of how Ethereum transactions work rather than of Solidity. At the moment a transaction is signed and broadcast, its eventual return value is unknown. By the time the transaction is mined, the network only records whether it succeeded or reverted, never what it returned. To communicate results from state-mutating functions to off-chain code, contracts emit events, which are written to the transaction receipt and are readable by frontends and indexers.
 
 ## Function arguments
 

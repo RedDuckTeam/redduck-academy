@@ -127,7 +127,7 @@ For program authors, nothing changes. You write the same handlers, the same Acco
 
 For client authors, the change is meaningful. You build a `VersionedTransaction` instead of a `Transaction`, and you supply the list of ALTs you're referencing along with the instruction data. The `@solana/web3.js` SDK handles the encoding once you provide the right inputs. The harder part is deciding which accounts go into the static list versus which can be pulled from an ALT, and whether to create your own ALT or rely on someone else's.
 
-## What you actually do day to day
+## When to reach for a lookup table
 
 Most transactions you build don't need ALTs. They fit in a legacy transaction with room to spare. When you hit the size limit, the first response is to look at the account list and identify items that show up in every transaction your protocol issues: program IDs, common mints, shared authority PDAs, oracle accounts. Those are the right candidates for a protocol-specific ALT.
 

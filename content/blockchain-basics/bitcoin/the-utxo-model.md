@@ -6,7 +6,7 @@ order: 2
 faq:
   - question: Where is my Bitcoin balance actually stored?
     answer: Nowhere as a single number. Bitcoin does not keep a table of users and
-      balances; instead it tracks individual coins called unspent transaction
+      balances. Instead it tracks individual coins called unspent transaction
       outputs (UTXOs), each with a specific value and owner. Your balance is a
       derived amount you get by adding up every unspent coin that currently
       belongs to you. The chain doesn't even know your total, only which coins
@@ -168,7 +168,7 @@ Each **input** has two essential pieces. The first is a pointer back to the spec
 
 Each **output** has two essential pieces. The first is the value of the new coin, stored as an integer in **satoshis** (the smallest unit of Bitcoin, one hundred-millionth of one BTC). The second is the **locking script** or **scriptPubKey**, a small program defining the condition the future spender will have to satisfy. The typical condition is "prove ownership of the private key corresponding to this address."
 
-The "small program" framing is worth pausing on. Each locking condition is written in a stack-based language called **Bitcoin Script**, deliberately limited so that every node can run it cheaply and deterministically. No loops. No external data. No shared state. The language only exists to answer one question per transaction: is this spend allowed, yes or no? The most common locking pattern, used in almost every routine payment, is called **Pay-to-Public-Key-Hash**. It locks the coin to a specific public key hash, and the spender unlocks it by providing a signature plus their public key. Other patterns exist, but the shape is always the same: the output sets a condition, the input satisfies it. Bitcoin's intentional choice to keep this language small is one of its defining design decisions, and we'll come back to it when we look at the trade-offs at the end of the module.
+The "small program" framing is worth pausing on. Each locking condition is written in a stack-based language called **Bitcoin Script**, deliberately limited so that every node can run it cheaply and deterministically. No loops. No external data. No shared state. The language only exists to answer one question per transaction: is this spend allowed, yes or no? The most common locking pattern, used in almost every routine payment, is called **Pay-to-Public-Key-Hash**. It locks the coin to a specific public key hash, and the spender unlocks it by providing a signature plus their public key. Other patterns exist, but the shape is always the same: the output sets a condition, the input satisfies it. Bitcoin's intentional choice to keep this language small is one of its defining design decisions, and we'll come back to it when we look at the trade-offs later.
 
 <svg role="img" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction input referencing output 1 of an earlier transaction</title><desc>An earlier transaction has three outputs, and output 1 sends 1.0 BTC to Alice. Alice's new transaction has input 0, which points back to that output using prev_txid and prev_vout, and unlocks it with an unlocking script containing a signature and public key.</desc>
   <defs>
@@ -226,6 +226,6 @@ This local-validation property pays off in three more ways.
 
 **Privacy.** Each coin has its own owner condition. The chain doesn't have a permanent identifier for a user. Alice can have a hundred different addresses, each holding different coins, and there's no on-chain record that they're all hers. In an account model, every transaction Alice makes is tied to the same account identifier, so her whole history is linked together. The UTXO model has no such per-user identifier, so it never forces that link.
 
-**Audit clarity.** Every coin's history can be traced exactly. This specific coin was created by this transaction, which was funded by these earlier coins, which were created by these even earlier transactions, all the way back to a mining reward. The provenance is built into the data structure, not bolted on as an audit log.
+**Audit clarity.** Every coin's history can be traced exactly. This specific coin was created by this transaction, which was funded by these earlier coins, which were created by these even earlier transactions, all the way back to a mining reward. The provenance is built into the data structure rather than bolted on as an audit log.
 
 The trade is that the UTXO model is unfamiliar and uses more storage for the same number of users, because the chain has to track every unspent coin separately rather than a single balance per user. Bitcoin accepts that trade. Several other chains made the opposite trade and use account models instead. Both work. They optimise for different things.

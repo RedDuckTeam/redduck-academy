@@ -22,7 +22,7 @@ faq:
     answer: Because a small solo miner could wait decades between blocks even though
       the reward is the same as anyone's, which is no way to run a business. In
       a pool, every miner hashes the operator's block template and submits
-      easier partial solutions called shares as proof they are working; when the
+      easier partial solutions called shares as proof they are working. When the
       pool finds a real winning block, it splits the reward in proportion to the
       shares each miner contributed. Income turns from a rare jackpot into a
       small steady payout.

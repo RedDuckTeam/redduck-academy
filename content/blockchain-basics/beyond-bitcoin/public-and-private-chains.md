@@ -10,7 +10,7 @@ faq:
       no operator able to ban you. A private blockchain restricts all of that to
       whoever the operator approves, whether a company, government, or
       consortium. Almost everything that makes blockchains interesting comes
-      from being public; private chains are essentially shared databases with
+      from being public. Private chains are essentially shared databases with
       cryptographic auditing, run by a small group that already trusts each
       other."
   - question: What is the difference between a coin chain and a smart-contract chain?
@@ -79,7 +79,7 @@ Two private-chain platforms are worth knowing by name because you'll encounter t
   <text x="540" y="280" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">enterprise deployments</text>
 </svg>
 
-The rest of this course assumes public chains. The chain-specific tracks that follow this module teach development on public chains. If you end up working in enterprise blockchain (banks, logistics companies, government tracking systems), the patterns transfer but the deployment model is different.
+The rest of this course assumes public chains. The chain-specific tracks that follow teach development on public chains. If you end up working in enterprise blockchain (banks, logistics companies, government tracking systems), the patterns transfer but the deployment model is different.
 
 ## The second question: what is the chain for?
 
@@ -91,7 +91,7 @@ A **smart-contract chain** is designed to run programs. Transactions on a smart-
 
 A **smart contract** is a program that lives at its own address on the chain, has its own storage, and can hold funds. You'll see the term constantly from here on. Anyone can call it by submitting a transaction that points at its address. When called, it runs whatever code its creator deployed and updates its own state accordingly. The chain enforces the contract's rules: whatever the code says happens, happens, and nobody can override that. Tokens, NFTs, decentralised exchanges, and lending markets are all smart contracts, or collections of them working together. These are the familiar things you've heard about on smart-contract chains.
 
-The distinction matters because it determines what's possible on the chain. On Bitcoin you can build payment systems. That's it. The locking conditions on UTXOs are deliberately limited — they can express payment rules and little else. On a smart-contract chain you can build payment systems. You can also build lending markets, exchanges, identity systems, prediction markets, in-game economies, ownership records, and arbitrary applications that combine those. The range of what you can build is far larger.
+The distinction matters because it determines what's possible on the chain. On Bitcoin you can build payment systems. That's it. The locking conditions on UTXOs are deliberately limited. They can express payment rules and little else. On a smart-contract chain you can build payment systems. You can also build lending markets, exchanges, identity systems, prediction markets, in-game economies, ownership records, and arbitrary applications that combine those. The range of what you can build is far larger.
 
 It also matters because it determines what kind of developer you'll be. Bitcoin development is a specialty focused on payment infrastructure and protocols built on top of Bitcoin. Smart-contract development is general-purpose application development on shared state, and it's where the bulk of web3 jobs are. The Solidity track this course leads into is smart-contract development on Ethereum. The Solana track is smart-contract development on Solana.
 

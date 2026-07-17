@@ -5,7 +5,7 @@ type: coding_task
 order: 7
 ---
 
-Two players play one round of rock-paper-scissors. The catch: if either player just submits their move directly, the other can see it in the mempool and beat it. Commit-reveal solves this. First each player submits `keccak256(move, salt, player)` as a commit. After BOTH commits are in, each reveals their `move` and `salt` and the contract verifies the hash matches.
+Two players play one round of rock-paper-scissors. The problem: if either player just submits their move directly, the other can see it in the mempool and beat it. Commit-reveal solves this. First each player submits `keccak256(move, salt, player)` as a commit. After BOTH commits are in, each reveals their `move` and `salt` and the contract verifies the hash matches.
 
 ## Examples
 

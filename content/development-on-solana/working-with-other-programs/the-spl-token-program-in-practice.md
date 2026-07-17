@@ -8,15 +8,16 @@ faq:
     answer: "A Mint account describes the token itself, like a currency: its total
       supply, its decimal precision, and the authorities allowed to mint or
       freeze. A token account (TokenAccount) is one holder's balance of that
-      token; it references a mint, names an owner, and tracks an amount. The
+      token. It references a mint, names an owner, and tracks an amount. The
       relationship is one-to-many: a single USDC mint has many token accounts
       pointing at it, one per wallet, each holding that wallet's balance."
   - question: Why does my token balance show a huge number like 100000000 instead of 100?
     answer: Token balances are stored as raw integers scaled by ten to the power of
-      the mint's decimal precision, not as display values. USDC has 6 decimals,
+      the mint's decimal precision. The number you see on screen is that raw
+      value converted for display. USDC has 6 decimals,
       so a stored balance of 100,000,000 means 100 USDC on screen. To convert,
       divide by 10^6 to display and multiply by 10^6 to send. Do this conversion
-      only at the edges (frontend or tests); inside program logic every amount
+      only at the edges (frontend or tests). Inside program logic every amount
       is a raw integer.
   - question: Does holding a token's mint authority let me move other people's tokens?
     answer: "No. The mint authority only controls MintTo, which creates new tokens,
@@ -33,7 +34,7 @@ faq:
       always have."
 ---
 
-> Most of what makes Solana useful flows through one program: the SPL Token Program. USDC, USDT, every project's governance token, every meme coin, every staking receipt, every wrapped asset, every position token from every protocol. The same program manages all of them. You've already called it twice through CPI without seeing its formal shape. This lecture is the formal shape: what state lives in its accounts, what instructions it accepts, and what authorities gate what actions. Once you have these pieces, working with tokens in your own programs becomes mechanical.
+> Most of what makes Solana useful flows through one program: the SPL Token Program. USDC, USDT, every project's governance token, every meme coin, every staking receipt, every wrapped asset, every position token from every protocol. The same program manages all of them. You've already called it twice through CPI without seeing its formal shape. Its formal shape comes down to three things: the state that lives in its accounts, the instructions it accepts, and the authorities that gate each action. Once you have these pieces, working with tokens in your own programs becomes mechanical.
 
 ## The Token Program is just a program
 

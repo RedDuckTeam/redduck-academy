@@ -6,13 +6,13 @@ order: 1
 faq:
   - question: Do I need to be a Rust expert to write Solana programs?
     answer: No. You need to be able to read Rust and write within the patterns
-      Anchor sets up, not master the whole language. You can skip advanced
+      Anchor sets up, without mastering the whole language. You can skip advanced
       topics like async runtimes, smart pointers, and unsafe Rust. The
       essentials are the basic syntax, the borrow checker, and the Anchor macros
       built on top of them.
   - question: What does the ? operator do in Rust and Anchor code?
     answer: It is shorthand for handling a Result. If the expression before it
-      succeeded, ? unwraps the value and continues; if it failed, ? returns
+      succeeded, ? unwraps the value and continues. If it failed, ? returns
       early from the function with that error. So token::transfer(cpi_ctx,
       amount)? means "do the transfer, but bail out of this handler if it
       fails." Every ? is one possible early-exit point.
@@ -30,7 +30,7 @@ faq:
       requires a type annotation.
 ---
 
-> Anchor programs are written in Rust. You don't need to be a Rust expert to write Solana programs, but you do need to be able to read Rust. This lecture covers the syntax you'll see in every Anchor program: variables, types, structs, enums, functions, traits, the question-mark operator, pattern matching, and module imports. 
+> Anchor programs are written in Rust. You don't need to be a Rust expert to write Solana programs, but you do need to be able to read Rust. The syntax you'll meet is a small, fixed set: variables, types, structs, enums, functions, traits, the question-mark operator, pattern matching, and module imports. Learn to read those and almost every Anchor program becomes readable.
 
 ## Why Rust, specifically
 
