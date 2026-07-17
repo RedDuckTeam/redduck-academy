@@ -20,13 +20,13 @@ A system fails in production. Someone traces it to a single place where the code
 
 ## Why this is worth your time
 
-It is easy to treat design principles as theory you can skip on the way to getting something built. The opposite is true. Almost every expensive failure in a system traces back to a principle that was ignored.
+It is easy to treat design principles as theory you can skip on the way to getting something built. The opposite is true. Almost every serious failure in a system traces back to a principle that was ignored.
 
 - A design that trusts a value the user controls becomes the security hole someone walks through.
 - A component that remembers state it never needed becomes the thing an attacker corrupts.
 - A convenience bolted onto the part that holds the assets becomes the reason a small change leaks them.
 
-Each of these is one principle away from never happening. Learning the principle is cheaper than learning it the hard way, once, in production.
+Each of these is one principle away from never happening. Learning the principle is cheaper than learning it from a failure in production.
 
 ## The principle outlives the tool
 

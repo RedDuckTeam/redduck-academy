@@ -23,7 +23,7 @@ faq:
       fix is applied once rather than repeated across every application.
 ---
 
-> A singleton concentrates one critical function into a single shared component that everything else depends on. This costs you something real, because a bug in that one component now reaches everything at once, where before a bug reached one thing. You accept the cost because concentrating the function in one place also concentrates the review effort on it, and one heavily-reviewed component can be safer than fifty lightly-reviewed ones.
+> A **singleton** concentrates one critical function into a single shared component that everything else depends on. The name comes from keeping exactly one of a thing where a system might otherwise have had many. This costs you something real, because a bug in that one component now reaches everything at once, where before a bug reached one thing. You accept the cost because concentrating the function in one place also concentrates the review effort on it, and one heavily-reviewed component can be safer than fifty lightly-reviewed ones.
 
 ## What fifty login systems cost
 
@@ -37,7 +37,7 @@ The fix is to pull login out of the fifty applications and put it in one place. 
 
 Now count the same three costs. Passwords are stored once, in one service, so there is one store to defend instead of fifty. A flaw in how passwords are verified is fixed once, in one place, and every application gets the fix the moment that service is updated. Each application integrates against one well-known, stable endpoint, so a new application joins by pointing at the same service every other application already uses.
 
-The same shape appears at the scale of the whole internet. When your browser opens a secure connection to a website, it needs to be sure the site is really who it claims to be. Millions of websites rely on a small number of trusted certificate authorities to vouch for that, rather than every pair of parties arranging trust between themselves from scratch. One heavily-trusted component stands in the middle, and everyone else leans on it.
+The same shape appears at the scale of the whole internet. When your browser opens a secure connection to a website, it needs to be sure the site is really who it claims to be. Millions of websites rely on a small number of trusted certificate authorities to vouch for that, rather than every pair of parties arranging trust between themselves from scratch. A small, heavily-trusted set of authorities stands in the middle, and everyone else depends on them. The web keeps that number small on purpose, because concentrating trust in a few closely-watched places is safer than spreading it thin across many.
 
 <svg role="img" viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Fifty separate login systems versus one shared authentication service</title><desc>Two panels. On the left, fifty applications each carry their own login and password store, so one security fix must be applied fifty times. On the right, every application delegates login to one shared authentication service, so passwords are stored once and one fix reaches all of them.</desc>
   <defs>
@@ -85,7 +85,7 @@ That concentrated risk is the whole reason a shared authentication service and a
 
 ## Which goal each part serves
 
-The parent and child goals from the Design tradeoffs module make this tradeoff easy to read. Storing passwords once and giving every application one stable endpoint to integrate against are child goals: operational efficiency and integration simplicity. Keeping accounts safe is the parent goal above them. A single shared login service is correct only because the concentrated review keeps that parent goal satisfied while the child goals improve. If the concentration made accounts less safe on the whole, the efficiency underneath would not matter, because it would be serving a parent goal that is no longer being met.
+The **parent goal** and **child goal** from [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not) make this tradeoff easy to read. Storing passwords once and giving every application one stable endpoint to integrate against are child goals: operational efficiency and integration simplicity. Keeping accounts safe is the parent goal above them. A single shared login service is correct only because the concentrated review keeps that parent goal satisfied while the child goals improve. If the concentration made accounts less safe on the whole, the efficiency underneath would not matter, because it would be serving a parent goal that is no longer being met.
 
 ## When making something shared is the right call
 

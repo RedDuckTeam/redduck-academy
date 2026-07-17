@@ -26,7 +26,7 @@ faq:
 
 ## What holds no state actually means
 
-A component is stateful when something inside it changes as a result of handling a call, and later calls can see the change. A component is stateless when nothing inside it changes. Every value it needs, the identity of the caller, the amount, the limits that apply, arrives with the call itself. The component reads those values, does its work, returns an answer, and keeps none of them. The next call starts from the same blank slate as the one before it. Nothing the component stored is different because it handled your request.
+A component is stateful when something inside it changes as a result of handling a call, and later calls can see the change. A component is **stateless** when nothing inside it changes. Every value it needs, the identity of the caller, the amount, the limits that apply, arrives with the call itself. The component reads those values, does its work, returns an answer, and keeps none of them. The next call starts from the same blank slate as the one before it. Nothing the component stored is different because it handled your request.
 
 ## The web already works this way
 
@@ -38,7 +38,7 @@ Every piece of state a component holds is a piece an attacker can try to manipul
 
 ## One component, many users, no interference
 
-A stateless component can serve many independent users at the same time without interference, because no call leaves a trace that another call could read or change. Two users' requests can run side by side and never touch, since neither one writes anything the other one reads. This is the same reason a stateless singleton, the single shared component from the singleton pattern, is safe to hand to everyone at once. One copy, reviewed once, used by all, and no user's call disturbs another's. A component that keeps no per-user state, the account-generic design from the relevance and genericity module, is stateless in exactly this way.
+A stateless component can serve many independent users at the same time without interference, because no call leaves a trace that another call could read or change. Two users' requests can run side by side and never touch, since neither one writes anything the other one reads. This is the same reason a stateless singleton, the single shared component from [the **singleton** pattern](/courses/engineering-principles/singleton-and-factory/the-singleton-pattern), is safe to hand to everyone at once. One copy, reviewed once, used by all, and no user's call disturbs another's. A component that keeps no per-user state, the [**account-generic**](/courses/engineering-principles/relevance-and-genericity/account-generic-design) design, is stateless in exactly this way.
 
 ## When a component should remember
 

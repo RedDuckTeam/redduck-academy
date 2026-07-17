@@ -161,7 +161,7 @@ pub struct Deposit<'info> {
 
 The Accounts struct declares which accounts the instruction touches and how. Before your handler runs, Anchor validates every account against the struct's rules. Inside the handler, `ctx.accounts.vault` is already a typed `Vault`. You write business logic. Anchor handles the validation and serialization on either side.
 
-The accounts struct is the function signature. It declares what the instruction needs, in the same way a normal function declaration says what arguments it takes. The handler is the function body. It says what to do with what was passed in. Each instruction is one logical unit with two halves. Each instruction is one logical unit with two halves.
+The accounts struct is the function signature. It declares what the instruction needs, in the same way a normal function declaration says what arguments it takes. The handler is the function body. It says what to do with what was passed in. Each instruction is one logical unit with two halves.
 
 The struct fields can be more than just account references. They can be types that carry validation rules. `Signer<'info>` means "this account must have signed the transaction." `Account<'info, Vault>` means "this account must be owned by the program, and its data must deserialize cleanly into the `Vault` struct." `Program<'info, System>` means "this account must be the System Program." These types are checked by Anchor before your handler runs, and any failure produces a clear error rather than a runtime panic in the middle of your logic.
 

@@ -25,9 +25,9 @@ faq:
 
 ## Two services, one that remembers you and one that does not
 
-Start with the difference stated plainly. An account-generic system holds no mapping from a user's identity to that user's stored state. Everything it needs to answer a request arrives with the request, and once the request is done, nothing about that particular caller is kept.
+Start with the difference stated plainly. An **account-generic** system holds no mapping from a user's identity to that user's stored state. Everything it needs to answer a request arrives with the request, and once the request is done, nothing about that particular caller is kept.
 
-A currency conversion service is a clean example. You send an amount and two currency codes, and it sends back the converted amount. It keeps no record of who asked. The next caller could be anyone, and they get an answer computed exactly the same way. The service has no idea who you are, and it does not need one, because your identity has no effect on what one hundred dollars is in euros. This is the Irrelevance Principle applied to identity. Who is asking is irrelevant to the conversion, so the design does not track it.
+A currency conversion service is a clean example. You send an amount and two currency codes, and it sends back the converted amount. It keeps no record of who asked. The next caller could be anyone, and they get an answer computed exactly the same way. The service has no idea who you are, and it does not need one, because your identity has no effect on what one hundred dollars is in euros. This is the [**Irrelevance Principle**](/courses/engineering-principles/relevance-and-genericity/the-irrelevance-principle) applied to identity. Who is asking is irrelevant to the conversion, so the design does not track it.
 
 Now the opposite, done correctly. A bank's ledger is account-specific on purpose. The bank has to know how much each customer holds, and it has to keep knowing across every deposit and withdrawal, for years. Tracking each customer's balance over time is the entire point of the service, so the customer's identity sits right at the core. A ledger that forgot who owned what would be broken, because the record of who owns what is the ledger itself.
 
@@ -72,7 +72,7 @@ An account-generic system has none of that. There is no per-user state sitting i
 
 An account-generic service does not need to know in advance who will call it. There is no account to create first, no registration, no setup. A new caller sends a well-formed request and gets a correct answer on the first try, the same as every existing caller. Anything that wants to build on top can do so without asking permission or being known ahead of time.
 
-This is closely related to stateless design, the broader idea of a system that keeps nothing between one request and the next. Account-generic design is that idea aimed squarely at user identity. Of all the things a system could hold on to between calls, the per-user record is often the one it can safely drop.
+Of all the things a system could hold on to between calls, the per-user record is often the one it can safely drop. A service that never needs to know who is asking has no reason to remember anyone.
 
 ## Check what you store per user
 

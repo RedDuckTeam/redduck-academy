@@ -108,9 +108,9 @@ With a standard, each participant implements the one shared interface and nothin
 
 ## A standard is a constraint you accept on purpose
 
-A standard is not free. It is a constraint. It fixes decisions that an individual participant might have preferred to make differently, and it fits some uses more comfortably than others. A standard that many participants already depend on is also very slow to change, because changing it means every one of them has to move at once. The flexibility you give up is real.
+A **standard** is not free. It is a constraint. It fixes decisions that an individual participant might have preferred to make differently, and it fits some uses more comfortably than others. A standard that many participants already depend on is also very slow to change, because changing it means every one of them has to move at once. The flexibility you give up is real.
 
-This is the tradeoff from the design tradeoffs module. The parent goal is compatibility across the whole ecosystem. The child goal a participant gives up is the freedom to shape its own interface exactly as it likes. Standardizing trades the child goal for the parent one. It is worth doing when compatibility across the group matters more than local control, and it is the wrong move when it does not.
+This is the **tradeoff** from [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not). The parent goal is compatibility across the whole ecosystem. The child goal a participant gives up is the freedom to shape its own interface exactly as it likes. Standardizing trades the child goal for the parent one. It is worth doing when compatibility across the group matters more than local control, and it is the wrong move when it does not.
 
 ## Count the integrations before you commit
 

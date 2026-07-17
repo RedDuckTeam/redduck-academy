@@ -32,13 +32,19 @@ A system creates many instances of the same kind of object. Whatever they are, s
 
 The obvious approach is a registry, a central lookup table that maps a name to the instance, kept current by someone. It works, and it carries three standing costs. It must be queried, so every consumer has to reach it. It must be kept current, so someone owns the job of updating it. And it must be trusted, because if the registry is wrong, or out of date, or tampered with, every consumer that believed it is deceived at once. The registry becomes a thing everyone has to trust, and a thing an attacker would like to control.
 
+## The factory names what it makes
+
+The component that creates all those instances has a name. It is a **factory**: a single place that produces every instance of a kind, so they are all built the same way instead of being assembled by hand wherever one happens to be needed. Because the factory is the one place each instance comes from, it is also the natural place to decide how an instance is named. It can hand every instance a name from a central registry, or it can derive each instance's identifier from the instance's own content. That second choice, a **content-derived identifier**, removes a dependency the first one cannot.
+
 ## Let the content name itself
 
-There is a way to identify an instance that needs no registry at all. Derive the identifier from the object's own content.
+A content-derived identifier needs no registry at all.
 
 Git does exactly this. A commit's identifier is a hash of the commit's content and its history: the files, the message, the author, and the identifier of the commit before it. No server assigns the identifier and no table stores it. Each party computes it directly from the commit's content. Anyone holding the commit can run the same computation and get the same identifier, and if the two match, the commit is genuine.
 
 Two things follow, and they are the whole point. Two independent parties always derive the same identifier for the same content, because the identifier is a function of the content and nothing else. And no party can substitute different content under the same identifier, because changing any part of the content changes the identifier it produces. There is no registry to query and no authority to trust. The check is something each party does for itself, from material it already holds.
+
+The same idea runs a deduplicating backup system. Every file is stored under a name computed from its contents, so two identical files anywhere on the system produce the same name and are kept only once. No index records which files happen to match. The shared name falls out of the shared content, exactly as it does for a commit.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Deriving an identifier from content and verifying it without a registry</title><desc>A commit's content is run through a hash to produce its identifier. Any party holding the same content recomputes the same identifier, so two independent parties agree without a registry or an authority. Changing any part of the content changes the identifier, which makes a substitution detectable.</desc>
   <defs>
@@ -73,7 +79,7 @@ Two things follow, and they are the whole point. Two independent parties always 
 
 ## Why the registry was never needed
 
-This is the irrelevance principle from the Relevance and genericity module, applied to identity. The registry looked essential, but it is irrelevant, because the identifier is derivable from inputs you already have. Once the identifier can be computed from the content, the lookup table that used to map names to instances has nothing left to do. You have removed the thing that had to be trusted. The registry is gone, and with it the question of whether to believe it.
+This is the [**Irrelevance Principle**](/courses/engineering-principles/relevance-and-genericity/the-irrelevance-principle), applied to identity. The registry looked essential, but it is irrelevant, because the identifier is derivable from inputs you already have. Once the identifier can be computed from the content, the lookup table that used to map names to instances has nothing left to do. You have removed the thing that had to be trusted. The registry is gone, and with it the question of whether to believe it.
 
 ## The limitation, stated exactly
 

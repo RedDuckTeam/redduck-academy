@@ -44,7 +44,7 @@ The EVM charges gas for every operation. A storage read costs around 2,100 gas t
 
 This pricing is fine for short, deterministic computation. It becomes a problem in three situations.
 
-First, when the work is unbounded. A loop over a dynamic array can run forever. If the array is attacker-controlled, an attacker can fill it until any function that iterates over it exceeds the block gas limit and reverts. The contract becomes unusable. This is denial-of-service through unbounded iteration, the same class of bug you saw in an earlier lesson. (Replace the empty `[previous lessons]()` link with a link to the specific lesson, and add the missing period.)
+First, when the work is unbounded. A loop over a dynamic array can run forever. If the array is attacker-controlled, an attacker can fill it until any function that iterates over it exceeds the block gas limit and reverts. The contract becomes unusable. This is denial-of-service through unbounded iteration, the same class of bug you saw in an earlier lesson.
 
 Second, when the work is large but bounded. Iterating over 10,000 known elements doesn't risk DoS but costs hundreds of thousands of gas. Real users won't pay that for a single transaction.
 
@@ -208,8 +208,6 @@ This is the shape. Learn to recognize it. Much of non-trivial Solidity engineeri
 A natural concern: if the user is computing the answer, what stops them from lying? The answer is that they're free to lie, but lying doesn't help them.
 
 A lie has to pass verification. The verification logic is the contract's own code, running deterministically on the chain. The user can't influence it. They can only submit inputs, and whatever they submit gets fed into the verification function. If the inputs don't produce a passing result, the contract reverts.
-
-Cut this paragraph. The same point — a failed verification reverts and changes nothing, so a lie only costs the liar gas — is already made in "The reframe," in worked example 1, and in worked example 2. Keep only the new content that follows: the model holds only if the verification itself is correct.
 
 The security model only works if the verification is correct. A buggy Merkle verification that accepts invalid proofs is a disaster. A buggy sqrt verification that accepts wrong roots silently corrupts whatever consumes the root. The verification step is the security boundary, and it has to be airtight.
 
