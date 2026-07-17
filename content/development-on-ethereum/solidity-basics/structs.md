@@ -42,9 +42,9 @@ If you've used Go, Rust, TypeScript, or C, the basic model is the same. Two thin
 
 A struct is a named bundle of fields. Two things to internalize before any syntax.
 
-First, field access is by name, not by position. This is the main difference from arrays, which use positions, and from mappings, which use keys. When you have a `Payment` struct with an `amount` field, you read it as `payment.amount`. The compiler maps the name to the field's location and reads it for you. You never work with positions directly. Structs are the right choice when the things you're bundling are different in kind, not different in position.
+First, field access is by name rather than by position. This is the main difference from arrays, which use positions, and from mappings, which use keys. When you have a `Payment` struct with an `amount` field, you read it as `payment.amount`. The compiler maps the name to the field's location and reads it for you. You never work with positions directly. Structs are the right choice when the things you're bundling are different in kind rather than in position.
 
-Second, structs are templates, not values until instantiated. Declaring `struct Payment { ... }` only defines the shape. To actually have a payment, you need to create an instance, either as a state variable, a local variable, or as a value sitting inside a mapping or array. The instance is where the data lives. The struct definition is just the recipe.
+Second, structs are templates that only become values once instantiated. Declaring `struct Payment { ... }` only defines the shape. To actually have a payment, you need to create an instance, either as a state variable, a local variable, or as a value sitting inside a mapping or array. The instance is where the data lives. The struct definition is just the recipe.
 
 These two ideas explain why some operations don't exist. You can't compare two structs with `==`, because there's no general definition of equality across all field types. You can't have a struct as a mapping key, because keys have to be hashable value types and structs aren't. You can't return a struct that contains a mapping, because the mapping has no enumerable content to copy out.
 
@@ -68,7 +68,7 @@ A few rules.
 
 **Field types can be almost anything.** Primitives, arrays, mappings, other structs. The one restriction is that a struct can't contain a field of its own type directly. More on that below.
 
-**No storage qualifiers inside the definition.** When you have a `string` field inside a struct, you write `string message;`, not `string memory message;`. Storage location is determined by where the struct instance lives, not by where each field is declared. A struct instance in storage stores its strings in storage. A struct instance in memory stores them in memory. The fields don't get a separate choice.
+**No storage qualifiers inside the definition.** When you have a `string` field inside a struct, you write `string message;`, not `string memory message;`. Storage location is determined by where the struct instance lives rather than by where each field is declared. A struct instance in storage stores its strings in storage. A struct instance in memory stores them in memory. The fields don't get a separate choice.
 
 **No recursion.** A struct cannot contain a field of its own type directly. This is a compile error:
 

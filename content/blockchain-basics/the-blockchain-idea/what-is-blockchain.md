@@ -42,7 +42,7 @@ The blockchain is the answer to all of those questions at once. It works because
 
 ## The structure, built up
 
-Step one. You need to record a list of items, in order. The word items is just a placeholder — we haven't said yet what they are. The list grows over time as new items are added.
+Step one. You need to record a list of items, in order. The word items is just a placeholder. We haven't said yet what they are. The list grows over time as new items are added.
 
 A naive list would look like this:
 
@@ -172,7 +172,7 @@ Step three. Apply what you learned about Merkle trees. Inside each block, the it
 
 </svg>
 
-Step four. Make every party in the network hold a full copy of the chain. Not just a few servers, not a centralised database, but thousands of independent computers each running the same software, each holding the same data, each verifying every new block against the same rules. The picture below shows the same chain replicated across many machines.
+Step four. Make every party in the network hold a full copy of the chain. Instead of a few servers or a centralised database, thousands of independent computers each run the same software, each hold the same data, and each verify every new block against the same rules. The picture below shows the same chain replicated across many machines.
 
 <svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Same blockchain copied across Node 1 to Node 5, and thousands more</title><desc>Five boxes labeled Node 1 through Node 5 each show the same chain of blocks, with a note for thousands more nodes. Every node holds its own copy of the same chain, so tampering with one copy doesn't change any other.</desc>
   <!-- Node 1 -->
@@ -260,8 +260,8 @@ Tampering with the past is detectable, because each block's hash binds it to the
 
 Adding to the present is easy, because anyone running the software can produce a new block that points at the current tip of the chain.
 
-Disagreement can still happen, because two nodes can produce two different new blocks at roughly the same time. The mechanism that decides which one becomes canonical is called **consensus**, and it gets its own lesson later in this module.
+Disagreement can still happen, because two nodes can produce two different new blocks at roughly the same time. The mechanism that decides which one becomes canonical is called **consensus**, and it gets its own lesson later.
 
 That's a blockchain. A replicated, append-only, hash-linked sequence of blocks, where every node holds the same copy, every block proves the integrity of every previous block, and the structure as a whole is tamper-evident even though no central authority maintains it.
 
-Everything else you'll meet in the rest of this course, transactions, smart contracts, tokens, mining, staking, dApps, NFTs, DeFi — all of it — is what people put inside the items, or what they build on top of the chain once they trust its contents. The chain itself is just the structure described above. Once you see that, the mystery is gone.
+Everything else you'll meet in the rest of this course, transactions, smart contracts, tokens, mining, staking, dApps, NFTs, DeFi, all of it, is what people put inside the items, or what they build on top of the chain once they trust its contents. The chain itself is just the structure described above. Once you see that, the mystery is gone.

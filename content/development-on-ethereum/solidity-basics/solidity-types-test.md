@@ -65,10 +65,10 @@ function build() public pure returns (uint256[] memory) {
 }
 ```
 
-- [ ] Compiles; returns `[1, 2, 3]`  <!-- a:69fba5fe1a3915235faad00d -->
-- [ ] Compiles; reverts at runtime when `push` is called  <!-- a:69fba6131a3915235faad00e -->
+- [ ] Compiles and returns `[1, 2, 3]`  <!-- a:69fba5fe1a3915235faad00d -->
+- [ ] Compiles, but reverts at runtime when `push` is called  <!-- a:69fba6131a3915235faad00e -->
 - [x] Compile error: memory arrays don't support `push`  <!-- a:69fba61d1a3915235faad00f -->
-- [ ] Compiles; returns `[1, 2]` (the `push` is silently ignored)  <!-- a:69fba6201a3915235faad010 -->
+- [ ] Compiles and returns `[1, 2]` (the `push` is silently ignored)  <!-- a:69fba6201a3915235faad010 -->
 
 <!-- q:69fba62a1a3915235faad011 -->
 Two functions read from data structures using a value that was never written:
@@ -87,9 +87,9 @@ contract A {
 What happens when `readMissing` is called on a freshly deployed contract?
 
 - [ ] Both reads return `0`  <!-- a:69fba6811a3915235faad012 -->
-- [x] `m[999]` returns `0`; `arr[999]` reverts  <!-- a:69fba6881a3915235faad013 -->
+- [x] `m[999]` returns `0` while `arr[999]` reverts  <!-- a:69fba6881a3915235faad013 -->
 - [ ] Both reads revert  <!-- a:69fba6921a3915235faad014 -->
-- [ ] `m[999]` reverts; `arr[999]` returns `0`  <!-- a:69fba69a1a3915235faad015 -->
+- [ ] `m[999]` reverts while `arr[999]` returns `0`  <!-- a:69fba69a1a3915235faad015 -->
 
 <!-- q:69fba6bb1a3915235faad016 -->
 A contract starts with a balance of 0. An external caller invokes the following function with 1 ether attached:
@@ -105,7 +105,7 @@ contract Vault {
 - [ ] 0, because the deposit is only credited after the function returns  <!-- a:69fba6db1a3915235faad017 -->
 - [x] 1 ether, because the deposit is credited before the function body runs  <!-- a:69fba6f31a3915235faad018 -->
 - [ ] Reverts because `address(this).balance` is not allowed in payable functions  <!-- a:69fba6f91a3915235faad019 -->
-- [ ] An undefined value; the order is not guaranteed  <!-- a:69fba7071a3915235faad01a -->
+- [ ] An undefined value, because the order is not guaranteed  <!-- a:69fba7071a3915235faad01a -->
 
 <!-- q:69fba70e1a3915235faad01b -->
 Two functions both compute "7 percent of `x`" using integer math:
@@ -143,7 +143,7 @@ What happens when this function is called with `value = 5`?
 - [ ] Returns `Status.С` (5 modulo 3 = 2, but indexing wraps around to A)  <!-- a:69fba7971a3915235faad021 -->
 - [ ] Returns `Status.C` (out-of-range values are clamped to the highest valid value)  <!-- a:69fba7a61a3915235faad022 -->
 - [x] Reverts the transaction  <!-- a:69fba7ae1a3915235faad023 -->
-- [ ] Returns an undefined value; behavior depends on the compiler version  <!-- a:69fba7b71a3915235faad024 -->
+- [ ] Returns an undefined value, and behavior depends on the compiler version  <!-- a:69fba7b71a3915235faad024 -->
 
 <!-- q:69fba7cd1a3915235faad025 -->
 Two contracts each declare a single state variable:

@@ -6,8 +6,8 @@ order: 8
 faq:
   - question: Is a variable marked private in a Solidity contract actually secret?
     answer: No. The `private` keyword only stops other Solidity source code from
-      referencing the variable by name; it is a compiler rule, not a security
-      feature. Every full node stores every contract's storage, and anyone can
+      referencing the variable by name. It is only a compiler rule, so it gives
+      you no real secrecy. Every full node stores every contract's storage, and anyone can
       read any slot with a single JSON-RPC call (`eth_getStorageAt`) or a tool
       like `cast storage`. Storing a secret code, seed, or password in a private
       variable means it is fully readable on chain, which is a recurring source
@@ -23,7 +23,7 @@ faq:
       gas.
   - question: Where does Solidity store the values in a mapping or a dynamic array?
     answer: Not next to your other variables. For a dynamic array, its declared slot
-      only holds the length; the elements live starting at keccak256 of that
+      only holds the length. The elements live starting at keccak256 of that
       slot number, with element i at that hash plus i. For a mapping, the
       declared slot stays empty forever, and each value sits at keccak256 of the
       key concatenated with the slot number. Because these positions come from
@@ -31,13 +31,13 @@ faq:
       contract address and the slot layout can still compute and read them.
   - question: Why can't I read all the keys in a mapping or return a whole mapping
       from a function?
-    answer: A mapping keeps no list of which keys have been set; every possible key
+    answer: A mapping keeps no list of which keys have been set. Every possible key
       conceptually already exists with a default value of zero, and values are
       scattered across hash-derived slots with no index. So there is nothing to
       iterate over, and a missing key is indistinguishable from one deliberately
       set to zero. If you need to enumerate keys, keep a separate array of them
       alongside the mapping. Mappings also cannot be returned from functions
-      because there is no finite way to serialize them; expose a getter for one
+      because there is no finite way to serialize them. Expose a getter for one
       key instead.
 ---
 

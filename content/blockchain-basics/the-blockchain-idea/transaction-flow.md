@@ -125,7 +125,7 @@ No cryptography has happened yet. No network communication has happened yet. The
 
 ### Step 2: The wallet signs the request
 
-The wallet computes a signature over the entire request, using the user's private key. This is the same signing operation from the cryptography module. The signature is appended to the request.
+The wallet computes a signature over the entire request, using the user's private key. This is the same signing operation from the cryptography lessons. The signature is appended to the request.
 
 Two things matter about this step. The signature mathematically proves the user approved the exact content of the request, and changing even one bit of the request after this point will invalidate the signature. From now on, the request is tamper-evident in the same sense the chain itself is, but at the level of a single message rather than a whole history.
 
@@ -141,13 +141,13 @@ If the checks pass, the node adds the request to its local buffer of pending req
 
 The receiving node announces the new request to its peers. Each peer that doesn't already have it asks for it, validates it themselves, and adds it to their own buffer. They then announce to *their* peers. Within seconds, most of the network is aware of the request and has independently validated that it's well-formed.
 
-The validation happens at every node, not just the first one. This is part of what makes the system trustless. The user does not have to trust the first node they sent the request to, because every other node will check the same things independently.
+The validation happens at every node rather than just the first one. This is part of what makes the system trustless. The user does not have to trust the first node they sent the request to, because every other node will check the same things independently.
 
 ### Step 5: A block producer assembles a new block
 
 Periodically, one participant earns the right under the consensus rules to propose the next block. This is the costly-participation mechanism from the consensus lesson: in proof-of-work systems it's whoever finishes the puzzle, in proof-of-stake systems it's whoever the protocol selects from the staked validators.
 
-That participant looks at their local buffer of pending requests, picks a set of them, usually prioritising the ones offering the highest fees, and assembles them into a block. The block has the structure from earlier in this module: a header containing the hash of the previous block plus a Merkle root summarising all the requests inside, then the requests themselves underneath.
+That participant looks at their local buffer of pending requests, picks a set of them, usually prioritising the ones offering the highest fees, and assembles them into a block. The block has the structure from earlier: a header containing the hash of the previous block plus a Merkle root summarising all the requests inside, then the requests themselves underneath.
 
 This is the turning point. Up to here, the user's request was waiting in mempools as a pending item. From here, if everything goes right, it's about to become part of the permanent record.
 
@@ -173,6 +173,6 @@ Eight steps, every one using a concept already in your head, ending with a perma
 
 This is what a blockchain *does*. The rest of this course is about the variations between chains, the edge cases, the failure modes, and the application layer built on top. But the flow above is the core. Every blockchain you'll ever meet runs some version of it.
 
-## Where this goes next
+## The flow you can now trace
 
-The walkthrough above assumed everything went smoothly. In reality, two block producers can earn the right to propose a block at roughly the same moment, with different sets of requests inside their respective blocks. The network momentarily holds two versions of "the next block." Half the nodes saw one first, half saw the other. The next lesson is about exactly this case: what happens when the network temporarily disagrees, and how it re-converges on a single shared history without anyone in charge.
+You can now trace a change to a blockchain from end to end: a user signs a request in their wallet, the network validates and gossips it, a block producer bundles it into a block, and every node independently checks and appends the result. That is the core loop every chain runs. Every chain you'll meet is a variation on one of these steps, running the same underlying loop.

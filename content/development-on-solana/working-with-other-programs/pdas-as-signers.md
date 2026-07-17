@@ -7,7 +7,7 @@ faq:
   - question: How can a program sign for a PDA that has no private key?
     answer: A Program Derived Address has no private key, so it can't produce a
       normal signature. Instead your program calls invoke_signed and passes the
-      PDA's seeds; the runtime appends your program's ID, re-derives the
+      PDA's seeds. The runtime appends your program's ID, re-derives the
       address, and if it matches an account in the call, marks it as a signer
       just as if a real signature had been given. In effect, the seeds are the
       signature, and only the program whose ID was used to create the PDA can
@@ -26,7 +26,7 @@ faq:
       personal token account). To move tokens out, the Token Program requires
       the owner to sign, so your program signs on the PDA's behalf via
       invoke_signed. From the Token Program's point of view this looks identical
-      to a normal wallet-authorized transfer; it has no concept of PDAs at all.
+      to a normal wallet-authorized transfer. It has no concept of PDAs at all.
 ---
 
 > A PDA has no private key. Nobody can sign a transaction with it the normal way. But programs need PDAs to be able to act on the chain, to authorize transfers out of vaults, to mint tokens from pools, to approve withdrawals from treasuries. The runtime's resolution is to let a program sign on behalf of any PDA derived under its own program ID, by submitting the seeds. The seeds are the signature. Once that one idea clicks, every pattern in real Solana code involving program-controlled funds works the same way.

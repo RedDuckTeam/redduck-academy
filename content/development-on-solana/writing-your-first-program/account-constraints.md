@@ -15,7 +15,7 @@ faq:
       Program, but "create" alone is ambiguous. payer names which field's
       balance funds the rent deposit, and space says how many bytes to allocate
       (8 bytes for the discriminator plus your struct's fields, often written 8
-      + Vault::INIT_SPACE). The three are inseparable; drop payer or space and
+      + Vault::INIT_SPACE). The three are inseparable. Drop payer or space and
       the program will not build.
   - question: What does has_one do in an Anchor constraint?
     answer: "has_one = authority is a cross-field check: it reads the authority
@@ -90,7 +90,7 @@ A handful of constraints cover the vast majority of real-world programs. Each on
 
 **`has_one = some_field`**. Cross-field check. The constraint says: read the value of a field on this account whose name matches `some_field`, and verify it equals the public key of the field named `some_field` in the Accounts struct. The classic use is a vault that stores its authority's pubkey inside its data, and an instruction that takes the authority as a Signer. `has_one = authority` makes Anchor confirm the signer is in fact the recorded authority, which is exactly the check the program would otherwise need to write by hand and would occasionally forget.
 
-**`seeds = [...]`**** with ****`bump`**. The account must live at a Program-Derived Address derived from these seeds. The seeds can mix byte strings, the keys of other accounts, and arbitrary values. The bump constraint tells Anchor to validate the canonical bump for that PDA. PDAs are deep enough to deserve their own treatment, so for now, recognize the syntax when you see it and know that any account constrained this way lives at an address your program controls.
+**`seeds = [...]` with `bump`**. The account must live at a Program-Derived Address derived from these seeds. The seeds can mix byte strings, the keys of other accounts, and arbitrary values. The bump constraint tells Anchor to validate the canonical bump for that PDA. PDAs are deep enough to deserve their own treatment, so for now, recognize the syntax when you see it and know that any account constrained this way lives at an address your program controls.
 
 **`address = some_pubkey`**. Pin the account to a specific known address. Useful for built-in programs, fixed oracle accounts, or any account whose identity is hardcoded at compile time. Often paired with `UncheckedAccount` when no type fits but you do know exactly which account should be there.
 

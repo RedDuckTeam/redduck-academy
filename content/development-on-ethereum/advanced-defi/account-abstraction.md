@@ -30,7 +30,7 @@ faq:
     answer: Yes, account abstraction makes both possible. With ERC-4337 a paymaster
       contract can agree to cover the gas, either sponsoring first-time users
       entirely or accepting payment in a token like USDC and paying the actual
-      ETH cost on your behalf; with EIP-7702 a relayer can submit the
+      ETH cost on your behalf. With EIP-7702 a relayer can submit the
       transaction for you. This turns onboarding from 'first buy ETH, then use
       our app' into 'just use our app, we'll cover gas,' and lets users hold and
       spend stablecoins without ever needing ETH in their wallet.
@@ -147,13 +147,13 @@ The idea: introduce a new transaction type (type `0x04`, the SetCode transaction
   <text x="380" y="124" font-family="monospace" font-size="10" font-style="italic" fill="#565653">When anyone calls 0xAlice...,</text>
   <text x="380" y="138" font-family="monospace" font-size="10" font-style="italic" fill="#565653">nothing executes. It's a wallet,</text>
   <text x="380" y="152" font-family="monospace" font-size="10" font-style="italic" fill="#565653">not a contract.</text>
-  <text x="40" y="208" font-family="monospace" font-size="11" font-weight="bold">Step 1 — Alice signs an authorization with her private key:</text>
+  <text x="40" y="208" font-family="monospace" font-size="11" font-weight="bold">Step 1. Alice signs an authorization with her private key:</text>
   <rect x="40" y="222" width="640" height="80" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
   <text x="60" y="246" font-family="monospace" font-size="10" font-weight="bold">Authorization tuple:</text>
   <text x="60" y="266" font-family="monospace" font-size="10">  chainId:      1</text>
   <text x="60" y="282" font-family="monospace" font-size="10">  address:      0xSmartWalletImpl...     ← contract whose code to use</text>
   <text x="60" y="298" font-family="monospace" font-size="10">  nonce:        7</text>
-  <text x="40" y="324" font-family="monospace" font-size="11" font-weight="bold">Step 2 — Anyone submits a type-0x04 transaction with that authorization:</text>
+  <text x="40" y="324" font-family="monospace" font-size="11" font-weight="bold">Step 2. Anyone submits a type-0x04 transaction with that authorization:</text>
   <rect x="40" y="340" width="640" height="80" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="60" y="362" font-family="monospace" font-size="10">  type-0x04 transaction</text>
   <text x="60" y="378" font-family="monospace" font-size="10">  - authorization_list: [ Alice's signed authorization ]</text>

@@ -12,7 +12,7 @@ faq:
       if both groups keep mining, the chain permanently splits into two.
   - question: Who actually decides whether a Bitcoin upgrade happens, miners or
       someone else?
-    answer: Nodes are the real backstop, not miners. Miners produce blocks, but the
+    answer: Nodes are the real backstop rather than miners. Miners produce blocks, but the
       people running nodes, especially exchanges, custodians, and large
       merchants, decide which blocks count as valid. During the SegWit fight in
       2017, users ran software that would reject non-signaling blocks, and

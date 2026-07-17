@@ -31,7 +31,7 @@ faq:
       answer.
 ---
 
-> The last module ended with a promise: the next thing you'd learn is the cryptography that makes blockchains possible at all. This lesson keeps that promise by starting with the smallest, simplest cryptographic tool there is: hashing. It's a function that takes any input and returns a short, fixed-size output, and it's the foundation that every blockchain rests on. Everything else in cryptography (signatures, addresses, identity, the integrity of a block) is built on top of it.
+> The previous lesson ended with a promise: the next thing you'd learn is the cryptography that makes blockchains possible at all. This lesson keeps that promise by starting with the smallest, simplest cryptographic tool there is: hashing. It's a function that takes any input and returns a short, fixed-size output, and it's the foundation that every blockchain rests on. Everything else in cryptography (signatures, addresses, identity, the integrity of a block) is built on top of it.
 
 ## The one-sentence definition
 

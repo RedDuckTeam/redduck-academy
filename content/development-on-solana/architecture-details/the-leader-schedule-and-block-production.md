@@ -32,7 +32,7 @@ faq:
   - question: Why does paying a higher priority fee help my Solana transaction land?
     answer: The leader chooses which transactions to include and in what order, and
       the standard validator client ranks them by priority fee per compute unit,
-      so a higher bid gets included earlier; you are effectively paying whoever
+      so a higher bid gets included earlier. You are effectively paying whoever
       is leading when your transaction arrives to prioritize it. Because
       leadership changes every four slots, the going rate can shift second to
       second depending on who is leading. Bidding too low risks being skipped
@@ -40,7 +40,7 @@ faq:
       on the table.
 ---
 
-> The previous lecture said "the leader schedule is public and known in advance." This lecture goes into what that schedule actually looks like, how it's computed, and what happens to your transaction once it arrives at a leader's queue. The schedule matters for users because it determines which validator can include your transaction in any given slot, which in turn shapes priority fees, transaction routing, and the entire MEV landscape on Solana. By the end you should understand why a stake-weighted, 4-slot, 2-days-in-advance schedule is what the network actually runs.
+> The previous lecture said "the leader schedule is public and known in advance." That schedule is stake-weighted, assigns each leader four consecutive slots, and is fixed two days ahead. It determines which validator can include your transaction in any given slot, which in turn shapes priority fees, transaction routing, and the entire MEV landscape on Solana. Those three properties, the stake-weighting, the four-slot window, and the two-day lead time, are what the network actually runs on, and each one has a concrete reason behind it.
 
 ## What "the leader" means
 
@@ -175,7 +175,7 @@ This is why priority fees work the way they do. When you attach a high priority 
 
 The 4-slot window also explains why priority fees vary on second-to-second timescales. When a transaction-fee-rich validator is the leader for their window, the going rate for inclusion in those four slots is what they're willing to accept. When a different validator takes over, the going rate can shift. Sophisticated transaction submitters track the leader schedule and adjust their bids based on who's about to lead.
 
-Beyond priority fees, leaders can earn additional revenue from MEV, or maximal extractable value. Because they have full control over transaction ordering within their slots, they can reorder transactions to extract profit — for example by surrounding a user's trade with their own orders (called a sandwich attack), or by arbitraging price differences. Specialized validator software like Jito's client lets leaders accept private order-flow bundles with explicit tips, paid by searchers — bots that identify and exploit profitable transaction orderings — in exchange for guaranteed ordering. A large share of validator revenue on Solana today comes from this kind of MEV tipping rather than from priority fees alone.
+Beyond priority fees, leaders can earn additional revenue from MEV, or maximal extractable value. Because they have full control over transaction ordering within their slots, they can reorder transactions to extract profit, for example by surrounding a user's trade with their own orders (called a sandwich attack), or by arbitraging price differences. Specialized validator software like Jito's client lets leaders accept private order-flow bundles with explicit tips, paid by searchers, bots that identify and exploit profitable transaction orderings, in exchange for guaranteed ordering. A large share of validator revenue on Solana today comes from this kind of MEV tipping rather than from priority fees alone.
 
 The combined leader revenue picture is:
 

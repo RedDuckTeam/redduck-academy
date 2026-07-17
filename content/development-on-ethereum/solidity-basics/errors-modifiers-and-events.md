@@ -22,7 +22,7 @@ faq:
       many functions?
     answer: Use a modifier, which is a named, reusable block of code that wraps a
       function. You write the check once, for example require(msg.sender ==
-      owner, "not owner"), with a special _; placeholder marking where the
+      owner, "not owner"), with a special `_;` placeholder marking where the
       function body gets inserted at compile time, then apply the modifier's
       name to any function. If the rule ever changes, you edit the modifier once
       and every function carrying it updates automatically.
@@ -141,7 +141,7 @@ contract Vault {
 
 Each error declaration looks like a function signature without a body. To trigger one, you write `revert ErrorName(args)`. The error and its arguments are encoded into the transaction's revert data and propagated up.
 
-A frontend reading the revert from a failed transaction sees a structured object, not a raw string. For example, an `InsufficientBalance(1000, 500)` revert tells the frontend exactly how short the user was, which is far more useful than the string `"insufficient balance"`.
+A frontend reading the revert from a failed transaction sees a structured object rather than a raw string. For example, an `InsufficientBalance(1000, 500)` revert tells the frontend exactly how short the user was, which is far more useful than the string `"insufficient balance"`.
 
 `require` was also overloaded to accept a custom error as its second argument starting in 0.8.26 via the via-IR pipeline, with full legacy-pipeline support from 0.8.27:
 
@@ -158,7 +158,7 @@ OpenZeppelin, Solady, and other production-quality libraries have moved to custo
 
 `assert(condition)` reverts if the condition is false, but it produces a different kind of revert from `require`. Where `require` and `revert` produce an `Error(string)` revert, `assert` produces a `Panic(uint256)` revert.
 
-The intent is also different. `assert` is for invariants that should never fail under any circumstances. If `assert(x > 0)` ever fires, it means there's a bug in the contract, not that a user did something wrong. A panic indicates the contract reached a state the developer believed to be unreachable.
+The intent is also different. `assert` is for invariants that should never fail under any circumstances. If `assert(x > 0)` ever fires, it means there is a bug in the contract rather than a mistake by the user. A panic indicates the contract reached a state the developer believed to be unreachable.
 
 In practice, you'll write `assert` rarely. Solidity 0.8 automatically generates `Panic` reverts for arithmetic overflow, division by zero, out-of-bounds array access, and other common conditions that previously needed explicit `assert`. The compiler handles what `assert` used to do.
 

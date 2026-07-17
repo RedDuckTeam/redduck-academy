@@ -20,7 +20,7 @@ faq:
       function find_program_address runs this search.
   - question: How do I compute a PDA address in my TypeScript client?
     answer: Use PublicKey.findProgramAddressSync from @solana/web3.js, passing the
-      same seeds and program ID your on-chain program uses; it returns a tuple
+      same seeds and program ID your on-chain program uses. It returns a tuple
       of the PDA and the canonical bump. The seed bytes must match exactly, so a
       wrong order or calling .toString() instead of .toBuffer() on a pubkey
       produces a different address and fails with a "seeds constraint violated"

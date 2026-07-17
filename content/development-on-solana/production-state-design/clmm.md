@@ -15,14 +15,14 @@ faq:
     answer: In a CLMM, the token mix you must deposit is forced by where your chosen
       range sits relative to the current price. If your whole range is above the
       current price, the pool will only ever sell one token as price rises
-      through it, so you deposit only that token; if the range is entirely
+      through it, so you deposit only that token. If the range is entirely
       below, you deposit only the other. You supply both tokens only when your
       range straddles the current price.
   - question: Can I place a limit order on a CLMM like Raydium's?
     answer: Yes, using a range order, which is a CLMM position exploiting the
       single-sided deposit rule. To sell at a target, you open a tight range
-      just above the current price and deposit only the asset you are selling;
-      if price passes through the range your tokens are swapped out and the
+      just above the current price and deposit only the asset you are selling.
+      If price passes through the range your tokens are swapped out and the
       position ends holding the other token at roughly your target. Unlike a
       true limit order it fills at an average across the range and earns fees
       while filling, so there is a little slippage.
@@ -37,7 +37,7 @@ faq:
       NFT.
 ---
 
-> Raydium's original AMM is an elegant first design: deposit two tokens in equal value, the pool prices swaps via `x * y = k`, you earn fees proportional to your share. The problem the Concentrated Liquidity Market Maker (CLMM) set out to solve is that the standard AMM wastes most of the capital LPs deposit. This lecture covers what concentrated liquidity is, how Raydium CLMM represents it with ticks, why a position below the current price needs only one token rather than two, and what else CLMM changed. The model is not obvious at first, but it explains how concentrated liquidity positions work in every major modern DEX.
+> Raydium's original AMM is an elegant first design: deposit two tokens in equal value, the pool prices swaps via `x * y = k`, you earn fees proportional to your share. The problem the Concentrated Liquidity Market Maker (CLMM) set out to solve is that the standard AMM wastes most of the capital LPs deposit. Concentrated liquidity is the fix. LPs concentrate their capital in a chosen price range, Raydium represents that range with ticks, and a position set below the current price needs only one token instead of two. The model is not obvious at first, but it explains how concentrated liquidity positions work in every major modern DEX.
 
 ## What's wrong with the standard AMM
 
@@ -322,7 +322,7 @@ The advantages over the standard AMM's design:
 - Multiple consumers reading the same window share the cost.
 - Pools with extended observation arrays cover hours or days of history.
 
-CLMM computes the TWAP by averaging tick values (log-price) over time rather than averaging raw price. Because the tick is the log of price, the result is the geometric mean of price over the window. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric mean treats equal ratio changes as equal distances — which matters when prices can swing by large multiples and makes it more useful for risk-bearing applications.
+CLMM computes the TWAP by averaging tick values (log-price) over time rather than averaging raw price. Because the tick is the log of price, the result is the geometric mean of price over the window. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric mean treats equal ratio changes as equal distances, which matters when prices can swing by large multiples and makes it more useful for risk-bearing applications.
 
 ## When CLMM vs the standard AMM
 

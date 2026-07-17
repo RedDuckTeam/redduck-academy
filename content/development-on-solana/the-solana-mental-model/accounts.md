@@ -13,11 +13,11 @@ faq:
       five fields, just filled in differently."
   - question: Where is my Solana token balance stored if it is not inside my wallet?
     answer: Token balances live in their own separate accounts owned by the Token
-      Program, not inside your wallet account. Such a token account holds 165
+      Program. Your wallet account does not hold them. Such a token account holds 165
       bytes recording which token it is, who the authorized user is, and the
       current amount. You are listed inside the data as the authorized user, and
       the Token Program enforces that nobody else can move the balance, even
-      though in the runtime sense the Token Program, not you, owns the account.
+      though in the runtime sense the account is owned by the Token Program rather than by you.
   - question: What keeps another program from writing to my account and stealing my
       tokens?
     answer: The owner field. Before any program code runs, the runtime checks that

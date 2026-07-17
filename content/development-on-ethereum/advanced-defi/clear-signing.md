@@ -56,13 +56,13 @@ For a call to a contract it does not recognize, it has nothing to show. Remember
 <svg role="img" viewBox="0 0 720 410" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What a hardware wallet shows when it cannot decode a transaction</title><desc>The device screen shows the call target, the function name execTransaction, a long block of raw hexadecimal calldata, a signing hash, and a value of 0 ETH. A warning line states the signer is approving bytes the device cannot explain. This is blind signing: the exact screen the Bybit signers approved.</desc>
   <!-- title bar -->
   <rect x="20" y="16" width="680" height="34" fill="#ed4937"/>
-  <text x="360" y="39" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#ffffff" font-weight="bold">BLIND SIGNING — WHAT THE DEVICE SHOWS TODAY</text>
+  <text x="360" y="39" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#ffffff" font-weight="bold">BLIND SIGNING: WHAT THE DEVICE SHOWS TODAY</text>
 
   <!-- device screen (neutral black border: this is the problem) -->
   <rect x="150" y="72" width="420" height="278" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <!-- screen header strip (gray, to contrast with the red clear-signing screen) -->
   <rect x="150" y="72" width="420" height="30" fill="#565653"/>
-  <text x="360" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff" font-weight="bold">HARDWARE WALLET — SIGN?</text>
+  <text x="360" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff" font-weight="bold">HARDWARE WALLET: SIGN?</text>
 
   <text x="172" y="124" font-family="monospace" font-size="11" fill="#565653">To: 0x1Db9…C4a2 (your wallet)</text>
   <text x="172" y="144" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">Call: execTransaction</text>
@@ -162,13 +162,13 @@ You state each requirement as a minimum. `at least +2,800 USDC` means the call m
 <svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What a hardware wallet shows for the same transaction under ERC-8009 clear signing</title><desc>The device screen no longer shows raw calldata. It shows the guaranteed balance changes decoded from the proxy's own parameters: ETH changes by at least minus 1.00, meaning spend at most 1 ETH, and USDC changes by at least plus 2,800.00, meaning receive at least 2,800 USDC. A line states the proxy enforces these on-chain and reverts the transaction if the real change is worse.</desc>
   <!-- title bar -->
   <rect x="20" y="16" width="680" height="34" fill="#ed4937"/>
-  <text x="360" y="39" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#ffffff" font-weight="bold">CLEAR SIGNING WITH ERC-8009 — WHAT THE DEVICE SHOWS</text>
+  <text x="360" y="39" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#ffffff" font-weight="bold">CLEAR SIGNING WITH ERC-8009: WHAT THE DEVICE SHOWS</text>
 
   <!-- device screen (focal box, red border) -->
   <rect x="150" y="74" width="420" height="256" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
   <!-- screen header strip -->
   <rect x="150" y="74" width="420" height="30" fill="#ed4937"/>
-  <text x="360" y="94" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff" font-weight="bold">HARDWARE WALLET — CONFIRM</text>
+  <text x="360" y="94" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff" font-weight="bold">HARDWARE WALLET: CONFIRM</text>
 
   <text x="172" y="128" font-family="monospace" font-size="11" fill="#565653">To: ERC-8009 proxy (known contract)</text>
   <text x="172" y="150" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">Guaranteed balance changes</text>

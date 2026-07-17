@@ -18,7 +18,7 @@ faq:
   - question: What is Firedancer and why does Solana need a second validator client?
     answer: In February 2023 a single bug in the one validator client every Solana
       node ran caused validators to disagree on the chain and halted the network
-      for roughly 19 hours; it was a network-wide failure because there was no
+      for roughly 19 hours. It was a network-wide failure because there was no
       alternative implementation to process the bad block differently.
       Firedancer is an independent validator client written from scratch in C by
       Jump Crypto, created to give Solana the kind of client diversity Ethereum
@@ -38,15 +38,15 @@ faq:
   - question: Do Solana's outages mean the network is fundamentally broken?
     answer: Not according to the pattern the outages reveal. Each one stressed an
       assumption that held in a clean test environment but broke under
-      adversarial real-world load, and each was followed by a targeted fix;
-      often the protocol design itself was sound and the gap was in the single
+      adversarial real-world load, and each was followed by a targeted fix.
+      Often the protocol design itself was sound and the gap was in the single
       implementation rather than the design. Every long-lived chain, including
       Bitcoin and Ethereum, has been through the same build-test-break-fix
       cycle, and Solana's steady cadence of fixes has made the network
       structurally more resilient over time.
 ---
 
-> Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that affected real money, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. This lecture walks through four notable outages, what each one revealed, and what changed. Treat this as a debugging-the-network exercise. Afterward, you'll look at your own programs differently.
+> Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that affected real money, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. Four notable outages make that pattern clear. Treat this as a debugging-the-network exercise. Afterward, you'll look at your own programs differently.
 
 ## Why outages teach more than uptime does
 
@@ -105,7 +105,7 @@ The fix was a multi-month effort across several teams. The scheduler in the Agav
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Four Solana outages and what each revealed</text>
   <rect x="40" y="80" width="640" height="105" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <rect x="40" y="80" width="640" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="98" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Sept 2021 — IDO bot storm</text>
+  <text x="55" y="98" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Sept 2021: IDO bot storm</text>
   <text x="55" y="125" font-family="monospace" font-size="10">Trigger:</text>
   <text x="140" y="125" font-family="monospace" font-size="10" fill="#565653">bots flooded the network with swap txs targeting a popular IDO</text>
   <text x="55" y="145" font-family="monospace" font-size="10">Revealed:</text>
@@ -114,7 +114,7 @@ The fix was a multi-month effort across several teams. The scheduler in the Agav
   <text x="140" y="165" font-family="monospace" font-size="10" fill="#565653">QUIC-based transactions, stake-weighted QoS for forwarding</text>
   <rect x="40" y="200" width="640" height="105" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <rect x="40" y="200" width="640" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="218" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">2022 — NFT mint cascades</text>
+  <text x="55" y="218" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">2022: NFT mint cascades</text>
   <text x="55" y="245" font-family="monospace" font-size="10">Trigger:</text>
   <text x="140" y="245" font-family="monospace" font-size="10" fill="#565653">Candy Machine mints brought repeated transaction-flood events</text>
   <text x="55" y="265" font-family="monospace" font-size="10">Revealed:</text>
@@ -123,7 +123,7 @@ The fix was a multi-month effort across several teams. The scheduler in the Agav
   <text x="140" y="285" font-family="monospace" font-size="10" fill="#565653">priority fees as an economic spam disincentive</text>
   <rect x="40" y="320" width="640" height="105" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
   <rect x="40" y="320" width="640" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="338" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Feb 2023 — block propagation bug</text>
+  <text x="55" y="338" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Feb 2023: block propagation bug</text>
   <text x="55" y="365" font-family="monospace" font-size="10">Trigger:</text>
   <text x="140" y="365" font-family="monospace" font-size="10" fill="#565653">an unusual block triggered a deduplication bug in the validator client</text>
   <text x="55" y="385" font-family="monospace" font-size="10">Revealed:</text>
@@ -132,7 +132,7 @@ The fix was a multi-month effort across several teams. The scheduler in the Agav
   <text x="140" y="405" font-family="monospace" font-size="10" fill="#565653">accelerated work on Firedancer as a second validator client</text>
   <rect x="40" y="440" width="640" height="105" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <rect x="40" y="440" width="640" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="458" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Q1 2024 — high tx failure rate under load</text>
+  <text x="55" y="458" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Q1 2024: high tx failure rate under load</text>
   <text x="55" y="485" font-family="monospace" font-size="10">Trigger:</text>
   <text x="140" y="485" font-family="monospace" font-size="10" fill="#565653">memecoin trading volumes hit Solana's tx forwarding pipeline harder than expected</text>
   <text x="55" y="505" font-family="monospace" font-size="10">Revealed:</text>

@@ -5,8 +5,10 @@
 //   npx tsx scripts/sync-content-db.ts --assign-ids   # write ids into files only, no DB
 //
 // Design:
-//   • INSERT-ONLY. Never updates or deletes an existing row — a removed file must never
-//     drop a DB row that may hold user progress, and edits to prose live in the files.
+//   • INSERT + isHidden. Never deletes a row, and the only column it updates on an existing row
+//     is `isHidden` — visibility carries no user data, so a file can hide/reveal a course, module,
+//     or lesson. A removed file must never drop a DB row that may hold user progress, and edits to
+//     prose live in the files.
 //   • Idempotent. "New" means an id present in the files but not yet in the DB, so it is
 //     safe to re-run: a second run inserts nothing.
 //   • File ids are the source of truth. They live in the reserved [1e9, 2e9) band,
@@ -25,6 +27,7 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
+import { eq } from 'drizzle-orm'
 import yaml from 'yaml'
 import { payloadSchema } from '@redduck/payload-config'
 
@@ -219,17 +222,25 @@ async function main() {
 
   try {
     const [haveCourses, haveModules, haveLessons] = await Promise.all([
-      db.select({ id: courses.id }).from(courses),
-      db.select({ id: modules.id }).from(modules),
-      db.select({ id: lessons.id }).from(lessons),
+      db.select({ id: courses.id, isHidden: courses.isHidden }).from(courses),
+      db.select({ id: modules.id, isHidden: modules.isHidden }).from(modules),
+      db.select({ id: lessons.id, isHidden: lessons.isHidden }).from(lessons),
     ])
-    const courseIds = new Set(haveCourses.map((r) => r.id))
-    const moduleIds = new Set(haveModules.map((r) => r.id))
-    const lessonIds = new Set(haveLessons.map((r) => r.id))
+    const courseHidden = new Map(haveCourses.map((r) => [r.id, r.isHidden ?? false]))
+    const moduleHidden = new Map(haveModules.map((r) => [r.id, r.isHidden ?? false]))
+    const lessonHidden = new Map(haveLessons.map((r) => [r.id, r.isHidden ?? false]))
+    const courseIds = new Set(courseHidden.keys())
+    const moduleIds = new Set(moduleHidden.keys())
+    const lessonIds = new Set(lessonHidden.keys())
 
     const newCourses = cs.filter((c) => !courseIds.has(c.id))
     const newModules = ms.filter((m) => !moduleIds.has(m.id))
     const newLessons = ls.filter((l) => !lessonIds.has(l.id))
+
+    // Existing rows whose `isHidden` changed in the files — the one field this sync updates.
+    const hideCourses = cs.filter((c) => courseIds.has(c.id) && courseHidden.get(c.id) !== c.isHidden)
+    const hideModules = ms.filter((m) => moduleIds.has(m.id) && moduleHidden.get(m.id) !== m.isHidden)
+    const hideLessons = ls.filter((l) => lessonIds.has(l.id) && lessonHidden.get(l.id) !== l.isHidden)
 
     // Referential + rule checks before touching the DB.
     const refErrors: string[] = []
@@ -245,16 +256,25 @@ async function main() {
     }
     if (refErrors.length) fail('Cannot insert new rows:', refErrors)
 
-    const total = newCourses.length + newModules.length + newLessons.length
-    if (total === 0) {
-      console.log('✓ Database is in sync with the content files — nothing to insert.')
+    const insertTotal = newCourses.length + newModules.length + newLessons.length
+    const hideTotal = hideCourses.length + hideModules.length + hideLessons.length
+    if (insertTotal === 0 && hideTotal === 0) {
+      console.log('✓ Database is in sync with the content files — nothing to insert or update.')
       return
     }
 
-    console.log(`${DRY_RUN ? '[dry run] would insert' : 'Inserting'} ${total} new row(s):`)
-    for (const c of newCourses) console.log(`  course  ${c.id}  ${c.slug}`)
-    for (const m of newModules) console.log(`  module  ${m.id}  ${m.slug}  (course ${m.courseId})`)
-    for (const l of newLessons) console.log(`  lesson  ${l.id}  ${l.slug}  (module ${l.moduleId})`)
+    if (insertTotal) {
+      console.log(`${DRY_RUN ? '[dry run] would insert' : 'Inserting'} ${insertTotal} new row(s):`)
+      for (const c of newCourses) console.log(`  course  ${c.id}  ${c.slug}`)
+      for (const m of newModules) console.log(`  module  ${m.id}  ${m.slug}  (course ${m.courseId})`)
+      for (const l of newLessons) console.log(`  lesson  ${l.id}  ${l.slug}  (module ${l.moduleId})`)
+    }
+    if (hideTotal) {
+      console.log(`${DRY_RUN ? '[dry run] would set' : 'Setting'} isHidden on ${hideTotal} existing row(s):`)
+      for (const c of hideCourses) console.log(`  course  ${c.id}  ${c.slug}  → isHidden=${c.isHidden}`)
+      for (const m of hideModules) console.log(`  module  ${m.id}  ${m.slug}  → isHidden=${m.isHidden}`)
+      for (const l of hideLessons) console.log(`  lesson  ${l.id}  ${l.slug}  → isHidden=${l.isHidden}`)
+    }
 
     if (DRY_RUN) {
       console.log('\n[dry run] no changes written.')
@@ -274,9 +294,13 @@ async function main() {
         await tx.insert(lessons).values(
           newLessons.map((l) => ({ id: l.id, title: l.title, slug: l.slug, module: l.moduleId, order: l.order, type: l.type as 'lecture' | 'test', isHidden: l.isHidden })),
         )
+      for (const c of hideCourses) await tx.update(courses).set({ isHidden: c.isHidden }).where(eq(courses.id, c.id))
+      for (const m of hideModules) await tx.update(modules).set({ isHidden: m.isHidden }).where(eq(modules.id, m.id))
+      for (const l of hideLessons) await tx.update(lessons).set({ isHidden: l.isHidden }).where(eq(lessons.id, l.id))
     })
 
-    console.log(`\n✓ Inserted ${total} row(s).`)
+    const done = [insertTotal ? `inserted ${insertTotal} row(s)` : '', hideTotal ? `set isHidden on ${hideTotal} row(s)` : ''].filter(Boolean)
+    console.log(`\n✓ ${done.join(', ')}.`)
   } finally {
     await sql.end({ timeout: 5 })
   }

@@ -10,7 +10,7 @@ faq:
       that takes real time to compute, so the chain itself proves that time
       passed. Transactions are woven in by being hashed into a step, which pins
       each one to a fixed position in the sequence without anyone agreeing on
-      wall-clock time. Crucially, PoH is not consensus; it only orders events
+      wall-clock time. Crucially, PoH is not consensus. It only orders events
       within a single chain, and a separate mechanism (Tower BFT) decides which
       chain is the canonical one."
   - question: Why doesn't Solana have a mempool like Ethereum?
@@ -38,12 +38,12 @@ faq:
       Two SOL transfers between unrelated wallets, or a token swap and an NFT
       mint that share no accounts, run in parallel. The cost is that access
       patterns must be known statically, which makes patterns like walking a
-      linked list of unknown shape awkward on Solana; in exchange, throughput
+      linked list of unknown shape awkward on Solana. In exchange, throughput
       scales with CPU cores rather than being capped at single-threaded
       execution.
 ---
 
-> This lecture zooms out to the protocol layer underneath. How does a transaction actually get from your wallet into a block, and how do thousands of validators agree on the result, in 400 milliseconds? These names may have come up before without a full explanation: Proof of History, Tower BFT, Turbine, Gulf Stream. None of them are magic. Each is an engineering answer to a specific bottleneck that other chains hit and didn't solve. Putting them together shows why Solana looks the way it does and what trade-offs the design accepted along the way.
+> Underneath everything you've built sits a protocol layer. How does a transaction actually get from your wallet into a block, and how do thousands of validators agree on the result, in 400 milliseconds? These names may have come up before without a full explanation: Proof of History, Tower BFT, Turbine, Gulf Stream. None of them are magic. Each is an engineering answer to a specific bottleneck that other chains hit and didn't solve. Putting them together shows why Solana looks the way it does and what trade-offs the design accepted along the way.
 
 ## Why the standard playbook doesn't work at Solana's target throughput
 
@@ -147,7 +147,7 @@ This has three consequences.
 
 First, the leader doesn't waste time during their slot fetching transactions. They have a queue. They process. Tiny startup latency, important when slots are 400ms long.
 
-Second, "front-running the mempool" is impossible because there is no mempool. You cannot see pending transactions in a shared pool and insert your own transactions around them to extract profit, because transactions are not broadcast publicly. They're sent point-to-point to specific leaders. This eliminates one major class of MEV — the practice of extracting profit by manipulating transaction ordering — that Ethereum has to contend with.
+Second, "front-running the mempool" is impossible because there is no mempool. You cannot see pending transactions in a shared pool and insert your own transactions around them to extract profit, because transactions are not broadcast publicly. They're sent point-to-point to specific leaders. This eliminates one major class of MEV, the practice of extracting profit by manipulating transaction ordering, that Ethereum has to contend with.
 
 Third, it shifts MEV pressure elsewhere. The leader sees all transactions arriving at their queue and can decide ordering inside the slot. If a leader wants to extract value, they can reorder transactions within their own slot, or buy private order flow from RPC providers. The MEV problem doesn't disappear, it moves from "everyone watches the mempool" to "leaders have local ordering power."
 
@@ -165,7 +165,7 @@ Turbine is the answer to "how do you propagate a block to 2,000 nodes in 400ms?"
 
 The last piece worth naming, because it's why throughput inside a slot is high in the first place. Solana programs execute in parallel based on the accounts they declare in the transaction's account list. The runtime can run two transactions simultaneously on different cores if their writable account sets don't overlap.
 
-This is the design choice that drove the entire programming model you spent six modules learning. Every transaction declares its accounts up front. The runtime sorts transactions into non-conflicting groups and runs each group on a different CPU core. Two SOL transfers between unrelated wallets run at the same time. A token swap and an NFT mint that share no accounts run at the same time. A program upgrade and any unrelated transaction run at the same time.
+This is the design choice that drove the entire programming model you've been learning. Every transaction declares its accounts up front. The runtime sorts transactions into non-conflicting groups and runs each group on a different CPU core. Two SOL transfers between unrelated wallets run at the same time. A token swap and an NFT mint that share no accounts run at the same time. A program upgrade and any unrelated transaction run at the same time.
 
 The trade-off, as you've internalized by now, is that the access pattern has to be known statically. Walking a linked list whose shape you don't know in advance, or branching to a different program based on data you haven't read yet, are awkward patterns on Solana. In exchange, you get the parallel-execution thesis: throughput scales with cores rather than being capped at single-threaded execution.
 
@@ -215,9 +215,9 @@ Now, putting it together. Here's what actually happens when a user signs a trans
 
 Each step exists because of one of the bottlenecks named at the start. No mempool, because mempool gossip eats time and creates MEV exposure. PoH, because every other step needs an agreed-on clock. Parallel execution, because slots are short and you can't process thousands of transactions sequentially in 400ms. Turbine, because gossip doesn't scale to thousands of validators. Tower BFT, because consensus needs to be fast enough to keep up with block production.
 
-## What this means for you as a programmer
+## Where your program runs in this pipeline
 
-You spent six modules learning to write code that runs inside step 3. Every Anchor constraint you wrote, every PDA you derived, every CPI you composed, runs as part of "leader executes transactions in parallel based on their account lists." That part of the architecture is the only part your program directly interacts with.
+You have been learning to write code that runs inside step 3. Every Anchor constraint you wrote, every PDA you derived, every CPI you composed, runs as part of "leader executes transactions in parallel based on their account lists." That part of the architecture is the only part your program directly interacts with.
 
 But the other parts shape the world your program lives in. Slots are 400 ms because of the propagation budget Turbine provides. Compute units are tightly capped because the leader must finish executing within one slot. Versioned transactions and Address Lookup Tables exist because the 1,232-byte transaction size limit comes from the UDP-packet shape that Turbine uses for shreds. Priority fees matter because the leader controls transaction ordering within their slot and can process higher-fee transactions first. The leader having scheduling power is what makes priority-fee tipping meaningful.
 

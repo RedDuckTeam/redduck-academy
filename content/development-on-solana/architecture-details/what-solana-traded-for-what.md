@@ -12,7 +12,7 @@ faq:
       four-figure range. A Bitcoin or Ethereum full node, by contrast, can run
       on a Raspberry Pi. The cost of Solana's choice is that fewer people can
       afford to run validators independently, creating more centralization
-      pressure; the bet is that hardware keeps getting cheaper and faster, so
+      pressure. The bet is that hardware keeps getting cheaper and faster, so
       today's high requirements will look modest later."
   - question: Why is Solana programming harder than Ethereum for dynamic data structures?
     answer: Every Solana transaction must declare in advance every account it will
@@ -45,7 +45,7 @@ faq:
       before crediting funds.
 ---
 
-> Every design choice in this module came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. This lecture is the honest accounting of what was given up to get those wins. Every design decision in distributed systems has a cost. Solana made specific trades, and understanding them is what separates a developer who can reason about chains from one who just picks whichever chain is currently popular.
+> Every design choice behind Solana came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. What was given up to get those wins deserves an honest accounting. Every design decision in distributed systems has a cost. Solana made specific trades, and understanding them is what separates a developer who can reason about chains from one who just picks whichever chain is currently popular.
 
 ## Throughput in exchange for validator hardware
 
@@ -59,7 +59,7 @@ The defense is also that the hardware curve runs in Solana's favor over time. Ne
 
 ## Parallel execution in exchange for static account declaration
 
-The defining programming-model trade. Every transaction on Solana declares, in advance, every account it will read or write. This is what lets the runtime schedule non-conflicting transactions across multiple cores. It's also what drove the entire mental model you spent module 2 internalizing.
+The defining programming-model trade. Every transaction on Solana declares, in advance, every account it will read or write. This is what lets the runtime schedule non-conflicting transactions across multiple cores. It's also what drove the entire mental model you internalized early in the Solana track.
 
 The cost is real. Walking a linked list whose shape you don't know in advance is awkward. Dynamic dispatch to programs based on runtime data is awkward. Iterating over collections of unknown size is awkward. Patterns that are routine in EVM programming feel awkward or require workarounds in Solana programming.
 
@@ -91,7 +91,7 @@ A user-facing consequence: the median Solana transaction is cheaper than a compa
 
 Ethereum's `CALL` opcode lets any contract call any other contract with arbitrary data. The composability is total. Build a contract that interacts with three protocols you've never heard of? Possible. Build a flash loan that touches twelve different contracts in one transaction? Routine.
 
-Solana's CPI is more constrained. Cross-program calls require declaring the callee's accounts in the outer transaction. The 1,232-byte transaction size limit caps how many accounts can appear, even with address lookup tables raising the practical ceiling. Deep recursive composition exists but is rarer than on Ethereum, and the gas-equivalent cost in compute units scales faster than the call depth would suggest.
+Solana's CPI is more constrained. Cross-program calls require declaring the callee's accounts in the outer transaction. The 1,232-byte transaction size limit caps how many accounts can appear, even with address lookup tables raising the practical ceiling. Deep recursive composition exists but is rarer than on Ethereum, and the cost in compute units scales faster than the call depth would suggest.
 
 The trade is composability versus parallelism. Ethereum's any-call-any model is what makes its DeFi ecosystem so deeply interconnected, with positions across many protocols being usable in single transactions. Solana's account-list model puts a brake on this, which limits some patterns but makes the parallel execution scheduler's job possible. A model where transactions could touch arbitrary accounts at runtime would defeat the entire static-scheduling premise.
 
@@ -115,4 +115,4 @@ None of these are wrong. They're answers to different optimization problems. Bit
 
 When you read someone's "Solana vs Ethereum" opinion piece, the question to ask is which set of trade-offs the author is implicitly weighing. Most arguments are really arguments about which trades matter most for a specific use case. Once you internalize that, you stop having opinions about which chain is "better" in some absolute sense and start having useful opinions about which chain fits which problem.
 
-You finished module 7. You finished the Solana track, at least the substantive part. What you built over these seven modules is the working knowledge of how a high-throughput chain actually works at every level, from the BPF runtime executing your code to the consensus mechanism that puts that code's outputs into the canonical chain history. That picture, more than any specific syntax or library, is what you take away.
+You finished the Solana track, at least the substantive part. What you built across it is the working knowledge of how a high-throughput chain actually works at every level, from the BPF runtime executing your code to the consensus mechanism that puts that code's outputs into the canonical chain history. That picture, more than any specific syntax or library, is what you take away.

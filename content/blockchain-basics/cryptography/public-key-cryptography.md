@@ -25,8 +25,8 @@ faq:
       32-byte private key and are believed secure against any ordinary computer.
   - question: If there's no password reset, what happens if I lose my private key?
     answer: There is no recovery. On a blockchain the private key is your entire
-      identity; the network knows only the public key that pairs with the key
-      you control, not your name or email. Lose the private key and no one can
+      identity. The network knows only the public key that pairs with the key
+      you control, never your name or email. Lose the private key and no one can
       restore access, and if someone steals it there is no insurance and no
       customer support to call.
 ---
@@ -52,7 +52,7 @@ What you need is something asymmetric. A pair of values, mathematically linked, 
 3. The secret can be used to "sign" or "decrypt" things in a way only the holder of the secret could do.
 4. The public token can be used by anyone to verify the work without ever holding the secret.
 
-For most of cryptographic history, no such construction was known. In the 1970s a sequence of breakthroughs (Diffie–Hellman 1976, RSA 1977) showed that it could be done, using carefully chosen mathematical operations where the forward direction is fast and the reverse direction is astronomically slow. This is the entire foundation of modern cryptography on the internet, and it is the entire foundation of identity on a blockchain.
+For most of cryptographic history, no such construction was known. In the 1970s a sequence of breakthroughs (Diffie-Hellman 1976, RSA 1977) showed that it could be done, using carefully chosen mathematical operations where the forward direction is fast and the reverse direction is astronomically slow. This is the entire foundation of modern cryptography on the internet, and it is the entire foundation of identity on a blockchain.
 
 ## One-way functions
 

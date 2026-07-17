@@ -9,7 +9,7 @@ faq:
       rule: the product of the two reserves, x times y, stays constant at k.
       When you add some of one token, the program gives back exactly enough of
       the other token to keep that product unchanged. There is no order matching
-      and no price quote; the output is just whatever amount preserves the
+      and no price quote. The output is just whatever amount preserves the
       invariant."
   - question: Why do I get a worse rate on a large AMM trade than a small one?
     answer: Each unit you swap moves the pool further along its price curve, and the
@@ -17,20 +17,20 @@ faq:
       your average rate worsens. A small swap against a deep pool barely moves
       the price, while a swap that is a big fraction of the pool gets a
       noticeably worse rate. This effect is called price impact, and the program
-      cannot avoid it; it is just what the invariant produces.
+      cannot avoid it. It is just what the invariant produces.
   - question: How do liquidity providers actually earn money from an AMM pool?
     answer: Swaps charge a fee, typically 0.3 percent of the input, and instead of
       paying it out the pool just keeps it in the reserves. No new LP tokens are
       minted for the fee, so the total LP supply stays fixed while the reserves
       grow, meaning each LP token now claims a slightly bigger slice of the
-      pool. LPs never have to claim anything; their tokens simply become worth
+      pool. LPs never have to claim anything. Their tokens simply become worth
       more, and they redeem by burning them for their share.
   - question: What is impermanent loss and why do liquidity providers suffer it?
     answer: The constant-product rule rebalances the pool every time the price
       moves, effectively selling whichever token is rising and buying whichever
       is falling, so an LP ends up with more of the loser and less of the winner
       than if they had just held. That gap versus holding is impermanent loss,
-      and it depends only on how far the price ratio moves; a 2x or 0.5x move
+      and it depends only on how far the price ratio moves. A 2x or 0.5x move
       both cost about 5.7 percent. It is called impermanent because it vanishes
       if the price returns to your entry, but it becomes permanent once you
       withdraw at a different price.
@@ -224,7 +224,7 @@ trader receives = 100 - 52.63 = 47.37 of token A
 
 47.37 is exactly the sum of 23.08 + 14.42 + 9.87. No coincidence. The pool ends at the same point whether you arrive in one big swap or three small ones, so the total output is identical.
 
-But here is the catch. The single 90-token trade averaged a rate of `47.37 / 90 = 0.53` token A per token B. The first 30-token trade by itself got `23.08 / 30 = 0.77` token A per token B. The bigger your trade relative to the pool, the worse your average rate, because you push deeper into the unfavorable part of the curve in one move.
+But here is the problem. The single 90-token trade averaged a rate of `47.37 / 90 = 0.53` token A per token B. The first 30-token trade by itself got `23.08 / 30 = 0.77` token A per token B. The bigger your trade relative to the pool, the worse your average rate, because you push deeper into the unfavorable part of the curve in one move.
 
 This effect has a name. It is called **price impact**. A trader doing a small swap against a deep pool barely moves the price. A trader doing a swap that is a sizable fraction of the pool gets a noticeably worse rate. There is nothing the program can do about this. The rate is just what the invariant produces.
 
@@ -364,7 +364,7 @@ IL = 2 * sqrt(r) / (1 + r) - 1
   <text x="60" y="367" font-family="monospace" font-size="10" font-weight="bold">At entry, SOL = $200:</text>
   <text x="60" y="380" font-family="monospace" font-size="10">  Alice has 1 SOL + 200 USDC, total value = $400. She splits her capital evenly.</text>
   <rect x="40" y="400" width="310" height="140" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="195" y="422" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Path A — HODL</text>
+  <text x="195" y="422" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Path A: HODL</text>
   <line x1="60" y1="430" x2="330" y2="430" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
   <text x="60" y="450" font-family="monospace" font-size="10">She keeps her tokens in her wallet.</text>
   <text x="60" y="475" font-family="monospace" font-size="10">When SOL hits $400:</text>
@@ -372,7 +372,7 @@ IL = 2 * sqrt(r) / (1 + r) - 1
   <text x="60" y="505" font-family="monospace" font-size="10">  + 200 USDC = $200</text>
   <text x="60" y="528" font-family="monospace" font-size="11" font-weight="bold">  total = $600</text>
   <rect x="370" y="400" width="310" height="140" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="525" y="422" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Path B — LP in the pool</text>
+  <text x="525" y="422" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Path B: LP in the pool</text>
   <line x1="390" y1="430" x2="660" y2="430" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
   <text x="390" y="450" font-family="monospace" font-size="10">Pool rebalances as price rises.</text>
   <text x="390" y="475" font-family="monospace" font-size="10">When SOL hits $400, she now holds:</text>
@@ -405,7 +405,7 @@ The central LP question. Do earned fees exceed IL?
 
 For stablecoin pairs the price ratio barely moves, so IL stays negligible and small fee income wins. For volatile pairs the math is closer. SOL/USDC on a 0.3 percent pool needs enough trading volume to pay back the IL accumulated from price movement. Pools with high volume-to-TVL ratios earn back IL and then some. Quiet pools do not.
 
-The cleanest mental model: being an LP in a constant-product AMM is like selling volatility insurance. You collect premiums in fees and pay claims in impermanent loss when price moves. Some positions earn more in fees than they lose to impermanent loss; others do not.
+The cleanest mental model: being an LP in a constant-product AMM is like selling volatility insurance. You collect premiums in fees and pay claims in impermanent loss when price moves. Some positions earn more in fees than they lose to impermanent loss. Others do not.
 
 ## Two structural choices worth knowing
 

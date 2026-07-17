@@ -44,7 +44,7 @@ The standard answer everyone uses is to make the token account's address a deter
 
 The ATA address is a Program-Derived Address computed under the Associated Token Program. The seeds are the wallet pubkey, the Token Program's ID, and the mint pubkey, in that order. The derivation runs `find_program_address` exactly as you'd compute any other PDA.
 
-<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Computing an Associated Token Account address from wallet, mint, and program seeds</title><desc>Three public inputs — Bob's wallet pubkey, the USDC mint pubkey, and the SPL Token Program ID — feed into find_program_address under the Associated Token Program. The result is Bob's USDC ATA address, which anyone can compute even before the account exists.</desc>
+<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Computing an Associated Token Account address from wallet, mint, and program seeds</title><desc>Three public inputs, namely Bob's wallet pubkey, the USDC mint pubkey, and the SPL Token Program ID, feed into find_program_address under the Associated Token Program. The result is Bob's USDC ATA address, which anyone can compute even before the account exists.</desc>
   <defs>
     <marker id="arrS44aR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
@@ -82,7 +82,7 @@ The ATA address is a Program-Derived Address computed under the Associated Token
 
 The whole protocol is built on this one fact: the address is a function of two public values and the well-known program IDs. There's no per-user state to look up, no registry to maintain, no recipient to interrogate. Given Bob's wallet and the USDC mint, the ATA derivation gives you exactly one address every time, computable offline, before any account at that address even exists.
 
-This is the same idea as content-addressed storage: the address is computed from the content itself, not assigned and stored somewhere. The address is the answer to a lookup rather than just a label for one. Bob never registers his USDC ATA anywhere. The convention is "the canonical address is computed this way" and the entire ecosystem follows it.
+This is the same idea as content-addressed storage: the address is computed from the content itself instead of being assigned and stored somewhere. The address is the answer to a lookup rather than just a label for one. Bob never registers his USDC ATA anywhere. The convention is "the canonical address is computed this way" and the entire ecosystem follows it.
 
 ## The Associated Token Program
 

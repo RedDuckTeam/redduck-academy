@@ -255,7 +255,7 @@ In every case, the structure is the same: heavy computation off-chain, cheap ver
 
 Not every problem fits. Three situations where you can't or shouldn't reach for this pattern:
 
-**When verification is as expensive as computation.** If checking the answer takes the same work as computing it, there's no savings. Sorting is usually like this: verifying an array is sorted takes O(n) reads — cheaper than O(n log n) sorting, but still too expensive on-chain for large arrays. The pattern shines when verification is asymptotically cheaper than computation, like the difference between O(log n) Merkle verification and O(n) iteration.
+**When verification is as expensive as computation.** If checking the answer takes the same work as computing it, there's no savings. Sorting is usually like this: verifying an array is sorted takes O(n) reads, cheaper than O(n log n) sorting, but still too expensive on-chain for large arrays. The pattern shines when verification is asymptotically cheaper than computation, like the difference between O(log n) Merkle verification and O(n) iteration.
 
 **When the user can't be expected to do the work.** If your program is a black box that users interact with through a wallet, asking them to "compute a Merkle proof of inclusion" requires the wallet or the dApp frontend to do it for them. That's usually fine in practice. Every airdrop dApp does this. But it shifts complexity into the frontend, which may not be where you want it.
 
