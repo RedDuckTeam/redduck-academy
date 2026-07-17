@@ -17,6 +17,15 @@ const CONTENT = join(ROOT, 'content')
 const SKIP = new Set(['README.md', 'TEMPLATE.md'])
 const LESSON_TYPES = ['lecture', 'test', 'coding_task', 'review_task']
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+// A test lesson's questions live in its body. `<!-- q:ID -->` starts a question; each option is a
+// GitHub task-list line (`- [x]` correct / `- [ ]` not) carrying its stable id in a trailing
+// `<!-- a:ID -->`. Ids are the join key into learners' stored answers, so they must be present and
+// globally unique. Multi-answer questions must cue it in the stem (matches the runtime's
+// `isMultipleChoices = correctCount > 1`).
+const Q_MARKER_RE = /^<!--\s*q:\s*([^\s>]+)\s*-->$/
+const OPTION_RE = /^- \[([ xX])\]\s+(.*?)\s*<!--\s*a:\s*([^\s>]+)\s*-->$/
+const TEST_ID_RE = /^[A-Za-z0-9_-]{6,}$/
+const MULTI_CUE_RE = /select all|choose all|all that apply|select every|select each/i
 const ALLOWED = {
   course: ['id', 'title', 'order', 'isHidden'],
   module: ['id', 'title', 'order', 'isHidden'],
@@ -58,6 +67,52 @@ function classify(relPath) {
     return { role: 'lesson', course: parts[0], module: parts[1], lesson: base.replace(/\.md$/, '') }
   }
   return { role: 'unknown', parts }
+}
+
+// Parse the questions section of a test-lesson body. Everything before the first `<!-- q: -->`
+// marker is the intro (the lesson content); questions follow. A stem may contain fenced code, so
+// option parsing is fence-aware (a `- [ ]` inside ``` is code, not an option). Returns
+// { questions: [{ id, stem, options: [{ id, label, correct }] }], parseErrors }. The DB sync reuses
+// this exact parser so validation and sync agree on what a file means.
+function parseTestQuestions(body) {
+  const parseErrors = []
+  const lines = body.split('\n')
+  const start = lines.findIndex((l) => Q_MARKER_RE.test(l.trim()))
+  if (start === -1) return { questions: [], parseErrors }
+
+  const questions = []
+  let cur = null
+  let inFence = false
+  for (const line of lines.slice(start)) {
+    const trimmed = line.trim()
+    const marker = trimmed.match(Q_MARKER_RE)
+    // A question marker always starts a new question and resets fence state, so an unbalanced
+    // ``` fence in one stem can never swallow the questions that follow it.
+    if (marker) {
+      if (cur) questions.push(cur)
+      cur = { id: marker[1], stemLines: [], options: [] }
+      inFence = false
+      continue
+    }
+    if (!cur) continue
+    if (/^```/.test(trimmed)) inFence = !inFence
+    if (!inFence) {
+      const opt = line.match(OPTION_RE)
+      if (opt) {
+        cur.options.push({ correct: opt[1].toLowerCase() === 'x', label: opt[2].trim(), id: opt[3] })
+        continue
+      }
+      // A task-list line that doesn't carry a well-formed id comment is a mistake worth flagging.
+      if (/^- \[[ xX]?\]/.test(trimmed)) {
+        parseErrors.push(`question ${cur.id}: malformed option (expected \`- [ ] text  <!-- a:ID -->\`): ${trimmed.slice(0, 70)}`)
+        continue
+      }
+    }
+    if (cur.options.length === 0) cur.stemLines.push(line)
+  }
+  if (cur) questions.push(cur)
+  for (const q of questions) q.stem = q.stemLines.join('\n').trim()
+  return { questions, parseErrors }
 }
 
 function validate(file, raw, meta, sets) {
@@ -138,6 +193,45 @@ function validate(file, raw, meta, sets) {
     const open = (body.match(/<svg\b/gi) ?? []).length
     const close = (body.match(/<\/svg>/gi) ?? []).length
     if (open !== close) err(`unbalanced <svg> tags: ${open} opening, ${close} closing`)
+
+    if (data.type === 'test') {
+      const { questions, parseErrors } = parseTestQuestions(body)
+      for (const pe of parseErrors) err(pe)
+      if (questions.length === 0) err('test has no questions — add at least one `<!-- q:ID -->` block with options')
+
+      const rel = relative(ROOT, file)
+      const localIds = new Map() // id -> count in this file, for intra-file duplicate detection
+      questions.forEach((q, qi) => {
+        const at = `question ${qi + 1}${q.id ? ` (id ${q.id})` : ''}`
+        if (!q.id || !TEST_ID_RE.test(q.id)) err(`${at}: missing or invalid question id comment`)
+        if (!q.stem) err(`${at}: empty question stem`)
+        if (q.options.length < 2) err(`${at}: needs at least 2 options (found ${q.options.length})`)
+
+        const correct = q.options.filter((o) => o.correct)
+        if (q.options.length > 0 && correct.length === 0) err(`${at}: no correct option is marked (use \`- [x]\`)`)
+        if (correct.length > 1 && !MULTI_CUE_RE.test(q.stem)) {
+          err(`${at}: ${correct.length} options are marked correct but the stem has no "select all that apply" cue`)
+        }
+
+        const seenLabels = new Set()
+        for (const o of q.options) {
+          if (!o.label) err(`${at}: an option has an empty label`)
+          if (!o.id || !TEST_ID_RE.test(o.id)) err(`${at}: option "${o.label.slice(0, 30)}" has a missing or invalid id comment`)
+          const labelKey = o.label.toLowerCase()
+          if (seenLabels.has(labelKey)) err(`${at}: duplicate option "${o.label.slice(0, 40)}"`)
+          seenLabels.add(labelKey)
+        }
+
+        for (const id of [q.id, ...q.options.map((o) => o.id)].filter(Boolean)) {
+          localIds.set(id, (localIds.get(id) ?? 0) + 1)
+          const others = [...(sets.testIdOwners.get(id) ?? [])].filter((o) => o !== rel)
+          if (others.length) err(`id "${id}" is also used in ${others.join(', ')} — every question/option id must be unique`)
+        }
+      })
+      for (const [id, count] of localIds) {
+        if (count > 1) err(`id "${id}" appears ${count} times in this file — each question and option needs its own id`)
+      }
+    }
   }
 
   return { errors, warn }
@@ -146,20 +240,32 @@ function validate(file, raw, meta, sets) {
 async function main() {
   const all = (await mdFiles(CONTENT)).sort()
   // Build the set of existing course/module metadata for parent checks.
-  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map() }
+  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map(), testIdOwners: new Map() }
   for (const f of all) {
     const c = classify(relative(CONTENT, f))
     if (c.role === 'course') sets.courses.add(c.course)
     if (c.role === 'module') sets.modules.add(`${c.course}/${c.module}`)
+    const { data, body } = parseFrontmatter(await readFile(f, 'utf8'))
     // Collect declared ids per role. Payload gives each collection its own id sequence,
     // so a course, a module, and a lesson may legitimately share a number — only a clash
     // within the same role means two files point at the same DB row.
-    const { data } = parseFrontmatter(await readFile(f, 'utf8'))
     if (data && typeof data.id === 'number' && c.role !== 'unknown') {
       const key = `${c.role}:${data.id}`
       const owners = sets.idOwners.get(key) ?? []
       owners.push(relative(ROOT, f))
       sets.idOwners.set(key, owners)
+    }
+    // Collect every question/option id so we can flag a collision across tests (they are primary
+    // keys, so a duplicate would fail the DB insert). All test-element ids share one namespace.
+    if (c.role === 'lesson' && data?.type === 'test' && body) {
+      const rel = relative(ROOT, f)
+      for (const q of parseTestQuestions(body).questions) {
+        for (const id of [q.id, ...q.options.map((o) => o.id)].filter(Boolean)) {
+          const owners = sets.testIdOwners.get(id) ?? new Set()
+          owners.add(rel)
+          sets.testIdOwners.set(id, owners)
+        }
+      }
     }
   }
 
