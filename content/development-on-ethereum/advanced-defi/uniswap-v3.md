@@ -218,8 +218,6 @@ LPs choose a fee tier based on the volatility they expect. Higher volatility mea
 
 ## Three position types: where single-sided liquidity comes from
 
-(Remove this sentence. The section heading already names the topic, and the following paragraph opens the explanation directly.)
-
 In V2, you always deposit both tokens, in the ratio set by the current pool price. There's no other option. In V3, the ratio depends on where your chosen range sits relative to the current price. Sometimes you deposit both tokens. Sometimes only one. And it's not up to you which case applies. The range you pick forces the composition.
 
 <svg role="img" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three Uniswap V3 position types by price range: below, straddling, above</title><desc>Shows three Uniswap V3 price ranges compared to a current price of $3,500. A range below current price needs only USDC, a range straddling it needs both USDC and ETH, and a range above it needs only ETH, because the chosen range forces the deposit ratio.</desc>

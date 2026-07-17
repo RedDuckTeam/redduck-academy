@@ -40,7 +40,7 @@ Set that against the old constraint. The rule was that proof requires disclosure
 
 ## Working within a wall, or making it disappear
 
-That is the pattern, and it is worth naming: constraint bypass. You take a constraint that every existing solution treats as fixed, and instead of paying it a little more efficiently, you build so that the constraint no longer applies.
+That is the pattern, and it is worth naming: **constraint bypass**. You take a constraint that every existing solution treats as fixed, and instead of paying it a little more efficiently, you build so that the constraint no longer applies.
 
 The distinguishing mark is precise. When you work within a constraint, the constraint survives in your solution as a tradeoff. Stronger encryption costs computation. The wall is still there, and you can point to where your design pays it. When you bypass a constraint, the constraint survives nowhere. There is no line in the design where you paid it, because it stopped being part of the problem. Ask of any solution, "where does this pay the constraint?" If the answer is "here," you worked within it. If the answer is "nowhere," you bypassed it.
 
@@ -85,6 +85,8 @@ Both breakthroughs came from the same move, and the move is methodical. Anyone c
 "Proving a secret requires revealing it" felt intrinsic to proof. It was only intrinsic to the method where you hand the secret over. "Agreeing on a key requires a private channel" was the same, a property of the method where the key travels between the parties. Neither outcome ever required what the wall demanded. The requirement belonged to the familiar method, and a different method left it behind.
 
 This is why the pattern is so dependable. Most walls in engineering are properties of the first solution everyone reached for, mistaken for properties of the problem itself. The bypass is there whenever the constraint you are fighting turns out to guard a method rather than a goal.
+
+The same move appears far outside cryptography. Databases long treated locking as the only way to stop two people from overwriting each other's edits, until optimistic concurrency dropped the lock: everyone edits freely, and the system checks for a conflict only at the moment a write is saved. The locking guarded the method, while the goal itself, safe concurrent editing, never required it.
 
 ## Test the wall before you accept it
 

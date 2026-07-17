@@ -97,7 +97,7 @@ The setup involves a key pair. The party generating randomness (the VRF oracle s
 
 The third point is the load-bearing one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
 
-For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle cannot deviate. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
+For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle cannot deviate. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
 
 ## The request-and-receive cycle
 

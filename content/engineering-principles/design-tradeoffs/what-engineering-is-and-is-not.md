@@ -16,7 +16,7 @@ faq:
       the goal above it, and the same choice can be right under one parent goal and
       wrong under another. Naming the parent goal is what makes a tradeoff
       decidable.
-  - question: Why is optimising a child goal sometimes a mistake?
+  - question: Why is optimizing a child goal sometimes a mistake?
     answer: A child goal is only worth improving while it still serves the parent
       goal above it. Making messages smaller is a real gain, but forcing a binary
       format onto a small public API saves bytes nobody notices while making every
@@ -36,9 +36,9 @@ That is what engineering is not. It is not making a thing as fast, as small, or 
 
 ## A tradeoff is a choice where one gain costs another
 
-A tradeoff is a design choice where gaining one property costs you another. More speed for less clarity. More clarity for less speed. Both options are valid, and neither is broken. What separates them is fit: which one serves the goal the work is really there for.
+A **tradeoff** is a design choice where gaining one property costs you another. More speed for less clarity. More clarity for less speed. Both options are valid, and neither is broken. What separates them is fit: which one serves the goal the work is really there for.
 
-That goal has a name worth using. Call it the parent goal, the larger thing every smaller choice underneath it is meant to serve. You cannot judge a smaller choice until you have named the parent goal above it, because the same choice can be right under one parent goal and wrong under another.
+That goal has a name worth using. Call it the **parent goal**, the larger thing every smaller choice underneath it is meant to serve. You cannot judge a smaller choice until you have named the parent goal above it, because the same choice can be right under one parent goal and wrong under another.
 
 ## Two real ways to send data between programs
 
@@ -52,7 +52,7 @@ Both formats are correct, and both are used widely every day. One is built aroun
 
 ## Which one is right depends on the parent goal
 
-Picture a public API, the kind outside developers around the world write code against. What is the parent goal there? Those developers succeeding quickly. When something breaks, a developer who can open the response and read it is unstuck in minutes. The handful of bytes a binary format would save is a small child goal at that scale, invisible next to the cost of confusing thousands of people. Readability serves the parent goal directly, so JSON is right.
+Picture a public API, the kind outside developers around the world write code against. What is the parent goal there? Those developers succeeding quickly. When something breaks, a developer who can open the response and read it is unstuck in minutes. The handful of bytes a binary format would save is a small **child goal** at that scale, invisible next to the cost of confusing thousands of people. Readability serves the parent goal directly, so JSON is right.
 
 Now picture internal traffic between a company's own services, machines exchanging billions of messages a day with each other. Here the parent goal shifts. Keeping that system fast and affordable is a large part of the whole point, and at billions of messages the size of each one and the cost of processing it stop being negligible. Now the compact binary format serves the parent goal, so Protocol Buffers is right.
 

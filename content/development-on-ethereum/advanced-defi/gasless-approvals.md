@@ -253,8 +253,6 @@ contract MyTokenPermit is ERC20, EIP712 {
 }
 ```
 
-(remove this sentence; the paragraphs that follow stand on their own)
-
 The `PERMIT_TYPEHASH` is a precomputed hash of the message type definition. It encodes "this is a Permit struct with these field types." The exact string must match character for character, with no spaces between fields. This is part of the EIP-712 spec.
 
 `nonces[owner]++` is doing two things in one expression: returning the current nonce and incrementing it for next time. Reading and incrementing in a single expression prevents a class of bugs where an incorrect nonce is included in the digest.
@@ -374,8 +372,6 @@ If all checks pass, the function calls `_approve(owner, spender, value)`, which 
 <text x="360" y="593" text-anchor="middle" font-family="monospace" font-size="12" fill="#ed4937" font-weight="bold">Done. Owner paid zero gas. Relayer collected fee or sponsored the user.</text>
 
 </svg>
-
-(remove this fragment; the paragraph that follows begins the explanation directly)
 
 The owner's wallet builds the EIP-712 typed data structure with the domain (read from the token's `DOMAIN_SEPARATOR()`) and the message fields. The wallet shows the user a human-readable preview. The user clicks approve. The wallet returns a signature, broken into the three components `v`, `r`, and `s`.
 

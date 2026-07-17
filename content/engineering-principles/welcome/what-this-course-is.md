@@ -19,7 +19,7 @@ This is a course about the decisions underneath good engineering. It teaches the
 
 ## Why principles beat a checklist
 
-Most of what makes one design better than another is not knowledge of a tool. It is a way of deciding. Two engineers meet the same problem. One reaches for the pattern they used last time and forces the problem to fit it. The other asks what the goal actually requires and picks the design that serves it. Both may know the same things. What separates them is the question they ask first. This course is about that question, asked on purpose, until it runs on its own.
+Most of what makes one design better than another is not knowledge of a tool. It is a way of deciding. Two engineers meet the same problem. One reaches for the pattern they used last time and forces the problem to fit it. The other asks what the goal actually requires and picks the design that serves it. Both may know the same things. What separates them is the question they ask first. This course is about that question, asked on purpose, until it becomes automatic.
 
 The principles fall into a few families. How to weigh a tradeoff against the goal it serves. How to make a hard constraint irrelevant instead of fighting it. How to keep the smallest amount of logic in the position of highest trust. How to reason like an adversary before you build. None of it depends on a particular language or platform. The same principle that shapes a payment system shapes a login screen, a file format, or a database schema.
 

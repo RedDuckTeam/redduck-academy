@@ -90,7 +90,7 @@ There is a reason the generic sort can be trusted, and it is worth stating preci
 
 A function written to work for any type, without reading what the values mean, is forced to behave the same way for every type. It cannot special-case prices over timestamps, because it has no way to tell one from the other. That uniform behavior is a guarantee you get for free, and you get it exactly because the function knows nothing about the type it is handed.
 
-In type theory this property has a name, parametricity. In everyday programming the same idea goes by genericity, or parametric polymorphism. For this course the useful name is the Irrelevance Principle: only constrain what you actually care about.
+In type theory this property has a name, parametricity. In everyday programming the same idea goes by genericity, or parametric polymorphism. For this course the useful name is the **Irrelevance Principle**: only constrain what you actually care about.
 
 ## The same principle one layer down
 

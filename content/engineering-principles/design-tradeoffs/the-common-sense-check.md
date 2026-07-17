@@ -21,7 +21,7 @@ faq:
       actor will act against you.
 ---
 
-> Here is a check that catches a whole class of design mistakes before you write a line of code. Take the design you are about to build and ask one question: does it still make sense if one of the people in the system is clever and out for themselves? If a self-interested person could walk straight through it, the design is broken, however clean it looked on paper. The check costs a few seconds and saves you from building the wrong thing.
+> Here is a check that catches a whole class of design mistakes before you write a line of code. Call it the **common-sense check**. Take the design you are about to build and ask one question: does it still make sense if one of the people in the system is clever and acting in their own interest? If a self-interested person could walk straight through it, the design is broken, however clean it looked on paper. The check costs a few seconds and saves you from building the wrong thing.
 
 ## Assume one actor is rational and adversarial
 

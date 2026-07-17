@@ -74,7 +74,7 @@ So you sign the authorization offline, at no cost, and hand the signed message t
 
 ## A pre-signed URL is exactly this
 
-Go back to the photo. Instead of granting the shop access to your whole account, you generate a pre-signed URL for that one image, a link to the single object with a signature attached, valid for a limited time. File storage services such as Amazon S3 provide this directly. You hand the link to the shop. The kiosk opens it, and the signature carried in the link is what the storage service checks before releasing the image. The shop never needed an account, and you never needed to be online when the kiosk fetched the file. The authorization was made in advance and travelled inside the URL.
+Go back to the photo. Instead of granting the shop access to your whole account, you generate a pre-signed URL for that one image, a link to the single object with a signature attached, valid for a limited time. File storage services such as Amazon S3 provide this directly. You hand the link to the shop. The kiosk opens it, and the signature carried in the link is what the storage service checks before releasing the image. The shop never needed an account, and you never needed to be online when the kiosk fetched the file. The authorization was made in advance and traveled inside the URL.
 
 ## The signed cheque, as an illustration
 
@@ -82,7 +82,7 @@ An everyday version, offered only to fix the shape in mind, is a signed cheque. 
 
 ## What a signed authorization has to pin down
 
-A signature by itself only proves who signed. It says nothing about what they meant to allow, and a signature attached to too little can be presented in situations the signer never had in mind. A sound signed authorization binds four things and guards against a fifth problem:
+A signature by itself only proves who signed. It says nothing about what they meant to allow, and a signature attached to too little can be presented in situations the signer never had in mind. A sound **signed authorization** binds four things and guards against a fifth problem:
 
 - Who is authorized. The specific party allowed to act, so a message meant for one cannot be used by another.
 - What exactly is authorized. The precise action and its limits, so a permission to do one small thing cannot be stretched into a larger one.

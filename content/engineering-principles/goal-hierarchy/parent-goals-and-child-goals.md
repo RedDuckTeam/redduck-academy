@@ -20,7 +20,7 @@ faq:
       still being served.
 ---
 
-> The design tradeoffs module gave you two names, the parent goal and the child goal. A parent goal is what a design is ultimately meant to achieve. A child goal is a smaller goal that earns its place only by serving the parent. Used well, the pair becomes a method. Trace any design choice up the chain of goals it serves, keep it while it serves the parent, and drop it the moment it serves only a child that has stopped serving the parent.
+> You already met the **parent goal** and the **child goal** in [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not). Here that pair becomes a method. Trace any design choice up the chain of goals it serves, keep it while it serves the parent, and drop it the moment it serves only a child that has stopped serving the parent.
 
 ## Goals stack, and the stack is the point
 
