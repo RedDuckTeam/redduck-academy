@@ -1,5 +1,5 @@
 import { contentAssetPath } from './paths'
-import { stripFrontmatter, parseLessonFaq } from './frontmatter'
+import { stripFrontmatter, stripTestQuestions, parseLessonFaq } from './frontmatter'
 import { fetchContentAsset } from './asset-fetch'
 import type { LessonFaqItem } from '@/types/lesson'
 
@@ -21,5 +21,5 @@ export async function loadLessonContent(
   const res = await fetchContentAsset(contentAssetPath(courseSlug, moduleSlug, lessonSlug))
   if (!res || !res.ok) return null
   const raw = await res.text()
-  return { body: stripFrontmatter(raw), faq: await parseLessonFaq(raw) }
+  return { body: stripTestQuestions(stripFrontmatter(raw)), faq: await parseLessonFaq(raw) }
 }

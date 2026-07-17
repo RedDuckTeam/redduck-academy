@@ -25,7 +25,7 @@ vi.mock('@/components/error-boundary', () => ({
 
 import { MarkdownContent } from './markdown-content'
 import { extractMarkdownHeadings } from '@/components/pages/lesson/toc/build-toc-items'
-import { stripFrontmatter } from '@/lib/content/frontmatter'
+import { stripFrontmatter, stripTestQuestions } from '@/lib/content/frontmatter'
 
 const md = [
   '# Should be h1',
@@ -216,7 +216,9 @@ describe('MarkdownContent', () => {
 
     const svgChildTags = ['path', 'rect', 'text', 'marker', 'defs', 'line', 'polygon', 'circle', 'g', 'polyline']
     for (const rel of files) {
-      const body = stripFrontmatter(readFileSync(resolve(root, rel), 'utf8'))
+      // The app renders only a lesson's display prose; a test's question block is stripped
+      // (rendered interactively from the DB instead), so mirror that here.
+      const body = stripTestQuestions(stripFrontmatter(readFileSync(resolve(root, rel), 'utf8')))
       const { container, unmount } = render(<MarkdownContent source={body} />)
 
       const stray = svgChildTags
