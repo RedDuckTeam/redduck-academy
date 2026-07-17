@@ -1,22 +1,26 @@
-// Inserts new course/module/lesson rows into the Payload Postgres database, using the
-// `id` each content file already declares. Runs on merge to main (and manually).
+// Inserts new course/module/lesson rows into the Payload Postgres database. Runs on merge to
+// main (and manually).
 //
 //   DATABASE_URL=... npx tsx scripts/sync-content-db.ts [--dry-run]
+//   npx tsx scripts/sync-content-db.ts --assign-ids   # write ids into files only, no DB
 //
 // Design:
 //   • INSERT-ONLY. Never updates or deletes an existing row — a removed file must never
 //     drop a DB row that may hold user progress, and edits to prose live in the files.
 //   • Idempotent. "New" means an id present in the files but not yet in the DB, so it is
 //     safe to re-run: a second run inserts nothing.
-//   • File ids are the source of truth. They live in the reserved [1e9, 2e9) band (see
-//     scripts/new-id.mjs), permanently above the CMS's low auto-increment sequence, so
-//     inserting an explicit id never collides with a CMS-generated one and the sequence
-//     is deliberately left untouched (no setval).
+//   • File ids are the source of truth. They live in the reserved [1e9, 2e9) band,
+//     permanently above the CMS's low auto-increment sequence, so inserting an explicit
+//     id never collides with a CMS-generated one and the sequence
+//     is deliberately left untouched (no setval). An id-less file gets one assigned and
+//     written back to its frontmatter (persisted before the DB write, so a re-run never
+//     mints a second id for the same file). The merge workflow commits those ids.
 //   • Only structural columns are written (title, slug, parent, order, type). The lesson
-//     body stays in the files; `content` is left null. Assessment data for non-lecture
-//     lessons is authored in the CMS, so new lessons must be `type: lecture`.
+//     body stays in the files; `content` is left null. New lessons must be `type: lecture`
+//     or `test` (a test's questions are synced separately by scripts/sync-tests.mjs);
+//     coding_task / review_task assessment data is still authored in the CMS.
 
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import postgres from 'postgres'
@@ -29,16 +33,40 @@ const { courses, modules, lessons } = payloadSchema
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CONTENT = join(ROOT, 'content')
 const DRY_RUN = process.argv.includes('--dry-run')
+// Assign + write back ids for id-less course/module/lesson files, then stop — no DB. The merge
+// workflow runs this and commits the ids before the DB sync, so a stable id lands in the repo first.
+const ASSIGN_IDS = process.argv.includes('--assign-ids')
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/
 const LESSON_TYPES = ['lecture', 'test', 'coding_task', 'review_task']
+// Reserved content-id band: permanently above the CMS's low auto-increment sequence, so a
+// file-authored id can never collide with a CMS-generated one.
+const BAND_MIN = 1_000_000_000
+const BAND_MAX = 2_000_000_000
 
 type Meta = Record<string, unknown>
 interface CourseRow { id: number; slug: string; title: string; description: string; order: number; isHidden: boolean }
 interface ModuleRow { id: number; slug: string; title: string; courseId: number; order: number; isHidden: boolean }
 interface LessonRow { id: number; slug: string; title: string; moduleId: number; order: number; type: string; isHidden: boolean }
+interface WriteBack { abs: string; id: number }
 
 function intId(v: unknown): number | null {
   return typeof v === 'number' && Number.isInteger(v) && v > 0 ? v : null
+}
+
+// A fresh id in the reserved band that no content file already uses (and no other just-assigned id
+// in this run). Mutates `used` so repeated calls don't collide.
+function newId(used: Set<number>): number {
+  let id: number
+  do {
+    id = BAND_MIN + Math.floor(Math.random() * (BAND_MAX - BAND_MIN))
+  } while (used.has(id))
+  used.add(id)
+  return id
+}
+
+// Insert `id: <n>` as the first line of a file's YAML frontmatter, leaving everything else intact.
+function insertFrontmatterId(raw: string, id: number): string {
+  return raw.replace(/^---\r?\n/, (m) => `${m}id: ${id}\n`)
 }
 
 async function subdirs(dir: string): Promise<string[]> {
@@ -54,14 +82,38 @@ async function readMeta(abs: string): Promise<{ data: Meta; body: string }> {
   return { data: (yaml.parse(m[1]) ?? {}) as Meta, body: raw.slice(m[0].length) }
 }
 
-// Walk content/ into flat course/module/lesson lists. Missing or invalid ids are collected
-// as errors — every file that should map to a DB row must carry one.
+// Every id already declared anywhere in content/, so a freshly assigned one can't collide.
+async function scanUsedIds(dir: string, used: Set<number>): Promise<void> {
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name)
+    if (e.isDirectory()) await scanUsedIds(p, used)
+    else if (e.name.endsWith('.md')) {
+      const id = intId((await readMeta(p)).data.id)
+      if (id) used.add(id)
+    }
+  }
+}
+
+// Walk content/ into flat course/module/lesson lists. An id-less file gets a fresh reserved-band id
+// assigned inline (so its children can reference it) and recorded in `writeBacks` to persist to the
+// file. A parent is assigned before its children are read.
 async function readContent() {
   const cs: CourseRow[] = []
   const ms: ModuleRow[] = []
   const ls: LessonRow[] = []
   const errors: string[] = []
+  const writeBacks: WriteBack[] = []
   const rel = (abs: string) => abs.slice(ROOT.length + 1)
+
+  const used = new Set<number>()
+  await scanUsedIds(CONTENT, used)
+  const idFor = (abs: string, data: Meta): number => {
+    const existing = intId(data.id)
+    if (existing) return existing
+    const id = newId(used)
+    writeBacks.push({ abs, id })
+    return id
+  }
 
   for (const courseDir of await subdirs(CONTENT)) {
     const courseSlug = basename(courseDir)
@@ -72,10 +124,9 @@ async function readContent() {
     } catch {
       continue // not a course directory
     }
-    const courseId = intId(cm.data.id)
-    if (!courseId) errors.push(`${rel(courseFile)}: missing or invalid id (run \`node scripts/new-id.mjs\`)`)
+    const courseId = idFor(courseFile, cm.data)
     cs.push({
-      id: courseId ?? -1,
+      id: courseId,
       slug: courseSlug,
       title: String(cm.data.title ?? courseSlug),
       description: cm.body.trim(),
@@ -92,13 +143,12 @@ async function readContent() {
       } catch {
         continue
       }
-      const moduleId = intId(mm.data.id)
-      if (!moduleId) errors.push(`${rel(moduleFile)}: missing or invalid id (run \`node scripts/new-id.mjs\`)`)
+      const moduleId = idFor(moduleFile, mm.data)
       ms.push({
-        id: moduleId ?? -1,
+        id: moduleId,
         slug: moduleSlug,
         title: String(mm.data.title ?? moduleSlug),
-        courseId: courseId ?? -1,
+        courseId,
         order: Number(mm.data.order ?? 0),
         isHidden: mm.data.isHidden === true,
       })
@@ -107,15 +157,13 @@ async function readContent() {
         if (!e.isFile() || !e.name.endsWith('.md') || e.name.startsWith('_')) continue
         const lessonFile = join(moduleDir, e.name)
         const lm = await readMeta(lessonFile)
-        const lessonId = intId(lm.data.id)
-        if (!lessonId) errors.push(`${rel(lessonFile)}: missing or invalid id (run \`node scripts/new-id.mjs\`)`)
         const type = String(lm.data.type ?? 'lecture')
         if (!LESSON_TYPES.includes(type)) errors.push(`${rel(lessonFile)}: unknown type "${type}"`)
         ls.push({
-          id: lessonId ?? -1,
+          id: idFor(lessonFile, lm.data),
           slug: basename(e.name, '.md'),
           title: String(lm.data.title ?? ''),
-          moduleId: moduleId ?? -1,
+          moduleId,
           order: Number(lm.data.order ?? 0),
           type,
           isHidden: lm.data.isHidden === true,
@@ -123,7 +171,7 @@ async function readContent() {
       }
     }
   }
-  return { cs, ms, ls, errors }
+  return { cs, ms, ls, errors, writeBacks }
 }
 
 function fail(message: string, details: string[] = []): never {
@@ -132,12 +180,33 @@ function fail(message: string, details: string[] = []): never {
   process.exit(1)
 }
 
+// Persist newly assigned ids into their files' frontmatter.
+async function applyWriteBacks(writeBacks: WriteBack[]): Promise<void> {
+  for (const w of writeBacks) await writeFile(w.abs, insertFrontmatterId(await readFile(w.abs, 'utf8'), w.id))
+}
+
 async function main() {
+  const { cs, ms, ls, errors, writeBacks } = await readContent()
+  if (errors.length) fail('Content has files that cannot be synced:', errors)
+
+  // --assign-ids: persist generated ids to the files and stop (no DB).
+  if (ASSIGN_IDS) {
+    if (writeBacks.length) {
+      await applyWriteBacks(writeBacks)
+      console.log(`Assigned ids to ${writeBacks.length} file(s):`)
+      for (const w of writeBacks) console.log(`  ${w.id}  ${w.abs.slice(ROOT.length + 1)}`)
+    } else {
+      console.log('✓ No content ids to assign.')
+    }
+    return
+  }
+
   const connectionString = process.env.DATABASE_CONNECTION_POOL_URL || process.env.DATABASE_URL
   if (!connectionString) fail('DATABASE_URL is not set.')
 
-  const { cs, ms, ls, errors } = await readContent()
-  if (errors.length) fail('Content has files that cannot be synced:', errors)
+  // Persist any assigned ids before the DB write, so a re-run reads a stable id instead of minting
+  // a new one (which would insert a duplicate row).
+  if (writeBacks.length && !DRY_RUN) await applyWriteBacks(writeBacks)
 
   // Local socket / localhost connections skip TLS; managed Postgres (prod) uses it.
   const isLocal = /^postgres(ql)?:\/\/\//.test(connectionString) || /localhost|127\.0\.0\.1|host=\//.test(connectionString)
@@ -169,7 +238,10 @@ async function main() {
     for (const m of newModules) if (!willHaveCourse(m.courseId)) refErrors.push(`module ${m.slug} (id ${m.id}): course id ${m.courseId} not found`)
     for (const l of newLessons) {
       if (!willHaveModule(l.moduleId)) refErrors.push(`lesson ${l.slug} (id ${l.id}): module id ${l.moduleId} not found`)
-      if (l.type !== 'lecture') refErrors.push(`lesson ${l.slug} (id ${l.id}): new lessons must be type "lecture", got "${l.type}"`)
+      // Lectures and tests are authored in files (a test's questions land via sync-tests.mjs after
+      // this inserts the lesson row). coding_task / review_task still carry CMS-authored data.
+      if (l.type !== 'lecture' && l.type !== 'test')
+        refErrors.push(`lesson ${l.slug} (id ${l.id}): new lessons must be type "lecture" or "test", got "${l.type}"`)
     }
     if (refErrors.length) fail('Cannot insert new rows:', refErrors)
 
@@ -200,7 +272,7 @@ async function main() {
         )
       if (newLessons.length)
         await tx.insert(lessons).values(
-          newLessons.map((l) => ({ id: l.id, title: l.title, slug: l.slug, module: l.moduleId, order: l.order, type: l.type as 'lecture', isHidden: l.isHidden })),
+          newLessons.map((l) => ({ id: l.id, title: l.title, slug: l.slug, module: l.moduleId, order: l.order, type: l.type as 'lecture' | 'test', isHidden: l.isHidden })),
         )
     })
 
