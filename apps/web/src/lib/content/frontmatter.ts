@@ -13,6 +13,22 @@ export function stripFrontmatter(raw: string): string {
   return match ? raw.slice(match[0].length) : raw
 }
 
+// A `<!-- q -->` / `<!-- q:ID -->` marker on its own line begins a test lesson's question block.
+const TEST_QUESTION_MARKER_RE = /^[ \t]*<!--\s*q(?::\s*[^\s>]+)?\s*-->[ \t]*$/m
+
+/**
+ * Drop a test lesson's question block from its body. In a `type: test` file the questions live
+ * below the intro as `<!-- q -->` markers + `- [x]` option lines — that's source data for the DB
+ * sync (scripts/sync-tests.mjs), rendered interactively from the DB, not prose. Only the intro
+ * before the first marker is display content. A no-op for lectures (no marker).
+ */
+export function stripTestQuestions(body: string): string {
+  const match = body.match(TEST_QUESTION_MARKER_RE)
+  if (!match) return body
+  const intro = body.slice(0, match.index).replace(/\s+$/, '')
+  return intro ? intro + '\n' : ''
+}
+
 /**
  * Parse a lesson's `faq` rows out of its own `.md` frontmatter. Server-only: the faq feeds
  * JSON-LD (an SSR/SEO concern — it is never rendered on the page), so the YAML parser is
