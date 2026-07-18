@@ -54,7 +54,7 @@ Both formats are correct, and both are used widely every day. One is built aroun
 
 Picture a public API, the kind outside developers around the world write code against. What is the parent goal there? Those developers succeeding quickly. When something breaks, a developer who can open the response and read it is unstuck in minutes. The handful of bytes a binary format would save is a small **child goal** at that scale, invisible next to the cost of confusing thousands of people. Readability serves the parent goal directly, so JSON is right.
 
-Now picture internal traffic between a company's own services, machines exchanging billions of messages a day with each other. Here the parent goal shifts. Keeping that system fast and affordable is a large part of the whole point, and at billions of messages the size of each one and the cost of processing it stop being negligible. Now the compact binary format serves the parent goal, so Protocol Buffers is right.
+Now picture internal traffic between a company's own services, machines exchanging billions of messages a day with each other. Here the parent goal shifts. Keeping that system fast and affordable is a large part of the whole point. At billions of messages, the size of each message and the cost of processing it stop being negligible. Now the compact binary format serves the parent goal, so Protocol Buffers is right.
 
 This is the split that happened in the real world. Google built Protocol Buffers for the internal services where size and speed dominate, while most public APIs are built on JSON. Same two formats. Opposite correct answers. The only thing that moved was the parent goal.
 
@@ -95,7 +95,7 @@ This is the split that happened in the real world. Google built Protocol Buffers
 
 There is a tempting way to get this wrong, and it is worth naming because it looks like rigor. You take one child goal, measure it, and declare a winner. "Protocol Buffers produces smaller messages, so Protocol Buffers is better." The measurement is true. The conclusion skips the parent goal entirely.
 
-Put the binary format into a small public API and watch what it buys. It saves a few bytes nobody will ever notice, and in exchange every outside developer now needs extra tooling to read a response they used to read directly. A child goal has been pushed to its best value at the direct expense of the parent goal above it. Improving a child goal while the parent goal it serves gets worse improves nothing at all.
+Put the binary format into a small public API and watch what it buys. It saves a few bytes nobody will ever notice, and in exchange every outside developer now needs extra tooling to read a response they used to read directly. A child goal has been pushed to its best value at the direct expense of the parent goal above it. When improving a child goal makes the parent goal it serves worse, you have improved nothing at all.
 
 ## Say the goal before you compare options
 

@@ -76,7 +76,7 @@ Of all the things a system could hold on to between calls, the per-user record i
 
 ## Check what you store per user
 
-You can classify a system with one question. For each user, what does it keep between calls? If the honest answer is nothing, and the results are still correct, the system is account-generic and should stay that way. If the answer is a balance, a history, or a claim that has to survive from one call to the next, the system is account-specific, and correctly so, because remembering the user is the job.
+You can classify a system with one question. For each user, what does it keep between calls? If the honest answer is nothing, and the results are still correct, the system is account-generic and should stay that way. If the answer is a balance, a history, or a claim that has to survive from one call to the next, the system is account-specific. That is correct, because remembering the user is the job.
 
 The design question is never which style is better in the abstract. The only thing that decides is whether the purpose requires remembering users. When it does not, do not remember them. Every stored record you can avoid is one an attacker cannot reach, and one less thing standing between a new caller and their first use.
 
@@ -84,4 +84,4 @@ The design question is never which style is better in the abstract. The only thi
 
 Skip this section if you only want the principle.
 
-Some on-chain proxies are account-generic. Every call carries a complete, self-contained assertion, for example that after this transaction a given address must hold at least a certain amount of a certain token, and nothing is stored between one call and the next. Because the proxy remembers no users and grants no one standing rights, anyone can call it, which is what makes it permissionless. ERC-4626 vaults sit at the other end, and correctly so. A vault has to track each depositor's claim over time, so it is account-specific by necessity, the same way a bank ledger is.
+Some on-chain proxies are account-generic. Every call carries a complete, self-contained assertion. For example, after this transaction a given address must hold at least a certain amount of a certain token. Nothing is stored between one call and the next. Because the proxy remembers no users and grants no one standing rights, anyone can call it, which is what makes it permissionless. ERC-4626 vaults sit at the other end, and correctly so. A vault has to track each depositor's claim over time, so it is account-specific by necessity, the same way a bank ledger is.
