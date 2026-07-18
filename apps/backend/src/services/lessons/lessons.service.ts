@@ -1,4 +1,4 @@
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { and, eq, ne, or, sql } from 'drizzle-orm'
 import { db, payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
 import { Lesson, payloadSchema } from '@redduck/payload-config'
@@ -8,20 +8,26 @@ import { enrichLessonContentInternalLinks } from './lesson-link-resolution'
 const { courses, lessons, modules } = payloadSchema
 
 export class LessonsService {
+  // A by-slug lesson lookup that respects the preview flag: the lesson must live under `courseSlug`
+  // and be API-accessible — visible, or `previewable` while hidden — as must its module and course.
+  static #lessonBySlugWhere(courseSlug: string, lessonSlug: string) {
+    return and(
+      eq(lessons.slug, lessonSlug),
+      or(ne(lessons.isHidden, true), eq(lessons.previewable, true)),
+      sql`exists (
+        select 1 from ${modules} m
+        inner join ${courses} c on c.id = m.course_id
+        where m.id = ${lessons.module}
+          and c.slug = ${courseSlug}
+          and (coalesce(c.is_hidden, false) = false or coalesce(c.previewable, false) = true)
+          and (coalesce(m.is_hidden, false) = false or coalesce(m.previewable, false) = true)
+      )`,
+    )
+  }
+
   static async getLesson(courseSlug: string, lessonSlug: string) {
     const lesson = await payloadDb.query.lessons.findFirst({
-      where: and(
-        eq(lessons.slug, lessonSlug),
-        ne(lessons.isHidden, true),
-        sql`exists (
-          select 1 from ${modules} m
-          inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module}
-            and c.slug = ${courseSlug}
-            and coalesce(c.is_hidden, false) = false
-            and coalesce(m.is_hidden, false) = false
-        )`,
-      ),
+      where: LessonsService.#lessonBySlugWhere(courseSlug, lessonSlug),
       with: {
         module: { with: { course: true } },
         faq: {
@@ -150,18 +156,7 @@ export class LessonsService {
    */
   static async getReviewLessonWithRubric(courseSlug: string, lessonSlug: string): Promise<Lesson> {
     const lesson = await payloadDb.query.lessons.findFirst({
-      where: and(
-        eq(lessons.slug, lessonSlug),
-        ne(lessons.isHidden, true),
-        sql`exists (
-          select 1 from ${modules} m
-          inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module}
-            and c.slug = ${courseSlug}
-            and coalesce(c.is_hidden, false) = false
-            and coalesce(m.is_hidden, false) = false
-        )`,
-      ),
+      where: LessonsService.#lessonBySlugWhere(courseSlug, lessonSlug),
       with: {
         reviewGradingTasks: {
           orderBy: (tasks, { asc }) => [asc(tasks._order)],
@@ -225,18 +220,7 @@ export class LessonsService {
 
   static async #getLessonBySlugs(courseSlug: string, lessonSlug: string) {
     const lesson = await payloadDb.query.lessons.findFirst({
-      where: and(
-        eq(lessons.slug, lessonSlug),
-        ne(lessons.isHidden, true),
-        sql`exists (
-          select 1 from ${modules} m
-          inner join ${courses} c on c.id = m.course_id
-          where m.id = ${lessons.module}
-            and c.slug = ${courseSlug}
-            and coalesce(c.is_hidden, false) = false
-            and coalesce(m.is_hidden, false) = false
-        )`,
-      ),
+      where: LessonsService.#lessonBySlugWhere(courseSlug, lessonSlug),
     })
 
     return lesson || null

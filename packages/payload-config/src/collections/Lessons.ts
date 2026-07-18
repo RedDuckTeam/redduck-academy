@@ -792,5 +792,15 @@ export const Lessons: CollectionConfig = {
         description: 'When checked, this lesson is excluded from the public API and all calculations.',
       },
     },
+    {
+      name: 'previewable',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'When checked together with "hidden", this lesson can still be fetched by its direct API/URL and submitted to (preview before launch). It stays out of listings and calculations.',
+      },
+    },
   ],
 }

@@ -195,6 +195,10 @@ export interface Course {
    */
   isHidden?: boolean | null;
   /**
+   * When checked together with "hidden", this course can still be fetched by its direct API/URL (preview before launch). It stays out of the course list and calculations.
+   */
+  previewable?: boolean | null;
+  /**
    * This course is locked until the selected prerequisite course is fully completed. Lectures are always accessible.
    */
   prerequisiteCourse?: (number | null) | Course;
@@ -215,6 +219,10 @@ export interface Module {
    * When checked, this module is excluded from the public API and all calculations.
    */
   isHidden?: boolean | null;
+  /**
+   * When checked together with "hidden", this module can still be fetched by its direct API/URL (preview before launch). It stays out of listings and calculations.
+   */
+  previewable?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -472,6 +480,10 @@ export interface Lesson {
    * When checked, this lesson is excluded from the public API and all calculations.
    */
   isHidden?: boolean | null;
+  /**
+   * When checked together with "hidden", this lesson can still be fetched by its direct API/URL and submitted to (preview before launch). It stays out of listings and calculations.
+   */
+  previewable?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -655,6 +667,7 @@ export interface CoursesSelect<T extends boolean = true> {
   order?: T;
   publishedAt?: T;
   isHidden?: T;
+  previewable?: T;
   prerequisiteCourse?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -669,6 +682,7 @@ export interface ModulesSelect<T extends boolean = true> {
   course?: T;
   order?: T;
   isHidden?: T;
+  previewable?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -780,6 +794,7 @@ export interface LessonsSelect<T extends boolean = true> {
         id?: T;
       };
   isHidden?: T;
+  previewable?: T;
   updatedAt?: T;
   createdAt?: T;
 }
