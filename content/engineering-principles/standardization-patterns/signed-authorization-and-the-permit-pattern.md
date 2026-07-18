@@ -94,10 +94,10 @@ Leave one of these out and the gap is concrete. With no expiry, an old authoriza
 
 ## Sign more than your name
 
-When you build or use a signed authorization, treat the signature as the easy part. The work is in what it commits to. Before you sign, make sure the message names who may act, the exact action, the system it is for, and the time it stops being valid, and make sure it can be used only once. A signature over all of that is a permission you can hand to a stranger and let them carry across time, without it turning into a permission you never meant to give.
+When you build or use a signed authorization, treat the signature as the easy part. The work is in what it commits to. Before you sign, make sure the message names who may act, the exact action, the system it is for, and the time it stops being valid. Make sure it can also be used only once. A signature over all of that is a permission you can hand to a stranger and let them carry across time, without it turning into a permission you never meant to give.
 
 ## Blockchain application
 
 Skip this section if you only want the principle. On many blockchains, letting another party spend your tokens through the standard ERC-20 approval flow takes two transactions: one approve call to grant the allowance, then a transferFrom that spends it. The first has to be sent by the token holder, and sending it requires already holding the chain's native currency to pay for the transaction. EIP-2612, the permit extension, applies signed authorization to remove that burden. The holder signs an approval message offline, and anyone can submit it together with the spend in a single transaction.
 
-EIP-712 gives that message its binding structure, so the approval is human-readable and tied to a specific token contract and chain, the who, what, and where from the list above. Only a token that implements EIP-2612 supports this flow, because the token contract itself has to verify the signature. ERC8009's permit router, examined in depth in the ERC8009 course, builds on this same mechanism.
+EIP-712 gives that message its binding structure, so the approval is human-readable and tied to a specific token contract and chain. That covers the who, what, and where from the list above. Only a token that implements EIP-2612 supports this flow, because the token contract itself has to verify the signature. ERC8009's permit router, examined in depth in the ERC8009 course, builds on this same mechanism.
