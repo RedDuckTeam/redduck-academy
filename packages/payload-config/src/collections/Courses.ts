@@ -110,6 +110,16 @@ export const Courses: CollectionConfig = {
       },
     },
     {
+      name: 'previewable',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'When checked together with "hidden", this course can still be fetched by its direct API/URL (preview before launch). It stays out of the course list and calculations.',
+      },
+    },
+    {
       name: 'prerequisiteCourse',
       type: 'relationship',
       relationTo: 'courses',
