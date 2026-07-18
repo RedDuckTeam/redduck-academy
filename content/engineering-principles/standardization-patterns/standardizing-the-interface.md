@@ -39,7 +39,7 @@ Unicode replaced the pairs with a single target. It gives every character in eve
 
 ## Why a standard turns N times N into N
 
-Underneath both stories is a number. Take N participants who all need to work with each other. Without a shared standard, each pair has to agree on its own interface, so the number of integrations grows with the number of pairs, on the order of N times N. Ten participants pull toward on the order of a hundred private arrangements. Add one more and you add ten new integrations, one against each participant already there.
+Underneath both stories is a number. Take N participants who all need to work with each other. Without a shared standard, each pair has to agree on its own interface, so the number of integrations grows with the number of pairs, on the order of N times N. With ten participants, that is on the order of a hundred private arrangements. Add one more and you add ten new integrations, one against each participant already there.
 
 With a standard, each participant implements the one shared interface and nothing else. That is N integrations in total, one per participant. Add a new participant and the cost is a single implementation matched against the standard, where before it was a negotiation with every member already present. This is the whole economic case for standardizing an interface, and it is why a standard grows more valuable as more participants adopt it.
 

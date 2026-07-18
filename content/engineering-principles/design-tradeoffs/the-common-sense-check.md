@@ -29,7 +29,7 @@ Most design mistakes look reasonable in the abstract and fall apart the moment a
 
 ## When the thing being checked writes its own rules
 
-Imagine a currency exchange that accepts only dollars and euros. Before taking your money, the clerk checks it against a list of accepted currencies. The flaw is who holds the list. You do. You walk in with a currency you invented this morning and a list that happens to include it, the clerk sees it on the list, and takes it. Absurd on sight. Nobody lets the customer supply the list of what counts as real money.
+Imagine a currency exchange that accepts only dollars and euros. Before taking your money, the clerk checks it against a list of accepted currencies. The flaw is who holds the list. You do. You walk in with a currency you invented this morning and a list that happens to include it. The clerk sees it on the list and takes it. Absurd on sight. Nobody lets the customer supply the list of what counts as real money.
 
 The shape underneath that scene is the one to remember: the thing being checked is also allowed to supply the rules of the check. Told as a scene with a self-interested customer in it, the absurdity is impossible to miss. Buried in a system design, the same shape slips straight through.
 
@@ -37,7 +37,7 @@ The shape underneath that scene is the one to remember: the thing being checked 
 
 Here is that exact shape in software. A web API needs to decide what each user is allowed to do, so it reads a field called `role` from the request and treats an admin role as permission to do anything. The problem is where the `role` field comes from. The client sends it, in the body of its own request. Any client can put `"role": "admin"` in the request it sends.
 
-Run the check. A rational, adversarial user reads the rules, sees that the server believes whatever `role` the request claims, and simply claims to be an admin. It is the currency list again: the thing being checked, the user, is supplying the rule that decides the check, their own role. A building where visitors write their own access badges is not a secured building.
+Run the check. A rational, adversarial user reads the rules, sees that the server believes whatever `role` the request claims, and simply claims to be an admin. It is the currency list again. The user is the thing being checked, and the user also supplies the rule that decides the check, their own role. A building where visitors write their own access badges is not a secured building.
 
 ## A different move: paying out before you have checked
 
@@ -45,7 +45,7 @@ Not every failure is about supplying the rules. Some are about timing. An online
 
 ## How far the check goes
 
-Passing this check does not prove a design is safe. Plenty of designs survive the question and still hide deeper flaws. What the check gives you is cheap and worth doing every time: it catches the errors a self-interested person would find in the first minute. When you run it and the answer to "does this make sense under an adversary?" comes out no, that is the signal to stop and redesign, before anything is built on top of the mistake.
+Passing this check does not prove a design is safe. Plenty of designs survive the question and still hide deeper flaws. What the check gives you is cheap and worth doing every time: it catches the errors a self-interested person would find in the first minute. When you run it and the answer comes out no, that is the signal to stop and redesign before anything is built on top of the mistake.
 
 ## Put an adversary in the room before you build
 
@@ -53,4 +53,4 @@ Before you commit to any design that touches money, access, or anything worth ta
 
 ## Blockchain application
 
-Skip this section if you only want the principle. The check matters most where a design handles assets and cannot be changed after it goes live, which is the situation of a smart contract on a public blockchain. A contract that accepts a caller-supplied list of "trusted" token addresses is the `role` field mistake in another domain: the caller is handed the power to define the very thing the contract trusts, so a self-interested caller supplies a list that serves themselves. The same one-question check catches it before deployment, when catching it is still free. The ERC8009 course applies this check to a real vulnerability of this kind.
+Skip this section if you only want the principle. The check matters most where a design handles assets and cannot be changed after it goes live, which is the situation of a smart contract on a public blockchain. A contract that accepts a caller-supplied list of "trusted" token addresses is the `role` field mistake in another domain. The caller is handed the power to define the very thing the contract trusts, so a self-interested caller supplies a list that serves themselves. The same one-question check catches it before deployment, when catching it is still free. The ERC8009 course applies this check to a real vulnerability of this kind.

@@ -27,7 +27,7 @@ faq:
 
 Picture a bank moving 100 dollars from account A to account B. The computer does two things in order. First it lowers A's balance by 100. Then it raises B's balance by 100. In between those two writes there is an instant where A has already lost the money and B has not yet gained it.
 
-Nothing is wrong as long as both writes happen. But a machine can lose power, a process can be killed, a network link can drop, at any moment, including that instant. If it stops there, 100 dollars has disappeared from the records. No one stole it. No one meant for it to happen. The system is simply resting in a state nobody designed, because the design let two steps be separated in the first place.
+Nothing is wrong as long as both writes happen. But a machine can lose power, a process can be killed, or a network link can drop. Any of these can happen at any moment, including that instant. If it stops there, 100 dollars has disappeared from the records. No one stole it. No one meant for it to happen. The system is simply resting in a state nobody designed, because the design let two steps be separated in the first place.
 
 That is the shape of the problem. Any time an operation is really several steps, some failure in the middle can leave the system in a state its authors never intended.
 
@@ -82,7 +82,7 @@ That is why atomicity earns the label of a security primitive, beyond its role i
 
 ## Look for the all-or-nothing seam
 
-When you design an exchange between parties who do not trust each other, look first for whether both sides' actions can sit inside one all-or-nothing unit. If they can, most of the guarding falls away, the deposits, the go-first rules, the "are you allowed to do this" gates that only existed to survive a partial failure. If they cannot, that answer is worth having too. It means the actions live on systems that cannot be joined into one unit, and the trust you were trying to remove is exactly the trust you will keep paying for. Either way, you learn something real before you build.
+When you design an exchange between parties who do not trust each other, look first for whether both sides' actions can sit inside one all-or-nothing unit. If they can, most of the guarding falls away. The deposits, the go-first rules, the "are you allowed to do this" gates all existed only to survive a partial failure. If they cannot, that answer is worth having too. It means the actions live on systems that cannot be joined into one unit, and the trust you were trying to remove is exactly the trust you will keep paying for. Either way, you learn something real before you build.
 
 ## Blockchain application
 

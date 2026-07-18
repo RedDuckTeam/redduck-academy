@@ -81,7 +81,7 @@ The same shape appears at the scale of the whole internet. When your browser ope
 
 Something was traded away here, and it is worth naming plainly. Before, a bug in one application's login reached that one application. Now a critical bug in the shared authentication service reaches all fifty at once. The certificate authority is the same story. If one of those few authorities is compromised, a large slice of the web is exposed through it.
 
-That concentrated risk is the whole reason a shared authentication service and a certificate authority receive the most intensive security review of any component in their ecosystem. The concentration of risk and the concentration of review effort are the same decision. You are choosing to put the critical function where the most eyes are on it, so a bug is more likely to be found before it reaches anyone, and less likely to survive once the whole system depends on the code being right.
+That concentrated risk is the whole reason a shared authentication service and a certificate authority receive the most intensive security review of any component in their ecosystem. The concentration of risk and the concentration of review effort are the same decision. You are choosing to put the critical function where the most eyes are on it. A bug there is more likely to be found before it reaches anyone, and less likely to survive once the whole system depends on the code being right.
 
 ## Which goal each part serves
 

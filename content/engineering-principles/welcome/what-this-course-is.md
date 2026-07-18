@@ -15,7 +15,7 @@ faq:
       and you can work out the answer instead of looking it up.
 ---
 
-This is a course about the decisions underneath good engineering. It teaches the design principles that decide whether a system stays simple or turns tangled, whether it resists an attacker or breaks, whether other people can build on it or have to fight it. Every principle is taught with plain examples from software you already understand, along with databases, networks, operating systems, and everyday physical systems. Nothing to install, and no blockchain background needed.
+This is a course about the decisions underneath good engineering. It teaches the design principles that decide whether a system stays simple or turns tangled, whether it resists an attacker or breaks, whether other people can build on it or have to fight it. Every principle is taught with plain examples you already understand, from software, databases, networks, operating systems, and everyday physical systems. Nothing to install, and no blockchain background needed.
 
 ## Why principles beat a checklist
 
