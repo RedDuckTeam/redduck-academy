@@ -45,6 +45,17 @@ export async function createBatch(prompt: ReviewPrompt, submissionId: number, cr
 
 // ─── Output parsing ──────────────────────────────────────────────────────────
 
+/** Coerce the model's confidence to the allowed enum; anything unexpected becomes `low` (fails safe). */
+function coerceConfidence(v: unknown): 'high' | 'medium' | 'low' {
+  return v === 'high' || v === 'medium' ? v : 'low'
+}
+
+/** Parse a 1-based rubric index from the model; returns null unless it is an integer in [1, n]. */
+function normalizeIndex(v: unknown, n: number): number | null {
+  const i = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN
+  return Number.isInteger(i) && i >= 1 && i <= n ? i : null
+}
+
 function parseReviewFeedback(
   content: string,
   submissionId: number,
@@ -62,43 +73,71 @@ function parseReviewFeedback(
     throw new Error('Assistant output is not valid JSON')
   }
   if (!isRecord(parsed)) throw new Error('Invalid feedback shape')
-  if (typeof parsed.lessonPassed !== 'boolean') throw new Error('Invalid feedback: lessonPassed')
-  if (typeof parsed.summary !== 'string') throw new Error('Invalid feedback: summary')
-  if (typeof parsed.promptInjectionDetected !== 'boolean') {
-    throw new Error('Invalid feedback: promptInjectionDetected')
-  }
-  if (typeof parsed.promptInjectionNotes !== 'string') {
-    throw new Error('Invalid feedback: promptInjectionNotes')
-  }
-  if (!Array.isArray(parsed.criteria)) throw new Error('Invalid feedback: criteria')
-  for (const c of parsed.criteria) {
-    if (!isRecord(c) || typeof c.passed !== 'boolean') throw new Error('Invalid feedback: criterion passed')
-    if (typeof c.taskId !== 'string') throw new Error('Invalid feedback: criterion taskId')
-    if (typeof c.evidence !== 'string') throw new Error('Invalid feedback: criterion evidence')
-    if (c.confidence !== 'high' && c.confidence !== 'medium' && c.confidence !== 'low') {
-      throw new Error('Invalid feedback: criterion confidence')
+
+  // Map each grader row to its rubric task without trusting the model to transcribe 24-char
+  // ObjectIds (echoed ids were the whole "unknown/duplicate taskId" failure class, and neither
+  // provider enforces one-row-per-task: OpenAI ignores minItems/maxItems under strict mode,
+  // Anthropic strips them). Two safe strategies, chosen by what the rows actually carry:
+  //   1. By echoed taskId — only when every row carries a distinct, valid rubric id covering all
+  //      tasks. That is the OLD output shape (in-flight batches spanning a deploy); an opaque id
+  //      maps correctly even when the rows are out of order.
+  //   2. By array POSITION — the current shape, where each row carries a 1-based `index`. We map by
+  //      position, NOT by the `index` label: a swapped-but-valid label permutation is
+  //      indistinguishable from out-of-order rows, so honoring the label could cross-assign a
+  //      verdict to the wrong criterion. `index` is only an ordering nudge for the model.
+  // Gaps become safe fails; extra rows are dropped. This never throws.
+  const n = tasks.length
+  const rows = Array.isArray(parsed.criteria) ? parsed.criteria.filter(isRecord) : []
+  const idToPos = new Map(tasks.map((t, i) => [String(t.id), i]))
+  const rowIds = rows.map((c) => (typeof c.taskId === 'string' ? c.taskId : null))
+  const mappableByTaskId =
+    rows.length === n && rowIds.every((id) => id !== null && idToPos.has(id)) && new Set(rowIds).size === n
+
+  let rowForTask: (i: number) => Record<string, unknown> | undefined
+  if (mappableByTaskId) {
+    const byId = new Map<string, Record<string, unknown>>()
+    rows.forEach((c, k) => byId.set(rowIds[k] as string, c))
+    rowForTask = (i) => byId.get(String(tasks[i].id))
+  } else {
+    if (rows.length === n && rows.some((c, i) => normalizeIndex(c.index, n) !== i + 1)) {
+      logger.error('Grader rows not in rubric order; mapped positionally (recovered)', undefined, { submissionId })
     }
+    rowForTask = (i) => rows[i]
   }
 
-  // Verify the model returned exactly one criterion per rubric task — no duplicates, no omissions,
-  // no fabricated taskIds. This is the real length lock: OpenAI's strict minItems/maxItems helps,
-  // but Anthropic drops those keywords, so this check is what actually guarantees full coverage.
-  const expectedIds = new Set(tasks.map((t) => String(t.id)))
-  const seenIds = new Set<string>()
-  for (const c of parsed.criteria as Array<{ taskId: string }>) {
-    if (!expectedIds.has(c.taskId)) {
-      throw new Error(`Invalid feedback: unknown taskId ${c.taskId}`)
+  const criteria: ReviewFeedback['criteria'] = tasks.map((t, i) => {
+    const taskId = String(t.id)
+    const title = t.title != null ? String(t.title).trim() : ''
+    const c = rowForTask(i)
+    if (!c) {
+      // No row for this rubric item. Fail it safely with an instructor note rather than dropping
+      // coverage — a required item must never silently disappear from the result.
+      return {
+        taskId,
+        name: title,
+        evidence: `The grader returned no row for rubric item ${i + 1} ("${title}").`,
+        confidence: 'low',
+        passed: false,
+        comment: 'This requirement could not be evaluated automatically. Please resubmit.',
+      }
     }
-    if (seenIds.has(c.taskId)) {
-      throw new Error(`Invalid feedback: duplicate taskId ${c.taskId}`)
+    return {
+      taskId,
+      name: typeof c.name === 'string' && c.name.trim() !== '' ? c.name : title,
+      evidence: typeof c.evidence === 'string' ? c.evidence : '',
+      confidence: coerceConfidence(c.confidence),
+      passed: c.passed === true,
+      comment: typeof c.comment === 'string' ? c.comment : '',
     }
-    seenIds.add(c.taskId)
-  }
-  if (seenIds.size !== expectedIds.size) {
-    throw new Error('Invalid feedback: criteria do not cover every rubric task')
-  }
+  })
 
-  return parsed as unknown as ReviewFeedback
+  return {
+    lessonPassed: typeof parsed.lessonPassed === 'boolean' ? parsed.lessonPassed : false,
+    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+    promptInjectionDetected: parsed.promptInjectionDetected === true,
+    promptInjectionNotes: typeof parsed.promptInjectionNotes === 'string' ? parsed.promptInjectionNotes : '',
+    criteria,
+  }
 }
 
 /**
