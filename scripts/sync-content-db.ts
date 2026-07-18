@@ -18,9 +18,10 @@
 //     written back to its frontmatter (persisted before the DB write, so a re-run never
 //     mints a second id for the same file). The merge workflow commits those ids.
 //   • Only structural columns are written (title, slug, parent, order, type). The lesson
-//     body stays in the files; `content` is left null. New lessons must be `type: lecture`
-//     or `test` (a test's questions are synced separately by scripts/sync-tests.mjs);
-//     coding_task / review_task assessment data is still authored in the CMS.
+//     body stays in the files; `content` is left null. Only `lecture` and `test` lessons are
+//     synced from files (a test's questions land separately via scripts/sync-tests.mjs);
+//     `coding_task` / `review_task` rows are skipped — their assessment data is still authored
+//     in the CMS, so this script never inserts, ids, or fails on them.
 
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
@@ -162,6 +163,10 @@ async function readContent() {
         const lm = await readMeta(lessonFile)
         const type = String(lm.data.type ?? 'lecture')
         if (!LESSON_TYPES.includes(type)) errors.push(`${rel(lessonFile)}: unknown type "${type}"`)
+        // Only lectures and tests are file-synced. coding_task / review_task are still
+        // CMS-managed (their assessment data isn't parsed from files yet), so skip those rows —
+        // don't insert, assign ids, or fail on them.
+        if (type !== 'lecture' && type !== 'test') continue
         ls.push({
           id: idFor(lessonFile, lm.data),
           slug: basename(e.name, '.md'),
@@ -247,12 +252,10 @@ async function main() {
     const willHaveCourse = (id: number) => courseIds.has(id) || newCourses.some((c) => c.id === id)
     const willHaveModule = (id: number) => moduleIds.has(id) || newModules.some((m) => m.id === id)
     for (const m of newModules) if (!willHaveCourse(m.courseId)) refErrors.push(`module ${m.slug} (id ${m.id}): course id ${m.courseId} not found`)
+    // `ls` only holds lecture/test rows (readContent skips the CMS-managed types), so the only
+    // check left is that a new lesson's module will exist.
     for (const l of newLessons) {
       if (!willHaveModule(l.moduleId)) refErrors.push(`lesson ${l.slug} (id ${l.id}): module id ${l.moduleId} not found`)
-      // Lectures and tests are authored in files (a test's questions land via sync-tests.mjs after
-      // this inserts the lesson row). coding_task / review_task still carry CMS-authored data.
-      if (l.type !== 'lecture' && l.type !== 'test')
-        refErrors.push(`lesson ${l.slug} (id ${l.id}): new lessons must be type "lecture" or "test", got "${l.type}"`)
     }
     if (refErrors.length) fail('Cannot insert new rows:', refErrors)
 
