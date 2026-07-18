@@ -43,11 +43,15 @@ export function buildReviewFeedbackSchema(criteriaCount: number): StructuredSche
               type: 'object',
               additionalProperties: false,
               properties: {
-                taskId: { type: 'string', description: 'Stable id for this rubric row (Payload grading task id).' },
+                index: {
+                  type: 'integer',
+                  description:
+                    'The <index> number (1-based) of the rubric <task> this row grades. Return exactly one row per <index>, in rubric order.',
+                },
                 name: {
                   type: 'string',
                   description:
-                    'Must exactly match the rubric task title for this taskId (same string as the title in the rubric XML).',
+                    'Must exactly match the rubric task <title> for this <index> (same string as in the rubric XML).',
                 },
                 evidence: {
                   type: 'string',
@@ -71,7 +75,7 @@ export function buildReviewFeedbackSchema(criteriaCount: number): StructuredSche
                     'SHOWN TO THE STUDENT. Brief feedback grounded in the student\'s own code or described in plain words. MUST NOT reveal the rubric\'s expected solution: no gradingHint labels (A/B/C/D, "Line A"), no prescribed order of operations, no enumerated list of required tests/cases — that detail belongs in "evidence". See <learner_comment_rules>.',
                 },
               },
-              required: ['taskId', 'name', 'evidence', 'confidence', 'passed', 'comment'],
+              required: ['index', 'name', 'evidence', 'confidence', 'passed', 'comment'],
             },
           },
         },

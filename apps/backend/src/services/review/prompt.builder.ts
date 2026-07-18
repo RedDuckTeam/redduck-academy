@@ -29,9 +29,9 @@ ${missingPaths.map((p) => `- ${p}`).join('\n')}
 function buildRubricBlock(tasks: NonNullable<Lesson['reviewGradingTasks']>): string {
   return tasks
     .map(
-      (t) => `
+      (t, i) => `
 <task>
-  <taskId>${String(t.id)}</taskId>
+  <index>${i + 1}</index>
   <title>${wrapCdata(t.title != null && String(t.title).trim() !== '' ? String(t.title) : 'Untitled')}</title>
   <requiredToPass>${t.isRequired}</requiredToPass>
   <gradingHint>${wrapCdata(t.criteria != null && String(t.criteria).trim() !== '' ? String(t.criteria) : 'None')}</gradingHint>
@@ -98,7 +98,7 @@ A "low" confidence means the evidence is insufficient. In that case "passed" MUS
 
 <grading_rules>
 1. For each <task> in <rubric>, follow <per_criterion_method> against the code in <submission_files>, evaluating that task's <gradingHint>.
-2. Echo "taskId" exactly as it appears in the <task>. Return one criterion per rubric task — no more, no less, no duplicates.
+2. Set "index" to the integer <index> of the <task> you are grading. Return exactly one criterion per rubric task: one row per <index>, in rubric order, no more, no less, no duplicates.
 3. "evidence" and "confidence" must be filled BEFORE "passed", per <per_criterion_method> and <confidence_calibration>.
 4. "passed": true ONLY if the quoted evidence plausibly meets the gradingHint expectations (subject to <comment_skepticism>) AND "confidence" is not "low".
 5. "lessonPassed": true ONLY IF every task with <requiredToPass>true</requiredToPass> has passed=true. Optional tasks affect feedback but do not by themselves fail the lesson.
