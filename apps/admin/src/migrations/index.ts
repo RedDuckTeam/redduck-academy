@@ -21,6 +21,7 @@ import * as migration_20260521_194943 from './20260521_194943';
 import * as migration_20260523_153915_drop_ai_possible_solutions from './20260523_153915_drop_ai_possible_solutions';
 import * as migration_20260529_132454 from './20260529_132454';
 import * as migration_20260707_222909 from './20260707_222909';
+import * as migration_20260718_140637_add_previewable_flag from './20260718_140637_add_previewable_flag';
 
 export const migrations = [
   {
@@ -136,6 +137,11 @@ export const migrations = [
   {
     up: migration_20260707_222909.up,
     down: migration_20260707_222909.down,
-    name: '20260707_222909'
+    name: '20260707_222909',
+  },
+  {
+    up: migration_20260718_140637_add_previewable_flag.up,
+    down: migration_20260718_140637_add_previewable_flag.down,
+    name: '20260718_140637_add_previewable_flag'
   },
 ];

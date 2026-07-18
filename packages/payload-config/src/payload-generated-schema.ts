@@ -132,6 +132,7 @@ export const courses = db_schema.table(
     order: numeric('order', { mode: 'number' }).notNull().default(0),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true, precision: 3 }),
     isHidden: boolean('is_hidden').default(false),
+    previewable: boolean('previewable').default(false),
     prerequisiteCourse: integer('prerequisite_course_id').references((): AnyPgColumn => courses.id, {
       onDelete: 'set null',
     }),
@@ -160,6 +161,7 @@ export const modules = db_schema.table(
       }),
     order: numeric('order', { mode: 'number' }).notNull(),
     isHidden: boolean('is_hidden').default(false),
+    previewable: boolean('previewable').default(false),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
   },
@@ -437,6 +439,7 @@ export const lessons = db_schema.table(
     templateRepoUrl: varchar('template_repo_url'),
     taskName: varchar('task_name'),
     isHidden: boolean('is_hidden').default(false),
+    previewable: boolean('previewable').default(false),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }).defaultNow().notNull(),
   },

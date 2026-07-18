@@ -57,5 +57,15 @@ export const Modules: CollectionConfig = {
         description: 'When checked, this module is excluded from the public API and all calculations.',
       },
     },
+    {
+      name: 'previewable',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'When checked together with "hidden", this module can still be fetched by its direct API/URL (preview before launch). It stays out of listings and calculations.',
+      },
+    },
   ],
 }

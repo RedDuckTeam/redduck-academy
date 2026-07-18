@@ -1,4 +1,4 @@
-import { eq, ne } from 'drizzle-orm'
+import { eq, ne, or } from 'drizzle-orm'
 import { payloadDb } from '../../db'
 import { AppError } from '../../lib/errors'
 
@@ -9,14 +9,16 @@ export class CoursesService {
     // per-lesson route that strips them lazily. Course-detail consumers only need navigation
     // shape (slug/title/order/type), so no learner-facing UX regresses.
     const result = await payloadDb.query.courses.findFirst({
-      where: (c, { and }) => and(eq(c.slug, slug), ne(c.isHidden, true)),
+      // Preview-aware: a hidden but `previewable` course (and its modules/lessons) stays fetchable by
+      // its direct slug for pre-launch testing, while the list endpoints below keep excluding it.
+      where: (c, { and }) => and(eq(c.slug, slug), or(ne(c.isHidden, true), eq(c.previewable, true))),
       with: {
         modules: {
-          where: (m) => ne(m.isHidden, true),
+          where: (m) => or(ne(m.isHidden, true), eq(m.previewable, true)),
           orderBy: (m, { asc }) => [asc(m.order)],
           with: {
             lessons: {
-              where: (l) => ne(l.isHidden, true),
+              where: (l) => or(ne(l.isHidden, true), eq(l.previewable, true)),
               orderBy: (l, { asc }) => [asc(l.order)],
               columns: {
                 id: true,
