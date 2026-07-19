@@ -32,21 +32,21 @@ faq:
       can do.
 ---
 
-> The single proxy that enforces your balance changes was not always safe. An early version had a hole that let an attacker spend other people's token approvals, and closing it forced ERC-8009 into the shape it has now: one small trusted core that enforces balances, with replaceable routers in front of it for each way a call gets paid for. One of those routers is what finally covers a multisig like Bybit's. And even with all of it in place, the guarantee has an edge worth knowing.
+> The single proxy that enforces your balance changes was not always safe. An early version had a hole that let an attacker spend other people's token approvals, and closing it forced ERC-8009 into the shape it has now: one small trusted core that enforces balances, with one replaceable router for each way a call can be paid. One of those routers is what finally covers a multisig like Bybit's. And even with all of it in place, the guarantee still has a limit worth knowing.
 
 ## The hole in a single proxy
 
-A proxy that stands between you and every contract you call is a powerful thing to get wrong, and early in ERC-8009's design it was wrong. The proxy let any caller pass in the target to call and the calldata to send, both chosen freely. It also held standing token approvals, because users approved it once so it could move their tokens for ordinary transactions.
+A proxy that stands between you and every contract you call is dangerous to get wrong, and early in ERC-8009's design it was wrong. The proxy let any caller pass in the target to call and the calldata to send, both chosen freely. It also held standing token approvals, because users approved it once so it could move their tokens for ordinary transactions.
 
-Put those two facts together from an attacker's side. Call the proxy with a token contract as the target, and as the calldata, an instruction to move some victim's tokens to yourself. The victim had already approved the proxy. The token sees the trusted proxy asking to move the victim's balance, and it obeys. The proxy had become a confused deputy: a trusted component anyone could point at any target, spending approvals that were never meant for them.
+Put those two facts together from an attacker's side. Call the proxy with a token contract as the target, and pass calldata that moves some victim's tokens to yourself. The victim had already approved the proxy. The token sees the trusted proxy asking to move the victim's balance, and it obeys. The proxy had become a confused deputy: a trusted component anyone could point at any target, spending approvals that were never meant for the caller.
 
-The balance check did not save the victim. It runs against the changes the caller declares, and the attacker declared no requirement about the victim's account, so nothing was checked there. The enforcement was sound and the design around it still leaked.
+The balance check did not save the victim. It runs against the changes the caller declares, and the attacker declared no requirement about the victim's account, so nothing was checked there. The enforcement was sound, and the design around it was still exploitable.
 
 ## A small core, and a router for each flow
 
-The fix was to split the one contract into two kinds of thing. A minimal core does the single job that has to be trusted: it enforces the balance changes and holds no standing power of its own. Everything that arranges how a specific call gets paid for moves out into a replaceable router that sits in front of the core. The caller can no longer aim a trusted, approval-holding component at an arbitrary target, because that combined component no longer exists.
+The fix was to split the one contract into two separate pieces. A minimal core does the single job that has to be trusted: it enforces the balance changes and holds no standing power of its own. Everything that arranges how a specific call gets paid for is moved out into a replaceable router that sits in front of the core. The caller can no longer aim a trusted, approval-holding component at an arbitrary target, because that combined component no longer exists.
 
-The routers are where standing approvals stop being a liability. The permit router uses a per-transaction approval instead of a standing one. Remember permit from the gasless approvals lesson: the owner signs an EIP-712 message that grants a spend for one transaction only, so no lasting approval sits on the proxy for an attacker to reach. A different way of paying for a call gets a different router, and the core beneath them stays the same small contract, audited once and deployed at one canonical address on each chain, so hardware wallet firmware can hardcode that address and trust it.
+The routers are where standing approvals stop being a liability. The permit router uses a per-transaction approval instead of a standing one. Remember permit from the gasless approvals lesson: the owner signs an EIP-712 message that grants a spend for one transaction only, so no lasting approval sits on the router or the core for an attacker to reach. A different way of paying for a call gets a different router, and the core beneath them stays the same small contract, audited once and deployed at one canonical address on each chain, so hardware wallet firmware can hardcode that address and trust it.
 
 <svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The ERC-8009 core-and-router structure</title><desc>Three replaceable router contracts sit on top: a permit router for per-transaction approvals, a Safe router for multisig execution, and room for more routers, one per new flow. All three feed down into a single minimal balance-proxy core, which is stateless, has one deployment per chain, and enforces the caller's balance changes or reverts. The routers are the replaceable periphery and the core is the small trusted piece.</desc>
   <rect x="20" y="16" width="680" height="34" fill="#ed4937"/>
@@ -75,7 +75,7 @@ The routers are where standing approvals stop being a liability. The permit rout
 
 ## Multisig, where signing and execution split
 
-Bybit was a multisig, and that separates signing from execution. Several owners approve a transaction, then one executor submits it on-chain. That split is why a plain single-signer flow did not cover the case that mattered, and it is exactly what the Safe router is built for, added in mid-2026.
+Bybit was a multisig, and that separates signing from execution. Several owners approve a transaction, then one executor submits it on-chain. That split is why a plain single-signer flow did not cover the case that mattered, and it is exactly what the Safe router, added in mid-2026, is built for.
 
 The Safe router is added as one of the Safe's owners and takes up one slot of the signature threshold. The executor submits the transaction through the router on their hardware wallet, and sees the same clear-signed balance requirements a single signer would. The router runs the Safe transaction through the core, and the required changes are checked after the Safe executes, so any violation reverts the whole bundle. Bybit's setup, three owners approving and one executor submitting, is the flow this now covers.
 
@@ -87,7 +87,7 @@ Balance requirements are a strong floor, and they are still only a floor. ERC-80
 
 Two narrower edges are worth remembering.
 
-- **An absolute-balance check ignores where funds came from.** Someone could top up your balance to satisfy it. When the source matters, use the difference form, which measures the change your own call produced.
+- **An absolute-balance check ignores where funds came from.** Someone could send you funds so the final number passes, hiding that your own call actually drained you. When the source matters, use the difference form, which measures the change your own call produced.
 - **The core is stateless.** Any funds left sitting in it belong to whoever withdraws them next, so a correct transaction never leaves a balance behind.
 
 ## Where ERC-8009 stands
@@ -100,4 +100,4 @@ ERC-8009 is a proposed standard, still in Draft. There is a working implementati
 
 ## Reading the floor for what it is
 
-You now have two things to do at signing time, and they work together. Read the balance changes the screen shows you, and confirm they match what you meant to do. Then remember that those numbers are a floor, so if a transaction touches something a balance does not capture, an NFT, a debt position, a change of ownership, the screen stays quiet about it and the judgment is still yours. The core enforces what you declared and nothing more, which is a firm guarantee about your ETH and tokens and an honest silence about everything else.
+You now have two things to do at signing time, and they work together. Read the balance changes the screen shows you, and confirm they match what you meant to do. Then remember that those numbers are a floor. If a transaction touches something a balance does not capture, the screen stays quiet about it and the judgment is still yours. That includes an NFT, a debt position, or a change of ownership. The core enforces what you declared and nothing more, which is a firm guarantee about your ETH and tokens and an honest silence about everything else.

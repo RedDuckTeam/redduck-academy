@@ -35,34 +35,34 @@ faq:
 
 You already have the question that catches the attacks a decoder misses: what will this transaction do to my balances? A decoder cannot answer it, because naming a function does not tell you the funds it moves. ERC-8009 answers it directly, by making the balance changes part of the transaction itself.
 
-Look at the Bybit transaction through this lens. Its effect on balances was zero, at the moment the signers believed they were sending ETH to a hot wallet. A screen that showed "0 ETH moved" against an expected transfer is a screen that stops the signer cold. A transaction that shows no change when you expect one is a transaction you reject.
+Apply that question to the Bybit transaction. It moved no balances at all, even though the signers believed they were sending ETH to a hot wallet. A screen that showed "0 ETH moved" against an expected transfer is a screen that makes the signer stop and reject. A transaction that shows no change when you expect one is a transaction you reject.
 
 ## How the proxy works
 
-ERC-8009 is a single contract, deployed once per network, that you route your transaction through. It is stateless and permissionless: it holds no funds between transactions, and everyone on a network uses the same instance at the same address. Instead of calling your target contract directly, you call the proxy and hand it two things: the call you want made, and the **balance changes you require** from it.
+ERC-8009 is a single contract, deployed once per network, that you route your transaction through. It keeps no persistent state and needs no permission to use: it holds no funds between transactions, and anyone can route a call through the one canonical deployment each network has. Instead of calling your target contract directly, you call the proxy and hand it two things: the call you want made, and the **balance changes you require** from it.
 
 The proxy then runs a fixed sequence.
 
-<svg role="img" viewBox="0 0 720 430" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The fixed sequence an ERC-8009 proxy runs for every call</title><desc>A vertical flow of four steps. First the proxy moves or approves the tokens the call needs. Second it makes the call to the target contract. Third it moves the results back to the caller. Fourth it checks every balance change the caller required, and reverts the whole transaction if any of them did not hold. The fourth step is the enforcement, and the numbers it checks are the same numbers the device displayed.</desc>
-  <rect x="20" y="16" width="680" height="34" fill="#ed4937"/>
-  <text x="360" y="39" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">WHAT THE PROXY DOES, IN ORDER</text>
-  <rect x="180" y="70" width="360" height="52" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+<svg role="img" viewBox="0 0 800 430" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The fixed sequence an ERC-8009 proxy runs for every call</title><desc>A vertical flow of four steps. First the proxy moves or approves the tokens the call needs. Second it makes the call to the target contract. Third it moves the results back to the caller. Fourth it checks every balance change the caller required, and reverts the whole transaction if any of them did not hold. The fourth step is the enforcement, and the numbers it checks are the same numbers the device displayed.</desc>
+  <rect x="20" y="16" width="760" height="34" fill="#ed4937"/>
+  <text x="400" y="39" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">WHAT THE PROXY DOES, IN ORDER</text>
+  <rect x="180" y="70" width="440" height="52" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="196" y="93" font-family="monospace" font-size="12" fill="#000000" font-weight="bold">1  APPROVALS</text>
   <text x="196" y="112" font-family="monospace" font-size="10" fill="#565653">move or approve the tokens the call needs</text>
-  <path d="M360 122 L360 146" stroke="#565653" stroke-width="2"/><path d="M354 140 L360 148 L366 140 Z" fill="#565653"/>
-  <rect x="180" y="150" width="360" height="52" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <path d="M400 122 L400 146" stroke="#565653" stroke-width="2"/><path d="M394 140 L400 148 L406 140 Z" fill="#565653"/>
+  <rect x="180" y="150" width="440" height="52" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="196" y="173" font-family="monospace" font-size="12" fill="#000000" font-weight="bold">2  CALL THE TARGET</text>
   <text x="196" y="192" font-family="monospace" font-size="10" fill="#565653">run the transaction you asked for</text>
-  <path d="M360 202 L360 226" stroke="#565653" stroke-width="2"/><path d="M354 220 L360 228 L366 220 Z" fill="#565653"/>
-  <rect x="180" y="230" width="360" height="52" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <path d="M400 202 L400 226" stroke="#565653" stroke-width="2"/><path d="M394 220 L400 228 L406 220 Z" fill="#565653"/>
+  <rect x="180" y="230" width="440" height="52" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="196" y="253" font-family="monospace" font-size="12" fill="#000000" font-weight="bold">3  WITHDRAWALS</text>
   <text x="196" y="272" font-family="monospace" font-size="10" fill="#565653">move the results back to you</text>
-  <path d="M360 282 L360 306" stroke="#565653" stroke-width="2"/><path d="M354 300 L360 308 L366 300 Z" fill="#565653"/>
-  <rect x="180" y="310" width="360" height="60" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
+  <path d="M400 282 L400 306" stroke="#565653" stroke-width="2"/><path d="M394 300 L400 308 L406 300 Z" fill="#565653"/>
+  <rect x="180" y="310" width="440" height="60" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
   <text x="196" y="333" font-family="monospace" font-size="12" fill="#000000" font-weight="bold">4  REQUIRE THE BALANCE CHANGES</text>
   <text x="196" y="352" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">every declared change must hold, or the whole transaction reverts</text>
-  <text x="360" y="404" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The proxy runs the same four steps every time, and the numbers it checks in step 4 are the</text>
-  <text x="360" y="420" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">exact balance changes the device showed you, so the screen and the chain cannot disagree.</text>
+  <text x="400" y="404" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The proxy runs the same four steps every time, and the numbers it checks in step 4 are the</text>
+  <text x="400" y="420" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">exact balance changes the device showed you, so the screen and the chain cannot disagree.</text>
 </svg>
 
 A revert costs you only gas. The declared changes are the whole safety property: if the call does anything other than what you required of your balances, step 4 throws it away.
@@ -71,7 +71,8 @@ A revert costs you only gas. The declared changes are the whole safety property:
 // Solidity 0.8.24, Ethereum mainnet
 interface IBalanceProxy {
     // token == address(0) means native ETH.
-    // balance is a signed minimum change: the actual change must be at least this.
+    // For diffs, balance is a signed minimum change: the actual change must be at least this.
+    // For approvals and withdrawals, balance is the amount to move.
     struct Balance { address target; address token; int256 balance; }
 
     // useTransfer true sends tokens to the target,
@@ -90,11 +91,11 @@ interface IBalanceProxy {
 }
 ```
 
-You state each requirement as a minimum. `at least +2,800 USDC` means the call must leave you 2,800 USDC richer or it reverts. Because the number is signed, `at least -1.00 ETH` means you may lose at most 1 ETH. One signed floor covers both directions, so a swap becomes a pair of them: lose at most 1 ETH, gain at least 2,800 USDC.
+You state each requirement as a minimum. A requirement of `+2,800 USDC` means the call must leave you at least 2,800 USDC richer or it reverts. Because the number is signed, `-1.00 ETH` means you may lose at most 1 ETH. One signed floor covers both directions, so a swap becomes a pair of them: lose at most 1 ETH, gain at least 2,800 USDC.
 
 ## Where the numbers on the screen come from
 
-A hardware wallet could never read the target contract's interface, because for a new contract it does not have one. That was the whole reason it fell back to a hash. The proxy removes that dependency. It has a fixed, well-known address and a fixed interface on every network, so the device can decode the proxy's own arguments straight from an interface it always knows. Your balance requirements are ordinary arguments to that interface. Each token also carries its symbol and decimals in the call, checked on-chain against the real token so a false label reverts, which is how the device can print `2,800 USDC` instead of a raw integer.
+A hardware wallet could never read the target contract's interface, because for a new contract it does not have one. That was the whole reason it fell back to a hash. The proxy removes that dependency. It has a fixed, well-known address and a fixed interface on every network, so the device can decode the proxy's own arguments straight from an interface it always knows. Your balance requirements are ordinary arguments to that interface. The device reads the token's address from those same arguments, and for a token it recognizes it shows the symbol and formats the amount using the token's decimals. That is how it can print `2,800 USDC` instead of a raw integer.
 
 <svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What a hardware wallet shows for the same transaction under ERC-8009 clear signing</title><desc>The device screen no longer shows raw calldata. It shows the guaranteed balance changes decoded from the proxy's own parameters: ETH changes by at least minus 1.00, meaning spend at most 1 ETH, and USDC changes by at least plus 2,800.00, meaning receive at least 2,800 USDC. A line states the proxy enforces these on-chain and reverts the transaction if the real change is worse.</desc>
 
@@ -142,8 +143,8 @@ A hardware wallet could never read the target contract's interface, because for 
 
 This is what separates ERC-8009 from a smarter decoder. A decoder shows you a prediction. If the prediction is wrong, or the device is tricked, the transaction still runs. ERC-8009 shows you the balance changes and enforces those same numbers on-chain. The figures on the screen are the figures the contract requires. If the real result comes out worse than the screen said, the transaction reverts and you lose only gas.
 
-That closes the gap the Bybit attack lived in. A compromised website can still show you a lie, and a compromised computer can still build a malicious call. What neither can do is make the chain accept a result that violates the balance changes you signed. The screen cannot promise one thing while the chain does another, because both read from the same requirements.
+That closes the gap the Bybit attack used. A compromised website can still show you a lie, and a compromised computer can still build a malicious call. What neither can do is make the chain accept a result that violates the balance changes you signed. The screen cannot promise one thing while the chain does another, because both read from the same requirements.
 
-## What the guarantee actually buys you
+## What the guarantee gives you
 
-A transaction you route through ERC-8009 has two possible endings. Either it produces the balance changes you approved, or it reverts and costs you gas. There is no third ending where it runs and does something else, which is the ending every theft so far depended on. You no longer have to understand the target contract, keep a whitelist current, or trust that a decoder read the calldata correctly. You read two or three numbers, decide whether they match what you meant to do, and the chain holds the transaction to them.
+A transaction you route through ERC-8009 has two possible endings. Either it produces the balance changes you approved, or it reverts and costs you gas. There is no third ending where it runs and does something else, which is the ending the Bybit attack depended on. You no longer have to understand the target contract, keep a whitelist current, or trust that a decoder read the calldata correctly. You read two or three numbers, decide whether they match what you meant to do, and the chain holds the transaction to them.

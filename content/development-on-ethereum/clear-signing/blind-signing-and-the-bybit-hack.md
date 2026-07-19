@@ -87,13 +87,13 @@ For a call to a contract it does not recognize, it has nothing to show. Remember
 
 On February 21, 2025, attackers stole about 1.46 billion dollars from the exchange Bybit. It remains the largest crypto theft on record, and the group behind it was the Lazarus Group.
 
-Bybit kept the funds in a Safe multisig wallet. Several people had to approve each transaction, and each approved on a Ledger hardware wallet. The attackers compromised the Safe website and served malicious JavaScript aimed only at Bybit, so every other Safe user saw nothing wrong. On screen, the Safe interface showed a routine transfer to a hot wallet. The transaction that actually reached the Ledgers was a different one, and the Ledgers could not decode it. Each signer saw a hash and confirmed it.
+Bybit kept the funds in a Safe multisig wallet. Several people had to approve each transaction, and each approved on a Ledger hardware wallet. The attackers compromised the Safe website and served malicious JavaScript aimed only at Bybit, so every other Safe user saw nothing wrong. On screen, the Safe interface showed a routine transfer to a hot wallet, an address kept online for everyday transfers. The transaction that actually reached the Ledgers was a different one, and the Ledgers could not decode it. Each signer saw a hash and confirmed it.
 
 What those bytes actually did connects to two things you have already seen. Remember from the low-level calls lesson that a `delegatecall` runs another contract's code against your own storage, and that **storage slot 0** is just the first slot, whatever happens to sit there. Remember from the upgradeable contracts lesson that a proxy keeps its implementation address, the code it runs for every call, in storage. A Safe is a proxy, and it keeps that address in slot 0.
 
-The malicious call was `execTransaction` with its operation flag set to `1`, which means **delegatecall**. It targeted an attacker contract whose function named `transfer` ignored tokens completely. Instead, it wrote a new address into slot 0. That single delegatecall repointed the Safe's implementation to attacker-controlled code, and it moved zero ETH.
+The malicious call was `execTransaction` with its operation flag set to `1`, which means **delegatecall**. It targeted an attacker contract with a `transfer` function that ignored tokens entirely. Instead, it wrote a new address into slot 0. That single delegatecall repointed the Safe's implementation to attacker-controlled code, and it moved zero ETH.
 
-Now the wallet ran the attacker's code. They called it again and swept it empty. Three signers had approved the transaction blind.
+Now the wallet ran the attacker's code. The attackers called it again and swept it empty. Three signers had approved the transaction blind.
 
 <svg role="img" viewBox="0 0 720 375" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The three views the Bybit signers had of one transaction</title><desc>Three side-by-side panels for the same transaction. The Safe website showed a routine transfer of ETH to a hot wallet. The hardware wallet could not decode the call and showed only a signing hash. The transaction's real effect was a delegatecall that overwrote the proxy's implementation slot and moved zero ETH. The gap between the first panel and the third is the whole attack.</desc>
   <rect x="20" y="16" width="680" height="34" fill="#ed4937"/>
@@ -128,7 +128,7 @@ Now the wallet ran the attacker's code. They called it again and swept it empty.
   <text x="360" y="352" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">wallet's code while moving no ETH. The distance from the first panel to the third is the whole attack.</text>
 </svg>
 
-The same shape had already played out twice. In October 2024, Radiant Capital lost about 50 million dollars. A compromised machine showed its signers a harmless transaction while they blind-signed a malicious one on their hardware wallets. In July 2024, WazirX lost about 235 million dollars to another Safe implementation swap that its signers approved without being able to read it. Different victims, one root cause: a person approving bytes they could not see through.
+The same shape had already played out twice. In October 2024, Radiant Capital lost about 50 million dollars. A compromised machine showed its signers a harmless transaction while they blind-signed a malicious one on their hardware wallets. In July 2024, WazirX lost about 235 million dollars to another Safe implementation swap that its signers approved without being able to read it. Different victims, one root cause: a person approving bytes whose real effect they could not see.
 
 ## Why decoding the calldata cannot save you
 
@@ -144,6 +144,6 @@ Decoding tells you what a transaction claims to be. It cannot tell you what it w
 
 ## What to bring to every signature
 
-There is one thing about a transaction that cannot lie: what it changes about your **balances**. You cannot build a transaction that drains your wallet while your balances report that nothing moved. The Bybit signers could check which contract they were calling and which function it named, and both checked out. What none of them could see was that the transaction moved zero ETH, at the moment they believed they were sending it to a hot wallet.
+There is one thing about a transaction that cannot lie: what it changes about your **balances**. You cannot build a transaction that drains your wallet while your balances report that nothing moved. The Bybit signers could check which contract they were calling and which function it named, and both checked out. What none of them could see was that the transaction moved zero ETH, even though they believed they were sending it to a hot wallet.
 
-So the question to carry into every signature is the one the screen kept from them: what will this do to my balances? When the numbers match what you meant to do, you sign. When the screen shows nothing moving and you expected to move funds, or shows a token you never meant to touch, you stop and throw the transaction away. Reading a transaction by the balances it changes is the habit that would have caught every theft in this lesson.
+So the question to carry into every signature is the one the screen kept from them: what will this do to my balances? When the numbers match what you meant to do, you sign. When the screen shows nothing moving and you expected to move funds, or shows a token you never meant to touch, you stop and throw the transaction away. Reading a transaction by the balances it changes is the habit that would have caught every theft you just read about.
