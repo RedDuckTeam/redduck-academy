@@ -61,9 +61,14 @@ The routers are where standing approvals stop being a liability. The permit rout
   <rect x="490" y="76" width="190" height="66" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="585" y="103" text-anchor="middle" font-family="monospace" font-size="12" fill="#000000" font-weight="bold">MORE ROUTERS</text>
   <text x="585" y="123" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">one per new flow</text>
-  <path d="M135 142 L275 250" stroke="#565653" stroke-width="2"/><path d="M266 242 L278 252 L272 238 Z" fill="#565653"/>
-  <path d="M360 142 L360 250" stroke="#565653" stroke-width="2"/><path d="M354 244 L360 252 L366 244 Z" fill="#565653"/>
-  <path d="M585 142 L445 250" stroke="#565653" stroke-width="2"/><path d="M454 238 L442 252 L448 242 Z" fill="#565653"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L12 6 L0 12 z" fill="#565653"/>
+    </marker>
+  </defs>
+  <path d="M135 142 L285 249" stroke="#565653" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+  <path d="M360 142 L360 249" stroke="#565653" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+  <path d="M585 142 L435 249" stroke="#565653" stroke-width="2" fill="none" marker-end="url(#ah)"/>
   <rect x="175" y="252" width="370" height="88" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
   <rect x="175" y="252" width="370" height="26" fill="#ed4937"/>
   <text x="360" y="271" text-anchor="middle" font-size="12" fill="#ffffff" font-weight="bold">BALANCE-PROXY CORE</text>
