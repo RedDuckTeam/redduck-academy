@@ -36,7 +36,7 @@ The move is to separate the consent from the act of using it. You do not have to
 So you sign the authorization offline, at no cost, and hand the signed message to whoever will act. That party carries it to the target system and presents it together with the action it permits. The system verifies the signature and, in one step, treats the action as authorized and carries it out. You were never online at that moment. Your agreement arrived ahead of you, inside a message.
 
 <svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Consent authored offline by the signer, then carried by anyone and checked at the target system</title><desc>A left-to-right flow. The signer creates a signed authorization offline at no cost. The authorization is a message binding who is authorized, the exact action, the target system, an expiry, and a one-time anti-replay value. Anyone carries that message to the target system, which verifies the signature and executes the action. The signer is absent when the check and the action happen.</desc>
-  <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Consent is authored once, then carried and checked later</text>
+<text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Consent is authored once, then carried and checked later</text>
 
   <rect x="15" y="110" width="155" height="90" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="92" y="150" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">Signer</text>
@@ -69,7 +69,7 @@ So you sign the authorization offline, at no cost, and hand the signed message t
   <line x1="465" y1="155" x2="543" y2="155" stroke="#565653" stroke-width="2" marker-end="url(#fa)"/>
   <text x="503" y="143" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">anyone carries</text>
 
-  <text x="360" y="298" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The signer is offline and absent when the system checks the signature and runs the action.</text>
+<text x="360" y="298" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The signer is offline and absent when the system checks the signature and runs the action.</text>
 </svg>
 
 ## A pre-signed URL is exactly this

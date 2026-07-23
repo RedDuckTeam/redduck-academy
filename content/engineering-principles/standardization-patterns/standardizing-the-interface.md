@@ -44,10 +44,10 @@ Underneath both stories is a number. Take N participants who all need to work wi
 With a standard, each participant implements the one shared interface and nothing else. That is N integrations in total, one per participant. Add a new participant and the cost is a single implementation matched against the standard, where before it was a negotiation with every member already present. This is the whole economic case for standardizing an interface, and it is why a standard grows more valuable as more participants adopt it.
 
 <svg role="img" viewBox="0 0 720 385" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pairwise integrations without a standard versus one integration each with a standard</title><desc>Two panels. On the left, five participants without a standard, every one connected to every other, giving ten links, on the order of N times N. On the right, the same five participants each connected only to a shared standard at the center, giving five links, N in total. Adding a participant adds a link to every other on the left, but only one link on the right.</desc>
-  <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Without a standard every pair coordinates. With one, each joins once.</text>
+<text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Without a standard every pair coordinates. With one, each joins once.</text>
 
-  <text x="190" y="58" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">Without a standard</text>
-  <text x="530" y="58" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">With a standard</text>
+<text x="190" y="58" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">Without a standard</text>
+<text x="530" y="58" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">With a standard</text>
 
   <g stroke="#565653" stroke-width="1.5">
     <line x1="190" y1="100" x2="276" y2="162"/>
@@ -100,10 +100,10 @@ With a standard, each participant implements the one shared interface and nothin
   </g>
   <text x="530" y="194" text-anchor="middle" font-size="10" fill="#ffffff" font-weight="bold" font-family="monospace">std</text>
 
-  <text x="190" y="332" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">5 participants, 10 links (~N x N)</text>
-  <text x="530" y="332" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">5 participants, 5 links (N)</text>
+<text x="190" y="332" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">5 participants, 10 links (~N x N)</text>
+<text x="530" y="332" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">5 participants, 5 links (N)</text>
 
-  <text x="360" y="366" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Adding one participant adds a link to every other on the left, but only one link on the right.</text>
+<text x="360" y="366" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Adding one participant adds a link to every other on the left, but only one link on the right.</text>
 </svg>
 
 ## A standard is a constraint you accept on purpose
