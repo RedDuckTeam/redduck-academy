@@ -40,12 +40,12 @@ Now count the same three costs. Passwords are stored once, in one service, so th
 The same shape appears at the scale of the whole internet. When your browser opens a secure connection to a website, it needs to be sure the site is really who it claims to be. Millions of websites rely on a small number of trusted certificate authorities to vouch for that, rather than every pair of parties arranging trust between themselves from scratch. A small, heavily-trusted set of authorities stands in the middle, and everyone else depends on them. The web keeps that number small on purpose, because concentrating trust in a few closely-watched places is safer than spreading it thin across many.
 
 <svg role="img" viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Fifty separate login systems versus one shared authentication service</title><desc>Two panels. On the left, fifty applications each carry their own login and password store, so one security fix must be applied fifty times. On the right, every application delegates login to one shared authentication service, so passwords are stored once and one fix reaches all of them.</desc>
-  <defs>
-    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
-    </marker>
-  </defs>
-  <text x="360" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Fifty login systems, or one shared service</text>
+<defs>
+<marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
+</marker>
+</defs>
+<text x="360" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Fifty login systems, or one shared service</text>
 
   <rect x="40" y="55" width="300" height="215" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <rect x="40" y="55" width="300" height="30" fill="#565653" stroke="#000000" stroke-width="2"/>
@@ -74,7 +74,7 @@ The same shape appears at the scale of the whole internet. When your browser ope
   <text x="610" y="186" text-anchor="middle" font-family="monospace" font-size="8" fill="#565653">one store</text>
   <text x="530" y="253" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">one store · one fix · one endpoint</text>
 
-  <text x="360" y="305" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Concentrating login in one service also concentrates the review that keeps it safe.</text>
+<text x="360" y="305" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Concentrating login in one service also concentrates the review that keeps it safe.</text>
 </svg>
 
 ## The risk you just concentrated
@@ -105,4 +105,4 @@ Before you pull a function into one shared component, say out loud what everythi
 
 Skip this section if you only want the principle.
 
-Decentralized finance uses the singleton deliberately. Balancer v2 puts a single contract, the Vault, in charge of holding all of the assets across every pool at once. Because one contract holds all the tokens, a trade that hops through several pools settles inside the Vault and the tokens themselves move only once, which greatly reduces the cost of the trade. Uniswap v4 takes the same route, holding all of its pools inside one PoolManager contract. The ERC8009 design, examined in depth in the ERC8009 course, deploys one balance-proxy contract per chain so that hardware wallet firmware can hardcode a single address and trust it. The single-vault decision concentrates risk deliberately, accepted for those measured benefits and paid for with unusually heavy auditing.
+Decentralized finance uses the singleton deliberately. Balancer v2 puts a single contract, the Vault, in charge of holding all of the assets across every pool at once. Because one contract holds all the tokens, a trade that hops through several pools settles inside the Vault and the tokens themselves move only once, which greatly reduces the cost of the trade. Uniswap v4 takes the same route, holding all of its pools inside one PoolManager contract. The ERC8009 design, examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack), deploys one balance-proxy contract per chain so that hardware wallet firmware can hardcode a single address and trust it. The single-vault decision concentrates risk deliberately, accepted for those measured benefits and paid for with unusually heavy auditing.

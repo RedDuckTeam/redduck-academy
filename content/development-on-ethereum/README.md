@@ -80,8 +80,13 @@ A hands-on path from your first line of Solidity to shipping production-ready sm
 4. [DeFi - Test](advanced-defi/defi-test.md) — test
 5. [Keepers and Chainlink Automation](advanced-defi/keepers-and-chainlink-automation.md)
 6. [Lending and borrowing on-chain](advanced-defi/lending-and-borrowing-on-chain.md)
-7. [Clear signing](advanced-defi/clear-signing.md)
 
-### 9. Conclusion
+### 9. Clear signing
+
+1. [Blind signing and the Bybit hack](clear-signing/blind-signing-and-the-bybit-hack.md)
+2. [ERC-8009: sign the outcome](clear-signing/erc-8009-sign-the-outcome.md)
+3. [The core and its routers](clear-signing/the-core-and-its-routers.md)
+
+### 10. Conclusion
 
 1. [Congratulations](conclusion/congratulations.md)

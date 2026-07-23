@@ -47,12 +47,12 @@ Two things follow, and they are the whole point. Two independent parties always 
 The same idea runs a deduplicating backup system. Every file is stored under a name computed from its contents, so two identical files anywhere on the system produce the same name and are kept only once. No index records which files happen to match. The shared name falls out of the shared content, exactly as it does for a commit.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Deriving an identifier from content and verifying it without a registry</title><desc>A commit's content is run through a hash to produce its identifier. Any party holding the same content recomputes the same identifier, so two independent parties agree without a registry or an authority. Changing any part of the content changes the identifier, which makes a substitution detectable.</desc>
-  <defs>
-    <marker id="down2" viewBox="0 0 10 10" refX="5" refY="9" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 5 10 L 10 0 z" fill="#565653"/>
-    </marker>
-  </defs>
-  <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">An identifier computed from content</text>
+<defs>
+<marker id="down2" viewBox="0 0 10 10" refX="5" refY="9" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M 0 0 L 5 10 L 10 0 z" fill="#565653"/>
+</marker>
+</defs>
+<text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">An identifier computed from content</text>
 
   <rect x="200" y="46" width="320" height="66" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="360" y="72" text-anchor="middle" font-size="13" fill="#000000" font-weight="bold">Commit content</text>
@@ -72,9 +72,9 @@ The same idea runs a deduplicating backup system. Every file is stored under a n
   <text x="360" y="278" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">Two independent parties hash the same content</text>
   <text x="360" y="300" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">and get the same identifier, with no registry to trust</text>
 
-  <text x="360" y="342" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">Change one byte of the content and the identifier no longer matches.</text>
+<text x="360" y="342" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">Change one byte of the content and the identifier no longer matches.</text>
 
-  <text x="360" y="368" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The identifier is derived from the content, so anyone can recompute and verify it.</text>
+<text x="360" y="368" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The identifier is derived from the content, so anyone can recompute and verify it.</text>
 </svg>
 
 ## Why the registry was never needed
@@ -95,4 +95,4 @@ If a design calls for a registry so one component can find and trust another, as
 
 Skip this section if you only want the principle.
 
-Ethereum's CREATE2 applies content-derived identity to deploying contracts. A contract's address is derived from the address of the deployer, a chosen value called a salt, and the hash of the contract's bytecode. Because the address is a function of those inputs, it can be computed before the contract exists and verified afterward without consulting any registry. Uniswap v2 relies on this. Anyone can compute the address of the pair contract for two tokens directly from the two token addresses, then check that the contract at that address is the real one. The ERC8009 design, examined in depth in the ERC8009 course, gives its single shared contract one deterministic canonical address on each chain. That fixed address is what lets hardware wallet firmware hardcode it and verify it.
+Ethereum's CREATE2 applies content-derived identity to deploying contracts. A contract's address is derived from the address of the deployer, a chosen value called a salt, and the hash of the contract's bytecode. Because the address is a function of those inputs, it can be computed before the contract exists and verified afterward without consulting any registry. Uniswap v2 relies on this. Anyone can compute the address of the pair contract for two tokens directly from the two token addresses, then check that the contract at that address is the real one. The ERC8009 design, examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack), gives its single shared contract one deterministic canonical address on each chain. That fixed address is what lets hardware wallet firmware hardcode it and verify it.

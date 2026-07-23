@@ -34,12 +34,12 @@ Every goal you pursue sits under a bigger one. In a chess game the stack runs fr
 Each lower goal is a child of the one above it. Capturing pieces is worth doing because it usually builds strength, strength usually leads to a winning position, and a winning position wins the game. The goal at the very top, winning, is the only one that matters on its own. Every goal beneath it is a means, and a means is only as good as the end it still serves.
 
 <svg role="img" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Goals stacked from the parent goal down to a child goal</title><desc>Four goals stacked. Win the game is the parent goal at the top. Below it, reach a winning position, then build strength on the board, then capture pieces, the smallest child goal. Each lower goal points up to the goal it serves. A child goal is worth keeping only while it still serves the parent above it.</desc>
-  <defs>
-    <marker id="up1" viewBox="0 0 10 10" refX="5" refY="1" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 10 L 5 0 L 10 10 z" fill="#565653"/>
-    </marker>
-  </defs>
-  <text x="360" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Every child goal serves a parent goal</text>
+<defs>
+<marker id="up1" viewBox="0 0 10 10" refX="5" refY="1" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M 0 10 L 5 0 L 10 10 z" fill="#565653"/>
+</marker>
+</defs>
+<text x="360" y="30" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Every child goal serves a parent goal</text>
 
   <rect x="200" y="50" width="320" height="54" fill="#ed4937" stroke="#ed4937" stroke-width="2"/>
   <text x="360" y="74" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Win the game</text>
@@ -64,7 +64,7 @@ Each lower goal is a child of the one above it. Capturing pieces is worth doing 
   <text x="360" y="374" text-anchor="middle" font-size="13" fill="#000000">Capture pieces</text>
   <text x="360" y="392" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">a child goal, kept only while it serves up</text>
 
-  <text x="360" y="428" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Trace a child goal up the stack, and keep it only while it still serves the parent.</text>
+<text x="360" y="428" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Trace a child goal up the stack, and keep it only while it still serves the parent.</text>
 </svg>
 
 ## When the child goal eats the parent
@@ -93,4 +93,4 @@ When you are about to defend a design choice, stop and name the parent goal it i
 
 ## Blockchain application
 
-Skip this section if you only want the principle. In a design for signing safety, the parent goal is plain: the person signing a transaction can verify what it will do before they sign. Several features can serve that goal. Showing the balance change a transaction will cause serves it for every transaction. Decoding a known contract's interface serves it only when the contract is one the tool already recognizes. Parsing the raw call data serves it only for the simple cases a human can read. The balance-change display won out, because it serves the parent goal no matter which contract is being called. A rarely-used feature that served only an edge case was removed, because keeping it added complexity to the simple path that serves everyone. That is a real case of giving up a child goal to protect the parent. This design is examined in depth in the ERC8009 course.
+Skip this section if you only want the principle. In a design for signing safety, the parent goal is plain: the person signing a transaction can verify what it will do before they sign. Several features can serve that goal. Showing the balance change a transaction will cause serves it for every transaction. Decoding a known contract's interface serves it only when the contract is one the tool already recognizes. Parsing the raw call data serves it only for the simple cases a human can read. The balance-change display won out, because it serves the parent goal no matter which contract is being called. A rarely-used feature that served only an edge case was removed, because keeping it added complexity to the simple path that serves everyone. That is a real case of giving up a child goal to protect the parent. This design is examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).

@@ -45,7 +45,7 @@ That is the pattern, and it is worth naming: **constraint bypass**. You take a c
 The distinguishing mark is precise. When you work within a constraint, the constraint survives in your solution as a tradeoff. Stronger encryption costs computation. The wall is still there, and you can point to where your design pays it. When you bypass a constraint, the constraint survives nowhere. There is no line in the design where you paid it, because it stopped being part of the problem. Ask of any solution, "where does this pay the constraint?" If the answer is "here," you worked within it. If the answer is "nowhere," you bypassed it.
 
 <svg role="img" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Working within a constraint versus bypassing it</title><desc>Two boxes side by side responding to the same constraint. The left box works within it, guarding the secret more carefully while the wall stays as a cost in the design. The right box bypasses it, proving knowledge while revealing nothing, so the wall no longer applies.</desc>
-  <text x="360" y="32" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Two responses to the same wall</text>
+<text x="360" y="32" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Two responses to the same wall</text>
 
   <rect x="40" y="60" width="300" height="180" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <rect x="40" y="60" width="300" height="30" fill="#565653" stroke="#000000" stroke-width="2"/>
@@ -67,7 +67,7 @@ The distinguishing mark is precise. When you work within a constraint, the const
   <text x="530" y="200" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">reveal nothing.</text>
   <text x="530" y="218" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">the wall is irrelevant</text>
 
-  <text x="360" y="272" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Within the wall you can point to the cost. Bypassed, there is no cost to point to.</text>
+<text x="360" y="272" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Within the wall you can point to the cost. Bypassed, there is no cost to point to.</text>
 </svg>
 
 ## Agreeing on a secret in the open
@@ -96,4 +96,4 @@ When a design feels constrained by something you have been treating as a law, pu
 
 Skip this section if you only want the principle.
 
-A hardware wallet signs transactions on a small, isolated device, and it faces a wall: the device cannot decode arbitrary transaction data into something a person can read. The response that accepts the wall is to teach the device more formats, larger whitelists of known contracts, more decoders for more interfaces, more registries to maintain. The device forever chases transactions it does not yet recognize. The ERC8009 approach bypasses the wall instead. Rather than decode the transaction, it shows the user the balance changes the transaction must produce, and the chain enforces those exact changes or the whole transaction reverts. The user approves what will actually happen to their holdings, and decoding is never required, so the wall that demanded it is irrelevant. The full design is examined in depth in the ERC8009 course.
+A hardware wallet signs transactions on a small, isolated device, and it faces a wall: the device cannot decode arbitrary transaction data into something a person can read. The response that accepts the wall is to teach the device more formats, larger whitelists of known contracts, more decoders for more interfaces, more registries to maintain. The device forever chases transactions it does not yet recognize. The ERC8009 approach bypasses the wall instead. Rather than decode the transaction, it shows the user the balance changes the transaction must produce, and the chain enforces those exact changes or the whole transaction reverts. The user approves what will actually happen to their holdings, and decoding is never required, so the wall that demanded it is irrelevant. The full design is examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).

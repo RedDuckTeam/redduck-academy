@@ -41,12 +41,12 @@ The card industry's own standard is built on this move. PCI DSS, the security st
 This split has a name. The small, guarded part is the **Core**. It holds the valuable state, the card data. It enforces the invariants, the rules that must never break, for example that a full card number is never handed back. It is minimal, it changes rarely, and every line of it is reviewed with care. Everything else is the **Periphery**: the checkout, the receipts, the discounts, the integrations. The Periphery is where all the convenience and all the change live. It holds nothing critical, and it reaches the Core only through a narrow, fixed interface, with no special powers inside it. It is just a caller, asking for a charge and getting back an answer.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The boundary between Core and Periphery</title><desc>Two boxes. On the left, a large Periphery box holding checkout pages, discount codes, receipts, and integrations, marked as holding no card data and replaceable at any time. On the right, a small red Core box that holds the card data, enforces the invariant, is rarely changed, and is heavily reviewed. A single narrow arrow runs from the Periphery to the Core, labeled narrow interface and no privileges, showing that the Periphery reaches the Core only as a caller.</desc>
-  <defs>
-    <marker id="toCore" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
-    </marker>
-  </defs>
-  <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">The boundary between Core and Periphery</text>
+<defs>
+<marker id="toCore" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
+</marker>
+</defs>
+<text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">The boundary between Core and Periphery</text>
 
   <rect x="40" y="56" width="330" height="252" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <rect x="40" y="56" width="330" height="30" fill="#565653" stroke="#000000" stroke-width="2"/>
@@ -70,11 +70,11 @@ This split has a name. The small, guarded part is the **Core**. It holds the val
   <text x="486" y="220" font-family="monospace" font-size="10" fill="#000000">rarely changed</text>
   <text x="486" y="242" font-family="monospace" font-size="10" fill="#000000">heavily reviewed</text>
 
-  <text x="420" y="172" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">narrow interface</text>
-  <line x1="374" y1="182" x2="466" y2="182" stroke="#565653" stroke-width="2" marker-end="url(#toCore)"/>
-  <text x="420" y="200" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">no privileges</text>
+<text x="420" y="172" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">narrow interface</text>
+<line x1="374" y1="182" x2="466" y2="182" stroke="#565653" stroke-width="2" marker-end="url(#toCore)"/>
+<text x="420" y="200" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">no privileges</text>
 
-  <text x="360" y="340" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The Core holds the assets and the rules. The Periphery holds nothing and can be swapped out.</text>
+<text x="360" y="340" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The Core holds the assets and the rules. The Periphery holds nothing and can be swapped out.</text>
 </svg>
 
 ## The same shape runs your computer
@@ -97,4 +97,4 @@ You will design systems that hold something valuable, a set of keys, a balance, 
 
 Skip this section if you only want the principle. Decentralized finance adopted this split openly. Uniswap v2, an exchange that runs as code on Ethereum, splits into core and periphery contracts. The core contracts are deliberately minimal. They hold the pooled funds and enforce the one trading rule that must never break, the invariant that defines a fair swap. The periphery, mainly a contract called the Router, handles conveniences like routing a trade and checking prices. The Router holds no funds and no special privileges inside the core. It is just a caller, the same role the checkout plays against the card vault.
 
-The ERC8009 standard has the same split, a minimal balance-proxy core and a replaceable Router periphery. There the division was forced by a real vulnerability rather than chosen up front, a story examined in depth in the ERC8009 course.
+The ERC8009 standard has the same split, a minimal balance-proxy core and a replaceable Router periphery. There the division was forced by a real vulnerability rather than chosen up front, a story examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).
