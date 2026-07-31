@@ -5,6 +5,7 @@
   "scripts": {
     "clean": "hardhat clean",
     "compile": "hardhat compile",
+    "test": "hardhat test",
     "deploy:sepolia": "hardhat ignition deploy ./ignition/modules/CourseCertificate.ts --network sepolia",
     "deploy:sepolia:verify": "hardhat ignition deploy ./ignition/modules/CourseCertificate.ts --network sepolia --verify",
     "deploy:main": "hardhat ignition deploy ./ignition/modules/CourseCertificate.ts --network main --build-profile production --parameters ./ignition/parameters/main.json",
