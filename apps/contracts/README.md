@@ -31,12 +31,3 @@ Deployments use [Hardhat Ignition](https://hardhat.org/ignition). The deploy mod
 yarn workspace contracts deploy:sepolia   # testnet
 yarn workspace contracts deploy:main      # mainnet (production build profile)
 ```
-
-Network RPC URLs and deploy accounts are configured in `hardhat.config.ts` and `config/` (see
-[`.env.example`](.env.example)). The deploy key is a Hardhat *configuration variable*
-(`SEPOLIA_PRIVATE_KEY`), which you can store in the encrypted keystore rather than a plaintext
-`.env`:
-
-```bash
-yarn workspace contracts exec hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
