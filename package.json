@@ -77,6 +77,7 @@
     "contracts:clean": "yarn workspace contracts clean",
     "contracts:compile": "yarn workspace contracts compile",
     "content:validate": "node scripts/validate-content.mjs",
+    "content:index": "node scripts/generate-course-index.mjs",
     "content:db-sync": "tsx scripts/sync-content-db.ts",
     "content:sync-tests": "node scripts/sync-tests.mjs",
     "content:assign-ids": "tsx scripts/sync-content-db.ts --assign-ids && node scripts/sync-tests.mjs --assign-ids",
