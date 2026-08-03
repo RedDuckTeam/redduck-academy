@@ -81,47 +81,6 @@ export class GitHubService {
     }
   }
 
-  /**
-   * When `templateRepoUrl` is set on the lesson, require a GitHub **fork** whose `source` matches that template.
-   * Uses the root of the fork network (`source`) so nested forks still count if they trace back to the template.
-   */
-  async assertRepoIsForkOfTemplate(submissionRepoUrl: string, templateRepoUrl: string): Promise<void> {
-    const submitted = parseGitHubRepoUrl(submissionRepoUrl)
-    const template = parseGitHubRepoUrl(templateRepoUrl)
-    const expectedFullName = repoFullName(template.owner, template.repo)
-
-    if (repoFullName(submitted.owner, submitted.repo).toLowerCase() === expectedFullName.toLowerCase()) {
-      throw new AppError(
-        400,
-        "Submit your fork of the repository, not the original. Use GitHub's Fork button on the template repo, then paste your fork's URL.",
-      )
-    }
-
-    let data: { fork: boolean; source?: { full_name?: string } | null }
-    try {
-      const res = await this.octokit.repos.get({ owner: submitted.owner, repo: submitted.repo })
-      data = res.data
-    } catch (e) {
-      throwGitHubApiError(e)
-    }
-
-    if (!data.fork) {
-      throw new AppError(
-        400,
-        "This repository is not a GitHub fork. Fork the course template with the Fork button, work in your fork, then submit your fork's URL.",
-      )
-    }
-
-    const sourceFullName = data.source?.full_name?.toLowerCase()
-    if (!sourceFullName || sourceFullName !== expectedFullName.toLowerCase()) {
-      const upstream = data.source?.full_name ?? 'unknown'
-      throw new AppError(
-        400,
-        `This repository is a fork of "${upstream}", but this lesson only accepts forks of "${expectedFullName}".`,
-      )
-    }
-  }
-
   async listBlobPathsAtCommit(owner: string, repo: string, commitSha: string): Promise<string[]> {
     try {
       const { data: commitObj } = await this.octokit.git.getCommit({
@@ -304,7 +263,3 @@ export class GitHubService {
 }
 
 export const githubService = new GitHubService()
-
-function repoFullName(owner: string, repo: string): string {
-  return `${owner}/${repo}`
-}
