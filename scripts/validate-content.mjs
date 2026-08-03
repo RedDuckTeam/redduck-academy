@@ -140,6 +140,15 @@ function validate(file, raw, meta, sets) {
     if (!sets.courses.has(c.course)) err(`missing content/${c.course}/_course.md for this lesson's course`)
     if (!sets.modules.has(`${c.course}/${c.module}`))
       err(`missing content/${c.course}/${c.module}/_module.md for this lesson's module`)
+    // A lesson slug must be unique within its course, not just its module: the API resolves lessons
+    // by (course, slug) and drops the module segment, so two same-slug lessons in different modules
+    // shadow each other and route progress/grading to an arbitrary one. Slug is the filename.
+    const slugOwners = (sets.lessonSlugOwners.get(`${c.course}/${c.lesson}`) ?? []).filter((o) => o !== relative(ROOT, file))
+    if (slugOwners.length) {
+      err(
+        `lesson slug "${c.lesson}" is already used in ${slugOwners.join(', ')} — a lesson slug must be unique within its course (the API resolves lessons by course + slug and ignores the module); rename this file`,
+      )
+    }
     if (data.type === 'lecture' && body.trim() === '') warn.push('lecture body is empty')
 
     const open = (body.match(/<svg\b/gi) ?? []).length
@@ -194,11 +203,19 @@ function validate(file, raw, meta, sets) {
 async function main() {
   const all = (await mdFiles(CONTENT)).sort()
   // Build the set of existing course/module metadata for parent checks.
-  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map(), testIdOwners: new Map() }
+  const sets = { courses: new Set(), modules: new Set(), idOwners: new Map(), testIdOwners: new Map(), lessonSlugOwners: new Map() }
   for (const f of all) {
     const c = classify(relative(CONTENT, f))
     if (c.role === 'course') sets.courses.add(c.course)
     if (c.role === 'module') sets.modules.add(`${c.course}/${c.module}`)
+    // The runtime resolves a lesson by (course, slug) with no module scope, so collect slugs per
+    // course (the slug is the filename) to catch cross-module collisions within one course below.
+    if (c.role === 'lesson') {
+      const key = `${c.course}/${c.lesson}`
+      const owners = sets.lessonSlugOwners.get(key) ?? []
+      owners.push(relative(ROOT, f))
+      sets.lessonSlugOwners.set(key, owners)
+    }
     const { data, body } = parseFrontmatter(await readFile(f, 'utf8'))
     // Collect declared ids per role. Payload gives each collection its own id sequence,
     // so a course, a module, and a lesson may legitimately share a number — only a clash
