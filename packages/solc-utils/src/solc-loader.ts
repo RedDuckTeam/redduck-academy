@@ -1,4 +1,4 @@
-const SOLC_URL = 'https://binaries.soliditylang.org/bin/soljson-v0.8.24+commit.e11b9ed9.js'
+const SOLC_URL = 'https://redduck-academy-vendor.redduck.io/soljson-v0.8.24+commit.e11b9ed9.js'
 
 /**
  * Subset of Emscripten/solc module exports we consume. Soljson is built with the
