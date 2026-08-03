@@ -21,11 +21,6 @@ export function getLessonExpectedPaths(lesson: Lesson): string[] {
   return paths
 }
 
-export function getLessonTemplateUrl(lesson: Lesson): string | null {
-  const raw = lesson.templateRepoUrl
-  return raw != null && String(raw).trim() !== '' ? String(raw).trim() : null
-}
-
 export function validateFetchResult(fetchResult: FetchExpectedFilesResult): void {
   if (fetchResult.oversizedPaths.length > 0) {
     const detail = fetchResult.oversizedPaths.map((o) => o.path).join(', ')

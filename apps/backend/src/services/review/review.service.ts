@@ -5,12 +5,7 @@ import { githubService, parseGitHubRepoUrl } from './github.service'
 import { buildReviewPrompt } from './prompt.builder'
 import { createBatch, pollAndParse } from './batch.service'
 import { SubmissionRepository } from './submission.repository'
-import {
-  getLessonExpectedPaths,
-  getLessonTasks,
-  getLessonTemplateUrl,
-  validateFetchResult,
-} from './utils/review-lesson'
+import { getLessonExpectedPaths, getLessonTasks, validateFetchResult } from './utils/review-lesson'
 import { SubmissionRateLimitService } from '../rate-limit/submission-rate-limit.service'
 import { recordAiUsage } from '../ai/usage.service'
 
@@ -38,11 +33,6 @@ export class ReviewService {
 
     const tasks = getLessonTasks(lesson)
     const expectedPaths = getLessonExpectedPaths(lesson)
-    const templateUrl = getLessonTemplateUrl(lesson)
-
-    if (templateUrl) {
-      await githubService.assertRepoIsForkOfTemplate(repoUrl, templateUrl)
-    }
 
     // Reject re-submissions of the same commit before doing any expensive work
     // (file fetch, rate-limit consumption, AI review batch). Reuse the resolved SHA for
