@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://redduck.io">
+  <a href="https://redduck.io/?utm_source=github&amp;utm_medium=readme&amp;utm_campaign=redduck-academy">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="assets/redduck-logo-dark.svg">
       <img src="assets/redduck-logo.svg" alt="RedDuck" width="240">
@@ -19,7 +19,7 @@
   &nbsp;·&nbsp;
   <a href="content/README.md"><b>Contribute a lesson</b></a>
   &nbsp;·&nbsp;
-  <a href="https://redduck.io"><b>RedDuck</b></a>
+  <a href="https://redduck.io/?utm_source=github&amp;utm_medium=readme&amp;utm_campaign=redduck-academy"><b>RedDuck</b></a>
 </p>
 
 ---
@@ -51,7 +51,7 @@ rebuilds with your change.
 
 ## Why RedDuck built this
 
-[RedDuck](https://redduck.io) is a blockchain development and consulting firm that has been
+[RedDuck](https://redduck.io/?utm_source=github&utm_medium=readme&utm_campaign=redduck-academy) is a blockchain development and consulting firm that has been
 shipping Web3 products since 2020 — EVM chains, smart contracts, and full-stack apps across
 Ethereum, Solana, Cosmos, and more. This academy began as our **internal onboarding
 curriculum**: the path we use to bring engineers up to speed on blockchain development, kept
