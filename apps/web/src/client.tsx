@@ -14,7 +14,7 @@ import * as Sentry from '@sentry/tanstackstart-react'
 //
 // We deliberately do NOT override `onUncaughtError`: React's default calls `reportError()`, which
 // already surfaces uncaught errors to `window.onerror` and thus to Sentry autocapture. Overriding
-// it would replace that path and risk dropping or double-counting uncaught errors.
+// it would replace that path and risk dropping or double-counting uncaught errors
 startTransition(() => {
   hydrateRoot(
     document,
