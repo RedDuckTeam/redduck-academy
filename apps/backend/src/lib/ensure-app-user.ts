@@ -40,24 +40,59 @@ async function generateUniqueUsername(): Promise<string> {
   return generateHandle()
 }
 
-export async function ensureAppUser(privyUserId: string): Promise<{ id: string }> {
-  const [existing] = await db
+async function findByPrivyUserId(privyUserId: string): Promise<{ id: string } | undefined> {
+  const [row] = await db
     .select({ id: userTable.id })
     .from(userTable)
     .where(eq(userTable.privyUserId, privyUserId))
     .limit(1)
+  return row
+}
 
-  if (existing) return { id: existing.id }
+// postgres.js surfaces a Postgres unique-violation as SQLSTATE 23505.
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code?: unknown }).code === '23505'
+  )
+}
 
-  const username = await generateUniqueUsername()
-  const id = crypto.randomUUID()
+export async function ensureAppUser(privyUserId: string): Promise<{ id: string }> {
+  const existing = await findByPrivyUserId(privyUserId)
+  if (existing) return existing
 
-  await db.insert(userTable).values({
-    id,
-    name: username,
-    privyUserId,
-    username,
-  })
+  // A brand-new user's SPA fires several authenticated requests on first load;
+  // over the small pool they all SELECT-miss above and race to INSERT the same
+  // privyUserId (a UNIQUE column). `onConflictDoNothing` on that constraint makes
+  // the insert idempotent so the losers no-op instead of raising 23505: the winner
+  // returns its row, the losers re-read the committed row. The loop additionally
+  // retries the separate (rare) username-uniqueness race — a collision on the
+  // username UNIQUE constraint escapes the privyUserId conflict target as a thrown
+  // 23505, so we regenerate a handle and try again.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const username = await generateUniqueUsername()
+    const id = crypto.randomUUID()
 
-  return { id }
+    try {
+      const [inserted] = await db
+        .insert(userTable)
+        .values({ id, name: username, privyUserId, username })
+        .onConflictDoNothing({ target: userTable.privyUserId })
+        .returning({ id: userTable.id })
+
+      if (inserted) return { id: inserted.id }
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err
+      // Username collided with a concurrent insert; try a fresh handle.
+      continue
+    }
+
+    // Insert was a no-op: a concurrent request already created this privyUserId.
+    const winner = await findByPrivyUserId(privyUserId)
+    if (winner) return winner
+  }
+
+  throw new Error(`ensureAppUser: exhausted retries provisioning user for privyUserId ${privyUserId}`)
 }
