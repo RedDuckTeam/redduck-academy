@@ -81,7 +81,3 @@ RedDuck Academy is split in two:
   Attribution-ShareAlike 4.0** ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)).
   See [`content/LICENSE`](content/LICENSE). You may reuse and adapt it with attribution to RedDuck
   Academy, as long as you keep derivatives under the same license.
-
-Both are provided **as is**, with no warranty of any kind. RedDuck is **not responsible** for any
-loss, damage, or breakage arising from using, modifying, forking, or deploying it. If you change it
-and something breaks, that is on you.
