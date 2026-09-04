@@ -5,54 +5,42 @@ type: lecture
 order: 1
 faq:
   - question: What types of lessons are in the RedDuck blockchain course?
-    answer: The course mixes four types of lessons. Lectures are short reading that
-      explain one idea at a time, tests are a few questions to confirm you
-      understood the concept, coding tasks ask you to write real code that is checked
-      automatically, and projects are larger builds you push to your own GitHub
-      repo and submit as a link for automated review with feedback.
+    answer: Lectures for reading, tests for checking the theoretical knowledge, coding tasks for lightweight in-browser coding challenges, projects for larger-scale programming submitted as github link.
   - question: How do I earn the certificate for a course here?
-    answer: You earn a course's certificate by completing every lesson in it. At the
-      bottom of each lesson, the 'Go to next lesson' button marks that lesson
-      complete and moves you forward, and finishing all of them unlocks the
-      certificate. Some courses also have prerequisites and only unlock after
-      you finish the course they build on.
+    answer: You earn a course's certificate by completing every lesson in it.
   - question: I'm stuck on a coding task, what should I do?
-    answer: Re-read the lecture directly above the task, because the answer is
-      usually there. The course increases difficulty gradually and is meant to be
-      learned step by step, so it also helps to avoid skipping ahead. You can
-      always return later using the Continue button on the home page and the
-      course outline on the left.
+    answer: There is no ultimate answer on this, but re-reading the lecture directly above the task usually helps.
 ---
 
-Welcome. This is a hands-on course in blockchain development. You'll read, check your understanding, write real code, and build projects. Before you start, here is a quick overview of how the course works. One minute, then we begin.
+Welcome to your first course. The blockchain basics course is applicable not only to developers but also to any people with any background who would like to learn more about blockchain. 
+
+Before you start, here is a quick overview of how the course works.
 
 ### What you'll do here
 
-Each course is a sequence of short lessons. There are four types:
+Each course consists of lessons. There are four types of them:
 
-- **Lectures** are the reading. Concise, example-driven, one idea at a time. This is one.
-- **Tests** are a few questions to confirm you understood the concept before you move on.
-- **Coding tasks** ask you to write real code in the editor. It's checked automatically.
-- **Projects** are larger builds in your own GitHub repo that you submit as a link. They get reviewed automatically, with detailed feedback.
+- **Lectures**: you're on one right now.
+- **Tests**: list of questions and answer options. You have to select the correct answers.
+- **Coding tasks**: Not applicable for the blockchain basics course. For dev-oriented courses, you would be requested to write code in a browser editor and submit it. The code is reviewed automatically with the use of AI and pre-defined tests.
+- **Projects**: Same as coding tasks, but larger scale. They are larger builds in your own GitHub repo that you submit as a link, instead of writing the code directly in the browser. Same as with coding tasks, projects also get reviewed automatically with the use of AI and pre-defined tests.
 
-So it's not just quizzes. You'll be writing and submitting real code.
+The programming tasks/projects build up not syntax knowledge, but intrinsic understanding of a successfull web3 engineer's mindset, which is why we had them for years in our private blockchain academy open only to trainees and employees. Now they're open to everyone.
 
-### How progress works
+### How your progress is tracked
 
-- At the bottom of each lesson, the **Go to next lesson** button marks it complete and moves you on. Completing lessons is how you progress.
-- Complete every lesson in a course to earn its certificate.
-- Some courses have prerequisites and unlock once you finish the course they build on.
+- At the bottom of each lesson, the **Go to next lesson** button also marks the lesson complete.
+- Certificate can only be issued if you completed all lessons within a course.
 - Your rank on the leaderboard reflects how many lessons you've completed overall.
 
-Return to your most recent lesson anytime with the Continue button on the home page, and move between lessons using the course outline on the left.
+### Navigation
+
+- The 'Continue' button on the home page redirects you to the last lesson where you left-off.
+- Use the course outline on the left to move between lessons of a course.
 
 ### A few tips
 
-- Difficulty increases gradually. Don't skip ahead.
-- Stuck on a coding task? Re-read the lecture above it. The answer is usually there.
-- Take your time. This is built to be learned rather than rushed.
-- Pull the engineering principle out of each lesson. The exact API matters less than the reason it works this way.
-- Ask why something works this way and not another. That contrast is usually where the understanding is.
-- An AI assistant helps with both. Ask one to name the principle behind a lesson, or to check your reasoning about why it works.
+- Try inferring patterns out of lessons. Don't simply memorize the answers, rather try to extract the ultimate thinking pattern applicable to a particular case.
+- Take your time. This isn't a course for quickly learning syntax. This academy is built to harden your mindset, not get a few tips on coding.
 
-That's it. Let's get started.
+That's it. Let's get it started.
