@@ -1,4 +1,6 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { PencilLine } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useScrollMagnet } from '@/hooks/useScrollMagnet'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
@@ -152,7 +154,23 @@ function LessonPage() {
           <>
             <LessonContentContainer>
               <>
-                <LessonTitle title={lesson.title} />
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <LessonTitle title={lesson.title} />
+                  {/* The only edit affordance on the site, and deliberately shown to logged-out
+                      visitors too — the editor's anonymous door is the point of the feature. Hidden
+                      when the prose comes from the DB, because then there is no file to propose against. */}
+                  {lessonBody != null && (
+                    <Button asChild variant="outline" size="sm" className="shrink-0">
+                      <Link
+                        to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
+                        params={{ courseSlug, moduleSlug, lessonSlug }}
+                      >
+                        <PencilLine className="mr-2 size-4" />
+                        Improve this lesson
+                      </Link>
+                    </Button>
+                  )}
+                </div>
                 {lessonBody != null ? (
                   <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
                 ) : lesson.content ? (

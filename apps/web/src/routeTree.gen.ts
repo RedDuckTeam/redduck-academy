@@ -26,6 +26,7 @@ import { Route as CertificatesCertificateIdRouteImport } from './routes/certific
 import { Route as CoursesCourseSlugIndexRouteImport } from './routes/courses/$courseSlug.index'
 import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
 import { Route as AdminUsersUserIdIndexRouteImport } from './routes/admin/users/$userId.index'
+import { Route as EditCourseSlugModuleSlugLessonSlugRouteImport } from './routes/edit.$courseSlug.$moduleSlug.$lessonSlug'
 import { Route as CoursesCourseSlugModuleSlugLessonSlugRouteImport } from './routes/courses/$courseSlug.$moduleSlug.$lessonSlug'
 import { Route as AdminLessonsCourseSlugLessonSlugRouteImport } from './routes/admin/lessons.$courseSlug.$lessonSlug'
 import { Route as AdminUsersUserIdCourseSlugLessonSlugRouteImport } from './routes/admin/users/$userId.$courseSlug.$lessonSlug'
@@ -116,6 +117,12 @@ const AdminUsersUserIdIndexRoute = AdminUsersUserIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminUsersUserIdRoute,
 } as any)
+const EditCourseSlugModuleSlugLessonSlugRoute =
+  EditCourseSlugModuleSlugLessonSlugRouteImport.update({
+    id: '/edit/$courseSlug/$moduleSlug/$lessonSlug',
+    path: '/edit/$courseSlug/$moduleSlug/$lessonSlug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CoursesCourseSlugModuleSlugLessonSlugRoute =
   CoursesCourseSlugModuleSlugLessonSlugRouteImport.update({
     id: '/$moduleSlug/$lessonSlug',
@@ -154,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/courses/$courseSlug/': typeof CoursesCourseSlugIndexRoute
   '/admin/lessons/$courseSlug/$lessonSlug': typeof AdminLessonsCourseSlugLessonSlugRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
+  '/edit/$courseSlug/$moduleSlug/$lessonSlug': typeof EditCourseSlugModuleSlugLessonSlugRoute
   '/admin/users/$userId/': typeof AdminUsersUserIdIndexRoute
   '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
 }
@@ -173,6 +181,7 @@ export interface FileRoutesByTo {
   '/courses/$courseSlug': typeof CoursesCourseSlugIndexRoute
   '/admin/lessons/$courseSlug/$lessonSlug': typeof AdminLessonsCourseSlugLessonSlugRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
+  '/edit/$courseSlug/$moduleSlug/$lessonSlug': typeof EditCourseSlugModuleSlugLessonSlugRoute
   '/admin/users/$userId': typeof AdminUsersUserIdIndexRoute
   '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
 }
@@ -196,6 +205,7 @@ export interface FileRoutesById {
   '/courses/$courseSlug/': typeof CoursesCourseSlugIndexRoute
   '/admin/lessons/$courseSlug/$lessonSlug': typeof AdminLessonsCourseSlugLessonSlugRoute
   '/courses/$courseSlug/$moduleSlug/$lessonSlug': typeof CoursesCourseSlugModuleSlugLessonSlugRoute
+  '/edit/$courseSlug/$moduleSlug/$lessonSlug': typeof EditCourseSlugModuleSlugLessonSlugRoute
   '/admin/users/$userId/': typeof AdminUsersUserIdIndexRoute
   '/admin/users/$userId/$courseSlug/$lessonSlug': typeof AdminUsersUserIdCourseSlugLessonSlugRoute
 }
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug/'
     | '/admin/lessons/$courseSlug/$lessonSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
+    | '/edit/$courseSlug/$moduleSlug/$lessonSlug'
     | '/admin/users/$userId/'
     | '/admin/users/$userId/$courseSlug/$lessonSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug'
     | '/admin/lessons/$courseSlug/$lessonSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
+    | '/edit/$courseSlug/$moduleSlug/$lessonSlug'
     | '/admin/users/$userId'
     | '/admin/users/$userId/$courseSlug/$lessonSlug'
   id:
@@ -261,6 +273,7 @@ export interface FileRouteTypes {
     | '/courses/$courseSlug/'
     | '/admin/lessons/$courseSlug/$lessonSlug'
     | '/courses/$courseSlug/$moduleSlug/$lessonSlug'
+    | '/edit/$courseSlug/$moduleSlug/$lessonSlug'
     | '/admin/users/$userId/'
     | '/admin/users/$userId/$courseSlug/$lessonSlug'
   fileRoutesById: FileRoutesById
@@ -279,6 +292,7 @@ export interface RootRouteChildren {
   CoursesCourseSlugRoute: typeof CoursesCourseSlugRouteWithChildren
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
+  EditCourseSlugModuleSlugLessonSlugRoute: typeof EditCourseSlugModuleSlugLessonSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -402,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersUserIdIndexRouteImport
       parentRoute: typeof AdminUsersUserIdRoute
     }
+    '/edit/$courseSlug/$moduleSlug/$lessonSlug': {
+      id: '/edit/$courseSlug/$moduleSlug/$lessonSlug'
+      path: '/edit/$courseSlug/$moduleSlug/$lessonSlug'
+      fullPath: '/edit/$courseSlug/$moduleSlug/$lessonSlug'
+      preLoaderRoute: typeof EditCourseSlugModuleSlugLessonSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/courses/$courseSlug/$moduleSlug/$lessonSlug': {
       id: '/courses/$courseSlug/$moduleSlug/$lessonSlug'
       path: '/$moduleSlug/$lessonSlug'
@@ -482,6 +503,8 @@ const rootRouteChildren: RootRouteChildren = {
   CoursesCourseSlugRoute: CoursesCourseSlugRouteWithChildren,
   ProfileUsernameRoute: ProfileUsernameRoute,
   CoursesIndexRoute: CoursesIndexRoute,
+  EditCourseSlugModuleSlugLessonSlugRoute:
+    EditCourseSlugModuleSlugLessonSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
