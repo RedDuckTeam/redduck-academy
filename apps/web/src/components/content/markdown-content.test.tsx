@@ -236,3 +236,38 @@ describe('MarkdownContent', () => {
     }
   })
 })
+
+describe('svg attribute sanitization', () => {
+  const renderSvg = (attrs: string) =>
+    render(<MarkdownContent source={`<svg role="img" viewBox="0 0 10 10" ${attrs}><title>D</title></svg>`} />)
+      .container.querySelector('svg')
+
+  it('keeps the presentation attributes diagrams actually use', () => {
+    const svg = renderSvg('style="background:#e0deda; font-family: system-ui, sans-serif;"')
+    expect(svg?.getAttribute('style')).toContain('background')
+    expect(svg?.getAttribute('style')).toContain('font-family')
+  })
+
+  it('keeps font-style, which the corpus uses 351 times', () => {
+    const svg = render(
+      <MarkdownContent source={'<svg role="img" viewBox="0 0 10 10"><text font-style="italic">x</text></svg>'} />,
+    ).container.querySelector('text')
+    expect(svg?.getAttribute('font-style')).toBe('italic')
+  })
+
+  // A full-viewport <svg> over the real origin is a phishing surface, and in a pull-request diff it
+  // is indistinguishable from the 182 diagrams that legitimately carry a `style` attribute.
+  it.each([
+    'style="position:fixed;inset:0;width:100vw;height:100vh;z-index:2147483647"',
+    'style="background:#000;position:fixed"',
+    'style="background:url(javascript:alert(1))"',
+    'style="transform:scale(999)"',
+  ])('drops the whole style attribute for %s', (attrs) => {
+    expect(renderSvg(attrs)?.getAttribute('style')).toBeNull()
+  })
+
+  // The compiled stylesheet ships .fixed/.inset-0/.z-50, so a class list rebuilds the same overlay.
+  it('drops class, which no lesson uses', () => {
+    expect(renderSvg('class="fixed inset-0 z-50"')?.getAttribute('class')).toBeNull()
+  })
+})

@@ -192,7 +192,7 @@ All variables from the `apps/admin` env section. Sensitive flag is fine — runt
 
 ## 6. Deploy: `apps/web` → Cloudflare Workers
 
-Deploy manually with `yarn workspace web deploy` from the repo root, which runs `yarn build && wrangler deploy`. There is no GitHub Actions workflow for the web app.
+A push to `main` is built and deployed by the connected Cloudflare Git integration, so merged content goes live on its own; there is deliberately no GitHub Actions workflow for the web app. To deploy by hand, run `yarn workspace web deploy` from the repo root (`yarn build && wrangler deploy`).
 
 **Cloudflare auth:** run `wrangler login` once, or set `CLOUDFLARE_API_TOKEN` (a token with `Workers Scripts: Edit`) in your shell before deploying.
 

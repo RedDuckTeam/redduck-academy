@@ -66,19 +66,3 @@ export const requireNotBanned = createMiddleware(async (c, next) => {
   await next()
 })
 
-/**
- * Returns the trusted client IP. Heroku's router appends the originating IP as the LAST
- * value in x-forwarded-for, so reading the first entry is spoofable by a malicious client
- * that sends its own x-forwarded-for header. Take the right-most value instead.
- */
-export function getClientIp(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for')
-  if (forwarded) {
-    const parts = forwarded
-      .split(',')
-      .map((p) => p.trim())
-      .filter(Boolean)
-    if (parts.length > 0) return parts[parts.length - 1]
-  }
-  return c.req.header('x-real-ip') ?? ''
-}

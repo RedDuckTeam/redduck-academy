@@ -32,6 +32,14 @@ const DRY_RUN = process.argv.includes('--dry-run')
 // Assign + write back ids for id-less questions/options, then stop — no DB. The merge workflow runs
 // this and commits the ids before the DB sync, so a stable id always lands in the repo first.
 const ASSIGN_IDS = process.argv.includes('--assign-ids')
+const FORCE = process.argv.includes('--force')
+
+// Blast-radius ceiling for one run. Deleting a question prunes every learner's saved answers for
+// it in the same transaction, and nothing short of a database restore brings those back. A run
+// that large is far more likely to be a content file that lost its `<!-- q:ID -->` / `<!-- a:ID -->`
+// trailers than a deliberate edit, so it stops and asks.
+const MAX_QUESTIONS_DELETED = 20
+const MAX_ANSWER_SETS_PRUNED = 50
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/
 
 function fail(message, details = []) {
@@ -273,6 +281,21 @@ async function main() {
     if (total === 0 && idWriteBacks.length === 0) {
       console.log('✓ Database is already in sync with the test files.')
       return
+    }
+
+    const overLimit =
+      plan.qDelete.length > MAX_QUESTIONS_DELETED || pruneCount > MAX_ANSWER_SETS_PRUNED
+    if (overLimit && !FORCE) {
+      const scale = `${plan.qDelete.length} question(s) deleted, ${pruneCount} learner answer set(s) pruned`
+      if (DRY_RUN) {
+        console.log(`\n⚠ Would refuse without --force: ${scale}.`)
+      } else {
+        fail(`Refusing to sync: ${scale}.`, [
+          `Ceiling is ${MAX_QUESTIONS_DELETED} question(s) / ${MAX_ANSWER_SETS_PRUNED} answer set(s) per run.`,
+          'Check that no test file lost its question or option id comments.',
+          'Re-run with --force once the plan above looks intentional.',
+        ])
+      }
     }
 
     if (DRY_RUN) {

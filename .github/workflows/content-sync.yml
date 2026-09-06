@@ -59,7 +59,10 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add content
-            git commit -m "chore: assign content ids [skip ci]"
+            # No [skip ci]: a GITHUB_TOKEN push already cannot re-trigger workflows, and the
+            # marker would also stop the Cloudflare build, leaving a new lesson published with
+            # the negative synthetic id build-manifest falls back to when `id:` is absent.
+            git commit -m "chore: assign content ids"
             git push origin HEAD:main
           else
             echo "No ids to assign."
