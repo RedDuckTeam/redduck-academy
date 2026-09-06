@@ -52,9 +52,16 @@ jobs:
       # Assign ids to id-less files and commit them back BEFORE any DB write. If the push is rejected
       # (e.g. main is still protected), the job fails here and never reaches the DB step, so no
       # id-less content is ever inserted with an unpersisted id.
-      - name: Assign & commit content ids
+      # Course outlines are regenerated here too, not on the contributor's branch. They are derived
+      # from the frontmatter of every lesson in a course, so a browser edit that changes a title or
+      # an order leaves the committed outline stale — and the pre-commit hook that normally fixes
+      # that does not exist for an API-driven commit. Doing it on the branch would need a second bot
+      # commit, and a GITHUB_TOKEN push creates no check run, so the pull request's head would end
+      # up with no checks at all.
+      - name: Assign ids, refresh outlines, commit
         run: |
           yarn content:assign-ids
+          yarn content:index
           if [ -n "$(git status --porcelain content)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -62,7 +69,7 @@ jobs:
             # No [skip ci]: a GITHUB_TOKEN push already cannot re-trigger workflows, and the
             # marker would also stop the Cloudflare build, leaving a new lesson published with
             # the negative synthetic id build-manifest falls back to when `id:` is absent.
-            git commit -m "chore: assign content ids"
+            git commit -m "chore: assign content ids and refresh course outlines"
             git push origin HEAD:main
           else
             echo "No ids to assign."

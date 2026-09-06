@@ -41,5 +41,10 @@ jobs:
       - run: yarn install --immutable
       - name: Validate content
         run: node scripts/validate-content.mjs
+      # Skipped for proposals opened from the site editor. Those commits come from the API, so the
+      # pre-commit hook that regenerates the outline never ran and the contributor has no way to run
+      # it — content-sync.yml refreshes the outlines on main after the merge instead. Everything
+      # else in this workflow still applies to them.
       - name: Check course outlines are in sync
+        if: "!contains(github.event.pull_request.labels.*.name, 'community-proposal') && !startsWith(github.ref_name, 'proposal/')"
         run: node scripts/generate-course-index.mjs --check
