@@ -25,10 +25,13 @@ const HEADING_CLASS: Record<string, string> = {
 }
 
 const hidden = Decoration.replace({})
+const fenceLine = Decoration.line({ class: 'cm-md-fence' })
+const quoteLine = Decoration.line({ class: 'cm-md-quote' })
 const strongStyle = Decoration.mark({ class: 'cm-md-strong' })
 const emphasisStyle = Decoration.mark({ class: 'cm-md-em' })
 const codeStyle = Decoration.mark({ class: 'cm-md-code' })
 const linkStyle = Decoration.mark({ class: 'cm-md-link' })
+const listMarkStyle = Decoration.mark({ class: 'cm-md-list-mark' })
 
 /** Lines touched by any cursor or selection. Markers on these stay visible so they can be edited. */
 function revealedLines(state: EditorState): Set<number> {
@@ -39,6 +42,22 @@ function revealedLines(state: EditorState): Set<number> {
     for (let line = first; line <= last; line++) lines.add(line)
   }
   return lines
+}
+
+/**
+ * A block construct is only a block on screen if every one of its lines carries the styling, so
+ * these are line decorations rather than one mark spanning the node. The range is clipped to the
+ * viewport the caller is iterating, which keeps a long fenced block from decorating lines nobody
+ * is looking at.
+ */
+function decorateLines(doc: Text, from: number, to: number, style: Decoration, into: Array<Range<Decoration>>): void {
+  let pos = from
+  while (pos <= to) {
+    const line = doc.lineAt(pos)
+    into.push(style.range(line.from))
+    if (line.to >= to) return
+    pos = line.to + 1
+  }
 }
 
 function hideMarks(node: SyntaxNode, name: string, into: Array<Range<Decoration>>): void {
@@ -106,6 +125,18 @@ function buildDecorations(view: EditorView): DecorationSet {
         const isRevealed = revealed.has(doc.lineAt(nodeRef.from).number)
 
         switch (nodeRef.name) {
+          // Left as raw text inside, deliberately: a code sample is the one place where the
+          // Markdown a contributor typed has to stay exactly as typed.
+          case 'FencedCode':
+          case 'CodeBlock':
+            decorateLines(doc, Math.max(nodeRef.from, from), Math.min(nodeRef.to, to), fenceLine, decorations)
+            return false
+          case 'Blockquote':
+            decorateLines(doc, Math.max(nodeRef.from, from), Math.min(nodeRef.to, to), quoteLine, decorations)
+            return
+          case 'ListMark':
+            decorations.push(listMarkStyle.range(nodeRef.from, nodeRef.to))
+            return
           case 'StrongEmphasis':
             styleInner(node, 'EmphasisMark', strongStyle, decorations)
             if (!isRevealed) hideMarks(node, 'EmphasisMark', decorations)
@@ -166,6 +197,18 @@ const livePreviewTheme = EditorView.theme({
     padding: '0.1em 0.25em',
   },
   '.cm-md-link': { color: 'var(--primary)', textDecoration: 'underline' },
+  // The editor's own font is already monospaced, so what separates a code block from prose has to
+  // be the surface it sits on, not the letterforms.
+  '.cm-md-fence': {
+    backgroundColor: 'color-mix(in srgb, currentColor 7%, transparent)',
+    boxShadow: 'inset 2px 0 0 color-mix(in srgb, currentColor 25%, transparent)',
+  },
+  '.cm-md-quote': {
+    boxShadow: 'inset 2px 0 0 color-mix(in srgb, currentColor 30%, transparent)',
+    paddingLeft: '0.75em',
+    opacity: '0.85',
+  },
+  '.cm-md-list-mark': { color: 'var(--primary)' },
 })
 
 export function livePreview(): Extension {

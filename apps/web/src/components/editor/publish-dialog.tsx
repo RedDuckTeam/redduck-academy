@@ -195,7 +195,7 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
               </Text>
               <Text variant="main-14" className="text-muted-foreground">
                 {freshness.message} You can still publish. If someone edited this lesson since you opened it, GitHub
-                will show you the difference before you commit — read it there.
+                will show you the difference before you commit. Read it there.
               </Text>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -247,7 +247,7 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
                     ref={manualCopyRef}
                     readOnly
                     value={content}
-                    aria-label={`${fileName}, the whole file — select and copy`}
+                    aria-label={`${fileName}, the whole file, select and copy`}
                     className={cn(
                       'h-40 w-full resize-y border border-border bg-transparent p-3 font-mono text-[13px]',
                       focusRing,
@@ -291,7 +291,7 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
                       </Text>
                       <Text variant="main-14" className="text-muted-foreground">
                         {usePrefill
-                          ? 'The file should already be there. If the box is empty, select it and paste — your copy is on the clipboard.'
+                          ? 'The file should already be there. If the box is empty, select it and paste, your copy is on the clipboard.'
                           : 'Select everything in GitHub’s editor and paste over it.'}{' '}
                         This page keeps your draft either way, so come back to it if anything over there goes wrong.
                       </Text>
@@ -366,20 +366,20 @@ function GithubSteps({ path, prefilled }: GithubStepsProps) {
       <ol className="flex list-decimal flex-col gap-2 pl-5 marker:text-muted-foreground">
         <li>
           <Text variant="main-14" element="span">
-            GitHub opens <span className="font-mono break-all">{path}</span> in its own editor. Sign in if it asks — it
+            GitHub opens <span className="font-mono break-all">{path}</span> in its own editor. Sign in if it asks, it
             brings you straight back.
           </Text>
         </li>
         <li>
           <Text variant="main-14" element="span">
             You almost certainly don’t have write access to {CONTENT_REPO_LABEL}, so GitHub quietly makes you your own
-            copy of it — a fork — to hold the change. That is normal, and it cannot affect the original.
+            copy of it, called a fork, to hold the change. That is normal, and it cannot affect the original.
           </Text>
         </li>
         <li>
           <Text variant="main-14" element="span">
             {prefilled
-              ? 'Check the file looks right — it arrives already filled in.'
+              ? 'Check the file looks right. It arrives already filled in.'
               : 'Select everything in the editor (Ctrl+A, or ⌘A on a Mac) and paste. Your version replaces what is on screen.'}
           </Text>
         </li>
@@ -428,8 +428,8 @@ function ChangedOnMain({
       </Text>
       <Text variant="main-14" className="text-muted-foreground">
         Someone else’s edit was merged after you opened this page. Pasting your version over it now would undo their
-        work, and the pull request would look like an ordinary edit — nobody would notice. Load the current lesson, make
-        your change in it again, and publish that. Your text is kept on the page to copy back in.
+        work, and the pull request would look like an ordinary edit that nobody would notice. Load the current lesson,
+        make your change in it again, and publish that. Your text is kept on the page to copy back in.
       </Text>
 
       <div className="flex flex-wrap gap-2">
@@ -455,7 +455,7 @@ function ChangedOnMain({
         onClick={onPublishAnyway}
         className={cn('self-start text-left text-[13px] text-muted-foreground underline', focusRing)}
       >
-        Publish mine anyway — I’ve already accounted for their change
+        Publish mine anyway, I’ve already accounted for their change
       </button>
     </div>
   )

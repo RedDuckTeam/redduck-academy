@@ -40,10 +40,15 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>How contributing works</DialogTitle>
-            <DialogDescription>You need a GitHub account for the last step, and nothing before it.</DialogDescription>
           </DialogHeader>
 
           <DialogBody className="flex flex-col gap-4">
+            {/* Deliberately the first thing in the body rather than a subtitle: it is the answer to
+                the question that actually stops people, so it reads as a statement, not a caption. */}
+            <DialogDescription className="text-foreground text-[14px]">
+              You need a GitHub account for the last step. Nothing before it.
+            </DialogDescription>
+
             <Text variant="main-14" className="text-muted-foreground">
               Every lesson on this site is a Markdown file in{' '}
               <a
@@ -55,15 +60,15 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
                 {CONTENT_REPO_LABEL}
                 <ExternalLink className="ml-1 inline size-3.5 align-[-2px]" aria-hidden />
               </a>
-              , the open repository this site is built from. You are editing{' '}
+              , the open repository the site is built from. You are editing{' '}
               <span className="font-mono break-all">{path}</span>.
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">
               Changes reach the site through a pull request, the same way every other change does. When you publish,
               this file is copied to your clipboard and GitHub opens with it. GitHub makes your own copy of the
-              repository automatically — you do not have to set anything up — and once you paste and confirm, your
-              change becomes a pull request for a maintainer to review.
+              repository for you, so there is nothing to set up. Once you paste and confirm, your change becomes a pull
+              request for a maintainer to review.
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">
@@ -71,8 +76,7 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">
-              Nothing is sent anywhere while you write. Your work is saved in this browser as you type, so you can leave
-              and come back.
+              Nothing is sent anywhere while you write. Your draft is kept in this tab and goes away when you close it.
             </Text>
           </DialogBody>
         </DialogContent>

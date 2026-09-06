@@ -1,12 +1,12 @@
-// Unsaved editor buffers live in IndexedDB rather than localStorage: localStorage is synchronous
-// and a lesson file is tens of kilobytes, so every autosave would block the main thread mid-keystroke.
-// Writes are started from `visibilitychange`, which is the last event a mobile browser reliably
-// fires — `beforeunload` needs sticky activation, is skipped on mobile, and disqualifies the page
-// from bfcache in Firefox.
+// Unsaved editor buffers live in sessionStorage, which is scoped to the tab and cleared the moment
+// it closes. That is the intended lifetime: a draft is a safety net for a reload or a stray click,
+// not a document we keep on someone's machine after they have walked away.
+//
+// Writes are synchronous, which localStorage and IndexedDB are not. A lesson file is tens of
+// kilobytes and the save is debounced, so the cost is nowhere near a frame; the flush on
+// `visibilitychange` stays because that is the last event a mobile browser reliably fires.
 
-const DB_NAME = 'redduck-lesson-editor'
-const DB_VERSION = 1
-const STORE = 'drafts'
+const KEY_PREFIX = 'redduck-lesson-draft:'
 
 export interface LessonDraft {
   key: string
@@ -14,8 +14,8 @@ export interface LessonDraft {
   content: string
   /**
    * The published file this draft was started from, restored with it: the freshness check asks
-   * "did the lesson move since you began?", and for a draft from last week that is last week's
-   * text, not today's. Absent on rows written before drafts carried it.
+   * "did the lesson move since you began?", and the answer has to be measured against the text the
+   * draft was written against, not against whatever is current now.
    */
   baseline?: string
   savedAt: number
@@ -25,56 +25,31 @@ export function draftKey(courseSlug: string, moduleSlug: string, lessonSlug: str
   return `${courseSlug}/${moduleSlug}/${lessonSlug}`
 }
 
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE, { keyPath: 'key' })
-    }
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error ?? new Error('IndexedDB unavailable'))
-    request.onblocked = () => reject(new Error('IndexedDB upgrade blocked by another tab'))
-  })
-}
-
-async function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const db = await openDatabase()
-  try {
-    return await new Promise<T>((resolve, reject) => {
-      const transaction = db.transaction(STORE, mode)
-      const request = run(transaction.objectStore(STORE))
-      request.onsuccess = () => resolve(request.result)
-      request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'))
-      transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'))
-    })
-  } finally {
-    db.close()
-  }
-}
-
 // Storage is a convenience, never a precondition for editing: private-mode Safari, a disabled
 // origin and a full quota all throw, and in every case the buffer in memory is still the truth.
 
-export async function loadDraft(key: string): Promise<LessonDraft | null> {
+export function loadDraft(key: string): LessonDraft | null {
   try {
-    const row = await withStore<LessonDraft | undefined>('readonly', (store) => store.get(key))
-    return row ?? null
+    const raw = sessionStorage.getItem(KEY_PREFIX + key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as LessonDraft
+    return typeof parsed?.content === 'string' ? parsed : null
   } catch {
     return null
   }
 }
 
-export async function saveDraft(draft: LessonDraft): Promise<void> {
+export function saveDraft(draft: LessonDraft): void {
   try {
-    await withStore('readwrite', (store) => store.put(draft))
+    sessionStorage.setItem(KEY_PREFIX + draft.key, JSON.stringify(draft))
   } catch {
     /* keep typing */
   }
 }
 
-export async function deleteDraft(key: string): Promise<void> {
+export function deleteDraft(key: string): void {
   try {
-    await withStore('readwrite', (store) => store.delete(key))
+    sessionStorage.removeItem(KEY_PREFIX + key)
   } catch {
     /* keep typing */
   }

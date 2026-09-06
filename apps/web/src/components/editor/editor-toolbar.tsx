@@ -155,7 +155,7 @@ const SHORTCUTS: Array<{ keys: string; what: string }> = [
   { keys: `${MOD}+Alt+1 … 3`, what: 'Heading level 1, 2 or 3' },
   { keys: 'Alt+↑ / Alt+↓', what: 'Move the current line up or down' },
   { keys: `${MOD}+Z / ${MOD}+Shift+Z`, what: 'Undo, redo' },
-  { keys: `${MOD}+V`, what: 'Paste — formatted text arrives as Markdown' },
+  { keys: `${MOD}+V`, what: 'Paste, formatted text arrives as Markdown' },
   { keys: 'Tab', what: 'Move focus out of the editor' },
 ]
 
@@ -248,7 +248,7 @@ export function EditorToolbar({ view, className }: EditorToolbarProps) {
           <DialogHeader>
             <DialogTitle className="text-[#000]">Keyboard shortcuts</DialogTitle>
             <DialogDescription className="text-[#000]/70">
-              Markdown works too — the buffer is the file, exactly as it will be committed.
+              Markdown works too. The buffer is the file, exactly as it will be committed.
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="gap-3 pb-6">

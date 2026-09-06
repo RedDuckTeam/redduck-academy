@@ -95,7 +95,7 @@ function SupersededVersion({ text, onDiscard }: SupersededVersionProps) {
       </Text>
       <Text variant="main-14" className="text-muted-foreground">
         The editor now holds the lesson as it was merged. Copy your text out, make your change in it again, and publish
-        that — this panel is the only copy left.
+        that. This panel is the only copy left.
       </Text>
       <pre className="max-h-64 overflow-auto border border-border p-3 text-[13px] whitespace-pre-wrap" tabIndex={0}>
         {text}
@@ -131,7 +131,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   const [superseded, setSuperseded] = useState<string | null>(null)
   const [publishOpen, setPublishOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
-  const [savedAt, setSavedAt] = useState<number | null>(null)
   const [mode, setMode] = useState<ViewMode>('split')
   const [pendingLine, setPendingLine] = useState<number | null>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -149,7 +148,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         setBaseline(text)
         setLoad({ status: 'ready' })
 
-        const stored = await loadDraft(key)
+        const stored = loadDraft(key)
         // A draft matching the published file is not a draft, it is yesterday's saved state.
         if (!cancelled && stored && stored.content !== text) setDraftOffer(stored)
       })
@@ -176,15 +175,15 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     if (load.status !== 'ready' || draftOffer) return
     const draft = draftRef.current
     const timer = setTimeout(() => {
-      if (!draft) return void deleteDraft(key)
-      void saveDraft(draft).then(() => setSavedAt(draft.savedAt))
+      if (!draft) return deleteDraft(key)
+      saveDraft(draft)
     }, AUTOSAVE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [source, key, load.status, draftOffer])
 
   useEffect(() => {
     const flush = () => {
-      if (document.visibilityState === 'hidden' && draftRef.current) void saveDraft(draftRef.current)
+      if (document.visibilityState === 'hidden' && draftRef.current) saveDraft(draftRef.current)
     }
     document.addEventListener('visibilitychange', flush)
     return () => document.removeEventListener('visibilitychange', flush)
@@ -206,8 +205,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
 
   const discardDraft = () => {
     setDraftOffer(null)
-    setSavedAt(null)
-    void deleteDraft(key)
+    deleteDraft(key)
   }
 
   // Buffer and baseline move together, always. Advancing the baseline to the merged file while the
@@ -288,13 +286,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Silent until there is something to report — an idle "No changes yet" is noise on a
-              page whose whole point is that you have not typed anything yet. */}
-          {isDirty && (
-            <Text variant="main-14" role="status" className="text-muted-foreground">
-              {savedAt ? 'Saved in this browser' : 'Unsaved changes, kept in this browser'}
-            </Text>
-          )}
           {isDesktop && (
             <Button
               type="button"
@@ -314,7 +305,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         <div className={cn(quietNoticeClass, 'flex-row items-center gap-3')} role="status">
           <WifiOff className="size-4 shrink-0 text-muted-foreground" />
           <Text variant="main-14" className="text-muted-foreground">
-            You are offline. Keep editing — everything is saved in this browser — but publishing needs a connection.
+            You are offline. Keep editing, your work is kept in this tab, but publishing needs a connection.
           </Text>
         </div>
       )}
@@ -509,7 +500,7 @@ function ReadOnlyOnSmallScreen({ path, source, title }: ReadOnlyOnSmallScreenPro
         </Text>
         <Text variant="main-14" className="text-muted-foreground">
           The editor needs a keyboard and room for two columns, so on a phone this is the lesson as it stands. You can
-          still take the file with you, or edit it directly on GitHub — that works on mobile.
+          still take the file with you, or edit it directly on GitHub, which works on mobile.
         </Text>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm" className={cn('gap-2', focusRing)}>

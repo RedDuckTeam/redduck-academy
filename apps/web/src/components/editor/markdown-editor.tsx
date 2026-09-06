@@ -178,12 +178,7 @@ export function MarkdownEditor({ value, onChange, onViewReady, className }: Mark
   return (
     // CodeMirror clears its own focus ring (`&.cm-focused { outline: none }`) because the ring
     // belongs on the framed editor, not on the scroller inside it.
-    <div
-      className={cn(
-        'flex min-h-0 flex-col border border-border has-[.cm-focused]:outline-2 has-[.cm-focused]:outline-offset-[-2px] has-[.cm-focused]:outline-primary',
-        className,
-      )}
-    >
+    <div className={cn('flex min-h-0 flex-col border border-border has-[.cm-focused]:border-foreground', className)}>
       <EditorToolbar view={view} />
       <div ref={hostRef} className="min-h-0 flex-1" />
     </div>

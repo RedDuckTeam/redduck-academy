@@ -41,7 +41,7 @@ export function PreviewPane({ source, title, className }: PreviewPaneProps) {
         <div className="border border-border p-4">
           <Text variant="main-14" className="text-muted-foreground">
             This lesson's questions are stored in the database and rendered from there, so they never appear in the page
-            body — and they cannot appear here either. Your edits to them are still submitted, and they reach the site
+            body, and they cannot appear here either. Your edits to them are still submitted, and they reach the site
             after the pull request is merged and the content sync runs.
           </Text>
         </div>

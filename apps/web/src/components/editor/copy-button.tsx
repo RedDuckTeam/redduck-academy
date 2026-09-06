@@ -36,7 +36,7 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
     >
       {state === 'copied' ? <Check className="size-4" /> : <Copy className="size-4" />}
       <span aria-live="polite">
-        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy — select it by hand' : label}
+        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy, select it by hand' : label}
       </span>
     </Button>
   )
