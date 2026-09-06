@@ -64,6 +64,36 @@ GITHUB_TOKEN=
 PORT=8787
 ```
 
+**Lesson proposals** (the in-browser editor). All optional — the API boots without them and the
+feature reports itself unavailable, so you can deploy the code before the config. Leave
+`PROPOSALS_ENABLED` unset to keep the editor off entirely.
+
+```env
+PROPOSALS_ENABLED=true
+PROPOSALS_REPO=owner/repo                # where proposal branches and pull requests are created
+
+GITHUB_APP_ID=
+GITHUB_APP_INSTALLATION_ID=
+GITHUB_APP_PRIVATE_KEY=                  # PKCS#1 PEM; escaped \n is accepted for Heroku config vars
+
+TURNSTILE_SECRET_KEY=                    # Cloudflare Turnstile; the widget's action must be `submit-proposal`
+PROPOSALS_IP_PEPPER=                     # any long random string; salts contributor IP prefixes
+```
+
+The GitHub App is deliberately **not** the account behind `GITHUB_TOKEN`. That token is a single
+shared PAT used to grade student projects, and GitHub's secondary rate limit is per identity — a
+burst of proposals on it would stop grading. Install the App on the content repository only, with
+`contents: write` and `pull_requests: write`.
+
+Two repository settings the code cannot apply for you:
+
+- A `community-proposal` label must exist. `.github/workflows/claude.yml` refuses to run on pull
+  requests carrying it, which is what keeps unreviewed contributor prose away from a job holding
+  write permissions and an API key.
+- `main` should require the `content-verify` status check, with `github-actions[bot]` as a bypass
+  actor so `content-sync.yml` can still push assigned ids. Without it, the validation that catches a
+  destructive content change is advisory.
+
 ### `apps/admin`
 
 ```env
@@ -84,7 +114,13 @@ VITE_API_URL=https://api.yourdomain.com
 VITE_APP_URL=https://yourdomain.com
 VITE_PRIVY_APP_ID=
 VITE_CHAIN_ENV=mainnet   # or testnet
+
+VITE_TURNSTILE_SITE_KEY= # public sitekey; leave empty to disable anonymous lesson proposals
 ```
+
+The sitekey is public by design — the secret half lives on the backend, which is where the token is
+actually verified. Configure the widget's allowed hostnames to match `ALLOWED_ORIGINS`: the backend
+rejects a token solved on any other host, so a mismatch shows up as a challenge that never passes.
 
 ### `packages/payload-config` (used by CLI for type generation)
 
