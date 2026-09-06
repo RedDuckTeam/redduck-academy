@@ -1,17 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Columns2,
-  Download,
-  ExternalLink,
-  Eye,
-  Loader2,
-  PenLine,
-  WifiOff,
-} from 'lucide-react'
+import { AlertTriangle, Columns2, Download, ExternalLink, Eye, Loader2, PenLine, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { Text } from '@/components/ui/text'
 import { CopyButton } from './copy-button'
 import { FrontmatterForm } from './frontmatter-form'
@@ -267,17 +258,41 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button asChild variant="outline" size="sm" className={focusRing}>
-          <Link to="/courses/$courseSlug/$moduleSlug/$lessonSlug" params={{ courseSlug, moduleSlug, lessonSlug }}>
-            <ArrowLeft className="mr-2 size-4" />
-            Back to the lesson
-          </Link>
-        </Button>
+        {load.status === 'ready' && isDesktop ? (
+          <div role="group" aria-label="Panes" className="flex border border-border">
+            {VIEW_MODES.filter(({ mode: value }) => value !== 'split' || canSplit).map(
+              ({ mode: value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={effectiveMode === value}
+                  onClick={() => setMode(value)}
+                  className={cn(
+                    // leading-none so the label's line box matches the icon's, otherwise the mono
+                    // font's descender pushes the text below the icon's centre.
+                    'inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[14px] leading-none transition-colors',
+                    focusRing,
+                    effectiveMode === value ? 'bg-foreground text-background' : 'hover:bg-muted',
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  {label}
+                </button>
+              ),
+            )}
+          </div>
+        ) : (
+          <span />
+        )}
 
         <div className="flex flex-wrap items-center gap-3">
-          <Text variant="main-14" role="status" className="text-muted-foreground">
-            {!isDirty ? 'No changes yet' : savedAt ? 'Saved in this browser' : 'Unsaved changes, kept in this browser'}
-          </Text>
+          {/* Silent until there is something to report — an idle "No changes yet" is noise on a
+              page whose whole point is that you have not typed anything yet. */}
+          {isDirty && (
+            <Text variant="main-14" role="status" className="text-muted-foreground">
+              {savedAt ? 'Saved in this browser' : 'Unsaved changes, kept in this browser'}
+            </Text>
+          )}
           {isDesktop && (
             <Button
               type="button"
@@ -291,34 +306,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
             </Button>
           )}
         </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Text variant="caps-14" element="span" className="text-muted-foreground">
-          {path}
-        </Text>
-        {load.status === 'ready' && isDesktop && (
-          <div role="group" aria-label="Panes" className="flex border border-border">
-            {VIEW_MODES.filter(({ mode: value }) => value !== 'split' || canSplit).map(
-              ({ mode: value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={effectiveMode === value}
-                  onClick={() => setMode(value)}
-                  className={cn(
-                    'inline-flex cursor-pointer items-center gap-2 px-3 py-1.5 text-[14px] transition-colors',
-                    focusRing,
-                    effectiveMode === value ? 'bg-foreground text-background' : 'hover:bg-muted',
-                  )}
-                >
-                  <Icon className="size-4" />
-                  {label}
-                </button>
-              ),
-            )}
-          </div>
-        )}
       </div>
 
       {!isOnline && (
@@ -421,6 +408,20 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
           )}
         </div>
       )}
+
+      <Link
+        to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+        params={{ courseSlug, moduleSlug, lessonSlug }}
+        className={cn(
+          'mt-2 flex w-full items-center gap-2 border border-border bg-transparent p-5 transition-colors hover:bg-muted',
+          focusRing,
+        )}
+      >
+        <ArrowRight className="rotate-180 [&_path]:fill-secondary" />
+        <Text variant="caps-20" className="text-secondary text-[18px]">
+          Back to the lesson
+        </Text>
+      </Link>
 
       {publishOpen && (
         <PublishDialog
