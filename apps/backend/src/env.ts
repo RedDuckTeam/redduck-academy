@@ -37,7 +37,10 @@ const envSchema = z.object({
    * set on Heroku crash-loops every dyno. Each is validated where it is used; see
    * services/proposals/proposals.config.ts, which fails closed rather than degrading.
    */
-  PROPOSALS_ENABLED: z.stringbool().default(false),
+  // Preprocessed rather than a bare `stringbool`, which rejects '' — and an empty config var (or a
+  // bare `PROPOSALS_ENABLED=` line that dotenv reads as '') would then crash-loop every dyno at
+  // import, taking the whole API down over a flag that is meant to be optional.
+  PROPOSALS_ENABLED: z.preprocess((v) => (v === '' ? undefined : v), z.stringbool().default(false)),
   /** Target of the proposal branch and pull request, as `owner/repo`. */
   PROPOSALS_REPO: z.string().optional(),
   GITHUB_APP_ID: z.string().optional(),

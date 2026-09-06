@@ -2,7 +2,7 @@ CREATE TABLE "content_proposals" (
 	"id" text PRIMARY KEY NOT NULL,
 	"path" text NOT NULL,
 	"branch" text NOT NULL,
-	"pr_number" integer NOT NULL,
+	"pr_number" integer,
 	"door" text NOT NULL,
 	"ip_hash" text,
 	"privy_user_id" text,

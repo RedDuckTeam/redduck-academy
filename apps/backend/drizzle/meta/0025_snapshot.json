@@ -1,5 +1,5 @@
 {
-  "id": "409af419-1449-4a58-9871-9249a9da78a5",
+  "id": "7783f42d-617d-4f02-82cd-d0903fe0a207",
   "prevId": "87f2ff91-3056-4863-b3a1-f89cb6c61f7f",
   "version": "7",
   "dialect": "postgresql",
@@ -359,7 +359,7 @@
           "name": "pr_number",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "door": {
           "name": "door",

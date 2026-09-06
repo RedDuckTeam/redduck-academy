@@ -57,63 +57,16 @@ export const ProposalsService = {
     // out everyone behind it.
     const ipHash = door === 'anonymous' ? hashContributorIp(context.clientIp) : null
 
-    await ProposalsRepository.assertWithinQuotas({ door, ipHash, privyUserId: context.privyUserId, path })
-
-    const content = normaliseContent(body.content)
-    const { content: base, base: baseCommit } = await proposalGitHubService.readBase(path)
-
-    const violations = checkContentRules({ path, base, submitted: content })
-    if (violations.length > 0) {
-      throw new AppError(422, 'This change cannot be proposed yet', { violations })
-    }
-
-    if (base !== null && sha256(base) !== body.baseHash) {
-      throw new AppError(409, 'This lesson changed while you were editing it', { theirs: base })
-    }
-    if (base === null && body.baseHash !== sha256('')) {
-      throw new AppError(409, 'This lesson no longer exists on main', {})
-    }
-
-    if (door === 'anonymous') {
-      if (!body.turnstileToken) throw new AppError(400, 'Please complete the challenge before submitting')
-      await TurnstileService.verify(body.turnstileToken, context.clientIp)
-    }
-
+    const id = randomUUID()
     const branch = buildProposalBranch(body.courseSlug, body.moduleSlug, body.lessonSlug)
-    const narrative = {
-      courseSlug: body.courseSlug,
-      moduleSlug: body.moduleSlug,
-      lessonSlug: body.lessonSlug,
-      path,
-      rationale: body.rationale,
-      displayName: body.displayName,
-      door,
-      licenseVersion: body.licenseVersion,
-      isNewLesson: base === null,
-      editorUrl: `${siteOrigin()}/edit/${body.courseSlug}/${body.moduleSlug}/${body.lessonSlug}`,
-    }
 
-    const { prNumber, prUrl } = await proposalGitHubService.openProposal({
-      // Pinned to the commit the file was read from, so a merge landing mid-edit becomes a visible
-      // conflict on the pull request rather than a silent revert.
-      base: baseCommit,
-      path,
-      content,
-      branch,
-      commitMessage: buildCommitMessage(narrative),
-      prTitle: buildPullRequestTitle(narrative),
-      prBody: buildPullRequestBody(narrative),
-      // The community-proposal label is a security control, not decoration: a privileged workflow
-      // refuses to run on pull requests carrying it, so unreviewed prose never reaches a job that
-      // holds write permissions and an API key.
-      labels: door === 'anonymous' ? [PROPOSAL_LABEL, UNVERIFIED_AUTHOR_LABEL] : [PROPOSAL_LABEL],
-    })
-
-    await ProposalsRepository.record({
-      id: randomUUID(),
+    // Claims the quota slot before any GitHub work, so concurrent submissions contend in Postgres
+    // instead of all reading a count of zero during the seconds the write takes. Released below if
+    // the submission never reaches a pull request.
+    await ProposalsRepository.reserve({
+      id,
       path,
       branch,
-      prNumber,
       door,
       ipHash,
       privyUserId: context.privyUserId,
@@ -121,6 +74,69 @@ export const ProposalsService = {
       licenseAcceptedAt: new Date(),
     })
 
-    return { prUrl, prNumber, branch }
+    try {
+      const content = normaliseContent(body.content)
+      const { content: base, base: baseCommit } = await proposalGitHubService.readBase(path)
+
+      const violations = checkContentRules({ path, base, submitted: content })
+      if (violations.length > 0) {
+        throw new AppError(422, 'This change cannot be proposed yet', { violations })
+      }
+
+      if (base !== null && sha256(base) !== body.baseHash) {
+        throw new AppError(409, 'This lesson changed while you were editing it', { theirs: base })
+      }
+      if (base === null && body.baseHash !== sha256('')) {
+        throw new AppError(409, 'This lesson no longer exists on main', {})
+      }
+      // Normalisation can erase a difference the editor still considered an edit — trailing
+      // newlines, most obviously. Without this the write succeeds and produces a pull request with
+      // one commit and no changed files, which also skips CI because no path under content/ moved.
+      if (base !== null && content === base) {
+        throw new AppError(400, 'This is identical to the published lesson')
+      }
+
+      if (door === 'anonymous') {
+        if (!body.turnstileToken) throw new AppError(400, 'Please complete the challenge before submitting')
+        await TurnstileService.verify(body.turnstileToken, context.clientIp)
+      }
+
+      const narrative = {
+        courseSlug: body.courseSlug,
+        moduleSlug: body.moduleSlug,
+        lessonSlug: body.lessonSlug,
+        path,
+        rationale: body.rationale,
+        displayName: body.displayName,
+        door,
+        licenseVersion: body.licenseVersion,
+        isNewLesson: base === null,
+        editorUrl: `${siteOrigin()}/edit/${body.courseSlug}/${body.moduleSlug}/${body.lessonSlug}`,
+      }
+
+      const { prNumber, prUrl } = await proposalGitHubService.openProposal({
+        // Pinned to the commit the file was read from, so a merge landing mid-edit becomes a visible
+        // conflict on the pull request rather than a silent revert.
+        base: baseCommit,
+        path,
+        content,
+        branch,
+        commitMessage: buildCommitMessage(narrative),
+        prTitle: buildPullRequestTitle(narrative),
+        prBody: buildPullRequestBody(narrative),
+        // The community-proposal label is a security control, not decoration: a privileged workflow
+        // refuses to run on pull requests carrying it, so unreviewed prose never reaches a job that
+        // holds write permissions and an API key.
+        labels: door === 'anonymous' ? [PROPOSAL_LABEL, UNVERIFIED_AUTHOR_LABEL] : [PROPOSAL_LABEL],
+      })
+
+      await ProposalsRepository.attachPullRequest(id, prNumber)
+      return { prUrl, prNumber, branch }
+    } catch (e) {
+      // A submission that never became a pull request must not cost the contributor a day's
+      // allowance — a typo in the frontmatter is not abuse.
+      await ProposalsRepository.release(id).catch(() => {})
+      throw e
+    }
   },
 }

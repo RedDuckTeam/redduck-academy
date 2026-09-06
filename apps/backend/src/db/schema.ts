@@ -232,7 +232,12 @@ export const contentProposals = pgTable(
     /** Repo-relative path written, e.g. `content/<course>/<module>/<lesson>.md`. */
     path: text('path').notNull(),
     branch: text('branch').notNull(),
-    prNumber: integer('pr_number').notNull(),
+    /**
+     * Null between reserving the quota slot and the pull request existing. The row is written
+     * before any GitHub call so that concurrent submissions contend for the slot in the database
+     * rather than all reading a count of zero and racing past every limit.
+     */
+    prNumber: integer('pr_number'),
     door: text('door', { enum: ['anonymous', 'signed_in'] }).notNull(),
     /** HMAC of the contributor's IP prefix; anonymous door only. */
     ipHash: text('ip_hash'),

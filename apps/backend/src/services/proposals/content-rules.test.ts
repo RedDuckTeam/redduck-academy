@@ -77,6 +77,16 @@ describe('checkContentRules', () => {
       expect(rules(file({ submitted }))).toContain('structural-id')
     })
 
+    // The sync scripts read the parsed key, so any spelling that yaml resolves to `id` is an id —
+    // matching only the shape of the line let these through and reached the destructive prune.
+    it.each([
+      ['a quoted key', '"id": 42\ntitle: New\ntype: lecture\norder: 10'],
+      ['a flow mapping', '{ id: 42, title: New, type: lecture, order: 10 }'],
+      ['an explicit key', '? id\n: 42\ntitle: New\ntype: lecture\norder: 10'],
+    ])('rejects an id smuggled onto a new file as %s', (_label, frontmatter) => {
+      expect(rules(file({ base: null, submitted: lesson(frontmatter) }))).toContain('structural-id')
+    })
+
     it('rejects an id authored on a new file', () => {
       const submitted = lesson('id: 1000000999\ntitle: New\ntype: lecture\norder: 10')
       expect(rules(file({ base: null, submitted }))).toContain('structural-id')
@@ -105,6 +115,16 @@ describe('checkContentRules', () => {
       expect(rules(file({ base: lesson(fm, body), submitted: lesson(fm, body) }))).toEqual([])
     })
 
+    // The renderer's regex lets \s* span newlines, so this truncates the published page even though
+    // no single line looks like a marker.
+    it('rejects a question marker split across several lines', () => {
+      const submitted = lesson(
+        'id: 1000000042\ntitle: Hashing\ntype: lecture\norder: 10',
+        '\nIntro.\n\n<!--\nq\n-->\n\nThe rest of the lecture.\n',
+      )
+      expect(rules(file({ submitted }))).toContain('question-marker')
+    })
+
     it('ignores a marker that is only part of a longer line', () => {
       const submitted = lesson(
         'id: 1000000042\ntitle: Hashing\ntype: lecture\norder: 10',
@@ -131,6 +151,14 @@ describe('checkContentRules', () => {
 
     it('rejects a dropped question id', () => {
       const submitted = withIds.replace('<!-- q:6a1cb87a3c68b19723964330 -->', '<!-- q -->')
+      expect(rules(file({ base: lesson(fm, withIds), submitted: lesson(fm, submitted) }))).toContain('question-ids')
+    })
+
+    // sync-tests.mjs only reads option lines, so an id parked anywhere else counts as deleted.
+    it('rejects an option id moved onto the question stem', () => {
+      const submitted = withIds
+        .replace('- [x] Yes  <!-- a:6a1cb87a3c68b19723964331 -->', '- [x] Yes')
+        .replace('What?', 'What?  <!-- a:6a1cb87a3c68b19723964331 -->')
       expect(rules(file({ base: lesson(fm, withIds), submitted: lesson(fm, submitted) }))).toContain('question-ids')
     })
 

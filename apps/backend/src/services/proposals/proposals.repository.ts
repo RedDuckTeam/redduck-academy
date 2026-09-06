@@ -1,5 +1,8 @@
-import { gt, sql } from 'drizzle-orm'
+import { eq, gt, sql } from 'drizzle-orm'
 import { db } from '../../db'
+
+/** The database handle or a transaction — the quota reads run inside one, the rest do not. */
+type Queryable = typeof db | Parameters<Parameters<(typeof db)['transaction']>[0]>[0]
 import { contentProposals } from '../../db/schema'
 import { AppError } from '../../lib/errors'
 
@@ -44,6 +47,12 @@ const GLOBAL_LIMIT = 60
 const GLOBAL_WINDOW_MS = HOUR_MS
 
 /** The widest window any quota looks at; bounds the rows a check has to scan. */
+/**
+ * Advisory lock id for the reservation transaction. An arbitrary constant — it only has to be
+ * unique among the advisory locks this application takes, and this is the only one.
+ */
+const RESERVATION_LOCK_ID = 8_417_233
+
 const WIDEST_WINDOW_MS = Math.max(ANONYMOUS_WINDOW_MS, SIGNED_IN_WINDOW_MS, PER_PATH_WINDOW_MS, GLOBAL_WINDOW_MS)
 
 const ANONYMOUS_MESSAGE = 'This network has reached its limit for edit suggestions. Try again later, or sign in'
@@ -58,14 +67,9 @@ export interface ProposalQuotaInput {
   path: string
 }
 
-export interface ProposalRecordInput {
+export interface ProposalReserveInput extends ProposalQuotaInput {
   id: string
-  path: string
   branch: string
-  prNumber: number
-  door: ProposalDoor
-  ipHash: string | null
-  privyUserId: string | null
   licenseVersion: string
   licenseAcceptedAt: Date
 }
@@ -81,7 +85,7 @@ function retryAfterMs(window: QuotaWindow, windowMs: number, now: Date): number 
   return Math.max(freesAt - now.getTime(), 0)
 }
 
-async function getWindows(input: ProposalQuotaInput, now: Date) {
+async function getWindows(tx: Queryable, input: ProposalQuotaInput, now: Date) {
   // The `postgres` driver doesn't serialize Date objects inside sql template params,
   // so we bind ISO strings and cast them to timestamp in the query.
   const scanCutoffIso = new Date(now.getTime() - WIDEST_WINDOW_MS).toISOString()
@@ -97,7 +101,7 @@ async function getWindows(input: ProposalQuotaInput, now: Date) {
 
   // One round-trip for all four quotas. The global ceiling already bounds the outer scan to roughly
   // GLOBAL_LIMIT * 24 rows, so conditional aggregates cost less here than four separate queries.
-  const [row] = await db
+  const [row] = await tx
     .select({
       anonymousCount:
         sql<number>`COUNT(*) FILTER (WHERE ${contentProposals.door} = 'anonymous' AND ${contentProposals.ipHash} = ${ipHash} AND ${contentProposals.createdAt} > ${anonymousCutoffIso})`.mapWith(
@@ -135,45 +139,79 @@ async function getWindows(input: ProposalQuotaInput, now: Date) {
   }
 }
 
+function contributorLimit(door: ProposalDoor): { limit: number; windowMs: number } {
+  return door === 'anonymous'
+    ? { limit: ANONYMOUS_LIMIT, windowMs: ANONYMOUS_WINDOW_MS }
+    : { limit: SIGNED_IN_LIMIT, windowMs: SIGNED_IN_WINDOW_MS }
+}
+
+/** Reported once a reservation is refused, so the contributor learns which limit they met. */
+async function refusal(tx: Queryable, input: ProposalQuotaInput, now: Date): Promise<never> {
+  const windows = await getWindows(tx, input, now)
+  const contributor = input.door === 'anonymous' ? windows.anonymous : windows.signedIn
+  const { limit, windowMs } = contributorLimit(input.door)
+
+  if (contributor.count >= limit) {
+    const message = input.door === 'anonymous' ? ANONYMOUS_MESSAGE : SIGNED_IN_MESSAGE
+    throw new AppError(429, message, { retryAfterMs: retryAfterMs(contributor, windowMs, now) })
+  }
+  if (windows.path.count >= PER_PATH_LIMIT) {
+    throw new AppError(429, PER_PATH_MESSAGE, { retryAfterMs: retryAfterMs(windows.path, PER_PATH_WINDOW_MS, now) })
+  }
+  throw new AppError(429, GLOBAL_MESSAGE, { retryAfterMs: retryAfterMs(windows.global, GLOBAL_WINDOW_MS, now) })
+}
+
 export const ProposalsRepository = {
   /**
-   * Throws on the first quota the submission would break. Anonymous submissions open a real pull
-   * request with no moderation step in between, so these counts are the only thing rationing write
-   * access to the repository.
+   * Claims a quota slot, or refuses with a 429.
+   *
+   * The row is written here — before any GitHub call — rather than after the pull request exists,
+   * because a check that only reads is not a limit. Opening a proposal takes several seconds and
+   * seven GitHub round-trips; with the row written at the end, a burst fired inside that window has
+   * every request read a count of zero, pass all four quotas and open a pull request each.
+   *
+   * Counting and inserting inside one advisory-locked transaction is what makes the limit exact.
+   * A conditional INSERT alone is not enough: under READ COMMITTED each statement counts against
+   * its own snapshot, so simultaneous submissions all see the same total and overshoot — measured
+   * at 6 admitted against a limit of 5 in a 50-way burst. Serialising costs nothing at a ceiling of
+   * 60 proposals an hour, and the lock is held only for two counts and an insert.
+   *
+   * `prNumber` stays null until `attachPullRequest`, and `release` removes the row if the
+   * submission never gets that far, so a failed attempt does not consume the contributor's day.
    */
-  async assertWithinQuotas(input: ProposalQuotaInput): Promise<void> {
-    const now = new Date()
-    const windows = await getWindows(input, now)
+  async reserve(input: ProposalReserveInput): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${RESERVATION_LOCK_ID})`)
 
-    // Contributor-scoped quotas first: when someone is over their own allowance, that is the
-    // accurate explanation, and it avoids reporting the shared quotas' state to whoever is exhausting them.
-    if (input.door === 'anonymous' && windows.anonymous.count >= ANONYMOUS_LIMIT) {
-      throw new AppError(429, ANONYMOUS_MESSAGE, {
-        retryAfterMs: retryAfterMs(windows.anonymous, ANONYMOUS_WINDOW_MS, now),
-      })
-    }
+      const now = new Date()
+      const windows = await getWindows(tx, input, now)
+      const contributor = input.door === 'anonymous' ? windows.anonymous : windows.signedIn
+      const { limit } = contributorLimit(input.door)
 
-    if (input.door === 'signed_in' && windows.signedIn.count >= SIGNED_IN_LIMIT) {
-      throw new AppError(429, SIGNED_IN_MESSAGE, {
-        retryAfterMs: retryAfterMs(windows.signedIn, SIGNED_IN_WINDOW_MS, now),
-      })
-    }
+      if (contributor.count >= limit || windows.path.count >= PER_PATH_LIMIT || windows.global.count >= GLOBAL_LIMIT) {
+        await refusal(tx, input, now)
+      }
 
-    if (windows.path.count >= PER_PATH_LIMIT) {
-      throw new AppError(429, PER_PATH_MESSAGE, {
-        retryAfterMs: retryAfterMs(windows.path, PER_PATH_WINDOW_MS, now),
+      await tx.insert(contentProposals).values({
+        id: input.id,
+        path: input.path,
+        branch: input.branch,
+        door: input.door,
+        ipHash: input.ipHash,
+        privyUserId: input.privyUserId,
+        licenseVersion: input.licenseVersion,
+        licenseAcceptedAt: input.licenseAcceptedAt,
       })
-    }
-
-    if (windows.global.count >= GLOBAL_LIMIT) {
-      throw new AppError(429, GLOBAL_MESSAGE, {
-        retryAfterMs: retryAfterMs(windows.global, GLOBAL_WINDOW_MS, now),
-      })
-    }
+    })
   },
 
-  /** The audit row, and the only counter the quotas above read. Written after the pull request exists. */
-  async record(input: ProposalRecordInput): Promise<void> {
-    await db.insert(contentProposals).values(input)
+  /** Completes a reservation once the pull request exists. */
+  async attachPullRequest(id: string, prNumber: number): Promise<void> {
+    await db.update(contentProposals).set({ prNumber }).where(eq(contentProposals.id, id))
+  },
+
+  /** Gives the slot back when a submission fails before a pull request was opened. */
+  async release(id: string): Promise<void> {
+    await db.delete(contentProposals).where(eq(contentProposals.id, id))
   },
 }

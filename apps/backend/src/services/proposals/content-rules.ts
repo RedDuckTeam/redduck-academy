@@ -25,10 +25,20 @@ export const PROPOSAL_PATH_RE = /^content\/[a-z0-9-]+\/(?:_course\.md|[a-z0-9-]+
 /** Frontmatter must open at byte 0. Shared by every content script; kept identical here. */
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/
 
-/** A question marker owns its whole line, per `scripts/lib/tests-md.mjs`. */
-const Q_MARKER_RE = /^<!--\s*q(?::\s*([^\s>]+))?\s*-->$/
-/** Ids assigned to existing questions and options, spliced in by `yarn content:assign-ids`. */
+/**
+ * Copied verbatim from `apps/web/src/lib/content/frontmatter.ts`, and it has to stay that way.
+ *
+ * Note the `\s*`, which matches newlines: the renderer treats a marker split across several lines as
+ * a marker, so a single-line pattern here would pass a comment that still truncates the page. It is
+ * matched against the whole body, not line by line, for the same reason.
+ */
+const RENDERED_MARKER_RE = /^[ \t]*<!--\s*q(?::\s*[^\s>]+)?\s*-->[ \t]*$/m
+
+/** Ids assigned to existing questions, spliced in by `yarn content:assign-ids`. */
 const Q_ID_RE = /^<!--\s*q:\s*([^\s>]+)\s*-->$/
+/** An option line, anchored at column 0 exactly as `scripts/lib/tests-md.mjs` anchors it. */
+const OPTION_LINE_RE = /^- \[[ xX]\]\s+.*$/
+/** The id trailer an option line carries. */
 const OPTION_ID_RE = /<!--\s*a:\s*([^\s>]+)\s*-->\s*$/
 
 const ID_LINE_RE = /^id:.*$/m
@@ -60,7 +70,17 @@ function bodyOf(source: string): string {
   return match ? source.slice(match[0].length) : source
 }
 
-/** The literal `id:` line, compared byte for byte rather than by parsed value. */
+/** Frontmatter values, or an empty map when the block does not parse. */
+function parseFrontmatterValues(block: string): Record<string, unknown> {
+  try {
+    const parsed = parseYaml(block)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {}
+  } catch {
+    return {}
+  }
+}
+
+/** The literal `id:` line, kept alongside the parsed value so formatting is preserved too. */
 function idLine(block: string): string | null {
   return block.match(ID_LINE_RE)?.[0] ?? null
 }
@@ -74,9 +94,17 @@ function markerIds(source: string, re: RegExp): Set<string> {
   return ids
 }
 
+/**
+ * Ids on genuine option lines only.
+ *
+ * A plain substring scan would count an id moved onto a question stem — or onto any other line — as
+ * still present, while `sync-tests.mjs` reads option lines and nothing else, sees it as deleted, and
+ * prunes every learner's answer for it.
+ */
 function optionIds(source: string): Set<string> {
   const ids = new Set<string>()
   for (const line of source.split('\n')) {
+    if (!OPTION_LINE_RE.test(line)) continue
     const id = line.match(OPTION_ID_RE)?.[1]
     if (id) ids.add(id)
   }
@@ -117,11 +145,19 @@ function checkFrontmatter(block: string | null, out: ContentRuleViolation[]): Re
  * every learner's saved answers in the same transaction. `validate-content.mjs` cannot catch it:
  * it only compares ids declared in other content files, and a CMS-authored row has no file.
  */
-function checkStructuralId(file: ProposalFile, submittedBlock: string, out: ContentRuleViolation[]): void {
-  const submittedId = idLine(submittedBlock)
+function checkStructuralId(
+  file: ProposalFile,
+  submittedBlock: string,
+  submittedFrontmatter: Record<string, unknown>,
+  out: ContentRuleViolation[],
+): void {
+  // The parsed key is the authority, because the parsed key is what the sync scripts read. Matching
+  // only the shape of the line would accept `"id": 42`, a flow mapping or an explicit-key form —
+  // none of which look like `id:` and all of which parse to exactly the same thing.
+  const declaresId = 'id' in submittedFrontmatter
 
   if (file.base === null) {
-    if (submittedId !== null) {
+    if (declaresId) {
       out.push({
         rule: 'structural-id',
         message: 'A new file must not declare an id — one is assigned automatically when the pull request is merged',
@@ -130,15 +166,20 @@ function checkStructuralId(file: ProposalFile, submittedBlock: string, out: Cont
     return
   }
 
-  const baseId = idLine(frontmatterBlock(file.base) ?? '')
-  if (baseId !== submittedId) {
+  const baseBlock = frontmatterBlock(file.base) ?? ''
+  if (submittedFrontmatter.id !== parseFrontmatterValues(baseBlock).id) {
     out.push({
       rule: 'structural-id',
       message:
-        baseId === null
-          ? 'This file has no id yet; do not add one'
-          : `The existing "${baseId}" line must stay exactly as it is`,
+        "The lesson id must stay exactly as it is — changing it detaches this file from its learners' saved progress",
     })
+    return
+  }
+
+  // Value equality alone is not enough: CI writes the id back into the file, so its exact formatting
+  // is part of what the next run compares against.
+  if (idLine(baseBlock) !== idLine(submittedBlock)) {
+    out.push({ rule: 'structural-id', message: 'The existing "id:" line must stay exactly as it is' })
   }
 }
 
@@ -149,8 +190,7 @@ function checkStructuralId(file: ProposalFile, submittedBlock: string, out: Cont
  */
 function checkQuestionMarkers(frontmatter: Record<string, unknown>, body: string, out: ContentRuleViolation[]): void {
   if (frontmatter.type === 'test') return
-  const hasMarker = body.split('\n').some((line) => Q_MARKER_RE.test(line.trim()))
-  if (hasMarker) {
+  if (RENDERED_MARKER_RE.test(body)) {
     out.push({
       rule: 'question-marker',
       message: 'A <!-- q --> marker only belongs in a lesson with `type: test`; here it would hide everything below it',
@@ -194,7 +234,7 @@ export function checkContentRules(file: ProposalFile): ContentRuleViolation[] {
   const frontmatter = checkFrontmatter(block, violations)
   if (block === null || frontmatter === null) return violations
 
-  checkStructuralId(file, block, violations)
+  checkStructuralId(file, block, frontmatter, violations)
   checkQuestionMarkers(frontmatter, bodyOf(file.submitted), violations)
   checkQuestionIds(file, violations)
 
