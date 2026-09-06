@@ -35,7 +35,7 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
       variant="outline"
       size="sm"
       className={cn('gap-2', focusRing, className)}
-      onClick={() => void copy()}
+      onClick={copy}
     >
       {copied ? <Check className="size-4 lg:size-5" /> : <Copy className="size-4 lg:size-5" />}
       <span aria-live="polite">{copied ? 'Copied' : label}</span>
