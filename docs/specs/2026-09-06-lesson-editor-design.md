@@ -1,6 +1,7 @@
 # In-browser lesson editor with GitHub pull requests
 
-**Status:** design, awaiting approval — not approved for implementation
+**Status:** implemented. Blocks marked *Changed in implementation* record where the built thing
+deliberately differs from this design, and why.
 **Date:** 2026-09-06
 **Branch:** `feat/lesson-editor`
 
@@ -222,7 +223,15 @@ v1 therefore has **no shared package**. Instead:
 - **CI on the proposal branch is the authority for everything else** — allowed keys, numeric
   `order`, `<svg>` balance, the full question grammar, corpus-wide id uniqueness. It fails *safe*:
   if `content-rules.ts` and the real validator ever disagree, CI goes red and nobody merges.
-- **A new workflow `proposal-index.yml`** regenerates `content/<course>/README.md` on the branch
+> **Changed in implementation.** This branch workflow was built and then removed. It had to push a
+> second bot commit, and a `GITHUB_TOKEN` push creates no workflow run — so the pull request's head
+> ended up with *no checks at all*, which also makes it unmergeable once `content-verify` becomes a
+> required check. Outline regeneration moved into `content-sync.yml`, which already writes assigned
+> ids back to `main` after a merge, and `content-verify.yml` now skips only the outline check for
+> proposal branches and labelled pull requests. One mechanism instead of two, and no commit without
+> a check run.
+
+- ~~**A new workflow `proposal-index.yml`**~~ regenerates `content/<course>/README.md` on the branch
   instead of the backend doing it. `on: push: branches: ['proposal/**'], paths: ['content/**']`,
   one job that runs `yarn content:index`, commits the regenerated outlines back, then runs
   `validate-content.mjs` and `generate-course-index.mjs --check` **in the same job**, so the run
@@ -399,7 +408,13 @@ The first draft specified the editor and forgot the contributor. Required for mi
   slug derived from the title, editable, validated against the slug regex **and against every
   lesson slug in the whole course** (§4).
 - **Draft restore** — "restore your unsaved draft?" on reopening a lesson with a stored draft.
-- **Error recovery** — an explicit table, buffer never discarded: `409` base moved → keep-mine /
+- **Error recovery** — an explicit table, buffer never discarded. *Changed in implementation:* the
+  409 path offers **"Load their version"**, not "keep mine". Advancing `baseHash` while leaving the
+  buffer on the old base let the next submit pass the server's check and produce a pull request that
+  silently reverted whatever had merged — the exact failure the base check exists to prevent,
+  reproduced in a real repository. Buffer, baseline and hash now move together, and the
+  contributor's own text is returned beside the editor to re-apply deliberately. Original wording:
+  `409` base moved → keep-mine /
   view-theirs; `429` → show `retryAfterMs` from `AppError.extra`; Turnstile failure → re-challenge
   in place; network drop → retry with the same idempotency key.
 - **After submit** — the PR link, a copy button, and plain wording about what happens next
@@ -430,14 +445,23 @@ write.** Turnstile tokens are single-use with a 300-second TTL, so verifying *be
 burns a solved challenge on every fixable mistake and can rate-limit a contributor out of their own
 typo fix.
 
-1. **Rate limit** (Postgres, following `services/rate-limit/submission-rate-limit.service.ts`;
-   in-memory is per-dyno and lost on deploy). Three buckets:
+1. **Reserve a quota slot** (Postgres). *Changed in implementation:* this is a **write**, not a
+   read. The read-then-record ordering below was exploitable — the counting row was written only
+   after seven GitHub round-trips, so a burst fired inside that window had every request read a
+   count of zero and open a pull request; measured at 50 admitted against a limit of 5. The row is
+   now inserted before any GitHub call, inside a transaction holding an advisory lock, and deleted
+   again if the submission never reaches a pull request. A conditional `INSERT` alone was not
+   enough: under `READ COMMITTED` each statement counts against its own snapshot, which still
+   admitted 6 of 50. With the lock it is exactly 5, verified against Postgres. Three buckets:
    - anonymous: `HMAC-SHA256(ip_prefix, PROPOSALS_IP_PEPPER)` where the prefix is the IPv4 /32 or
      the IPv6 **/64** — hashing a full /128 hands one attacker 2^64 free buckets, and a bare
      SHA-256 of an IPv4 address is trivially reversed, so a peppered HMAC is the minimum.
    - signed-in: keyed on the Privy user id, a much higher limit, **no IP bucket**, so a school or
      office NAT cannot lock out identified contributors.
    - per-target: at most N open proposals per lesson path, so one lesson cannot be swarmed.
+   - **plus a per-IP limiter on the route itself.** A reservation released after a failed validation
+     stops counting, so without this a caller who never succeeds is never throttled while still
+     spending two GitHub calls per attempt.
    - **plus a simple global repo-wide budget** (e.g. 60 creations/hour) checked before any GitHub
      call, returning 429 with `retryAfterMs`. 500 content-generating requests/hour ÷ ~4 per
      proposal ≈ 125/hour before the App is locked out for *everyone*, so the cap exists to stop one
@@ -475,7 +499,10 @@ typo fix.
      every blob on a proposal branch is a permanent git object reachable via `refs/pull/N/head`
      even after the branch is deleted).
 
-4. **Base check** (§3.1) → 409 before any write.
+4. **Base check** (§3.1) → 409 before any write. Also reject content identical to the published
+   lesson: normalisation can erase a difference the editor still counted as an edit, and the result
+   was a pull request with one commit, no changed files and no CI — nothing under `content/` moved,
+   so both workflows' path filters skipped it.
 
 5. **Turnstile** (anonymous door only) — one `fetch` to `siteverify` with `remoteip` from the
    established client IP. Assert `result.hostname` matches the expected host **and**
@@ -534,7 +561,7 @@ typo fix.
 | `id` | ULID, not a serial — proposals must not be enumerable |
 | `path` | the constructed content path |
 | `branch` | `proposal/<course>/<module>/<lesson>/<8hex>` |
-| `pr_number` | |
+| `pr_number` | Null between reserving the slot and the pull request existing |
 | `door` | `anonymous` \| `signed_in` |
 | `ip_hash` | peppered HMAC of the IP prefix; anonymous door only; document a retention period |
 | `privy_user_id` | nullable |
@@ -644,6 +671,16 @@ cannot perform.
 
 **IDs** — §2.6. Never author one; never modify an existing one; preserve `<!-- q:ID -->` and
 `<!-- a:ID -->` trailers. *Submit-time.*
+
+> **Changed in implementation.** All three of these checks were first written against the *text*,
+> and each had a working bypass. The id rule matched the shape of the line, so `"id": 42`, a flow
+> mapping and an explicit-key form all passed while yaml still resolved them to `id`; it compares
+> the parsed value now, with the byte comparison kept on top so CI's write-back still matches. The
+> question-marker rule used a single-line pattern while the renderer's lets `\s*` span newlines, so
+> a marker split across lines passed and still truncated the published lecture; it runs the
+> renderer's own regex over the whole body now. Option ids were collected from any line, so an id
+> moved onto a question stem counted as present while `sync-tests.mjs` saw it deleted and pruned the
+> answers; only real option lines count now.
 
 **Test-question grammar** — *CI-time except where noted*
 
