@@ -14,13 +14,17 @@ A Markdown editor on `academy.redduck.io` that lets anyone improve a lesson with
 site and without a local checkout. Saving does not publish — it opens a **pull request** against
 `content/`, which goes through the review and CI we already have.
 
-Three ways in, deliberately equal where it counts:
+Two ways in, deliberately equal where it counts:
 
 | Door | Who | Gate | Attribution |
 |---|---|---|---|
-| `github` | Privy session with a linked GitHub account | none | `Co-authored-by:` with the verified GitHub identity — counts toward their contribution graph |
-| `signed_in` | Privy session, no GitHub linked | none | `Proposed-by: <display name>`, one-click "link GitHub" to upgrade before submit |
+| `signed_in` | Privy session (Google or wallet) | none | `Proposed-by: <display name>` |
 | `anonymous` | no session at all | Turnstile | `Proposed-by: <display name>` |
+
+> **Scope decision (owner).** No GitHub login in v1. It was going to buy contribution-graph credit
+> via a `Co-authored-by` trailer, at the cost of a `loginMethods` change, a linked-account read and
+> a verified-identity path through the whole pipeline. Dropped until the editor itself is proven.
+> Nothing here forecloses it: adding a third door later only adds a trailer branch (§2.2).
 
 **Equal means:** same branch, same CI, same PR state, same review queue. The doors differ only in
 the attribution trailer and the gate. In particular the anonymous door does **not** get a draft PR
@@ -123,55 +127,42 @@ through the `yaml` package's Document API so key order, comments and folded mult
 blocks survive (`content/blockchain-basics/cryptography/hashing.md` has wrapped `faq:` blocks a
 naive `dump()` would reflow).
 
-### 2.2 Attribution: `Co-authored-by`, no forks, no user tokens
+### 2.2 Attribution: a `Proposed-by:` trailer, no forks, no user tokens
 
 All three doors write the same way: our GitHub App pushes a branch **in this repository** (not a
 fork) and opens the PR. Only the trailer differs.
 
-- `github` door: `Co-authored-by: <login> <{id}+{login}@users.noreply.github.com>`, with `login`
-  and `id` from a verified OAuth identity — never from a request-body field. A co-authored commit
-  counts toward that person's contribution graph once it lands on `main`, which is what "виден
-  контрибюшн" actually requires. **No fork and no repo scope are needed for that.**
-- `signed_in` / `anonymous`: `Proposed-by: <display name>`, single-line, sanitised (§3.5). No email
-  is ever written into git. CC BY-SA 4.0 §3(a)(1) permits attribution by pseudonym, so a handle is
-  licence-compliant and publishes no personal data into a history we cannot rewrite.
+Both doors get `Proposed-by: <display name>`, single-line and sanitised (§3.5). No email is ever
+written into git. CC BY-SA 4.0 §3(a)(1) permits attribution by pseudonym, so a handle is
+licence-compliant and publishes no personal data into a history we cannot rewrite.
 
-Two hard rules, both of which the first draft stated and then left unenforced:
+The bot stays the git `author` and `committer`, which keeps commits GitHub-signed — a custom author
+turns a signed bot commit into `verified: false, reason: "unsigned"`.
 
-- **Never put a submitted email in `Co-authored-by`.** An unverified address resolves to whoever
-  owns it on GitHub; there is a documented incident where a placeholder co-author email was
+Two hard rules that outlive the scope cut, because a future GitHub door would reintroduce both:
+
+- **Never put a submitted email in a `Co-authored-by` trailer.** An unverified address resolves to
+  whoever owns it on GitHub; there is a documented incident where a placeholder co-author email was
   registered by a real user and unrelated commits were credited to them.
 - **Never accept a caller-supplied author** — including *indirectly*. A `display_name` containing
-  `"x\n\nCo-authored-by: victim@example.com"` injects a second trailer and produces exactly the
-  spoofed credit the previous rule forbids. Enforcement is specified in §3.5, not left to prose.
+  `"x\n\nCo-authored-by: victim@example.com"` injects a trailer the commit was never meant to
+  carry, which is why §3.5 rejects newlines in that field rather than trusting prose.
 
-We keep the bot as git `author` and `committer`: a custom author turns a GitHub-signed bot commit
-into `verified: false, reason: "unsigned"`, and `Co-authored-by` gets the credit while keeping the
-signature.
+**Session source: Privy, and only Privy.** `apps/backend/src/lib/middleware.ts:21-37` verifies
+Privy bearer tokens on every `/api/*` business route; the `signed_in` door is simply a request that
+carries one. No `loginMethods` change is needed now that the GitHub door is out of scope.
 
-**Where the GitHub identity comes from is an open design choice, not a fact.** Two live session
-mechanisms exist:
-
-- **Privy** — `apps/backend/src/lib/middleware.ts:21-37` verifies Privy bearer tokens on every
-  `/api/*` business route. Adding `'github'` to `loginMethods` and reading the linked account
-  server-side via `PrivyClient` (`lib/privy.ts:4`) is the least new code.
-- **better-auth is mounted but unused as a login path.** Nobody signs in through it — confirmed
-  by the owner. Its routes are nonetheless live (`apps/backend/src/index.ts:72` mounts
-  `services/auth/auth.routes.ts`, serving `auth.handler` on `['POST','GET','OPTIONS'] /api/auth/*`),
-  and the `user` table it generated (`db/auth-schema.ts`, a plain Drizzle table with no import from
-  `lib/auth.ts`) **is** the identity table `requireAuth` / `requireAdmin` / `requireNotBanned` and
-  `lib/ensure-app-user.ts` read and write. Retiring better-auth is a separate cleanup with its own
-  blast radius; it is out of scope here, and nothing in this design should be read as authorising
-  it. The browser client `apps/web/src/lib/auth-client.ts` has no importers at all.
+A caution for whoever touches auth next: **better-auth is mounted but unused as a login path.**
+Nobody signs in through it, but its routes are live (`apps/backend/src/index.ts:72` mounts
+`services/auth/auth.routes.ts`, serving `auth.handler` on `['POST','GET','OPTIONS'] /api/auth/*`),
+and the `user` table it generated (`db/auth-schema.ts`, a plain Drizzle table with no import from
+`lib/auth.ts`) **is** the identity table `requireAuth` / `requireAdmin` / `requireNotBanned` and
+`lib/ensure-app-user.ts` read and write. Retiring it is a separate cleanup with its own blast
+radius; nothing in this design authorises it. The browser client `apps/web/src/lib/auth-client.ts`
+has no importers at all.
 
 > **Reversed after review.** The first draft told the next engineer to "confirm `lib/auth.ts` is
 > dead" — following that would have taken down `/api/auth/*`.
-
-**Decided: Privy owns the GitHub identity.** Add `'github'` to `loginMethods` and read the linked
-account server-side via `PrivyClient`. Privy's `github_oauth` linked account carries `subject`,
-which for GitHub is the numeric user id — **verify this once at the start of milestone 1.** If it
-turns out to carry only the login, resolve the id with a single `GET /users/{login}` through the
-App token and cache it. Do not add another auth stack for this.
 
 ### 2.3 Branch in this repository, not a fork
 
@@ -430,7 +421,7 @@ Errors are `AppError(status, message, extra?)`; `extra` is how `retryAfterMs` re
 (`apps/backend/src/index.ts:36` → `apps/web/src/lib/api/errors.ts:46-49`).
 
 **The door is derived from a successfully verified Privy bearer and from nothing else.** A body
-field claiming `door: "github"` without a bearer is a 401. No bearer ⇒ Turnstile is mandatory.
+field claiming `door: "signed_in"` without a bearer is a 401. No bearer ⇒ Turnstile is mandatory.
 
 ### 3.5 Submit pipeline
 
@@ -444,8 +435,8 @@ typo fix.
    - anonymous: `HMAC-SHA256(ip_prefix, PROPOSALS_IP_PEPPER)` where the prefix is the IPv4 /32 or
      the IPv6 **/64** — hashing a full /128 hands one attacker 2^64 free buckets, and a bare
      SHA-256 of an IPv4 address is trivially reversed, so a peppered HMAC is the minimum.
-   - signed-in / github: keyed on the verified user id, a much higher limit, **no IP bucket**, so a
-     school or office NAT cannot lock out identified contributors.
+   - signed-in: keyed on the Privy user id, a much higher limit, **no IP bucket**, so a school or
+     office NAT cannot lock out identified contributors.
    - per-target: at most N open proposals per lesson path, so one lesson cannot be swarmed.
    - **plus a simple global repo-wide budget** (e.g. 60 creations/hour) checked before any GitHub
      call, returning 429 with `retryAfterMs`. 500 content-generating requests/hour ÷ ~4 per
@@ -544,7 +535,7 @@ typo fix.
 | `path` | the constructed content path |
 | `branch` | `proposal/<course>/<module>/<lesson>/<8hex>` |
 | `pr_number` | |
-| `door` | `anonymous` \| `signed_in` \| `github` |
+| `door` | `anonymous` \| `signed_in` |
 | `ip_hash` | peppered HMAC of the IP prefix; anonymous door only; document a retention period |
 | `privy_user_id` | nullable |
 | `licence_version`, `licence_accepted_at` | clickwrap record we control, independent of GitHub |
@@ -730,7 +721,7 @@ assume CI catches a regression there; this design adds vitest to `apps/backend`.
   request bodies (`base_tree` present, trailer format, ref prefix, label applied, **ready-for-review
   not draft**), plus: every §4 submit-time rule; `main` as a target ref is rejected; a tree entry
   outside `content/**` is rejected; `TURNSTILE_SECRET_KEY` unset ⇒ 503 and nothing written; no
-  `cf-turnstile-response` ⇒ 400 and nothing written; `door: "github"` with no bearer ⇒ 401;
+  `cf-turnstile-response` ⇒ 400 and nothing written; `door: "signed_in"` with no bearer ⇒ 401;
   `display_name` containing `\nCo-authored-by: x@y.z` ⇒ rejected and no second trailer; rationale
   containing `@org/team`, `Closes #1`, `owner/repo#1` and a triple-backtick run ⇒ fenced and inert;
   base moved ⇒ 409 before any write; global budget exhausted ⇒ 429 with `retryAfterMs`.
@@ -743,39 +734,36 @@ assume CI catches a regression there; this design adds vitest to `apps/backend`.
   same commit or the workflow silently stops firing. Add `apps/web/src/components/content/**` to
   both lists so the corpus test runs when the renderer changes, not only when content does.
 
-## 7. Prerequisite: a live sanitiser hole
+## 7. The sanitiser hole (fixed — commit `097825e`)
 
-**This exists on production today and is not created by this design — but this design makes it
-trivially reachable and must not ship before it is fixed.**
+Found during review, present on production, not created by this design — but the editor would have
+made it routine, so it was fixed before any editor code was written.
 
-`markdown-sanitize.ts:31-34` carries a comment explaining that `style` is deliberately kept off `*`
-so that contributor HTML such as `<img style="position:fixed;inset:0;width:100vw;height:100vh">`
-cannot cover the page with a click-through overlay. But `'style'` is the **second entry of
-`SVG_ATTRS`** (`:14`), and `:35` applies `SVG_ATTRS` to all 22 SVG tags including `<svg>` itself. So
+`markdown-sanitize.ts` granted `style` **and** `className` to all 22 SVG tags including `<svg>`
+itself, while the comment directly above the schema explained that `style` was deliberately kept
+off `*` so contributor HTML could not cover the page. So
+`<svg style="position:fixed;inset:0;width:100vw;height:100vh;z-index:2147483647">` rebuilt exactly
+that overlay, and `class="fixed inset-0 z-50"` did the same — those utilities ship in the compiled
+stylesheet. `svgWrapperClass` does not contain it: `overflow` cannot clip a `position:fixed` child,
+and class rules lose to an inline `style`.
 
-```html
-<svg style="position:fixed;inset:0;width:100vw;height:100vh;z-index:2147483647;background:#0b0b0b">
-```
+**Resolution (owner's call): keep `style`, constrain its value.** Removing it outright would have
+forced a migration of 182 diagrams for no gain the owner wanted. Measurement made the middle path
+cheap — across all of `content/` there is exactly **one** distinct inline style,
+`background:#e0deda; font-family: system-ui, sans-serif;`, used 182 times. `style` is now matched
+against a property allowlist (`background`, `background-color`, `color`, `fill`, `stroke`,
+`font-family`, `font-size`, `font-style`, `font-weight`, `letter-spacing`, `opacity`) with brackets
+forbidden in values, which excludes `url()` and every other CSS function. Every real diagram passes;
+`position`, `inset`, `z-index`, `width`, `height` and `transform` are unexpressible.
 
-reproduces the exact overlay the comment defends against. The wrapper does not contain it:
-`svgWrapperClass` (`rich-content-styles.ts:13`) is `overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full`
-— class rules an inline `style` outranks, and `overflow` does not clip a `position:fixed` child.
+Also shipped in the same commit: `className` dropped (no lesson has ever used `class` on an `<svg>`);
+an `ancestors` rule so SVG children cannot render outside an `<svg>`, which hardens the stray-element
+assertion the corpus test already made; and `fontStyle` **added** — it was missing from the
+allowlist, so all 351 `font-style="italic"` attributes in the corpus were being silently stripped.
 
-Any contributor can already land this through a normal GitHub PR if a reviewer skims the diff. The
-editor's preview pane widens it: rendering an arbitrary buffer through the site renderer on the
-real origin, on a site whose login is a wallet connect, is a hosted phishing surface.
-
-**Fix, before milestone 2:**
-
-- Remove `'style'` from `SVG_ATTRS`. The corpus test says exactly how many of the 94 SVG files rely
-  on it; port those to presentation attributes, which are already allowlisted. If some genuinely
-  need it, allow a value-constrained pair instead, denying `position`, `inset`, `top`, `left`,
-  `z-index`, `width`, `height` and `transform`.
-- Add `ancestors` to the schema —
-  `Object.fromEntries(SVG_TAGS.filter(t => t !== 'svg').map(t => [t, ['svg']]))` — so SVG tags
-  (notably `<title>`) cannot appear outside an `<svg>`.
-- Verify the `embeds.tsx:45-60` host matching is an exact-or-subdomain test, not a suffix test
-  (`evil-plgrnd.io`, `plgrnd.io.evil.com`).
+The judgement worth keeping: an overlay is not something PR review reliably catches. 182 diagrams
+already carry a `style` attribute, so the malicious one reads as ordinary. `<script>` gets spotted;
+this would not.
 
 ## 8. Milestones
 
@@ -783,9 +771,9 @@ real origin, on a site whose login is a wallet connect, is a hosted phishing sur
 > user-visible byte, gated by a pure-refactor package, and scheduled the owner's resume requirement
 > dead last.
 
-0. **Prerequisites.** (a) Drop `[skip ci]` from the id write-back commit at `content-sync.yml:66`,
-   so Cloudflare rebuilds once ids exist (§1.1); it is redundant for its stated purpose. Fix the
-   stale claim at `docs/self-hosting.md:195` while there. (b) Fix the sanitiser hole (§7).
+0. **Prerequisites — done in `097825e`, except (d).** (a) Dropped `[skip ci]` from the id
+   write-back at `content-sync.yml`, so Cloudflare rebuilds once ids exist (§1.1), and fixed the
+   stale deploy claim in `docs/self-hosting.md`. (b) Fixed the sanitiser hole (§7).
    (c) Add the `community-proposal` exclusion to `claude.yml` (§2.3). (d) Add the `main` ruleset with
    `content-verify` required and `github-actions[bot]` bypassing, and update the comment at
    `content-sync.yml:15` (§2.7). (e) Delete `@keystatic/core` and `@markdoc/markdoc` from
@@ -823,13 +811,13 @@ real origin, on a site whose login is a wallet connect, is a hosted phishing sur
 
 ## 9. Open decisions and risks
 
-1. ~~Which session mechanism owns the GitHub identity~~ — **decided: Privy** (§2.2). One thing to
-   confirm at the start of milestone 1: that Privy's `github_oauth` linked account exposes the
-   numeric GitHub user id in `subject`. Fallback is `GET /users/{login}`, not a new auth stack.
+1. ~~Which session mechanism owns the GitHub identity~~ — **moot: no GitHub door in v1** (§1).
+   Privy is the only session source; better-auth stays untouched.
 2. ~~Trusted proxy hop count~~ — **decided: none.** The backend is on Heroku with nothing in front,
    so `getClientIp` is correct as written (§3.5 step 1). Revisit if a CDN is ever added.
-3. **How many of the 94 SVG files actually use inline `style`** (§7). Determines whether removal is
-   free or needs a port.
+3. ~~How many SVG files use inline `style`~~ — **measured: 182 occurrences of one identical
+   declaration across 93 files.** Resolved by constraining the value rather than removing the
+   attribute (§7).
 4. **`main` branch protection** (§2.7) changes a documented premise of `content-sync.yml`. Confirm
    a ruleset bypass actor really does let `github-actions[bot]` push the id write-back before
    relying on it.
