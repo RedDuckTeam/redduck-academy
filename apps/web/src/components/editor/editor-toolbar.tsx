@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from 'react'
-import { Bold, Code2, Heading2, Italic, Link2, List, Type } from 'lucide-react'
+import { Bold, Code2, FileDiff, Heading2, Italic, Link2, List, RotateCcw, Type } from 'lucide-react'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { KeyboardEvent, ReactNode } from 'react'
@@ -120,6 +120,10 @@ export function insertLink(view: EditorView): boolean {
 interface EditorToolbarProps {
   /** Null until CodeMirror has mounted, which is one frame after this renders. */
   view: EditorView | null
+  /** Whether the buffer differs from the published lesson; the document-wide actions need it. */
+  dirty?: boolean
+  onRevert?: () => void
+  onShowChanges?: () => void
   className?: string
 }
 
@@ -172,7 +176,15 @@ const SYNTAX: Array<{ syntax: string; what: ReactNode }> = [
   { syntax: '<svg>…</svg>', what: 'Diagram, pasted as raw markup. Give it a <title>' },
 ]
 
-export function EditorToolbar({ view, className }: EditorToolbarProps) {
+export function EditorToolbar({ view, className, dirty, onRevert, onShowChanges }: EditorToolbarProps) {
+  // Built here rather than as a constant: the trailing buttons act on the document as a whole, and
+  // which of them exist depends on what the page handed down.
+  const trailing = [
+    onShowChanges && { key: 'changes', label: 'Your changes', icon: FileDiff, run: onShowChanges, needsChange: true },
+    onRevert && { key: 'revert', label: 'Undo every change', icon: RotateCcw, run: onRevert, needsChange: true },
+    { key: 'syntax', label: 'What you can write', icon: Type, run: () => setHelpOpen(true), needsChange: false },
+  ].filter((entry) => entry !== undefined)
+
   const [helpOpen, setHelpOpen] = useState(false)
   // Roving tabindex: a `role="toolbar"` is one stop in the tab order and is navigated with the
   // arrow keys, which also keeps six buttons from standing between the page and the editor.
@@ -181,8 +193,9 @@ export function EditorToolbar({ view, className }: EditorToolbarProps) {
 
   // Wraps at both ends. `focused` follows from the button's own `onFocus`, so a disabled button
   // that refuses focus never becomes the toolbar's tab stop.
+  const stops = ACTIONS.length + trailing.length
   const moveFocus = (to: number) => {
-    buttonsRef.current[(to + ACTIONS.length + 1) % (ACTIONS.length + 1)]?.focus()
+    buttonsRef.current[(to + stops) % stops]?.focus()
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -199,7 +212,7 @@ export function EditorToolbar({ view, className }: EditorToolbarProps) {
       moveFocus(0)
     } else if (event.key === 'End') {
       event.preventDefault()
-      moveFocus(ACTIONS.length)
+      moveFocus(stops - 1)
     }
   }
 
@@ -240,20 +253,29 @@ export function EditorToolbar({ view, className }: EditorToolbarProps) {
           </Fragment>
         ))}
 
-        <button
-          ref={(node) => {
-            buttonsRef.current[ACTIONS.length] = node
-          }}
-          type="button"
-          className={cn(buttonClass, 'ml-auto')}
-          tabIndex={focused === ACTIONS.length ? 0 : -1}
-          aria-label="What you can write"
-          title="What you can write"
-          onFocus={() => setFocused(ACTIONS.length)}
-          onClick={() => setHelpOpen(true)}
-        >
-          <Type className="size-4" />
-        </button>
+        <div className="ml-auto flex items-center gap-0.5">
+          {trailing.map(({ key, label, icon: Icon, run, needsChange }, offset) => {
+            const index = ACTIONS.length + offset
+            return (
+              <button
+                key={key}
+                ref={(node) => {
+                  buttonsRef.current[index] = node
+                }}
+                type="button"
+                className={buttonClass}
+                disabled={needsChange && !dirty}
+                tabIndex={focused === index ? 0 : -1}
+                aria-label={label}
+                title={label}
+                onFocus={() => setFocused(index)}
+                onClick={run}
+              >
+                <Icon className="size-4" />
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>

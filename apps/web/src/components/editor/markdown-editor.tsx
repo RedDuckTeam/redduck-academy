@@ -16,6 +16,10 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void
   /** Handed the live view so the page can put the cursor on a line a rule violation points at. */
   onViewReady?: (view: EditorView | null) => void
+  /** Passed straight through to the toolbar's document-wide actions. */
+  dirty?: boolean
+  onRevert?: () => void
+  onShowChanges?: () => void
   className?: string
 }
 
@@ -101,7 +105,15 @@ const editorTheme = EditorView.theme({
   },
 })
 
-export function MarkdownEditor({ value, onChange, onViewReady, className }: MarkdownEditorProps) {
+export function MarkdownEditor({
+  value,
+  onChange,
+  onViewReady,
+  className,
+  dirty,
+  onRevert,
+  onShowChanges,
+}: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<EditorView | null>(null)
 
@@ -179,7 +191,7 @@ export function MarkdownEditor({ value, onChange, onViewReady, className }: Mark
     // CodeMirror clears its own focus ring (`&.cm-focused { outline: none }`) because the ring
     // belongs on the framed editor, not on the scroller inside it.
     <div className={cn('flex min-h-0 flex-col border border-border has-[.cm-focused]:border-foreground', className)}>
-      <EditorToolbar view={view} />
+      <EditorToolbar view={view} dirty={dirty} onRevert={onRevert} onShowChanges={onShowChanges} />
       <div ref={hostRef} className="min-h-0 flex-1" />
     </div>
   )

@@ -9,6 +9,7 @@ import { FrontmatterForm } from './frontmatter-form'
 import { HowItWorksDialog } from './how-it-works-dialog'
 import { PreviewPane } from './preview-pane'
 import { PublishDialog } from './publish-dialog'
+import { ChangesDialog } from './changes-dialog'
 import { checkContentRules } from '@/lib/editor/content-rules'
 import { deleteDraft, draftKey, loadDraft, saveDraft } from '@/lib/editor/draft-store'
 import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
@@ -72,6 +73,10 @@ const columnClass = 'flex min-h-0 min-w-0 flex-col gap-4'
 const noticeClass = 'flex flex-col gap-2 border border-primary p-4'
 const quietNoticeClass = 'flex flex-col gap-2 border border-border p-4'
 const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+
+// The shared Button scales its text up to 20px from `md`, which is right for a page's main action
+// and far too loud for a button sitting beside 14px prose in a notice.
+const compactText = 'text-[14px] md:text-[14px]'
 /** Both panes pin to the viewport once the header scrolls away, and scroll their own content. */
 const paneHeight = 'lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)]'
 
@@ -128,6 +133,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   const [draftOffer, setDraftOffer] = useState<LessonDraft | null>(null)
   const [superseded, setSuperseded] = useState<string | null>(null)
   const [publishOpen, setPublishOpen] = useState(false)
+  const [changesOpen, setChangesOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [mode, setMode] = useState<ViewMode>('split')
   const [pendingLine, setPendingLine] = useState<number | null>(null)
@@ -349,12 +355,18 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
               type="button"
               variant="outline"
               size="sm"
-              className={focusRing}
+              className={cn(compactText, focusRing)}
               onClick={() => restoreDraft(draftOffer)}
             >
-              Restore them
+              Restore
             </Button>
-            <Button type="button" variant="outline" size="sm" className={focusRing} onClick={discardDraft}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn(compactText, focusRing)}
+              onClick={discardDraft}
+            >
               Discard
             </Button>
           </div>
@@ -383,6 +395,9 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
               <MarkdownEditor
                 value={body}
                 onChange={(next) => setSource(frontmatter + next)}
+                dirty={isDirty}
+                onRevert={() => setSource(baseline)}
+                onShowChanges={() => setChangesOpen(true)}
                 onViewReady={(view) => {
                   viewRef.current = view
                 }}
@@ -412,6 +427,10 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
           Back to the lesson
         </Text>
       </Link>
+
+      {changesOpen && (
+        <ChangesDialog open={changesOpen} onOpenChange={setChangesOpen} baseline={baseline} source={source} />
+      )}
 
       {publishOpen && (
         <PublishDialog

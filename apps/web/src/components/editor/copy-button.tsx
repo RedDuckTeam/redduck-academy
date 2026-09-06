@@ -34,7 +34,7 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
       )}
       onClick={async () => setState((await copyToClipboard(text)) ? 'copied' : 'failed')}
     >
-      {state === 'copied' ? <Check className="size-4" /> : <Copy className="size-4" />}
+      {state === 'copied' ? <Check className="size-4 lg:size-5" /> : <Copy className="size-4 lg:size-5" />}
       <span aria-live="polite">
         {state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy, select it by hand' : label}
       </span>

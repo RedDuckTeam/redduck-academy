@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AlertTriangle, ArrowRight, Check, Download, ExternalLink, Loader2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, Check, Download, ExternalLink, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { CopyButton } from './copy-button'
+import { DiffView } from './diff-view'
 import { Text } from '@/components/ui/text'
 import {
-  CONTENT_REPO_LABEL,
   copyToClipboard,
   downloadMarkdown,
   fetchPublishedFile,
@@ -52,52 +53,7 @@ type Handoff =
 
 const noticeClass = 'flex flex-col gap-2 border border-primary p-3'
 const quietNoticeClass = 'flex flex-col gap-2 border border-border p-3'
-const monoBlockClass = 'max-h-64 overflow-auto border border-border p-3 font-mono text-[13px] leading-[1.5]'
 const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
-
-interface DiffViewProps {
-  hunks: DiffHunk[] | null
-  /** Shown when the change is too large to diff line by line. */
-  fallback: string
-}
-
-/**
- * Marked with `−`/`+` as well as colour: the whole point of showing this is that somebody reads it
- * and decides, and a colour-only diff is unreadable to roughly one man in twelve.
- */
-function DiffView({ hunks, fallback }: DiffViewProps) {
-  if (hunks === null) {
-    return (
-      <pre className={cn(monoBlockClass, 'whitespace-pre-wrap')} tabIndex={0} aria-label="The lesson as it stands now">
-        {fallback}
-      </pre>
-    )
-  }
-
-  return (
-    <div className={monoBlockClass} tabIndex={0} role="group" aria-label="What changed on the main branch">
-      {hunks.map((hunk, index) => (
-        <div key={index} className={index > 0 ? 'mt-3 border-t border-border pt-3' : undefined}>
-          {hunk.lines.map((line, lineIndex) => (
-            <div
-              key={lineIndex}
-              className={cn(
-                'flex gap-2 whitespace-pre-wrap',
-                line.kind === 'removed' && 'bg-primary/10 text-primary',
-                line.kind === 'added' && 'bg-success/15 text-success',
-              )}
-            >
-              <span aria-hidden className="w-3 shrink-0 select-none opacity-70">
-                {line.kind === 'removed' ? '−' : line.kind === 'added' ? '+' : ' '}
-              </span>
-              <span className="min-w-0 flex-1">{line.text || ' '}</span>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  )
-}
 
 export function PublishDialog({ open, onOpenChange, path, content, baseline, onLoadCurrent }: PublishDialogProps) {
   const [freshness, setFreshness] = useState<Freshness>({ status: 'checking' })
@@ -161,12 +117,12 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-[#000]">Publish your change</DialogTitle>
-          <DialogDescription className="text-[#000]/70">
-            The last two steps happen on GitHub, in a new tab.
-          </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-5 pb-6">
+          <DialogDescription className="text-foreground text-[14px]">
+            The last two steps happen on GitHub, in a new tab.
+          </DialogDescription>
           {freshness.status === 'checking' && (
             <div className="flex items-center gap-3" role="status">
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
@@ -264,22 +220,30 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <CopyButton text={content} label="Copy .md" className="w-full justify-center" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={cn('w-full justify-center gap-2', focusRing)}
+                      onClick={() => downloadMarkdown(path, content)}
+                    >
+                      <Download className="size-4 lg:size-5" />
+                      Download .md
+                    </Button>
+                  </div>
+
                   <div>
                     <Button
                       type="button"
                       size="md"
-                      className={cn('gap-2', focusRing)}
+                      className={cn('w-full justify-center gap-2', focusRing)}
                       disabled={handoff.stage === 'working'}
                       onClick={publish}
                     >
-                      {handoff.stage === 'working' ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="size-4" />
-                      )}
-                      {handoff.stage === 'idle' || handoff.stage === 'working'
-                        ? 'Copy the file and open GitHub'
-                        : 'Open GitHub again'}
+                      {handoff.stage === 'working' && <Loader2 className="size-4 animate-spin lg:size-5" />}
+                      {handoff.stage === 'idle' || handoff.stage === 'working' ? 'Open on GitHub' : 'Open GitHub again'}
                     </Button>
                   </div>
 
@@ -318,28 +282,6 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
                   )}
                 </div>
               )}
-
-              <div className="flex flex-col gap-2 border-t border-border pt-4">
-                <Text variant="caps-12" element="span" className="text-muted-foreground">
-                  Working from a clone instead?
-                </Text>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn('gap-2', focusRing)}
-                    onClick={() => downloadMarkdown(path, content)}
-                  >
-                    <Download className="size-4" />
-                    Download .md
-                  </Button>
-                  <Text variant="main-14" className="text-muted-foreground">
-                    Saves <span className="font-mono">{fileName}</span>. It belongs at{' '}
-                    <span className="font-mono break-all">{path}</span> in {CONTENT_REPO_LABEL}.
-                  </Text>
-                </div>
-              </div>
             </>
           )}
         </DialogBody>
@@ -368,12 +310,6 @@ function GithubSteps({ path, prefilled }: GithubStepsProps) {
           <Text variant="main-14" element="span">
             GitHub opens <span className="font-mono break-all">{path}</span> in its own editor. Sign in if it asks, it
             brings you straight back.
-          </Text>
-        </li>
-        <li>
-          <Text variant="main-14" element="span">
-            You almost certainly don’t have write access to {CONTENT_REPO_LABEL}, so GitHub quietly makes you your own
-            copy of it, called a fork, to hold the change. That is normal, and it cannot affect the original.
           </Text>
         </li>
         <li>
@@ -446,7 +382,7 @@ function ChangedOnMain({
           <Text variant="main-14" className="text-muted-foreground">
             <span aria-hidden>−</span> what you started from, <span aria-hidden>+</span> what is on the main branch now.
           </Text>
-          <DiffView hunks={hunks} fallback={theirs} />
+          <DiffView hunks={hunks} fallback={theirs} label="What changed on the main branch" className="max-h-64" />
         </>
       )}
 
