@@ -220,7 +220,7 @@ export function PublishDialog({ open, onOpenChange, path, content, baseline, onL
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <CopyButton text={content} label="Copy .md" className="w-full justify-center" />
                     <Button
                       type="button"

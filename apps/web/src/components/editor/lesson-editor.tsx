@@ -74,9 +74,10 @@ const noticeClass = 'flex flex-col gap-2 border border-primary p-4'
 const quietNoticeClass = 'flex flex-col gap-2 border border-border p-4'
 const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
 
-// The shared Button scales its text up to 20px from `md`, which is right for a page's main action
-// and far too loud for a button sitting beside 14px prose in a notice.
-const compactText = 'text-[14px] md:text-[14px]'
+// The shared Button scales its type up at `md` and again at `2xl`, which is right for a page's main
+// action and far too loud beside 14px prose in a notice. `!` because overriding one breakpoint just
+// hands the next one the win.
+const compactText = '!text-[14px] !leading-none'
 /** Both panes pin to the viewport once the header scrolls away, and scroll their own content. */
 const paneHeight = 'lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)]'
 

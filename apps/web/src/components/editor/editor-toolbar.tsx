@@ -223,7 +223,7 @@ export function EditorToolbar({ view, className, dirty, onRevert, onShowChanges 
         aria-label="Formatting"
         aria-controls={EDITOR_CONTENT_ID}
         onKeyDown={onKeyDown}
-        className={cn('flex items-center gap-0.5 border-b border-border px-1 py-1', className)}
+        className={cn('flex flex-wrap items-center gap-0.5 border-b border-border px-1 py-1', className)}
       >
         {ACTIONS.map(({ label, keys, icon: Icon, run, startsGroup }, index) => (
           <Fragment key={label}>
