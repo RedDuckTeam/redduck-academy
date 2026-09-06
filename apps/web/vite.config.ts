@@ -1,7 +1,9 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { CONTENT_ASSET_PREFIX } from './src/lib/content/paths'
-import { buildContentTree, coursesIndexJson, courseManifestJson } from './src/lib/content/build-manifest'
+// Relative imports carry their `.ts` extension so Vite can load this config with the
+// native (Node) loader, which it plans to make the default in a future major.
+import { CONTENT_ASSET_PREFIX } from './src/lib/content/paths.ts'
+import { buildContentTree, coursesIndexJson, courseManifestJson } from './src/lib/content/build-manifest.ts'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
@@ -9,9 +11,8 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite'
 import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
-import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
-import { requiredClientEnv } from './src/env-schema'
+import { requiredClientEnv } from './src/env-schema.ts'
 
 // Required client env vars come straight from the env schema (src/env-schema.ts):
 // `requiredClientEnv` is every var with no default. If any is empty the `createEnv`
@@ -235,6 +236,8 @@ const config = defineConfig({
     ],
   },
   resolve: {
+    // `@/*` → `src/*`, read from tsconfig.json (replaces vite-tsconfig-paths, native since Vite 8).
+    tsconfigPaths: true,
     alias: [
       // `use-sidecar` (transitive via Radix) uses `detect-node-es` whose conditional
       // resolution lands on the `node` variant in the Cloudflare SSR env, which
@@ -252,9 +255,6 @@ const config = defineConfig({
     nodePolyfills({ include: ['buffer', 'process'], globals: { Buffer: true, process: true } }),
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
-    viteTsConfigPaths({
-      projects: ['./tsconfig.json'],
-    }),
     tailwindcss(),
     tanstackStart({
       prerender: {
