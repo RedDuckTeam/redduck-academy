@@ -13,6 +13,7 @@ import reviewApp from './services/review/review.routes'
 import communityApp from './services/community/community.routes'
 import certificatesApp from './services/certificates/certificates.routes'
 import adminApp from './services/admin/admin.routes'
+import proposalsApp from './services/proposals/proposals.routes'
 import { AppError, GENERIC_ERROR_MESSAGE } from './lib/errors'
 import { Logger } from './lib/logger'
 import { env } from './env'
@@ -77,6 +78,7 @@ app.route('/api/review', reviewApp)
 app.route('/api/community', communityApp)
 app.route('/api/certificates', certificatesApp)
 app.route('/api/admin', adminApp)
+app.route('/api/proposals', proposalsApp)
 
 if (env.NODE_ENV !== 'production') {
   app.get(

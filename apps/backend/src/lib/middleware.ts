@@ -37,6 +37,26 @@ async function resolveUser(c: Context): Promise<{ id: string; idToken: string; p
   return { id: appUser.id, idToken: token, privyUserId: claims.userId }
 }
 
+/**
+ * Resolves a session when one is offered, and lets the request through when none is.
+ *
+ * For routes open to visitors without an account, where being signed in changes how the request is
+ * treated rather than whether it is allowed. A *malformed or expired* token is still a 401 — a
+ * stale session must surface as something the client can refresh, not silently downgrade the
+ * caller to anonymous and hand them a captcha they cannot explain.
+ */
+export const optionalAuth = createMiddleware(async (c, next) => {
+  if (extractBearerToken(c) === null) {
+    await next()
+    return
+  }
+  const resolved = await resolveUser(c)
+  c.set('user', { id: resolved.id })
+  c.set('idToken', resolved.idToken)
+  c.set('privyUserId', resolved.privyUserId)
+  await next()
+})
+
 export const requireAuth = createMiddleware(async (c, next) => {
   const resolved = await resolveUser(c)
   c.set('user', { id: resolved.id })

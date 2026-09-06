@@ -176,6 +176,13 @@
       "when": 1779660598154,
       "tag": "0024_flippant_sleeper",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788712525751,
+      "tag": "0025_nervous_yellowjacket",
+      "breakpoints": true
     }
   ]
 }

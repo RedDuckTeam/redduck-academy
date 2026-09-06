@@ -51,6 +51,7 @@
     "quansync": "^1.0.0",
     "sharp": "^0.34.5",
     "viem": "^2.44.4",
+    "yaml": "^2.8.1",
     "zod": "^4.3.5"
   },
   "devDependencies": {
@@ -82,6 +83,7 @@
     "content:sync-tests": "node scripts/sync-tests.mjs",
     "content:assign-ids": "tsx scripts/sync-content-db.ts --assign-ids && node scripts/sync-tests.mjs --assign-ids",
     "content:dump": "node scripts/dump-content.mjs",
-    "heroku-postbuild": "yarn workspace backend build && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+    "heroku-postbuild": "yarn workspace backend build && rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "backend:test": "yarn workspace backend test"
   }
 }

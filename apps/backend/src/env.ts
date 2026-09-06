@@ -31,6 +31,22 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   /** Required only when AI_PROVIDER=anthropic; validated at provider construction, not here. */
   ANTHROPIC_API_KEY: z.string().optional(),
+  /**
+   * Lesson-edit proposals (the in-browser editor's write path). All optional so a dyno without
+   * them still boots — `env.ts` parses eagerly at import, so a newly-required var that is not yet
+   * set on Heroku crash-loops every dyno. Each is validated where it is used; see
+   * services/proposals/proposals.config.ts, which fails closed rather than degrading.
+   */
+  PROPOSALS_ENABLED: z.stringbool().default(false),
+  /** Target of the proposal branch and pull request, as `owner/repo`. */
+  PROPOSALS_REPO: z.string().optional(),
+  GITHUB_APP_ID: z.string().optional(),
+  GITHUB_APP_INSTALLATION_ID: z.string().optional(),
+  /** PKCS#1 PEM from GitHub. Heroku config vars flatten newlines; escaped \n is accepted. */
+  GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
+  /** HMAC pepper for contributor IP prefixes. A bare hash of an IPv4 address is reversible. */
+  PROPOSALS_IP_PEPPER: z.string().optional(),
   R2_BUCKET: z.string().min(1),
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
