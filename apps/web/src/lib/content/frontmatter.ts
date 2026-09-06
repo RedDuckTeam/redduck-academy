@@ -15,7 +15,8 @@ export function stripFrontmatter(raw: string): string {
 
 // A `<!-- q -->` / `<!-- q:ID -->` marker on its own line begins a test lesson's question block.
 // Exported so the editor can warn about one in a lecture using the very pattern that would truncate
-// the page — the backend's copy in `content-rules.ts` is kept identical to this for the same reason.
+// the page. `scripts/lib/tests-md.mjs` matches the same marker in the content pipeline; the two
+// must stay in step.
 export const TEST_QUESTION_MARKER_RE = /^[ \t]*<!--\s*q(?::\s*[^\s>]+)?\s*-->[ \t]*$/m
 
 /**

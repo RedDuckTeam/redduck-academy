@@ -61,26 +61,21 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     published: published.data,
     source,
     baseline,
-    onRestore: (stored) => setEdited({ source: stored.content, baseline: stored.baseline ?? baseline }),
+    onRestore: (stored) => setEdited({ source: stored.content, baseline: stored.baseline }),
   })
 
   const setSource = (next: string) => setEdited({ source: next, baseline })
 
   const effectiveMode = canSplit ? mode : mode === 'split' ? 'write' : mode
   const { frontmatter, body } = splitSource(source)
-  const frontmatterLines = frontmatter ? frontmatter.split('\n').length - 1 : 0
   const title = readFrontmatter(source)?.title ?? lessonSlug
 
   const violations = useMemo(
-    () => (published.data === undefined ? [] : checkContentRules(baseline, source)),
-    [published.data, baseline, source],
+    () => (published.data === undefined ? [] : checkContentRules(source)),
+    [published.data, source],
   )
 
-  const goToLine = useGoToLine({
-    view: viewRef,
-    frontmatterLines,
-    editorVisible: effectiveMode !== 'preview',
-  })
+  const goToLine = useGoToLine({ view: viewRef, editorVisible: effectiveMode !== 'preview' })
 
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">
@@ -134,9 +129,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
 
       {draft.offer && <DraftBanner savedAt={draft.offer.savedAt} onRestore={draft.restore} onDiscard={draft.discard} />}
 
-      {violations.length > 0 && (
-        <ViolationList violations={violations} frontmatterLines={frontmatterLines} onGoToLine={goToLine} />
-      )}
+      {violations.length > 0 && <ViolationList violations={violations} onGoToLine={goToLine} />}
 
       {published.isSuccess && (
         <div className={cn('grid min-h-0 flex-1 gap-6 lg:items-start', effectiveMode === 'split' && 'lg:grid-cols-2')}>

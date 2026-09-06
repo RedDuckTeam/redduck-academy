@@ -1,7 +1,5 @@
 export interface DiffLine {
   kind: 'context' | 'added' | 'removed'
-  /** 1-based line number in whichever side this line belongs to. */
-  number: number
   text: string
 }
 
@@ -43,16 +41,16 @@ export function diffLines(oldText: string, newText: string): DiffHunk[] | null {
   if (oldMiddle.length === 0 && newMiddle.length === 0) return []
   if (oldMiddle.length > LCS_LINE_LIMIT || newMiddle.length > LCS_LINE_LIMIT) return null
 
-  const script = backtrack(oldMiddle, newMiddle, lcsTable(oldMiddle, newMiddle), head)
+  const script = backtrack(oldMiddle, newMiddle, lcsTable(oldMiddle, newMiddle))
   return groupHunks([
-    ...before.slice(0, head).map((text, index) => contextLine(index + 1, text)),
+    ...before.slice(0, head).map((text) => contextLine(text)),
     ...script,
-    ...before.slice(before.length - tail).map((text, index) => contextLine(before.length - tail + index + 1, text)),
+    ...before.slice(before.length - tail).map((text) => contextLine(text)),
   ])
 }
 
-function contextLine(number: number, text: string): DiffLine {
-  return { kind: 'context', number, text }
+function contextLine(text: string): DiffLine {
+  return { kind: 'context', text }
 }
 
 /** Classic LCS lengths table. `table[i][j]` is the longest common subsequence of the two suffixes. */
@@ -66,25 +64,25 @@ function lcsTable(a: string[], b: string[]): Uint32Array[] {
   return table
 }
 
-function backtrack(a: string[], b: string[], table: Uint32Array[], offset: number): DiffLine[] {
+function backtrack(a: string[], b: string[], table: Uint32Array[]): DiffLine[] {
   const lines: DiffLine[] = []
   let i = 0
   let j = 0
   while (i < a.length && j < b.length) {
     if (a[i] === b[j]) {
-      lines.push(contextLine(offset + i + 1, a[i]))
+      lines.push(contextLine(a[i]))
       i++
       j++
     } else if (table[i + 1][j] >= table[i][j + 1]) {
-      lines.push({ kind: 'removed', number: offset + i + 1, text: a[i] })
+      lines.push({ kind: 'removed', text: a[i] })
       i++
     } else {
-      lines.push({ kind: 'added', number: offset + j + 1, text: b[j] })
+      lines.push({ kind: 'added', text: b[j] })
       j++
     }
   }
-  for (; i < a.length; i++) lines.push({ kind: 'removed', number: offset + i + 1, text: a[i] })
-  for (; j < b.length; j++) lines.push({ kind: 'added', number: offset + j + 1, text: b[j] })
+  for (; i < a.length; i++) lines.push({ kind: 'removed', text: a[i] })
+  for (; j < b.length; j++) lines.push({ kind: 'added', text: b[j] })
   return lines
 }
 

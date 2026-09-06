@@ -5,7 +5,7 @@ export interface LessonDraft {
   /** The whole file, frontmatter included. */
   content: string
   /** The published file this draft started from — freshness is checked against this, not the current file. */
-  baseline?: string
+  baseline: string
   savedAt: number
 }
 

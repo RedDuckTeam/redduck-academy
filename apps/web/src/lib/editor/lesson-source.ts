@@ -3,8 +3,8 @@ import { FRONTMATTER_RE } from '@/lib/content/frontmatter'
 
 /**
  * Reads the lesson from the same `/_content/**.md` static asset the lesson page loads. These assets
- * are built from `content/`, so they trail `main` by a deploy; the publish step re-reads the file
- * from GitHub and reconciles the difference there.
+ * are built from `content/`, so they trail `main` by a deploy; GitHub's editor shows the current
+ * file, and the contributor pastes over that.
  */
 export async function loadLessonSource(courseSlug: string, moduleSlug: string, lessonSlug: string): Promise<string> {
   // Revalidate rather than accept a CDN copy from before the last deploy — every extra hour of

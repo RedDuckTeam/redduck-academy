@@ -1,7 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
-import { compactButtonClass, focusRing } from '@/lib/editor/styles'
+import { focusRing } from '@/lib/editor/styles'
 import { cn } from '@/lib/utils'
+
+// The shared Button scales its type up at `md` and again at `2xl`, which is far too loud beside the
+// 14px sentence it sits next to.
+const compactButtonClass = '!text-[14px] !leading-none'
 
 interface DraftBannerProps {
   savedAt: number
