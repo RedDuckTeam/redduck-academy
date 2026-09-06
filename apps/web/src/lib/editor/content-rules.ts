@@ -1,18 +1,10 @@
 import { FRONTMATTER_RE, TEST_QUESTION_MARKER_RE } from '@/lib/content/frontmatter'
 import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
 
-/**
- * Two of the server's content rules, run on every keystroke so a contributor sees the problem while
- * they are making it rather than after a full submit round trip. The server's `content-rules.ts`
- * stays the authority and checks more than this — these are the two that are cheap to evaluate
- * continuously and expensive to discover late, because both are silently destructive.
- */
-
 /** Ids are minted after merge by `content-sync.yml`; the exact line is what the next run compares. */
 const ID_LINE_RE = /^id:.*$/m
 
 export interface ContentRuleViolation {
-  /** 1-based line in the whole file, so the contributor can go straight to it. */
   line: number
   message: string
 }

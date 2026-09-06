@@ -1,11 +1,3 @@
-// A line diff exists here for one reason: the freshness check has to *show* what somebody else
-// merged, not merely assert it. "This lesson changed while you were editing" with no evidence is a
-// message people click past, and clicking past it is how a merged fix gets pasted over.
-//
-// Line-granular and dependency-free. Character-level refinement inside a changed line would be
-// nicer, but the question being answered is "is this someone else's work, or my own stale copy?",
-// and whole lines answer it.
-
 export interface DiffLine {
   kind: 'context' | 'added' | 'removed'
   /** 1-based line number in whichever side this line belongs to. */
@@ -17,7 +9,6 @@ export interface DiffHunk {
   lines: DiffLine[]
 }
 
-/** Unchanged lines kept either side of a change, so a hunk reads in place. */
 const CONTEXT_LINES = 3
 
 /**
@@ -97,7 +88,6 @@ function backtrack(a: string[], b: string[], table: Uint32Array[], offset: numbe
   return lines
 }
 
-/** Drops runs of context longer than `2 * CONTEXT_LINES`, splitting what is left into hunks. */
 function groupHunks(lines: DiffLine[]): DiffHunk[] {
   const changed = lines.map((line) => line.kind !== 'context')
   const keep = lines.map((_, index) =>

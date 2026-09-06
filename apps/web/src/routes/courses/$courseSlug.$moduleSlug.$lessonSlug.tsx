@@ -184,7 +184,10 @@ function LessonPage() {
                   <LessonTitle title={lesson.title} />
                   {/* Hidden when the prose comes from the DB, because then there is no file to
                       propose against. */}
-                  {lessonBody != null && (
+                  {/* Not offered for tests: their questions live below the prose in a grammar the
+                      editor does not yet understand, and a wrong edit there deletes learners' saved
+                      answers on the next content sync. */}
+                  {lessonBody != null && lesson.type !== 'test' && (
                     <EditPageLink courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
                   )}
                 </div>

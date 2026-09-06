@@ -10,10 +10,6 @@ interface CopyButtonProps {
   className?: string
 }
 
-/**
- * Reports the real outcome rather than flashing "Copied" on hope. Every path out of this editor
- * runs through the clipboard, so a copy that silently did nothing costs the contributor their work.
- */
 export function CopyButton({ text, label, className }: CopyButtonProps) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
 

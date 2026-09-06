@@ -7,28 +7,19 @@ import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
 import { cn } from '@/lib/utils'
 
 interface PreviewPaneProps {
-  /** The whole file, frontmatter included. */
   source: string
   title: string
   className?: string
 }
 
-/**
- * The site's own pipeline, not a second Markdown path: `stripFrontmatter` → `stripTestQuestions` →
- * `MarkdownContent`, exactly as `loadLessonContent` and the lesson route run it. Anything else
- * would show a preview that renders things the live page never does.
- */
+// Mirrors the site's own render path (stripFrontmatter → stripTestQuestions → MarkdownContent) so the preview never shows what the live page wouldn't.
 export function PreviewPane({ source, title, className }: PreviewPaneProps) {
-  // react-markdown plus the Shiki highlighter is far too heavy to run on every keystroke; the
-  // preview lagging a beat behind the buffer is the right trade.
   const deferred = useDeferredValue(source)
 
   const { body, questionsHidden } = useMemo(() => {
     const withoutFrontmatter = stripFrontmatter(deferred)
     const stripped = stripTestQuestions(withoutFrontmatter)
-    // Only a test lesson's questions are stored and rendered from the database. In any other type
-    // the same truncation is the bug `content-rules.ts` reports, and the note below would be a
-    // reassuring explanation of something that is actually wrong.
+    // Only test lessons legitimately lose content here; the same truncation on any other type is the bug content-rules.ts flags, not something to reassure about.
     const isTest = readFrontmatter(deferred)?.type === 'test'
     return { body: stripped, questionsHidden: isTest && stripped.length !== withoutFrontmatter.length }
   }, [deferred])

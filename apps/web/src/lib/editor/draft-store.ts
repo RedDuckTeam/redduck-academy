@@ -1,22 +1,10 @@
-// Unsaved editor buffers live in sessionStorage, which is scoped to the tab and cleared the moment
-// it closes. That is the intended lifetime: a draft is a safety net for a reload or a stray click,
-// not a document we keep on someone's machine after they have walked away.
-//
-// Writes are synchronous, which localStorage and IndexedDB are not. A lesson file is tens of
-// kilobytes and the save is debounced, so the cost is nowhere near a frame; the flush on
-// `visibilitychange` stays because that is the last event a mobile browser reliably fires.
-
 const KEY_PREFIX = 'redduck-lesson-draft:'
 
 export interface LessonDraft {
   key: string
   /** The whole file, frontmatter included. */
   content: string
-  /**
-   * The published file this draft was started from, restored with it: the freshness check asks
-   * "did the lesson move since you began?", and the answer has to be measured against the text the
-   * draft was written against, not against whatever is current now.
-   */
+  /** The published file this draft started from — freshness is checked against this, not the current file. */
   baseline?: string
   savedAt: number
 }
@@ -42,15 +30,11 @@ export function loadDraft(key: string): LessonDraft | null {
 export function saveDraft(draft: LessonDraft): void {
   try {
     sessionStorage.setItem(KEY_PREFIX + draft.key, JSON.stringify(draft))
-  } catch {
-    /* keep typing */
-  }
+  } catch {}
 }
 
 export function deleteDraft(key: string): void {
   try {
     sessionStorage.removeItem(KEY_PREFIX + key)
-  } catch {
-    /* keep typing */
-  }
+  } catch {}
 }

@@ -10,7 +10,6 @@ interface ManualCopyProps {
   url: string
 }
 
-/** The clipboard was refused, so the text is offered pre-selected and the tab is not opened yet. */
 export function ManualCopy({ content, fileName, url }: ManualCopyProps) {
   return (
     <div className={cn(noticeClass, 'p-3')}>

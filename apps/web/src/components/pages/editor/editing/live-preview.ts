@@ -4,17 +4,6 @@ import type { DecorationSet, ViewUpdate } from '@codemirror/view'
 import type { EditorState, Extension, Range, Text } from '@codemirror/state'
 import type { SyntaxNode } from '@lezer/common'
 
-/**
- * Obsidian's live-preview model: the buffer stays raw Markdown — that is the whole point of §2.1 —
- * but every syntax marker on a line the cursor is not on is hidden, and the text it governs is
- * styled. Move into the line and the markers come straight back, so what you edit is always what
- * is in the file.
- *
- * Decisions are taken from the Lezer tree rather than from regexes, which is also what keeps
- * fenced code untouched: inside a `FencedCode` node there are no `Emphasis` or `ATXHeading` nodes
- * to decorate, so a `**` or a leading `#` in a code sample is left exactly as typed.
- */
-
 const HEADING_CLASS: Record<string, string> = {
   ATXHeading1: 'cm-md-h1',
   ATXHeading2: 'cm-md-h2',
@@ -33,7 +22,6 @@ const codeStyle = Decoration.mark({ class: 'cm-md-code' })
 const linkStyle = Decoration.mark({ class: 'cm-md-link' })
 const listMarkStyle = Decoration.mark({ class: 'cm-md-list-mark' })
 
-/** Lines touched by any cursor or selection. Markers on these stay visible so they can be edited. */
 function revealedLines(state: EditorState): Set<number> {
   const lines = new Set<number>()
   for (const range of state.selection.ranges) {
@@ -44,12 +32,6 @@ function revealedLines(state: EditorState): Set<number> {
   return lines
 }
 
-/**
- * A block construct is only a block on screen if every one of its lines carries the styling, so
- * these are line decorations rather than one mark spanning the node. The range is clipped to the
- * viewport the caller is iterating, which keeps a long fenced block from decorating lines nobody
- * is looking at.
- */
 function decorateLines(doc: Text, from: number, to: number, style: Decoration, into: Array<Range<Decoration>>): void {
   let pos = from
   while (pos <= to) {
@@ -78,19 +60,11 @@ function decorateLink(node: SyntaxNode, doc: Text, revealed: boolean, into: Arra
   if (textFrom < textTo) into.push(linkStyle.range(textFrom, textTo))
   if (revealed || marks.length < 2) return
 
-  // Two marks and no label is a bracket pair that never resolved into a link — `[1]` inside the
-  // text of a real link parses as its own Link node — so hiding its brackets would hide markup the
-  // contributor typed and leave the `](url)` they wanted hidden on screen.
   if (marks.length < 4 && node.getChild('LinkLabel') === null) return
 
-  // A replacing decoration may not span a line break when it comes from a ViewPlugin:
-  // @codemirror/view throws mid-update, React never sees the keystroke, and every later dispatch
-  // fails too — the editor stops accepting input. A destination wrapped onto the next line
-  // (`[text](\nurl)`) stays visible instead.
+  // A replacing decoration can't span a line break inside a ViewPlugin — CodeMirror throws mid-update and the editor stops accepting input.
   if (doc.lineAt(marks[1].from).number !== doc.lineAt(node.to).number) return
 
-  // `[` on its own, then everything from `]` to the closing paren — the destination is what the
-  // reader does not need to see, and hiding it as one span keeps the decoration count down.
   into.push(hidden.range(marks[0].from, marks[0].to))
   into.push(hidden.range(marks[1].from, node.to))
 }
@@ -114,7 +88,6 @@ function buildDecorations(view: EditorView): DecorationSet {
           decorations.push(Decoration.line({ class: headingClass }).range(line.from))
           if (!revealed.has(line.number)) {
             for (const mark of node.getChildren('HeaderMark')) {
-              // Swallow the space after `##` too, or the heading text sits one column in.
               const end = doc.sliceString(mark.to, mark.to + 1) === ' ' ? mark.to + 1 : mark.to
               decorations.push(hidden.range(mark.from, end))
             }
@@ -125,8 +98,6 @@ function buildDecorations(view: EditorView): DecorationSet {
         const isRevealed = revealed.has(doc.lineAt(nodeRef.from).number)
 
         switch (nodeRef.name) {
-          // Left as raw text inside, deliberately: a code sample is the one place where the
-          // Markdown a contributor typed has to stay exactly as typed.
           case 'FencedCode':
           case 'CodeBlock':
             decorateLines(doc, Math.max(nodeRef.from, from), Math.min(nodeRef.to, to), fenceLine, decorations)
@@ -171,8 +142,6 @@ const livePreviewPlugin = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      // `selectionSet` is the one that matters for reveal-on-cursor; without it the markers of the
-      // line you just arrived on would stay hidden until the next edit.
       if (update.docChanged || update.viewportChanged || update.selectionSet) {
         this.decorations = buildDecorations(update.view)
       }
@@ -197,8 +166,6 @@ const livePreviewTheme = EditorView.theme({
     padding: '0.1em 0.25em',
   },
   '.cm-md-link': { color: 'var(--primary)', textDecoration: 'underline' },
-  // The editor's own font is already monospaced, so what separates a code block from prose has to
-  // be the surface it sits on, not the letterforms.
   '.cm-md-fence': {
     backgroundColor: 'color-mix(in srgb, currentColor 7%, transparent)',
     boxShadow: 'inset 2px 0 0 color-mix(in srgb, currentColor 25%, transparent)',

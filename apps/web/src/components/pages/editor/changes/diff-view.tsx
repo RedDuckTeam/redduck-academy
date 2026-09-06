@@ -3,19 +3,14 @@ import { cn } from '@/lib/utils'
 
 interface DiffViewProps {
   hunks: DiffHunk[] | null
-  /** Shown when the change is too large to diff line by line. */
   fallback: string
-  /** What this diff is of, for anyone reading it through a screen reader. */
   label: string
   className?: string
 }
 
 const monoBlockClass = 'overflow-auto border border-border p-3 font-mono text-[13px] leading-[1.5]'
 
-/**
- * Marked with `−`/`+` as well as colour: the whole point of showing this is that somebody reads it
- * and decides, and a colour-only diff is unreadable to roughly one man in twelve.
- */
+/** Marked with −/+ as well as colour — a colour-only diff is unreadable to the ~1 in 12 men who are red-green colour-blind. */
 export function DiffView({ hunks, fallback, label, className }: DiffViewProps) {
   if (hunks === null) {
     return (

@@ -4,10 +4,6 @@ interface GithubStepsProps {
   path: string
 }
 
-/**
- * Said before they leave, in the order they will meet it. People stop at the hand-off because a
- * fork they did not ask for looks like something going wrong.
- */
 export function GithubSteps({ path }: GithubStepsProps) {
   return (
     <div className="flex flex-col gap-2">

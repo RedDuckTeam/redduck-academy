@@ -3,12 +3,8 @@ import { FRONTMATTER_RE } from '@/lib/content/frontmatter'
 import type { Pair, ParsedNode } from 'yaml'
 
 /**
- * Frontmatter is edited through a form and written back by splicing single spans of the YAML text,
- * never by re-emitting the block. Several lessons carry `faq:` answers folded across lines
- * (`content/blockchain-basics/cryptography/hashing.md`), which any round-trip through a writer
- * would reflow into a diff touching every one of them; comments and key order would go the same way.
- * `parseDocument` is used purely to locate nodes — the source offsets on the parsed nodes are what
- * the edits are applied to.
+ * Splices spans of the YAML text instead of re-emitting the block: re-emitting reflows the folded
+ * `faq:` answers several lessons use, producing a diff on every file that has them.
  */
 
 /** The lesson keys the form owns. `id` is read-only here and `faq` is left entirely to the file. */
@@ -35,7 +31,6 @@ export interface FrontmatterPatch {
 const KEY_ORDER = ['id', 'title', 'type', 'order', 'isHidden', 'faq']
 
 interface Located {
-  /** Offset of the YAML text within the file. */
   start: number
   yaml: string
 }
@@ -77,8 +72,7 @@ export function readFrontmatter(source: string): LessonFrontmatter | null {
 }
 
 export function patchFrontmatter(source: string, patch: FrontmatterPatch): string {
-  // One key at a time, re-parsing between each, so a second insertion sees the offsets the first
-  // one produced. The blocks are a few hundred bytes; correctness is worth more than the passes.
+  // Re-parsed between keys so a second insertion sees the offsets the first one produced.
   return KEY_ORDER.reduce((current, key) => {
     if (!(key in patch)) return current
     const value = patch[key as keyof FrontmatterPatch]
@@ -141,9 +135,8 @@ function replacementEdit(pair: Pair<ParsedNode, ParsedNode | null>, yaml: string
   // `title:` parses to an empty value node sitting immediately after the colon, so the separating
   // space has to come from the edit or the key and the value run together.
   const separator = range[0] === range[1] && yaml[range[0] - 1] === ':' ? ' ' : ''
-  // A block scalar's range runs to the start of the next key, newline included. Replacing that
-  // newline would glue the next key onto the value line and destroy it — `type: lecture` would
-  // simply cease to exist, and the form is the only way back into the frontmatter.
+  // A block scalar's range runs to the next key, newline included; replacing that newline would
+  // glue the next key onto the value line and destroy it.
   const trailing = /\r?\n$/.exec(yaml.slice(range[0], range[1]))?.[0].length ?? 0
   return { from: range[0], to: range[1] - trailing, insert: `${separator}${literal}` }
 }

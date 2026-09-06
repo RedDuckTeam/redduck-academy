@@ -1,25 +1,17 @@
-// Pasting from Google Docs, Notion or a rendered web page puts a `text/plain` flavour on the
-// clipboard that has already lost every heading, list and link — the structure only survives in
-// `text/html`. This converts that flavour, and only that flavour: it runs over freshly pasted
-// markup, never over the lesson file, so it cannot reformat anything already committed.
-//
-// Deliberately hand-rolled rather than pulling in a converter: the editor route already carries
-// ~171 KB gzipped of CodeMirror, and this app is size-constrained by the Cloudflare Worker limit.
+// Hand-rolled rather than a converter package: the route already carries ~171 KB of CodeMirror and
+// the Worker has a size limit.
 
 const HEADINGS: Record<string, number> = { H1: 1, H2: 2, H3: 3, H4: 4, H5: 5, H6: 6 }
 
 const BLOCK_TAGS = new Set(['P', 'DIV', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR'])
 
-/** Elements that stay inline even when they somehow wrap a block, because promoting them loses meaning. */
 const INLINE_ONLY = new Set(['A', 'CODE', 'KBD', 'SAMP', 'BR', 'IMG'])
 
 const IGNORED = new Set(['SCRIPT', 'STYLE', 'HEAD', 'META', 'LINK', 'NOSCRIPT'])
 
 /**
- * Kept verbatim as HTML, because Markdown has no equivalent and raw `<svg>` is how the corpus
- * embeds diagrams already. HTML parsing puts an SVG element in the SVG namespace, where `tagName`
- * is lowercase — it matches none of the sets above, so without this it would take the inline path
- * and be reduced to its `<text>` nodes.
+ * Kept verbatim: an SVG element's `tagName` is lowercase in the SVG namespace, so it matches none
+ * of the sets above and would otherwise take the inline path and lose everything but its text.
  */
 const RAW_TAGS = new Set(['svg'])
 
@@ -33,7 +25,6 @@ export function htmlToMarkdown(html: string): string {
     .trim()
 }
 
-/** Block-level children of `parent`, with loose inline runs gathered into their own paragraph. */
 function childBlocks(parent: Node): string[] {
   const blocks: string[] = []
   let inlineRun = ''
@@ -125,7 +116,6 @@ function listItems(list: HTMLElement): string {
     if (!body.trim()) continue
 
     const bullet = ordered ? `${start + lines.length}. ` : '- '
-    // Continuation lines align under the bullet, which is what makes a nested list nest.
     const pad = ' '.repeat(bullet.length)
     const [first = '', ...rest] = body.split('\n')
     lines.push([`${bullet}${first}`, ...rest.map((line) => (line ? `${pad}${line}` : line))].join('\n'))
@@ -157,9 +147,8 @@ function convertInline(node: Node): string {
   const tag = element.tagName
   if (IGNORED.has(tag)) return ''
   if (RAW_TAGS.has(tag)) return element.outerHTML
-  // A hard break, not a bare newline: CommonMark folds a lone newline inside a paragraph into a
-  // space, so a Shift+Enter break pasted from a document would collapse onto one line. The
-  // backslash form rather than two trailing spaces, which `flush()` collapses back to one.
+  // CommonMark folds a lone newline into a space. Backslash rather than two trailing spaces,
+  // which `flush()` would collapse.
   if (tag === 'BR') return '\\\n'
   if (tag === 'IMG') {
     const source = element.getAttribute('src') ?? ''

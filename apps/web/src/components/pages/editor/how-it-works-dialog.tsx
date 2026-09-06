@@ -6,19 +6,10 @@ import { CONTENT_REPO_LABEL, CONTENT_REPO_URL } from '@/lib/editor/github-publis
 import { cn } from '@/lib/utils'
 
 interface HowItWorksDialogProps {
-  /** The file being edited, so the answer to "what am I actually changing" is concrete. */
   path: string
   className?: string
 }
 
-/**
- * The contribution story, behind a link rather than a panel.
- *
- * It used to sit open above the editor, where it was the first thing everyone read and the first
- * thing everyone stopped reading. What a contributor needs at that moment is the editor; what they
- * need this for is the one question that stops them at the end — whether publishing is about to do
- * something to their GitHub account.
- */
 export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
   const [open, setOpen] = useState(false)
 
@@ -43,8 +34,6 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
           </DialogHeader>
 
           <DialogBody className="flex flex-col gap-4">
-            {/* Deliberately the first thing in the body rather than a subtitle: it is the answer to
-                the question that actually stops people, so it reads as a statement, not a caption. */}
             <DialogDescription className="text-foreground text-[14px]">
               You need a GitHub account for the last step. Nothing before it.
             </DialogDescription>

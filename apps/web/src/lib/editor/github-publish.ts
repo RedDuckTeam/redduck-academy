@@ -1,7 +1,5 @@
-// The publish step is a hand-off, not an API call: GitHub's own file editor already does
-// fork-and-pull-request for a visitor with no write access, so the editor's last act is to put the
-// finished file on the clipboard and send them there. Nothing below needs a token, an endpoint or
-// a captcha — everything is either a public GET or a plain link.
+// This hands off to GitHub's own file editor (which forks automatically for a visitor with no
+// write access) rather than calling an API — everything here is a public GET or a plain link.
 
 /**
  * The canonical owner. `git remote` still names the org's former spelling, `RedDuck-Software`,
@@ -15,7 +13,6 @@ const BRANCH = 'main'
 export const CONTENT_REPO_LABEL = `${OWNER}/${REPO}`
 export const CONTENT_REPO_URL = `https://github.com/${OWNER}/${REPO}`
 
-/** Where the lesson lives in the repository, e.g. `content/basics/crypto/hashing.md`. */
 export function lessonFilePath(courseSlug: string, moduleSlug: string, lessonSlug: string): string {
   return `content/${courseSlug}/${moduleSlug}/${lessonSlug}.md`
 }
@@ -25,17 +22,11 @@ export function githubEditUrl(path: string): string {
   return `https://github.com/${OWNER}/${REPO}/edit/${BRANCH}/${encodeURI(path)}`
 }
 
-/**
- * GitHub's new-file editor. `value` prefills the body; it is dropped when the resulting URL would
- * be over budget — see `PREFILL_URL_LIMIT`, and `prefillFits` for the decision.
- */
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
     return true
-  } catch {
-    /* fall through to the legacy path */
-  }
+  } catch {}
 
   try {
     const area = document.createElement('textarea')
@@ -55,7 +46,6 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-/** Saves the buffer as a file named after the lesson, for anyone working from a local clone. */
 export function downloadMarkdown(path: string, text: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/markdown;charset=utf-8' }))
   const link = document.createElement('a')

@@ -4,17 +4,12 @@ import { patchFrontmatter, readFrontmatter } from '@/lib/editor/frontmatter-patc
 import { cn } from '@/lib/utils'
 
 interface FrontmatterFormProps {
-  /** The whole file. The field writes back a spliced copy of it. */
   source: string
   onSourceChange: (next: string) => void
   className?: string
 }
 
-// Title is the only frontmatter a contributor can change here. `type`, `order` and `isHidden` decide
-// where a lesson sits in the course and whether it appears at all — editorial calls that belong with
-// whoever reviews the pull request, not with a drive-by correction. They stay in the file untouched,
-// as does `faq`, which never renders and whose folded multi-line answers are exactly what the
-// patcher exists to preserve.
+// Title is the only field exposed here — type/order/isHidden/faq are editorial calls for the PR reviewer, not a drive-by edit, and stay untouched.
 export function FrontmatterForm({ source, onSourceChange, className }: FrontmatterFormProps) {
   const frontmatter = readFrontmatter(source)
 
