@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
-import { AlertTriangle, Columns2, Download, ExternalLink, Eye, Loader2, PenLine, WifiOff } from 'lucide-react'
+import { AlertTriangle, Columns2, ExternalLink, Eye, Loader2, PenLine, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { Text } from '@/components/ui/text'
@@ -12,7 +12,7 @@ import { PublishDialog } from './publish-dialog'
 import { checkContentRules } from '@/lib/editor/content-rules'
 import { deleteDraft, draftKey, loadDraft, saveDraft } from '@/lib/editor/draft-store'
 import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
-import { downloadMarkdown, githubEditUrl, lessonFilePath } from '@/lib/editor/github-publish'
+import { githubEditUrl, lessonFilePath } from '@/lib/editor/github-publish'
 import { loadLessonSource, splitSource } from '@/lib/editor/lesson-source'
 import type { LessonDraft } from '@/lib/editor/draft-store'
 import type { EditorView } from '@codemirror/view'
@@ -27,7 +27,6 @@ const MarkdownEditor = lazy(() => import('./markdown-editor').then((module) => (
 const AUTOSAVE_DELAY_MS = 800
 
 /** The editor needs a keyboard and a second column; below `md` the page is read-only (§3.2). */
-const DESKTOP_QUERY = '(min-width: 768px)'
 /** Below this a split view gives each pane too little to be worth the halving. */
 const SPLIT_QUERY = '(min-width: 1024px)'
 
@@ -117,7 +116,6 @@ const VIEW_MODES: Array<{ mode: ViewMode; label: string; icon: typeof PenLine }>
 ]
 
 export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEditorProps) {
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
   const canSplit = useMediaQuery(SPLIT_QUERY)
   const isOnline = useIsOnline()
   const key = draftKey(courseSlug, moduleSlug, lessonSlug)
@@ -257,9 +255,11 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-4">
-          {load.status === 'ready' && isDesktop && (
-            <div role="group" aria-label="Panes" className="flex border border-border">
+        {/* Full width below sm: on a phone a control that stops halfway across the screen reads as
+            unfinished, and these two are the page's only actions. */}
+        <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
+          {load.status === 'ready' && (
+            <div role="group" aria-label="Panes" className="flex w-full border border-border sm:w-auto">
               {VIEW_MODES.filter(({ mode: value }) => value !== 'split' || canSplit).map(
                 ({ mode: value, label, icon: Icon }) => (
                   <button
@@ -270,7 +270,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
                     className={cn(
                       // leading-none so the label's line box matches the icon's, otherwise the mono
                       // font's descender pushes the text below the icon's centre.
-                      'inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[14px] leading-none transition-colors',
+                      'inline-flex flex-1 cursor-pointer items-center justify-center gap-2 px-3 py-2 text-[14px] leading-none transition-colors sm:flex-none sm:justify-start',
                       focusRing,
                       effectiveMode === value ? 'bg-foreground text-background' : 'hover:bg-muted',
                     )}
@@ -285,19 +285,19 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
           <HowItWorksDialog path={path} />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {isDesktop && (
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          {
             <Button
               type="button"
               size="sm"
-              className={focusRing}
+              className={cn('w-full sm:w-auto', focusRing)}
               disabled={!isDirty || load.status !== 'ready' || violations.length > 0}
               aria-describedby={violations.length > 0 ? VIOLATIONS_ID : undefined}
               onClick={() => setPublishOpen(true)}
             >
               Publish on GitHub
             </Button>
-          )}
+          }
         </div>
       </div>
 
@@ -365,13 +365,11 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
 
       {/* Outside the panes: it is why the Publish button is disabled, so it has to stay on screen
           in the preview-only view too — and `aria-describedby` has to resolve to something. */}
-      {violations.length > 0 && isDesktop && (
+      {violations.length > 0 && (
         <ViolationList violations={violations} frontmatterLines={frontmatterLines} onGoToLine={goToLine} />
       )}
 
-      {load.status === 'ready' && !isDesktop && <ReadOnlyOnSmallScreen path={path} source={source} title={title} />}
-
-      {load.status === 'ready' && isDesktop && (
+      {load.status === 'ready' && (
         <div className={cn('grid min-h-0 flex-1 gap-6 lg:items-start', effectiveMode === 'split' && 'lg:grid-cols-2')}>
           <div className={cn(columnClass, paneHeight, 'lg:overflow-y-auto', effectiveMode === 'preview' && 'hidden')}>
             <FrontmatterForm source={source} onSourceChange={setSource} />
@@ -477,52 +475,5 @@ function ViolationList({ violations, frontmatterLines, onGoToLine }: ViolationLi
         ))}
       </ul>
     </div>
-  )
-}
-
-interface ReadOnlyOnSmallScreenProps {
-  path: string
-  source: string
-  title: string
-}
-
-/**
- * Not a dead end. Editing a Markdown buffer on a phone is genuinely bad — Android `contenteditable`
- * needs platform fixes and the split view has nowhere to go — but everything except the typing
- * still works, so the ways out are offered here rather than an apology.
- */
-function ReadOnlyOnSmallScreen({ path, source, title }: ReadOnlyOnSmallScreenProps) {
-  return (
-    <>
-      <div className={quietNoticeClass}>
-        <Text variant="caps-12" element="span" className="text-muted-foreground">
-          Read-only on this screen
-        </Text>
-        <Text variant="main-14" className="text-muted-foreground">
-          The editor needs a keyboard and room for two columns, so on a phone this is the lesson as it stands. You can
-          still take the file with you, or edit it directly on GitHub, which works on mobile.
-        </Text>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm" className={cn('gap-2', focusRing)}>
-            <a href={githubEditUrl(path)} target="_blank" rel="noopener noreferrer">
-              Edit on GitHub
-              <ExternalLink className="size-4" />
-            </a>
-          </Button>
-          <CopyButton text={source} label="Copy the file" />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn('gap-2', focusRing)}
-            onClick={() => downloadMarkdown(path, source)}
-          >
-            <Download className="size-4" />
-            Download .md
-          </Button>
-        </div>
-      </div>
-      <PreviewPane source={source} title={title} />
-    </>
   )
 }
