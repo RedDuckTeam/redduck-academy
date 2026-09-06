@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from 'react'
-import { Bold, Code2, Heading2, Italic, Keyboard, Link2, List } from 'lucide-react'
+import { Bold, Code2, Heading2, Italic, Link2, List, Type } from 'lucide-react'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { KeyboardEvent } from 'react'
@@ -147,16 +147,22 @@ const ACTIONS: ToolbarAction[] = [
   { label: 'Link', keys: `${MOD}+K`, icon: Link2, run: insertLink, startsGroup: true },
 ]
 
-/** Everything the buffer responds to, including the bindings that have no button. */
-const SHORTCUTS: Array<{ keys: string; what: string }> = [
-  { keys: `${MOD}+B`, what: 'Bold' },
-  { keys: `${MOD}+I`, what: 'Italic' },
-  { keys: `${MOD}+K`, what: 'Link around the selection' },
-  { keys: `${MOD}+Alt+1 … 3`, what: 'Heading level 1, 2 or 3' },
-  { keys: 'Alt+↑ / Alt+↓', what: 'Move the current line up or down' },
-  { keys: `${MOD}+Z / ${MOD}+Shift+Z`, what: 'Undo, redo' },
-  { keys: `${MOD}+V`, what: 'Paste, formatted text arrives as Markdown' },
-  { keys: 'Tab', what: 'Move focus out of the editor' },
+/**
+ * What a lesson file may contain, mirroring `content/README.md`. This is the reference a
+ * contributor actually reaches for: the shortcuts are discoverable from the toolbar and the
+ * keymap, but nothing on screen says whether a table or a raw diagram is allowed here.
+ */
+const SYNTAX: Array<{ syntax: string; what: string }> = [
+  { syntax: '## Heading', what: 'Section heading. Use ### for a sub-section' },
+  { syntax: '**bold**  *italic*', what: 'Emphasis' },
+  { syntax: '`code`', what: 'Inline code' },
+  { syntax: '```solidity', what: 'Code block. Also rust, typescript, or nothing for plain text' },
+  { syntax: '- item   1. item', what: 'Lists, and they nest' },
+  { syntax: '> quote', what: 'Blockquote' },
+  { syntax: '| a | b |', what: 'Table, GitHub flavoured' },
+  { syntax: '[text](https://…)', what: 'Link' },
+  { syntax: '[text](/courses/…)', what: 'Link to another lesson on this site' },
+  { syntax: '<svg>…</svg>', what: 'Diagram, pasted as raw markup. Give it a <title>' },
 ]
 
 export function EditorToolbar({ view, className }: EditorToolbarProps) {
@@ -234,32 +240,37 @@ export function EditorToolbar({ view, className }: EditorToolbarProps) {
           type="button"
           className={cn(buttonClass, 'ml-auto')}
           tabIndex={focused === ACTIONS.length ? 0 : -1}
-          aria-label="Keyboard shortcuts"
-          title="Keyboard shortcuts"
+          aria-label="What you can write"
+          title="What you can write"
           onFocus={() => setFocused(ACTIONS.length)}
           onClick={() => setHelpOpen(true)}
         >
-          <Keyboard className="size-4" />
+          <Type className="size-4" />
         </button>
       </div>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[#000]">Keyboard shortcuts</DialogTitle>
-            <DialogDescription className="text-[#000]/70">
-              Markdown works too. The buffer is the file, exactly as it will be committed.
-            </DialogDescription>
+            <DialogTitle className="text-[#000]">What you can write</DialogTitle>
           </DialogHeader>
-          <DialogBody className="gap-3 pb-6">
+          <DialogBody className="flex flex-col gap-4 pb-6">
+            <DialogDescription className="text-foreground text-[14px]">
+              A lesson is Markdown. What you type is the file, exactly as it will be committed.
+            </DialogDescription>
             <dl className="flex flex-col gap-2">
-              {SHORTCUTS.map(({ keys, what }) => (
-                <div key={keys} className="flex items-baseline justify-between gap-4">
-                  <dt className="font-mono text-[13px] whitespace-nowrap">{keys}</dt>
+              {SYNTAX.map(({ syntax, what }) => (
+                <div key={syntax} className="flex items-baseline justify-between gap-4">
+                  <dt className="font-mono text-[13px] whitespace-nowrap">{syntax}</dt>
                   <dd className="text-right text-[14px] text-muted-foreground">{what}</dd>
                 </div>
               ))}
             </dl>
+            {/* Not the shared `Text` component: this file already binds that name to CodeMirror's
+                document type. */}
+            <p className="text-[14px] text-muted-foreground">
+              A paragraph that is only a link to plgrnd.io, eth.build or YouTube becomes an embedded frame.
+            </p>
           </DialogBody>
         </DialogContent>
       </Dialog>
