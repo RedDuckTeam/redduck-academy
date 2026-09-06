@@ -12,11 +12,13 @@ import { useCreateProposal } from '@/hooks/api/proposals/useCreateProposal'
 import {
   isProposalConflict,
   isProposalNetworkFailure,
+  isProposalSessionRejected,
   proposalConflictContent,
   proposalRetryAfterMs,
   proposalRuleViolations,
 } from '@/lib/api/proposals'
-import { useSession } from '@/hooks/useSession'
+import { getAuthToken } from '@/lib/api/auth-token'
+import { usePrivyAuth } from '@/components/providers/privy-auth-context'
 
 /**
  * Version of the licence notice below, recorded against the proposal so an acceptance can always
@@ -29,6 +31,11 @@ const RATIONALE_MAX = 2000
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 /** Asserted server-side, so a token minted elsewhere on the site cannot be spent on this route. */
 const TURNSTILE_ACTION = 'submit-proposal'
+/** Turnstile rejects nothing on its own if the widget never answers, so the wait needs an end. */
+const CHALLENGE_TIMEOUT_MS = 30_000
+
+const SESSION_ENDED =
+  'You are not signed in any more, so this goes in as an anonymous proposal. Confirm you’re human and submit again.'
 
 interface TurnstileApi {
   render: (container: HTMLElement, options: Record<string, unknown>) => string | undefined
@@ -80,8 +87,8 @@ interface SubmitDialogProps {
   /** The whole file as the contributor left it. Never modified here. */
   content: string
   baseHash: string
-  /** The lesson moved on `main` and the contributor chose to keep their own text over it. */
-  onRebase: (theirs: string) => void
+  /** The lesson moved on `main`: hand the editor the merged file, buffer and base hash together. */
+  onLoadMerged: (theirs: string) => void
   onSubmitted: () => void
 }
 
@@ -99,16 +106,21 @@ export function SubmitDialog({
   lessonSlug,
   content,
   baseHash,
-  onRebase,
+  onLoadMerged,
   onSubmitted,
 }: SubmitDialogProps) {
-  const { session, isPending: sessionPending } = useSession()
+  const { ready, authenticated } = usePrivyAuth()
   const mutation = useCreateProposal()
 
   const [rationale, setRationale] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [licenseAccepted, setLicenseAccepted] = useState(false)
   const [challengeError, setChallengeError] = useState<string | null>(null)
+  // Everything the button is doing before the request goes out. Without it the dialog looks idle
+  // through a challenge that can take as long as the contributor takes to click the checkbox, and a
+  // second click restarts it — orphaning the first token promise, which then never settles.
+  const [phase, setPhase] = useState<'idle' | 'session' | 'challenge'>('idle')
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [showTheirs, setShowTheirs] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -117,11 +129,35 @@ export function SubmitDialog({
   const pendingTokenRef = useRef<{ resolve: (token: string) => void; reject: (error: Error) => void } | null>(null)
 
   // Two doors, and they are equal: a Privy session skips the captcha, everyone else solves one.
-  // Waiting for the session to resolve first stops a returning contributor being shown a challenge
-  // for the half-second before their session is recognised.
-  const needsChallenge = !sessionPending && !session
+  // Which door this is has to be read from the token the request will carry, because that is what
+  // the server reads: deriving it from the user-settings query instead means a transient failure
+  // there shows a signed-in contributor a captcha the backend ignores — or, with no sitekey
+  // configured, a permanently dead Submit button. Waiting for Privy to be ready first stops a
+  // returning contributor being challenged for the half-second before their token can be minted.
+  useEffect(() => {
+    if (!open || !ready) return
+    let cancelled = false
+    void getAuthToken().then((token) => {
+      if (!cancelled) setSignedIn(token !== null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [open, ready, authenticated])
+
+  const doorPending = !ready || signedIn === null
+  const needsChallenge = signedIn === false
   const sitekey = env.VITE_TURNSTILE_SITE_KEY
   const challengeUnavailable = needsChallenge && !sitekey
+
+  // A 401 says the bearer was rejected, so the server answered on the anonymous door while the
+  // dialog was showing the signed-in one. Without this the contributor is asked to complete a
+  // challenge that is not on the screen, and no retry can ever succeed.
+  useEffect(() => {
+    if (needsChallenge || !isProposalSessionRejected(mutation.error)) return
+    setSignedIn(false)
+    setChallengeError(SESSION_ENDED)
+  }, [mutation.error, needsChallenge])
 
   const result = mutation.data ?? null
   const conflict = isProposalConflict(mutation.error)
@@ -129,8 +165,14 @@ export function SubmitDialog({
   const violations = proposalRuleViolations(mutation.error)
   const retryAfterMs = proposalRetryAfterMs(mutation.error)
   const networkFailure = isProposalNetworkFailure(mutation.error)
+  // A rejected session has its own message and its own recovery below, so it is not "unexplained".
   const unexplainedError =
-    mutation.isError && !conflict && !networkFailure && retryAfterMs === null && violations.length === 0
+    mutation.isError &&
+    !conflict &&
+    !networkFailure &&
+    !isProposalSessionRejected(mutation.error) &&
+    retryAfterMs === null &&
+    violations.length === 0
 
   const trimmedName = displayName.trim()
   const nameError = trimmedName.length > 0 && !displayNameField.safeParse(trimmedName).success
@@ -139,7 +181,8 @@ export function SubmitDialog({
     !nameError &&
     licenseAccepted &&
     !challengeUnavailable &&
-    !sessionPending &&
+    !doorPending &&
+    phase === 'idle' &&
     !mutation.isPending
 
   // Mounted only while the dialog is open, and only on the anonymous door. `execution: 'execute'`
@@ -194,47 +237,71 @@ export function SubmitDialog({
       return Promise.reject(new Error('The challenge is not ready yet. Give it a moment and try again.'))
     }
     return new Promise<string>((resolve, reject) => {
-      pendingTokenRef.current = { resolve, reject }
+      const timer = setTimeout(() => {
+        pendingTokenRef.current = null
+        reject(new Error('The challenge did not finish. Try submitting again.'))
+      }, CHALLENGE_TIMEOUT_MS)
+      pendingTokenRef.current = {
+        resolve: (token) => {
+          clearTimeout(timer)
+          resolve(token)
+        },
+        reject: (error) => {
+          clearTimeout(timer)
+          reject(error)
+        },
+      }
       // A widget that has already solved once still holds its spent token, and Cloudflare rejects
       // a replay as `timeout-or-duplicate` — so every attempt starts from a fresh challenge.
       api.reset(widget)
       api.execute(widget)
+      // `appearance: 'interaction-only'` means the checkbox only exists from here on, and the
+      // dialog body scrolls — a contributor who scrolled down to the button would never see it.
+      widgetHostRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     })
   }, [])
 
   const submit = async () => {
     setChallengeError(null)
-    let turnstileToken: string | undefined
+    setPhase('session')
 
-    if (needsChallenge) {
-      try {
+    try {
+      // Read the token again at the moment of sending rather than trusting what the dialog opened
+      // with: Privy refreshes in the background, and a refresh that failed since then would send an
+      // anonymous request through the signed-in door.
+      const tokenNow = await getAuthToken()
+      setSignedIn(tokenNow !== null)
+
+      let turnstileToken: string | undefined
+      if (tokenNow === null) {
+        if (!needsChallenge) {
+          setChallengeError(SESSION_ENDED)
+          return
+        }
+        setPhase('challenge')
         turnstileToken = await requestToken()
-      } catch (error) {
-        setChallengeError(error instanceof Error ? error.message : 'The challenge failed. Please try again.')
-        return
       }
+
+      mutation.mutate(
+        {
+          courseSlug,
+          moduleSlug,
+          lessonSlug,
+          content,
+          baseHash,
+          rationale: rationale.trim(),
+          displayName: trimmedName || undefined,
+          licenseVersion: LICENSE_VERSION,
+          turnstileToken,
+        },
+        { onSuccess: onSubmitted },
+      )
+    } catch (error) {
+      setChallengeError(error instanceof Error ? error.message : 'The challenge failed. Please try again.')
+    } finally {
+      // `mutate` does not wait, so this hands the button straight over to `mutation.isPending`.
+      setPhase('idle')
     }
-
-    mutation.mutate(
-      {
-        courseSlug,
-        moduleSlug,
-        lessonSlug,
-        content,
-        baseHash,
-        rationale: rationale.trim(),
-        displayName: trimmedName || undefined,
-        licenseVersion: LICENSE_VERSION,
-        turnstileToken,
-      },
-      { onSuccess: onSubmitted },
-    )
-  }
-
-  const keepMine = (mine: string) => {
-    onRebase(mine)
-    setShowTheirs(false)
-    mutation.reset()
   }
 
   const copyLink = async () => {
@@ -388,13 +455,13 @@ export function SubmitDialog({
               <Text variant="main-14" className="text-muted-foreground">
                 {theirs === null
                   ? 'The file no longer exists on the main branch, so there is nothing to propose against.'
-                  : 'Someone else’s edit was merged first. Keep yours and it will be proposed on top of theirs — read theirs first so you do not undo it.'}
+                  : 'Someone else’s edit was merged first. The editor can switch to their version — yours is kept on the page to copy back in, so your change goes on top of theirs instead of undoing it.'}
               </Text>
               {theirs !== null && (
                 <>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => keepMine(theirs)}>
-                      Keep my version
+                    <Button type="button" size="sm" onClick={() => onLoadMerged(theirs)}>
+                      Load their version
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => setShowTheirs((shown) => !shown)}>
                       {showTheirs ? 'Hide theirs' : 'View theirs'}
@@ -424,7 +491,13 @@ export function SubmitDialog({
                 The request never reached us. Check your connection — your edit is still here.
               </Text>
               <div>
-                <Button type="button" variant="outline" size="sm" onClick={submit}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={phase !== 'idle' || mutation.isPending}
+                  onClick={submit}
+                >
                   Try again
                 </Button>
               </div>
@@ -442,8 +515,8 @@ export function SubmitDialog({
               Cancel
             </Button>
             <Button type="button" size="md" className="gap-2" disabled={!canSubmit} onClick={submit}>
-              {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              Submit proposal
+              {(mutation.isPending || phase !== 'idle') && <Loader2 className="size-4 animate-spin" />}
+              {phase === 'challenge' ? 'Confirming you’re human…' : 'Submit proposal'}
             </Button>
           </div>
         </DialogBody>

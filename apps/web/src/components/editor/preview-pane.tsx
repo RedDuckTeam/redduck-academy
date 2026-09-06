@@ -3,6 +3,7 @@ import { MarkdownContent } from '@/components/content/markdown-content'
 import { LessonTitle } from '@/components/pages/lesson/text/lesson-title'
 import { Text } from '@/components/ui/text'
 import { stripFrontmatter, stripTestQuestions } from '@/lib/content/frontmatter'
+import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
 import { cn } from '@/lib/utils'
 
 interface PreviewPaneProps {
@@ -25,7 +26,11 @@ export function PreviewPane({ source, title, className }: PreviewPaneProps) {
   const { body, questionsHidden } = useMemo(() => {
     const withoutFrontmatter = stripFrontmatter(deferred)
     const stripped = stripTestQuestions(withoutFrontmatter)
-    return { body: stripped, questionsHidden: stripped.length !== withoutFrontmatter.length }
+    // Only a test lesson's questions are stored and rendered from the database. In any other type
+    // the same truncation is the bug `content-rules.ts` reports, and the note below would be a
+    // reassuring explanation of something that is actually wrong.
+    const isTest = readFrontmatter(deferred)?.type === 'test'
+    return { body: stripped, questionsHidden: isTest && stripped.length !== withoutFrontmatter.length }
   }, [deferred])
 
   return (

@@ -141,7 +141,11 @@ function replacementEdit(pair: Pair<ParsedNode, ParsedNode | null>, yaml: string
   // `title:` parses to an empty value node sitting immediately after the colon, so the separating
   // space has to come from the edit or the key and the value run together.
   const separator = range[0] === range[1] && yaml[range[0] - 1] === ':' ? ' ' : ''
-  return { from: range[0], to: range[1], insert: `${separator}${literal}` }
+  // A block scalar's range runs to the start of the next key, newline included. Replacing that
+  // newline would glue the next key onto the value line and destroy it — `type: lecture` would
+  // simply cease to exist, and the form is the only way back into the frontmatter.
+  const trailing = /\r?\n$/.exec(yaml.slice(range[0], range[1]))?.[0].length ?? 0
+  return { from: range[0], to: range[1] - trailing, insert: `${separator}${literal}` }
 }
 
 function removalEdit(items: Array<Pair<ParsedNode, ParsedNode | null>>, yaml: string, index: number): Edit | null {

@@ -52,12 +52,24 @@ function styleInner(node: SyntaxNode, markName: string, style: Decoration, into:
   if (from < to) into.push(style.range(from, to))
 }
 
-function decorateLink(node: SyntaxNode, revealed: boolean, into: Array<Range<Decoration>>): void {
+function decorateLink(node: SyntaxNode, doc: Text, revealed: boolean, into: Array<Range<Decoration>>): void {
   const marks = node.getChildren('LinkMark')
   const textFrom = marks[0]?.to ?? node.from
   const textTo = marks[1]?.from ?? node.to
   if (textFrom < textTo) into.push(linkStyle.range(textFrom, textTo))
   if (revealed || marks.length < 2) return
+
+  // Two marks and no label is a bracket pair that never resolved into a link — `[1]` inside the
+  // text of a real link parses as its own Link node — so hiding its brackets would hide markup the
+  // contributor typed and leave the `](url)` they wanted hidden on screen.
+  if (marks.length < 4 && node.getChild('LinkLabel') === null) return
+
+  // A replacing decoration may not span a line break when it comes from a ViewPlugin:
+  // @codemirror/view throws mid-update, React never sees the keystroke, and every later dispatch
+  // fails too — the editor stops accepting input. A destination wrapped onto the next line
+  // (`[text](\nurl)`) stays visible instead.
+  if (doc.lineAt(marks[1].from).number !== doc.lineAt(node.to).number) return
+
   // `[` on its own, then everything from `]` to the closing paren — the destination is what the
   // reader does not need to see, and hiding it as one span keeps the decoration count down.
   into.push(hidden.range(marks[0].from, marks[0].to))
@@ -107,7 +119,7 @@ function buildDecorations(view: EditorView): DecorationSet {
             if (!isRevealed) hideMarks(node, 'CodeMark', decorations)
             return
           case 'Link':
-            decorateLink(node, isRevealed, decorations)
+            decorateLink(node, doc, isRevealed, decorations)
             return
           default:
             return

@@ -1,20 +1,40 @@
 import { Bold, Code2, Heading2, Italic, Link2, List } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { EditorView } from '@codemirror/view'
+import type { Text } from '@codemirror/state'
 
 // CodeMirror is only imported for its types here, so this file adds nothing to the bundle beyond
 // itself — the commands work entirely through the view instance the editor hands over. A toolbar
 // is the discoverable fallback GitBook, HackMD and Medium all keep for people who will never learn
 // keyboard Markdown, so it is always visible rather than hidden behind a selection.
 
+/** How many `char` in a row end at `at`, looking backwards. */
+function runBefore(doc: Text, at: number, char: string): number {
+  let length = 0
+  while (at - length > 0 && doc.sliceString(at - length - 1, at - length) === char) length++
+  return length
+}
+
+/** How many `char` in a row start at `at`. */
+function runAfter(doc: Text, at: number, char: string): number {
+  let length = 0
+  while (at + length < doc.length && doc.sliceString(at + length, at + length + 1) === char) length++
+  return length
+}
+
 /** Wraps the selection in `marker`, or unwraps it when it is already wrapped. */
 export function toggleWrap(view: EditorView, marker: string): boolean {
   const { state } = view
   const range = state.selection.main
-  const before = state.doc.sliceString(Math.max(0, range.from - marker.length), range.from)
-  const after = state.doc.sliceString(range.to, Math.min(state.doc.length, range.to + marker.length))
+  const char = marker[0]
+  const run = Math.min(runBefore(state.doc, range.from, char), runAfter(state.doc, range.to, char))
 
-  if (before === marker && after === marker) {
+  // A run of asterisks is one delimiter: `*` is italic, `**` bold, `***` both. Taking a single `*`
+  // out of a `**` run would downgrade bold to italic rather than adding emphasis — which is what
+  // pressing Italic on bold text used to do — so unwrap only a run that carries this marker.
+  const wrapped = char === '*' ? run === marker.length || run === 3 : run >= marker.length
+
+  if (wrapped) {
     view.dispatch({
       changes: [
         { from: range.from - marker.length, to: range.from },
@@ -54,16 +74,23 @@ export function toggleLinePrefix(view: EditorView, prefix: string): boolean {
   const { state } = view
   const range = state.selection.main
   const first = state.doc.lineAt(range.from).number
-  const last = state.doc.lineAt(range.to).number
+  // A drag-selection normally ends on the first character of the line after the last one the
+  // contributor meant to include, and bulleting that line adds an empty bullet to the diff.
+  const end = range.to > range.from ? range.to - 1 : range.to
+  const last = state.doc.lineAt(Math.max(range.from, end)).number
 
   const lines = []
   for (let number = first; number <= last; number++) lines.push(state.doc.line(number))
 
-  const allPrefixed = lines.every((line) => line.text.startsWith(prefix))
+  // Measured against the first non-blank column, so an already-indented `  - item` counts as
+  // prefixed instead of picking up a second bullet at column 0.
+  const indent = (line: { text: string }) => line.text.length - line.text.trimStart().length
+  const allPrefixed = lines.every((line) => line.text.trimStart().startsWith(prefix))
   const changes: Array<{ from: number; to?: number; insert?: string }> = []
   for (const line of lines) {
-    if (allPrefixed) changes.push({ from: line.from, to: line.from + prefix.length })
-    else if (!line.text.startsWith(prefix)) changes.push({ from: line.from, insert: prefix })
+    const at = line.from + indent(line)
+    if (allPrefixed) changes.push({ from: at, to: at + prefix.length })
+    else if (!line.text.trimStart().startsWith(prefix)) changes.push({ from: at, insert: prefix })
   }
 
   if (changes.length > 0) view.dispatch({ changes })

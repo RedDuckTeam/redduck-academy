@@ -24,6 +24,8 @@ const LESSON_TYPES = [
 
 const labelClass = 'text-muted-foreground'
 
+const IS_HIDDEN_ID = 'lesson-is-hidden'
+
 export function FrontmatterForm({ source, onSourceChange, className }: FrontmatterFormProps) {
   const frontmatter = readFrontmatter(source)
 
@@ -51,14 +53,16 @@ export function FrontmatterForm({ source, onSourceChange, className }: Frontmatt
       </label>
 
       <div className="flex flex-col gap-1.5">
-        <Text variant="caps-12" element="span" className={labelClass}>
+        {/* A SelectTrigger takes its accessible name from its own content, so once a value is
+            picked it announces "Lecture" with no hint of which field that is. */}
+        <Text variant="caps-12" element="span" id="lesson-type-label" className={labelClass}>
           Type
         </Text>
         <Select
           value={frontmatter.type || undefined}
           onValueChange={(value) => onSourceChange(patchFrontmatter(source, { type: value }))}
         >
-          <SelectTrigger size="sm">
+          <SelectTrigger size="sm" aria-labelledby="lesson-type-label">
             <SelectValue placeholder="Choose a type" />
           </SelectTrigger>
           <SelectContent>
@@ -91,16 +95,20 @@ export function FrontmatterForm({ source, onSourceChange, className }: Frontmatt
         />
       </label>
 
+      {/* Labelled through `htmlFor`, not proximity: the switch renders as a bare `role="switch"`
+          button whose only children are aria-hidden, so without this it is announced with no name
+          at all — and flipping it blind is what keeps a lesson off the site. */}
       <div className="flex items-center justify-between gap-3 sm:col-span-2">
-        <div className="flex flex-col">
+        <label htmlFor={IS_HIDDEN_ID} className="flex cursor-pointer flex-col">
           <Text variant="caps-12" element="span" className={labelClass}>
             Hidden
           </Text>
           <Text variant="main-14" className="text-muted-foreground">
             Keeps the lesson out of the sidebar and the next-lesson chain.
           </Text>
-        </div>
+        </label>
         <Switch
+          id={IS_HIDDEN_ID}
           checked={frontmatter.isHidden}
           onCheckedChange={(checked) => onSourceChange(patchFrontmatter(source, { isHidden: checked }))}
         />

@@ -1,11 +1,13 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Check, Copy, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { FrontmatterForm } from './frontmatter-form'
 import { PreviewPane } from './preview-pane'
 import { SubmitDialog } from './submit-dialog'
+import { checkContentRules } from '@/lib/editor/content-rules'
 import { deleteDraft, draftKey, loadDraft, saveDraft } from '@/lib/editor/draft-store'
 import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
 import { loadLessonSource, sha256Hex, splitSource } from '@/lib/editor/lesson-source'
@@ -44,6 +46,54 @@ interface LessonEditorProps {
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready' }
 
 const columnClass = 'flex min-h-0 min-w-0 flex-col gap-4'
+const noticeClass = 'flex flex-col gap-2 border border-primary p-4'
+
+interface SupersededVersionProps {
+  /** The buffer as it stood before the editor was moved onto the version that was merged. */
+  text: string
+  onDiscard: () => void
+}
+
+/**
+ * The one place this text still exists. It is deliberately not written back into the buffer: the
+ * editor holds the merged lesson now, and re-applying an edit by hand is what keeps a proposal
+ * from undoing somebody else's work.
+ */
+function SupersededVersion({ text, onDiscard }: SupersededVersionProps) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error('Could not copy your version')
+    }
+  }
+
+  return (
+    <div className={noticeClass}>
+      <Text variant="caps-12" element="span" className="text-primary">
+        Your version, before the update
+      </Text>
+      <Text variant="main-14" className="text-muted-foreground">
+        The editor now holds the lesson as it was merged. Copy your text out, make your change in it again, and propose
+        that — this panel is the only copy left.
+      </Text>
+      <pre className="max-h-64 overflow-auto border border-border p-3 text-[13px] whitespace-pre-wrap">{text}</pre>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={copy}>
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+          {copied ? 'Copied' : 'Copy my version'}
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={onDiscard}>
+          Discard it
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEditorProps) {
   const isDesktop = useIsDesktop()
@@ -55,6 +105,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   const [baseline, setBaseline] = useState('')
   const [baseHash, setBaseHash] = useState('')
   const [draftOffer, setDraftOffer] = useState<LessonDraft | null>(null)
+  const [superseded, setSuperseded] = useState<string | null>(null)
   const [submitOpen, setSubmitOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
 
@@ -124,10 +175,21 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     void deleteDraft(key)
   }
 
-  const handleRebase = useCallback(async (theirs: string) => {
-    setBaseline(theirs)
-    setBaseHash(await sha256Hex(theirs))
-  }, [])
+  // The base and the buffer move together, always. Advancing `baseHash` to the merged file while
+  // the buffer still held the old one would let the next submit pass the server's base check and
+  // open a pull request that quietly reverts what was merged — no git conflict, and a diff that
+  // reads as an ordinary edit. §3.1 promises that cannot happen, so the contributor's text is
+  // handed back to re-apply deliberately instead.
+  const handleLoadMerged = useCallback(
+    async (theirs: string) => {
+      setSuperseded(source)
+      setSource(theirs)
+      setBaseline(theirs)
+      setBaseHash(await sha256Hex(theirs))
+      setSubmitOpen(false)
+    },
+    [source],
+  )
 
   const handleSubmitted = useCallback(() => {
     setBaseline(source)
@@ -136,6 +198,13 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
 
   const title = readFrontmatter(source)?.title ?? lessonSlug
   const { frontmatter, body } = splitSource(source)
+
+  // The server runs the full set again and stays the authority; these two run here so a
+  // destructive edit is caught while it is being made, not after a licence tick and a captcha.
+  const violations = useMemo(
+    () => (load.status === 'ready' ? checkContentRules(baseline, source) : []),
+    [load.status, baseline, source],
+  )
 
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">
@@ -153,7 +222,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
           <Button
             type="button"
             size="sm"
-            disabled={!isDirty || load.status !== 'ready'}
+            disabled={!isDirty || load.status !== 'ready' || violations.length > 0}
             onClick={() => setSubmitOpen(true)}
           >
             Propose change
@@ -196,6 +265,8 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         </div>
       )}
 
+      {superseded !== null && <SupersededVersion text={superseded} onDiscard={() => setSuperseded(null)} />}
+
       {load.status === 'ready' && !isDesktop && (
         <>
           <div className="border border-border p-4">
@@ -212,6 +283,22 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-2">
           <div className={columnClass}>
             <FrontmatterForm source={source} onSourceChange={setSource} />
+            {violations.length > 0 && (
+              <div className={noticeClass}>
+                <Text variant="caps-12" element="span" className="text-primary">
+                  This change cannot be proposed yet
+                </Text>
+                <ul className="flex list-disc flex-col gap-1 pl-5">
+                  {violations.map((violation) => (
+                    <li key={violation.message}>
+                      <Text variant="main-14" element="span">
+                        Line {violation.line} — {violation.message}
+                      </Text>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <Suspense
               fallback={
                 <div className="flex min-h-[400px] items-center justify-center border border-border">
@@ -241,7 +328,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
           lessonSlug={lessonSlug}
           content={source}
           baseHash={baseHash}
-          onRebase={handleRebase}
+          onLoadMerged={handleLoadMerged}
           onSubmitted={handleSubmitted}
         />
       )}

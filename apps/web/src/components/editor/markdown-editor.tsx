@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
-import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { defaultHighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirror/language'
 import { EditorState, Prec } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import type { SyntaxNode } from '@lezer/common'
 import { EditorToolbar, insertLink, toggleHeading, toggleWrap } from './editor-toolbar'
 import { livePreview } from './live-preview'
 import { htmlToMarkdown } from '@/lib/editor/html-to-markdown'
@@ -16,6 +17,10 @@ interface MarkdownEditorProps {
   className?: string
 }
 
+const stripWhitespace = (text: string) => text.replace(/\s+/g, '')
+
+const CODE_NODES = new Set(['FencedCode', 'CodeBlock', 'InlineCode'])
+
 /** True for a lone http(s) URL — the shape that should become a link around the selection. */
 function isSingleUrl(text: string): boolean {
   if (!text || /\s/.test(text)) return false
@@ -27,12 +32,26 @@ function isSingleUrl(text: string): boolean {
   }
 }
 
+/** True inside a fenced block, an indented block or inline code, where Markdown means nothing. */
+function inCode(view: EditorView, at: number): boolean {
+  let node: SyntaxNode | null = syntaxTree(view.state).resolveInner(at, -1)
+  while (node) {
+    if (CODE_NODES.has(node.name)) return true
+    node = node.parent
+  }
+  return false
+}
+
 function handlePaste(event: ClipboardEvent, view: EditorView): boolean {
   const clipboard = event.clipboardData
   if (!clipboard) return false
 
   const range = view.state.selection.main
   const plain = clipboard.getData('text/plain').trim()
+
+  // Inside a code block every rewrite below is wrong, and one of them is destructive: a converted
+  // ``` fence pasted into an open fence closes it, and the rest of the lesson stops being code.
+  if (inCode(view, range.from)) return false
 
   if (!range.empty && isSingleUrl(plain)) {
     const selected = view.state.doc.sliceString(range.from, range.to)
@@ -51,7 +70,11 @@ function handlePaste(event: ClipboardEvent, view: EditorView): boolean {
   if (!html) return false
 
   const converted = htmlToMarkdown(html)
-  if (!converted || converted === plain) return false
+  // Whitespace-blind, not just an equality check: an IDE writes syntax-highlighted HTML with one
+  // <div> per line, which converts to the same characters with every level of indentation gone and
+  // a blank line between them. When the conversion adds no Markdown of its own, the plain flavour
+  // is the faithful one.
+  if (!converted || stripWhitespace(converted) === stripWhitespace(plain)) return false
 
   event.preventDefault()
   view.dispatch({
@@ -128,8 +151,8 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
     }
   }, [])
 
-  // Only fires when the buffer is replaced from outside — restoring a draft, or keeping your own
-  // text after a 409. Ordinary typing round-trips to the identical string and is skipped.
+  // Only fires when the buffer is replaced from outside — restoring a draft, or loading the merged
+  // lesson after a 409. Ordinary typing round-trips to the identical string and is skipped.
   useEffect(() => {
     if (!view) return
     const current = view.state.doc.toString()

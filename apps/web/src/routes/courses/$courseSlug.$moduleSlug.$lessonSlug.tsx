@@ -97,6 +97,27 @@ function LessonNotFound() {
   return <LessonNotFoundPage courseSlug={courseSlug} />
 }
 
+interface ImproveLessonButtonProps {
+  courseSlug: string
+  moduleSlug: string
+  lessonSlug: string
+}
+
+/**
+ * The site's edit affordance, and deliberately shown to logged-out visitors too — the editor's
+ * anonymous door is the point of the feature.
+ */
+function ImproveLessonButton({ courseSlug, moduleSlug, lessonSlug }: ImproveLessonButtonProps) {
+  return (
+    <Button asChild variant="outline" size="sm" className="shrink-0">
+      <Link to="/edit/$courseSlug/$moduleSlug/$lessonSlug" params={{ courseSlug, moduleSlug, lessonSlug }}>
+        <PencilLine className="mr-2 size-4" />
+        Improve this lesson
+      </Link>
+    </Button>
+  )
+}
+
 function LessonPage() {
   const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug, lessonBody, lessonFaq } = Route.useLoaderData()
   // Prose is served from the open-source content/ files (static assets, resolved in the
@@ -156,23 +177,22 @@ function LessonPage() {
               <>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <LessonTitle title={lesson.title} />
-                  {/* The only edit affordance on the site, and deliberately shown to logged-out
-                      visitors too — the editor's anonymous door is the point of the feature. Hidden
-                      when the prose comes from the DB, because then there is no file to propose against. */}
+                  {/* Hidden when the prose comes from the DB, because then there is no file to
+                      propose against. */}
                   {lessonBody != null && (
-                    <Button asChild variant="outline" size="sm" className="shrink-0">
-                      <Link
-                        to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
-                        params={{ courseSlug, moduleSlug, lessonSlug }}
-                      >
-                        <PencilLine className="mr-2 size-4" />
-                        Improve this lesson
-                      </Link>
-                    </Button>
+                    <ImproveLessonButton courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
                   )}
                 </div>
                 {lessonBody != null ? (
-                  <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
+                  <>
+                    <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
+                    {/* Repeated at the end of the article on purpose: finishing a long lesson and
+                        spotting the typo in its last paragraph is the moment of highest intent to
+                        contribute, and the header button is a page-scroll away by then. */}
+                    <div className="flex justify-end">
+                      <ImproveLessonButton courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+                    </div>
+                  </>
                 ) : lesson.content ? (
                   <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
                 ) : null}

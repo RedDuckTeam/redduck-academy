@@ -37,6 +37,14 @@ export function proposalConflictContent(error: unknown): string | null {
   return typeof theirs === 'string' ? theirs : null
 }
 
+/**
+ * The bearer the Fetcher attached was rejected, so `optionalAuth` never set a user and the server
+ * answered on the anonymous door — the dialog has to put the challenge back on screen.
+ */
+export function isProposalSessionRejected(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401
+}
+
 export function proposalRetryAfterMs(error: unknown): number | null {
   if (!(error instanceof ApiError) || error.status !== 429) return null
   const value = error.extra?.retryAfterMs

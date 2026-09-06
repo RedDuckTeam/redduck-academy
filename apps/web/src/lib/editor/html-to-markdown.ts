@@ -15,6 +15,14 @@ const INLINE_ONLY = new Set(['A', 'CODE', 'KBD', 'SAMP', 'BR', 'IMG'])
 
 const IGNORED = new Set(['SCRIPT', 'STYLE', 'HEAD', 'META', 'LINK', 'NOSCRIPT'])
 
+/**
+ * Kept verbatim as HTML, because Markdown has no equivalent and raw `<svg>` is how the corpus
+ * embeds diagrams already. HTML parsing puts an SVG element in the SVG namespace, where `tagName`
+ * is lowercase — it matches none of the sets above, so without this it would take the inline path
+ * and be reduced to its `<text>` nodes.
+ */
+const RAW_TAGS = new Set(['svg'])
+
 export function htmlToMarkdown(html: string): string {
   // DOMParser builds a detached document: nothing here is ever attached to the live page, and the
   // result is text, so no markup from the clipboard can execute.
@@ -52,7 +60,7 @@ function childBlocks(parent: Node): string[] {
 function isBlock(node: Node): boolean {
   if (node.nodeType !== Node.ELEMENT_NODE) return false
   const { tagName } = node as Element
-  if (tagName in HEADINGS || BLOCK_TAGS.has(tagName)) return true
+  if (tagName in HEADINGS || BLOCK_TAGS.has(tagName) || RAW_TAGS.has(tagName)) return true
   if (INLINE_ONLY.has(tagName)) return false
   // Google Docs wraps its whole clipboard payload in `<b style="font-weight:normal">` and marks
   // runs with inline styles instead; anything holding a block is a block, whatever its tag says.
@@ -62,6 +70,7 @@ function isBlock(node: Node): boolean {
 function convertBlock(element: HTMLElement): string {
   const tag = element.tagName
   if (IGNORED.has(tag)) return ''
+  if (RAW_TAGS.has(tag)) return element.outerHTML
 
   const level = HEADINGS[tag]
   if (level) {
@@ -105,6 +114,9 @@ function fencedCode(element: HTMLElement): string {
 
 function listItems(list: HTMLElement): string {
   const ordered = list.tagName === 'OL'
+  // A list continuing an earlier one carries `start`; renumbering from 1 would silently renumber
+  // the steps of a procedure the contributor pasted.
+  const start = ordered ? Number(list.getAttribute('start')) || 1 : 1
   const lines: string[] = []
 
   for (const item of Array.from(list.children)) {
@@ -112,7 +124,7 @@ function listItems(list: HTMLElement): string {
     const body = childBlocks(item).join('\n\n')
     if (!body.trim()) continue
 
-    const bullet = ordered ? `${lines.length + 1}. ` : '- '
+    const bullet = ordered ? `${start + lines.length}. ` : '- '
     // Continuation lines align under the bullet, which is what makes a nested list nest.
     const pad = ' '.repeat(bullet.length)
     const [first = '', ...rest] = body.split('\n')
@@ -144,7 +156,11 @@ function convertInline(node: Node): string {
   const element = node as HTMLElement
   const tag = element.tagName
   if (IGNORED.has(tag)) return ''
-  if (tag === 'BR') return '\n'
+  if (RAW_TAGS.has(tag)) return element.outerHTML
+  // A hard break, not a bare newline: CommonMark folds a lone newline inside a paragraph into a
+  // space, so a Shift+Enter break pasted from a document would collapse onto one line. The
+  // backslash form rather than two trailing spaces, which `flush()` collapses back to one.
+  if (tag === 'BR') return '\\\n'
   if (tag === 'IMG') {
     const source = element.getAttribute('src') ?? ''
     return source ? `![${element.getAttribute('alt') ?? ''}](${source})` : ''
