@@ -2,7 +2,7 @@ import { Fragment, useRef, useState } from 'react'
 import { Bold, Code2, Heading2, Italic, Link2, List, Type } from 'lucide-react'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import type { KeyboardEvent } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { Text } from '@codemirror/state'
 
@@ -152,11 +152,18 @@ const ACTIONS: ToolbarAction[] = [
  * contributor actually reaches for: the shortcuts are discoverable from the toolbar and the
  * keymap, but nothing on screen says whether a table or a raw diagram is allowed here.
  */
-const SYNTAX: Array<{ syntax: string; what: string }> = [
+const SYNTAX: Array<{ syntax: string; what: ReactNode }> = [
   { syntax: '## Heading', what: 'Section heading. Use ### for a sub-section' },
   { syntax: '**bold**  *italic*', what: 'Emphasis' },
   { syntax: '`code`', what: 'Inline code' },
-  { syntax: '```solidity', what: 'Code block. Also rust, typescript, or nothing for plain text' },
+  {
+    syntax: '```solidity',
+    what: (
+      <>
+        Code block. Also <strong className="font-semibold">rust, typescript, or nothing</strong> for plain text
+      </>
+    ),
+  },
   { syntax: '- item   1. item', what: 'Lists, and they nest' },
   { syntax: '> quote', what: 'Blockquote' },
   { syntax: '| a | b |', what: 'Table, GitHub flavoured' },
@@ -250,7 +257,7 @@ export function EditorToolbar({ view, className }: EditorToolbarProps) {
       </div>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-[#000]">What you can write</DialogTitle>
           </DialogHeader>
