@@ -13,25 +13,24 @@ export const UNVERIFIED_AUTHOR_LABEL = 'unverified-author'
 /** Prefix every proposal ref must carry. Asserted again immediately before each git ref write. */
 export const PROPOSAL_BRANCH_PREFIX = 'proposal/'
 
-/**
- * Configuration is read through these accessors rather than off `env` directly so a missing value
- * is a 503 at the call site instead of a silent skip.
- *
- * `env.ts` parses `process.env` eagerly at import, so making these required would crash-loop every
- * dyno the moment the code deploys ahead of the config vars. Optional-plus-fail-closed keeps the
- * rest of the API up while refusing to run this feature half-configured — which for
- * `TURNSTILE_SECRET_KEY` in particular is the difference between "captcha off" and "unauthenticated
- * write access to the repository".
- */
-const UNAVAILABLE = 'Lesson proposals are temporarily unavailable'
+export const PROPOSALS_UNAVAILABLE = 'Lesson proposals are temporarily unavailable'
 
+/**
+ * Reads one setting, or refuses the request.
+ *
+ * Everything this feature needs is optional in `env.ts`, because that module parses `process.env`
+ * eagerly at import: a newly-required variable would crash-loop every dyno the moment the code
+ * deployed ahead of the config. Failing closed here keeps the rest of the API serving while
+ * refusing to run this feature half-configured — which for `TURNSTILE_SECRET_KEY` is the
+ * difference between "captcha off" and unauthenticated write access to the repository.
+ */
 function required(value: string | undefined, name: string): string {
-  if (!value) throw new AppError(503, UNAVAILABLE, { missing: name })
+  if (!value) throw new AppError(503, PROPOSALS_UNAVAILABLE, { missing: name })
   return value
 }
 
 export function assertProposalsEnabled(): void {
-  if (!env.PROPOSALS_ENABLED) throw new AppError(503, UNAVAILABLE, { missing: 'PROPOSALS_ENABLED' })
+  if (!env.PROPOSALS_ENABLED) throw new AppError(503, PROPOSALS_UNAVAILABLE, { missing: 'PROPOSALS_ENABLED' })
 }
 
 export interface ProposalsRepoConfig {
@@ -46,7 +45,8 @@ export interface ProposalsRepoConfig {
 export function proposalsRepoConfig(): ProposalsRepoConfig {
   const slug = required(env.PROPOSALS_REPO, 'PROPOSALS_REPO')
   const [owner, repo] = slug.split('/')
-  if (!owner || !repo) throw new AppError(503, UNAVAILABLE, { missing: 'PROPOSALS_REPO must be "owner/repo"' })
+  if (!owner || !repo)
+    throw new AppError(503, PROPOSALS_UNAVAILABLE, { missing: 'PROPOSALS_REPO must be "owner/repo"' })
 
   return {
     owner,

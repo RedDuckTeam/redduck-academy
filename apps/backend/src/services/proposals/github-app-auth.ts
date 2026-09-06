@@ -1,12 +1,9 @@
 import { createSign } from 'crypto'
 import { AppError } from '../../lib/errors'
 import { Logger } from '../../lib/logger'
-import { proposalsRepoConfig } from './proposals.config'
+import { PROPOSALS_UNAVAILABLE, proposalsRepoConfig } from './proposals.config'
 
 const logger = new Logger('GitHubAppAuth')
-
-/** Same copy as `proposals.config.ts`: a broken App is an outage on our side, not a bad request. */
-const UNAVAILABLE = 'Lesson proposals are temporarily unavailable'
 
 /** GitHub rejects an App JWT whose lifetime exceeds ten minutes. */
 const JWT_TTL_SECONDS = 540
@@ -89,7 +86,7 @@ export class GitHubAppAuth {
       // A malformed PEM, a revoked installation and a GitHub outage are the same event to a caller.
       // The detail that separates them can echo key material, so it goes no further than the log.
       logger.error('Could not mint a GitHub App installation token', e, { appId, installationId })
-      throw new AppError(503, UNAVAILABLE)
+      throw new AppError(503, PROPOSALS_UNAVAILABLE)
     }
   }
 }

@@ -78,6 +78,23 @@ export const requireAdmin = createMiddleware(async (c, next) => {
   await next()
 })
 
+/**
+ * The blacklist check for routes that also serve visitors with no account.
+ *
+ * `requireNotBanned` cannot be used there: it throws 401 when no session was resolved, which on
+ * those routes is the ordinary anonymous case rather than a failure.
+ */
+export const rejectBannedUser = createMiddleware(async (c, next) => {
+  const authUser = c.get('user')
+  if (!authUser) {
+    await next()
+    return
+  }
+  const [row] = await db.select({ blacklisted: user.blacklisted }).from(user).where(eq(user.id, authUser.id)).limit(1)
+  if (row?.blacklisted) throw new AppError(403, 'Your account has been suspended. Please contact support.')
+  await next()
+})
+
 export const requireNotBanned = createMiddleware(async (c, next) => {
   const authUser = c.get('user')
   if (!authUser) throw new AppError(401, 'Unauthorized')
@@ -85,4 +102,3 @@ export const requireNotBanned = createMiddleware(async (c, next) => {
   if (row?.blacklisted) throw new AppError(403, 'Your account has been suspended. Please contact support.')
   await next()
 })
-
