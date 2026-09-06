@@ -75,7 +75,11 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     [published.data, source],
   )
 
-  const goToLine = useGoToLine({ view: viewRef, editorVisible: effectiveMode !== 'preview' })
+  const jumpToLine = useGoToLine({ view: viewRef, editorVisible: effectiveMode !== 'preview' })
+  const goToLine = (line: number) => {
+    if (effectiveMode === 'preview') setMode('write')
+    jumpToLine(line)
+  }
 
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">

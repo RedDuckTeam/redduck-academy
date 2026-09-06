@@ -16,5 +16,12 @@ export const Route = createFileRoute('/edit/$courseSlug/$moduleSlug/$lessonSlug'
 
 function EditLessonPage() {
   const { courseSlug, moduleSlug, lessonSlug } = Route.useParams()
-  return <LessonEditor key={lessonSlug} courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+  return (
+    <LessonEditor
+      key={`${courseSlug}/${moduleSlug}/${lessonSlug}`}
+      courseSlug={courseSlug}
+      moduleSlug={moduleSlug}
+      lessonSlug={lessonSlug}
+    />
+  )
 }

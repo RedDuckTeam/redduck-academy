@@ -9,6 +9,9 @@ export interface LessonDraft {
   savedAt: number
 }
 
+/** A draft on its way to storage: the timestamp is stamped when it lands, not when it is built. */
+export type PendingDraft = Omit<LessonDraft, 'savedAt'>
+
 export function draftKey(courseSlug: string, moduleSlug: string, lessonSlug: string): string {
   return `${courseSlug}/${moduleSlug}/${lessonSlug}`
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { deleteDraft, loadDraft, saveDraft } from '@/lib/editor/draft-store'
-import type { LessonDraft } from '@/lib/editor/draft-store'
+import type { LessonDraft, PendingDraft } from '@/lib/editor/draft-store'
 
 const AUTOSAVE_DELAY_MS = 800
 
@@ -23,13 +23,23 @@ export function useLessonDraft({ key, published, source, baseline, onRestore }: 
     setOffer(stored && stored.content !== published ? stored : null)
   }, [key, published])
 
-  const draftRef = useRef<LessonDraft | null>(null)
-  draftRef.current = isDirty ? { key, content: source, baseline, savedAt: Date.now() } : null
+  // Typing declines the offer: leaving the banner up would let Restore discard what was written since.
+  useEffect(() => {
+    if (isDirty) setOffer(null)
+  }, [isDirty])
+
+  const draftRef = useRef<PendingDraft | null>(null)
+  draftRef.current = isDirty && !offer ? { key, content: source, baseline } : null
 
   useEffect(() => {
+    // While an offer is up the buffer is still the published file, and the delete branch below would
+    // throw away the very draft the banner is offering.
     if (published === undefined || offer) return
     const draft = draftRef.current
-    const timer = setTimeout(() => (draft ? saveDraft(draft) : deleteDraft(key)), AUTOSAVE_DELAY_MS)
+    const timer = setTimeout(
+      () => (draft ? saveDraft({ ...draft, savedAt: Date.now() }) : deleteDraft(key)),
+      AUTOSAVE_DELAY_MS,
+    )
     return () => clearTimeout(timer)
   }, [source, key, published, offer])
 
@@ -37,7 +47,8 @@ export function useLessonDraft({ key, published, source, baseline, onRestore }: 
   // page from Firefox's bfcache.
   useEffect(() => {
     const flush = () => {
-      if (document.visibilityState === 'hidden' && draftRef.current) saveDraft(draftRef.current)
+      const draft = draftRef.current
+      if (document.visibilityState === 'hidden' && draft) saveDraft({ ...draft, savedAt: Date.now() })
     }
     document.addEventListener('visibilitychange', flush)
     return () => document.removeEventListener('visibilitychange', flush)
