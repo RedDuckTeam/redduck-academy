@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { LessonEditor } from '@/components/editor/lesson-editor'
+import { LessonEditor } from '@/components/pages/editor/lesson-editor'
 import { createPageMeta } from '@/lib/seo'
 
 export const Route = createFileRoute('/edit/$courseSlug/$moduleSlug/$lessonSlug')({

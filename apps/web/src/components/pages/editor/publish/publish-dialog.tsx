@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Check, Download, ExternalLink, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { CopyButton } from './copy-button'
-import { DiffView } from './diff-view'
+import { CopyButton } from '../copy-button'
+import { DiffView } from '../changes/diff-view'
 import { Text } from '@/components/ui/text'
 import {
   copyToClipboard,
@@ -15,6 +15,11 @@ import {
 } from '@/lib/editor/github-publish'
 import { diffLines } from '@/lib/editor/line-diff'
 import type { DiffHunk } from '@/lib/editor/line-diff'
+import {
+  focusRing,
+  noticeClass as sharedNoticeClass,
+  quietNoticeClass as sharedQuietNoticeClass,
+} from '@/lib/editor/styles'
 import { cn } from '@/lib/utils'
 
 // There is no submit endpoint any more. The editor's last act is a hand-off: put the finished file
@@ -51,9 +56,9 @@ type Handoff =
   | { stage: 'blocked' }
   | { stage: 'copy-failed' }
 
-const noticeClass = 'flex flex-col gap-2 border border-primary p-3'
-const quietNoticeClass = 'flex flex-col gap-2 border border-border p-3'
-const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+// Tighter than the page's, because a dialog has less room to give away.
+const noticeClass = cn(sharedNoticeClass, 'p-3')
+const quietNoticeClass = cn(sharedQuietNoticeClass, 'p-3')
 
 export function PublishDialog({ open, onOpenChange, path, content, baseline, onLoadCurrent }: PublishDialogProps) {
   const [freshness, setFreshness] = useState<Freshness>({ status: 'checking' })

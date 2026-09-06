@@ -8,8 +8,8 @@ import { CopyButton } from './copy-button'
 import { FrontmatterForm } from './frontmatter-form'
 import { HowItWorksDialog } from './how-it-works-dialog'
 import { PreviewPane } from './preview-pane'
-import { PublishDialog } from './publish-dialog'
-import { ChangesDialog } from './changes-dialog'
+import { PublishDialog } from './publish/publish-dialog'
+import { ChangesDialog } from './changes/changes-dialog'
 import { checkContentRules } from '@/lib/editor/content-rules'
 import { deleteDraft, draftKey, loadDraft, saveDraft } from '@/lib/editor/draft-store'
 import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
@@ -17,13 +17,16 @@ import { githubEditUrl, lessonFilePath } from '@/lib/editor/github-publish'
 import { loadLessonSource, splitSource } from '@/lib/editor/lesson-source'
 import type { LessonDraft } from '@/lib/editor/draft-store'
 import type { EditorView } from '@codemirror/view'
+import { compactButtonClass, focusRing, noticeClass, quietNoticeClass } from '@/lib/editor/styles'
 import { cn } from '@/lib/utils'
 
 // CodeMirror and its Markdown grammar are ~171 KB gzipped — `@codemirror/lang-markdown` pulls in
 // lang-html, which pulls in lang-javascript and lang-css. This app already ships Monaco and
 // per-grammar Shiki imports to stay under the Worker size limit, so the editor loads as its own
 // chunk when someone actually opens it.
-const MarkdownEditor = lazy(() => import('./markdown-editor').then((module) => ({ default: module.MarkdownEditor })))
+const MarkdownEditor = lazy(() =>
+  import('./editing/markdown-editor').then((module) => ({ default: module.MarkdownEditor })),
+)
 
 const AUTOSAVE_DELAY_MS = 800
 
@@ -70,14 +73,7 @@ type ViewMode = 'write' | 'split' | 'preview'
 const VIOLATIONS_ID = 'lesson-editor-violations'
 
 const columnClass = 'flex min-h-0 min-w-0 flex-col gap-4'
-const noticeClass = 'flex flex-col gap-2 border border-primary p-4'
-const quietNoticeClass = 'flex flex-col gap-2 border border-border p-4'
-const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
 
-// The shared Button scales its type up at `md` and again at `2xl`, which is right for a page's main
-// action and far too loud beside 14px prose in a notice. `!` because overriding one breakpoint just
-// hands the next one the win.
-const compactText = '!text-[14px] !leading-none'
 /** Both panes pin to the viewport once the header scrolls away, and scroll their own content. */
 const paneHeight = 'lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)]'
 
@@ -356,7 +352,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
               type="button"
               variant="outline"
               size="sm"
-              className={cn(compactText, focusRing)}
+              className={cn(compactButtonClass, focusRing)}
               onClick={() => restoreDraft(draftOffer)}
             >
               Restore
@@ -365,7 +361,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
               type="button"
               variant="outline"
               size="sm"
-              className={cn(compactText, focusRing)}
+              className={cn(compactButtonClass, focusRing)}
               onClick={discardDraft}
             >
               Discard
