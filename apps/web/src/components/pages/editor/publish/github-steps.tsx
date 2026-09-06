@@ -19,7 +19,7 @@ export function GithubSteps({ path }: GithubStepsProps) {
         </li>
         <li>
           <Text variant="main-14" element="span">
-            Select everything in the editor (Ctrl+A, or ⌘A on a Mac) and paste. Your version replaces what is on screen.
+            Select everything in the editor (Ctrl+A, or ⌘A on a Mac) and paste the file you copied.
           </Text>
         </li>
         <li>
