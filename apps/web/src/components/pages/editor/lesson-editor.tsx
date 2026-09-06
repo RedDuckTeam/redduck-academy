@@ -1,10 +1,9 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
 import { AlertTriangle, Columns2, ExternalLink, Eye, Loader2, PenLine, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { Text } from '@/components/ui/text'
-import { CopyButton } from './copy-button'
 import { FrontmatterForm } from './frontmatter-form'
 import { HowItWorksDialog } from './how-it-works-dialog'
 import { PreviewPane } from './preview-pane'
@@ -77,40 +76,6 @@ const columnClass = 'flex min-h-0 min-w-0 flex-col gap-4'
 /** Both panes pin to the viewport once the header scrolls away, and scroll their own content. */
 const paneHeight = 'lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)]'
 
-interface SupersededVersionProps {
-  /** The buffer as it stood before the editor was moved onto the version that was merged. */
-  text: string
-  onDiscard: () => void
-}
-
-/**
- * The one place this text still exists. It is deliberately not written back into the buffer: the
- * editor holds the merged lesson now, and re-applying an edit by hand is what keeps a contribution
- * from undoing somebody else's work.
- */
-function SupersededVersion({ text, onDiscard }: SupersededVersionProps) {
-  return (
-    <div className={noticeClass}>
-      <Text variant="caps-12" element="span" className="text-primary">
-        Your version, before the update
-      </Text>
-      <Text variant="main-14" className="text-muted-foreground">
-        The editor now holds the lesson as it was merged. Copy your text out, make your change in it again, and publish
-        that. This panel is the only copy left.
-      </Text>
-      <pre className="max-h-64 overflow-auto border border-border p-3 text-[13px] whitespace-pre-wrap" tabIndex={0}>
-        {text}
-      </pre>
-      <div className="flex gap-2">
-        <CopyButton text={text} label="Copy my version" />
-        <Button type="button" variant="outline" size="sm" className={focusRing} onClick={onDiscard}>
-          Discard it
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 const VIEW_MODES: Array<{ mode: ViewMode; label: string; icon: typeof PenLine }> = [
   { mode: 'write', label: 'Write', icon: PenLine },
   { mode: 'split', label: 'Split', icon: Columns2 },
@@ -128,7 +93,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   /** The published file this session started from. "Changed" always means "differs from this". */
   const [baseline, setBaseline] = useState('')
   const [draftOffer, setDraftOffer] = useState<LessonDraft | null>(null)
-  const [superseded, setSuperseded] = useState<string | null>(null)
   const [publishOpen, setPublishOpen] = useState(false)
   const [changesOpen, setChangesOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
@@ -208,20 +172,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     setDraftOffer(null)
     deleteDraft(key)
   }
-
-  // Buffer and baseline move together, always. Advancing the baseline to the merged file while the
-  // buffer still held the old one would make the next publish look clean while silently reverting
-  // what was merged — no conflict, and a diff that reads as an ordinary edit. The contributor's
-  // text is handed back to re-apply deliberately instead.
-  const handleLoadCurrent = useCallback(
-    (theirs: string) => {
-      setSuperseded(source)
-      setSource(theirs)
-      setBaseline(theirs)
-      setPublishOpen(false)
-    },
-    [source],
-  )
 
   const title = readFrontmatter(source)?.title ?? lessonSlug
   const { frontmatter, body } = splitSource(source)
@@ -370,8 +320,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         </div>
       )}
 
-      {superseded !== null && <SupersededVersion text={superseded} onDiscard={() => setSuperseded(null)} />}
-
       {/* Outside the panes: it is why the Publish button is disabled, so it has to stay on screen
           in the preview-only view too — and `aria-describedby` has to resolve to something. */}
       {violations.length > 0 && (
@@ -429,16 +377,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         <ChangesDialog open={changesOpen} onOpenChange={setChangesOpen} baseline={baseline} source={source} />
       )}
 
-      {publishOpen && (
-        <PublishDialog
-          open={publishOpen}
-          onOpenChange={setPublishOpen}
-          path={path}
-          content={source}
-          baseline={baseline}
-          onLoadCurrent={handleLoadCurrent}
-        />
-      )}
+      {publishOpen && <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} path={path} content={source} />}
     </main>
   )
 }
