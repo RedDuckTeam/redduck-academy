@@ -33,20 +33,28 @@ queue the owner rejected. The distinction is carried by labels (`community-propo
 > (`apps/web/src/components/providers/privy-provider.tsx:74`), so *every existing learner* is a
 > signed-in user with no GitHub link — the most common case had no design at all.
 
-### 1.1 A merged proposal is not a published proposal
+### 1.1 Publication is automatic, with one gap
 
 Lesson prose is baked into the build: `apps/web/vite.config.ts` emits every `content/**/*.md` into
 `dist/client/_content/` at `vite build`, and `lib/content/lesson-body.ts:24` reads it back through
-the ASSETS binding. `content-sync.yml` only writes DB rows; it never rebuilds the site. **And
-there is no web deploy workflow at all** — verified: `.github/workflows/` contains
-`claude.yml`, `content-sync.yml`, `content-verify.yml`, `db-backup.yml`, `deploy-admin.yml`,
-`deploy-backend.yml` and nothing that runs `wrangler`. `docs/self-hosting.md:195` says so in as
-many words, and `apps/web/package.json:11` is a manual `yarn build && wrangler deploy`.
+the ASSETS binding. `content-sync.yml` only writes DB rows; it never rebuilds the site.
 
-So today a merged typo fix reaches the site only when a maintainer runs a deploy from a laptop.
-Shipping a contribution loop whose last step is an unowned human chore is the most demoralising
-possible first-contributor experience. **Automating the web deploy is a hard prerequisite**
-(milestone 0), not a nice-to-have.
+There is no web deploy *workflow* in `.github/workflows/`, which initially read as a gap. It is
+not: **the web app is built and deployed by the Cloudflare Git integration**, confirmed by the
+owner and corroborated by the comment at `apps/web/wrangler.jsonc:3-4` ("Cloudflare build installs
+only this workspace's tree via `yarn workspaces focus`"). A merge to `main` rebuilds and publishes
+on its own. (`docs/self-hosting.md:195` still says otherwise and is stale — worth a one-line fix.)
+
+**The gap is narrower and only affects new lessons.** `content-sync.yml:66` commits the assigned
+ids back with `chore: assign content ids [skip ci]`, and Cloudflare Workers Builds honours
+`[skip ci]`. So the build that publishes a brand-new lesson runs on the *merge* commit, before its
+`id` exists, and `build-manifest.ts:68-72` gives it a **negative synthetic id** — which is not the
+id the DB row got. Until the next unrelated deploy, that lesson's progress and test submission
+point at an id that does not exist.
+
+The fix is to drop `[skip ci]` from that commit message. It is redundant for its stated purpose:
+the workflow's own header comment records that a `GITHUB_TOKEN` push does not re-trigger workflows
+by design, so the loop it guards against cannot happen. Milestone 4 (new lessons) depends on this.
 
 ## 2. Decisions, and why
 
@@ -147,19 +155,23 @@ mechanisms exist:
 - **Privy** — `apps/backend/src/lib/middleware.ts:21-37` verifies Privy bearer tokens on every
   `/api/*` business route. Adding `'github'` to `loginMethods` and reading the linked account
   server-side via `PrivyClient` (`lib/privy.ts:4`) is the least new code.
-- **better-auth — which is live, not dead code.** `apps/backend/src/index.ts:72` mounts
-  `services/auth/auth.routes.ts`, which serves `auth.handler` on `['POST','GET','OPTIONS']
-  /api/auth/*`, and its generated `user` table (`db/auth-schema.ts`) is the identity table that
-  `requireAuth` / `requireAdmin` / `requireNotBanned` and `lib/ensure-app-user.ts` read and write.
-  Its `socialProviders.github` would return the numeric GitHub `id` directly. What *is* unused is
-  the browser client `apps/web/src/lib/auth-client.ts` (no importers anywhere in `apps/web/src`).
+- **better-auth is mounted but unused as a login path.** Nobody signs in through it — confirmed
+  by the owner. Its routes are nonetheless live (`apps/backend/src/index.ts:72` mounts
+  `services/auth/auth.routes.ts`, serving `auth.handler` on `['POST','GET','OPTIONS'] /api/auth/*`),
+  and the `user` table it generated (`db/auth-schema.ts`, a plain Drizzle table with no import from
+  `lib/auth.ts`) **is** the identity table `requireAuth` / `requireAdmin` / `requireNotBanned` and
+  `lib/ensure-app-user.ts` read and write. Retiring better-auth is a separate cleanup with its own
+  blast radius; it is out of scope here, and nothing in this design should be read as authorising
+  it. The browser client `apps/web/src/lib/auth-client.ts` has no importers at all.
 
 > **Reversed after review.** The first draft told the next engineer to "confirm `lib/auth.ts` is
-> dead" — following that would have taken down `/api/auth/*` and the user table.
+> dead" — following that would have taken down `/api/auth/*`.
 
-**Decide before milestone 1:** which of the two owns the GitHub identity. Prefer Privy if it
-exposes the numeric GitHub user id; fall back to better-auth's `socialProviders.github` if it does
-not. Do not add a third auth stack.
+**Decided: Privy owns the GitHub identity.** Add `'github'` to `loginMethods` and read the linked
+account server-side via `PrivyClient`. Privy's `github_oauth` linked account carries `subject`,
+which for GitHub is the numeric user id — **verify this once at the start of milestone 1.** If it
+turns out to carry only the login, resolve the id with a single `GET /users/{login}` through the
+App token and cache it. Do not add another auth stack for this.
 
 ### 2.3 Branch in this repository, not a fork
 
@@ -435,19 +447,19 @@ typo fix.
    - signed-in / github: keyed on the verified user id, a much higher limit, **no IP bucket**, so a
      school or office NAT cannot lock out identified contributors.
    - per-target: at most N open proposals per lesson path, so one lesson cannot be swarmed.
-   - **plus a global repo-wide budget** (e.g. 60 creations/hour) checked before any GitHub call,
-     and a circuit breaker that serves 503 on a GitHub secondary-rate-limit 403 instead of
-     retrying. 500 content-generating requests/hour ÷ ~4 per proposal ≈ 125/hour before the App is
-     locked out for *everyone*.
+   - **plus a simple global repo-wide budget** (e.g. 60 creations/hour) checked before any GitHub
+     call, returning 429 with `retryAfterMs`. 500 content-generating requests/hour ÷ ~4 per
+     proposal ≈ 125/hour before the App is locked out for *everyone*, so the cap exists to stop one
+     burst starving every other contributor — not to squeeze the quota. The owner accepts GitHub's
+     limits as they are at current traffic; no circuit breaker, no retry queue.
 
-   **The IP source must be established, not assumed.** `getClientIp` (`lib/middleware.ts:74-84`)
-   returns the right-most XFF entry, which is correct for exactly one trusted proxy. If the API is
-   Cloudflare-proxied (and `lib/rate-limit.ts:37` already falls back to `cf-connecting-ip`, so
-   someone assumed a CF hop), the right-most value is a constant edge IP and every submitter on
-   earth shares one bucket. Measure the hop count with a header-echo probe, then take
-   `parts[parts.length - 1 - TRUSTED_PROXY_HOPS]` from an env var; if `parts.length <= HOPS`, treat
-   the request as un-attributable and apply the strictest bucket rather than falling back to a
-   spoofable entry. Separately: `lib/rate-limit.ts:35-36`'s `defaultKey` reads the *first* XFF entry
+   **The IP source is `getClientIp` as it stands.** It returns the right-most XFF entry
+   (`lib/middleware.ts:74-84`), which is correct for exactly one trusted proxy, and the backend
+   runs directly on Heroku with no CDN in front — confirmed by the owner. Record that as a
+   dependency: **if a proxy is ever put in front of the API, every anonymous quota collapses into
+   one bucket** (the right-most value becomes a constant edge IP), so revisit this before doing so.
+   Note `lib/rate-limit.ts:37` already falls back to `cf-connecting-ip`, which is where the
+   first draft's doubt came from. Separately: `lib/rate-limit.ts:35-36`'s `defaultKey` reads the *first* XFF entry
    and is client-spoofable — this is `RELIABILITY-AUDIT.md:172-180` finding **M8**, and it should be
    fixed to reuse `getClientIp` with or before this work. (Finding **H6**, shared NAT collapsing a
    cohort onto one bucket, is the separate risk the per-target and per-user buckets above address.)
@@ -592,7 +604,7 @@ assertion and §2.7's ruleset (which does not list the App as a bypass actor). B
 neither is optional.
 
 New env vars: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID`,
-`TURNSTILE_SECRET_KEY`, `PROPOSALS_IP_PEPPER`, `TRUSTED_PROXY_HOPS`, and `PROPOSALS_ENABLED`
+`TURNSTILE_SECRET_KEY`, `PROPOSALS_IP_PEPPER`, and `PROPOSALS_ENABLED`
 (defaults to off). Declare them `.optional()` in `env.ts` and validate at the use site — `env.ts:43`
 parses `process.env` eagerly at import, so a new *required* var not set on Heroku before the deploy
 crash-loops every dyno. Follow the `ANTHROPIC_API_KEY` precedent (`env.ts:32-33`) for the App vars,
@@ -771,11 +783,9 @@ real origin, on a site whose login is a wallet connect, is a hosted phishing sur
 > user-visible byte, gated by a pure-refactor package, and scheduled the owner's resume requirement
 > dead last.
 
-0. **Prerequisites.** (a) Restore `.github/workflows/deploy-web.yml` — `on: push: main`,
-   `paths: ['content/**','apps/web/**','packages/**','yarn.lock']`, running
-   `yarn workspace web build && wrangler deploy` with `CLOUDFLARE_API_TOKEN` as a repo secret
-   (client `VITE_*` values already asserted at build time in `vite.config.ts`). Without this,
-   nothing a contributor writes ever reaches the site (§1.1). (b) Fix the sanitiser hole (§7).
+0. **Prerequisites.** (a) Drop `[skip ci]` from the id write-back commit at `content-sync.yml:66`,
+   so Cloudflare rebuilds once ids exist (§1.1); it is redundant for its stated purpose. Fix the
+   stale claim at `docs/self-hosting.md:195` while there. (b) Fix the sanitiser hole (§7).
    (c) Add the `community-proposal` exclusion to `claude.yml` (§2.3). (d) Add the `main` ruleset with
    `content-verify` required and `github-actions[bot]` bypassing, and update the comment at
    `content-sync.yml:15` (§2.7). (e) Delete `@keystatic/core` and `@markdoc/markdoc` from
@@ -813,11 +823,11 @@ real origin, on a site whose login is a wallet connect, is a hosted phishing sur
 
 ## 9. Open decisions and risks
 
-1. **Which session mechanism owns the GitHub identity** — Privy or the live better-auth instance
-   (§2.2). Decide before milestone 1. Requires confirming Privy exposes the numeric GitHub user id,
-   not just the login.
-2. **Trusted proxy hop count** for the API host (§3.5 step 1). Measure with a header-echo probe
-   before writing any rate-limit code; every anonymous quota depends on it.
+1. ~~Which session mechanism owns the GitHub identity~~ — **decided: Privy** (§2.2). One thing to
+   confirm at the start of milestone 1: that Privy's `github_oauth` linked account exposes the
+   numeric GitHub user id in `subject`. Fallback is `GET /users/{login}`, not a new auth stack.
+2. ~~Trusted proxy hop count~~ — **decided: none.** The backend is on Heroku with nothing in front,
+   so `getClientIp` is correct as written (§3.5 step 1). Revisit if a CDN is ever added.
 3. **How many of the 94 SVG files actually use inline `style`** (§7). Determines whether removal is
    free or needs a port.
 4. **`main` branch protection** (§2.7) changes a documented premise of `content-sync.yml`. Confirm
