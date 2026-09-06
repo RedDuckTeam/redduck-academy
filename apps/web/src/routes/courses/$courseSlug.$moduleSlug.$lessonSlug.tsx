@@ -1,6 +1,5 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import { PencilLine } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { FilePenLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useScrollMagnet } from '@/hooks/useScrollMagnet'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
@@ -97,7 +96,7 @@ function LessonNotFound() {
   return <LessonNotFoundPage courseSlug={courseSlug} />
 }
 
-interface ImproveLessonButtonProps {
+interface EditPageLinkProps {
   courseSlug: string
   moduleSlug: string
   lessonSlug: string
@@ -105,20 +104,20 @@ interface ImproveLessonButtonProps {
 
 /**
  * The site's edit affordance, and deliberately shown to logged-out visitors too: nothing before the
- * final hand-off to GitHub needs an account of any kind.
+ * final hand-off to GitHub needs an account of any kind. Kept quiet on purpose — it sits beside the
+ * lesson title, where anything louder would compete with the heading it annotates.
  */
-function ImproveLessonButton({ courseSlug, moduleSlug, lessonSlug }: ImproveLessonButtonProps) {
+function EditPageLink({ courseSlug, moduleSlug, lessonSlug }: EditPageLinkProps) {
   return (
-    <Button asChild variant="outline" size="sm" className="shrink-0">
-      <Link
-        to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
-        params={{ courseSlug, moduleSlug, lessonSlug }}
-        title="Edit this lesson’s Markdown and open it as a pull request"
-      >
-        <PencilLine className="mr-2 size-4" />
-        Improve this lesson
-      </Link>
-    </Button>
+    <Link
+      to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
+      params={{ courseSlug, moduleSlug, lessonSlug }}
+      title="Edit this lesson’s Markdown and open it as a pull request"
+      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap underline-offset-4 transition-colors hover:underline"
+    >
+      <FilePenLine className="size-3.5" aria-hidden />
+      Edit page
+    </Link>
   )
 }
 
@@ -179,23 +178,19 @@ function LessonPage() {
           <>
             <LessonContentContainer>
               <>
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                {/* w-full because the article is a flex column with items-start, which would otherwise
+                    shrink this row to its content and leave justify-between nothing to space. */}
+                <div className="flex w-full flex-wrap items-center justify-between gap-3">
                   <LessonTitle title={lesson.title} />
                   {/* Hidden when the prose comes from the DB, because then there is no file to
                       propose against. */}
                   {lessonBody != null && (
-                    <ImproveLessonButton courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+                    <EditPageLink courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
                   )}
                 </div>
                 {lessonBody != null ? (
                   <>
                     <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
-                    {/* Repeated at the end of the article on purpose: finishing a long lesson and
-                        spotting the typo in its last paragraph is the moment of highest intent to
-                        contribute, and the header button is a page-scroll away by then. */}
-                    <div className="flex justify-end">
-                      <ImproveLessonButton courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
-                    </div>
                   </>
                 ) : lesson.content ? (
                   <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
