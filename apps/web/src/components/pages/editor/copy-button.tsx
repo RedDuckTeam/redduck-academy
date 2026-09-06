@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Check, Copy } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { copyToClipboard } from '@/lib/editor/github-publish'
+import { focusRing } from '@/lib/editor/styles'
 import { cn } from '@/lib/utils'
 
 interface CopyButtonProps {
@@ -11,29 +13,32 @@ interface CopyButtonProps {
 }
 
 export function CopyButton({ text, label, className }: CopyButtonProps) {
-  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (state === 'idle') return
-    const timer = setTimeout(() => setState('idle'), 3000)
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 3000)
     return () => clearTimeout(timer)
-  }, [state])
+  }, [copied])
+
+  const copy = async () => {
+    if (await copyToClipboard(text)) {
+      setCopied(true)
+      return
+    }
+    toast.error('Could not copy to clipboard')
+  }
 
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
-      className={cn(
-        'gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-        className,
-      )}
-      onClick={async () => setState((await copyToClipboard(text)) ? 'copied' : 'failed')}
+      className={cn('gap-2', focusRing, className)}
+      onClick={() => void copy()}
     >
-      {state === 'copied' ? <Check className="size-4 lg:size-5" /> : <Copy className="size-4 lg:size-5" />}
-      <span aria-live="polite">
-        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy, select it by hand' : label}
-      </span>
+      {copied ? <Check className="size-4 lg:size-5" /> : <Copy className="size-4 lg:size-5" />}
+      <span aria-live="polite">{copied ? 'Copied' : label}</span>
     </Button>
   )
 }
