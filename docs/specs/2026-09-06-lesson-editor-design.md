@@ -1,5 +1,20 @@
 # In-browser lesson editor with GitHub pull requests
 
+> **Superseded — the server-side path below was built, reviewed and then removed.** The editor
+> ships, but it no longer submits anything: it hands the edited Markdown to GitHub's own web
+> editor, which forks the repository and opens the pull request under the contributor's account.
+> No backend route, no stored token, no captcha, no quotas.
+>
+> The blocker was the credential, and neither shape of it was acceptable. A GitHub App cannot be
+> installed on this repository by the maintainer, and holding a token with write access to the
+> content repository was refused outright. An OAuth App avoids the server-held token, but it would
+> have to request `public_repo` from every contributor — a scope that grants write to *all* of
+> their public repositories, asked in exchange for fixing a typo. Deep-linking to GitHub's editor
+> needs no credential from anyone.
+>
+> Everything below is left as written. It remains the record of what was considered and why —
+> including the analysis of doors, abuse and licensing that the new path still has to answer for.
+
 **Status:** implemented. Blocks marked *Changed in implementation* record where the built thing
 deliberately differs from this design, and why.
 **Date:** 2026-09-06

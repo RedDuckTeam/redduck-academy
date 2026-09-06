@@ -13934,8 +13934,6 @@ __metadata:
     esbuild: "npm:^0.28.0"
     obscenity: "npm:^0.4.6"
     typescript: "npm:^6.0.2"
-    vitest: "npm:^4.1.10"
-    yaml: "npm:^2.8.1"
     zod: "npm:^4.3.5"
   languageName: unknown
   linkType: soft

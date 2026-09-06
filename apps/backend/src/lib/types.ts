@@ -4,6 +4,3 @@ export type AuthVariables = {
   idToken: string
   privyUserId: string
 }
-
-/** Variables `optionalAuth` publishes — absent when the caller offered no token. */
-export type OptionalAuthVariables = Partial<AuthVariables>

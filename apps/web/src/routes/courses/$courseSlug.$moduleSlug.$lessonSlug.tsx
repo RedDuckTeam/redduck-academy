@@ -104,13 +104,17 @@ interface ImproveLessonButtonProps {
 }
 
 /**
- * The site's edit affordance, and deliberately shown to logged-out visitors too — the editor's
- * anonymous door is the point of the feature.
+ * The site's edit affordance, and deliberately shown to logged-out visitors too: nothing before the
+ * final hand-off to GitHub needs an account of any kind.
  */
 function ImproveLessonButton({ courseSlug, moduleSlug, lessonSlug }: ImproveLessonButtonProps) {
   return (
     <Button asChild variant="outline" size="sm" className="shrink-0">
-      <Link to="/edit/$courseSlug/$moduleSlug/$lessonSlug" params={{ courseSlug, moduleSlug, lessonSlug }}>
+      <Link
+        to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
+        params={{ courseSlug, moduleSlug, lessonSlug }}
+        title="Edit this lesson’s Markdown and open it as a pull request"
+      >
         <PencilLine className="mr-2 size-4" />
         Improve this lesson
       </Link>

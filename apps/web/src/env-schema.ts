@@ -15,9 +15,6 @@ export const clientEnvSchema = {
   VITE_PUBLIC_POSTHOG_HOST: z.string().url().default('https://eu.posthog.com'),
   // Optional — when empty, Sentry init is skipped (e.g. local dev without a project).
   VITE_SENTRY_DSN: z.string().default(''),
-  // Turnstile sitekey for the lesson-proposal captcha. Defaulted so an environment without the
-  // feature configured still builds; the submit dialog says so rather than rendering a dead widget.
-  VITE_TURNSTILE_SITE_KEY: z.string().default(''),
 }
 
 // Keys that must be provided (no default / not optional) — derived from the schema

@@ -5,7 +5,7 @@ import { defaultHighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirr
 import { EditorState, Prec } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
-import { EditorToolbar, insertLink, toggleHeading, toggleWrap } from './editor-toolbar'
+import { EDITOR_CONTENT_ID, EditorToolbar, insertLink, toggleHeading, toggleWrap } from './editor-toolbar'
 import { livePreview } from './live-preview'
 import { htmlToMarkdown } from '@/lib/editor/html-to-markdown'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,8 @@ interface MarkdownEditorProps {
   /** The prose below the frontmatter. The frontmatter block is edited by the form, never here. */
   value: string
   onChange: (value: string) => void
+  /** Handed the live view so the page can put the cursor on a line a rule violation points at. */
+  onViewReady?: (view: EditorView | null) => void
   className?: string
 }
 
@@ -85,9 +87,12 @@ function handlePaste(event: ClipboardEvent, view: EditorView): boolean {
 }
 
 const editorTheme = EditorView.theme({
-  '&': { color: 'var(--foreground)', backgroundColor: 'transparent', fontSize: '16px' },
+  // A definite height is what makes `.cm-scroller` the scrolling element, and that is what lets
+  // CodeMirror render only the visible lines. Scrolled by an ancestor instead, it puts the whole
+  // document in the DOM — 11,000 pixels of it on the longest lesson here.
+  '&': { height: '100%', color: 'var(--foreground)', backgroundColor: 'transparent', fontSize: '16px' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: 'inherit', lineHeight: '1.6' },
+  '.cm-scroller': { fontFamily: 'inherit', lineHeight: '1.6', overflow: 'auto' },
   '.cm-content': { padding: '16px 20px', caretColor: 'var(--foreground)' },
   '.cm-line': { padding: '0' },
   '.cm-activeLine': { backgroundColor: 'transparent' },
@@ -96,7 +101,7 @@ const editorTheme = EditorView.theme({
   },
 })
 
-export function MarkdownEditor({ value, onChange, className }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, onChange, onViewReady, className }: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<EditorView | null>(null)
 
@@ -104,6 +109,8 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
   // would throw away undo history and the cursor.
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const onViewReadyRef = useRef(onViewReady)
+  onViewReadyRef.current = onViewReady
   const initialDoc = useRef(value)
 
   useEffect(() => {
@@ -136,6 +143,12 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
           EditorView.lineWrapping,
           livePreview(),
           editorTheme,
+          // CodeMirror's content element is a bare `contenteditable`; without these a screen reader
+          // announces an unlabelled edit box, and the toolbar's `aria-controls` points at nothing.
+          EditorView.contentAttributes.of({
+            id: EDITOR_CONTENT_ID,
+            'aria-label': 'Lesson body, Markdown',
+          }),
           EditorView.domEventHandlers({ paste: handlePaste }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) onChangeRef.current(update.state.doc.toString())
@@ -145,9 +158,11 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
     })
 
     setView(instance)
+    onViewReadyRef.current?.(instance)
     return () => {
       instance.destroy()
       setView(null)
+      onViewReadyRef.current?.(null)
     }
   }, [])
 
@@ -161,9 +176,16 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
   }, [view, value])
 
   return (
-    <div className={cn('flex min-h-0 flex-col border border-border', className)}>
+    // CodeMirror clears its own focus ring (`&.cm-focused { outline: none }`) because the ring
+    // belongs on the framed editor, not on the scroller inside it.
+    <div
+      className={cn(
+        'flex min-h-0 flex-col border border-border has-[.cm-focused]:outline-2 has-[.cm-focused]:outline-offset-[-2px] has-[.cm-focused]:outline-primary',
+        className,
+      )}
+    >
       <EditorToolbar view={view} />
-      <div ref={hostRef} className="min-h-0 flex-1 overflow-auto" />
+      <div ref={hostRef} className="min-h-0 flex-1" />
     </div>
   )
 }

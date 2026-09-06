@@ -49,19 +49,14 @@ the part of the project you are changing.
 
 ### Editing from the site
 
-A pull request you push yourself is covered by GitHub's Terms of Service, which pass your
-contribution through under this project's license. A change submitted from the site editor never
-touches GitHub's terms, so the grant is made in the editor instead — the notice you accept there is
-the operative one, and this is its text (version `2026-09-06`):
+Lessons carry an edit button that opens a Markdown editor in the browser, so you can fix a lesson
+without a local checkout. It does not publish anything: when you are done it hands your text to
+GitHub's own editor, and GitHub forks the repository and opens the pull request under your account.
 
-> I wrote this, or I have the right to submit it, and I license it irrevocably under CC BY-SA 4.0
-> (MIT for code). A hyperlink or URL is sufficient attribution. This submission is public and
-> permanent; my name is published with it and my email is not collected.
+That makes it an ordinary pull request, licensed the way every other one here is — GitHub's Terms
+of Service pass your contribution through under this project's license. Nothing extra to accept,
+and no CLA to sign: requiring a signature ceremony for a three-word typo fix would cost more
+corrections than it protects.
 
-The version string, the acceptance and its timestamp are recorded against the proposal. There is no
-CLA to sign — requiring a signature ceremony for a three-word typo fix would cost more corrections
-than it protects.
-
-The display name you give is optional and goes into the commit as a `Proposed-by:` trailer. A
-pseudonym is fine: CC BY-SA 4.0 §3(a)(1) accepts attribution by pseudonym, and it keeps personal
-data out of a git history nobody can rewrite later.
+Attribution follows your GitHub account, so the change lands in your contribution graph like any
+other. A pseudonymous account is fine — CC BY-SA 4.0 §3(a)(1) accepts attribution by pseudonym.

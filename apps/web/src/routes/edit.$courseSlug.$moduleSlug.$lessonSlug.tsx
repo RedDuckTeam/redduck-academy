@@ -3,7 +3,7 @@ import { LessonEditor } from '@/components/editor/lesson-editor'
 import { createPageMeta } from '@/lib/seo'
 
 export const Route = createFileRoute('/edit/$courseSlug/$moduleSlug/$lessonSlug')({
-  // Client-only. The editor is built on the clipboard, IndexedDB and `crypto.subtle`, none of which
+  // Client-only. The editor is built on the clipboard, IndexedDB and `matchMedia`, none of which
   // the Worker has, and rendering it server-side would drag CodeMirror into the SSR bundle for a
   // screen nobody should be reading without JavaScript.
   ssr: false,

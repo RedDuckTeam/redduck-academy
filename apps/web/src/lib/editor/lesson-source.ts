@@ -1,44 +1,32 @@
 import { contentAssetPath } from '@/lib/content/paths'
 import { FRONTMATTER_RE } from '@/lib/content/frontmatter'
 
-export interface LessonSource {
-  /** The file exactly as served, frontmatter included. The editor buffer starts as this string. */
-  text: string
-  /** SHA-256 of `text`. The server re-hashes the file at `main` HEAD and 409s when they differ. */
-  baseHash: string
-}
-
 /**
- * Hex SHA-256 over UTF-8 bytes, matching the server's `createHash('sha256').update(value, 'utf8')`.
- * `crypto.subtle` needs a secure context, which every origin this route runs on is (localhost counts).
+ * Reads the lesson from the same `/_content/**.md` static asset the lesson page loads. These assets
+ * are built from `content/`, so they trail `main` by a deploy; the publish step re-reads the file
+ * from GitHub and reconciles the difference there.
  */
-export async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-/**
- * Reads the lesson from the same `/_content/**.md` static asset the lesson page loads, rather than
- * a backend endpoint: a read endpoint would be an unauthenticated GitHub proxy spending the App's
- * hourly quota on every editor page-open. Staleness is caught at submit instead, via `baseHash`.
- */
-export async function loadLessonSource(
-  courseSlug: string,
-  moduleSlug: string,
-  lessonSlug: string,
-): Promise<LessonSource> {
-  // Revalidate rather than accept a CDN copy from before the last deploy — a stale buffer only
-  // surfaces later as a 409 the contributor has no way to act on.
-  const response = await fetch(contentAssetPath(courseSlug, moduleSlug, lessonSlug), { cache: 'no-cache' })
+export async function loadLessonSource(courseSlug: string, moduleSlug: string, lessonSlug: string): Promise<string> {
+  // Revalidate rather than accept a CDN copy from before the last deploy — every extra hour of
+  // staleness here is another chance of editing against a file that has already moved on.
+  let response: Response
+  try {
+    response = await fetch(contentAssetPath(courseSlug, moduleSlug, lessonSlug), { cache: 'no-cache' })
+  } catch {
+    throw new Error(
+      navigator.onLine
+        ? 'Could not reach the server to load this lesson. Try again in a moment.'
+        : 'You appear to be offline, so this lesson could not be loaded.',
+    )
+  }
   if (!response.ok) {
     throw new Error(
       response.status === 404
         ? 'This lesson has no source file yet, so it cannot be edited here.'
-        : 'Could not load this lesson. Check your connection and try again.',
+        : `Could not load this lesson — the server answered ${response.status}.`,
     )
   }
-  const text = await response.text()
-  return { text, baseHash: await sha256Hex(text) }
+  return response.text()
 }
 
 export interface SourceParts {

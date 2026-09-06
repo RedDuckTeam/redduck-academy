@@ -19,19 +19,17 @@ jobs:
     # job. (The action enforces the same permission check internally; this refuses the run before
     # it ever spins up.)
     #
-    # The association gate covers who *starts* the job, not whose text it reads. A proposal opened
-    # from the site editor carries attacker-controlled prose in its diff and body, so those PRs are
-    # excluded outright — otherwise a maintainer typing "@claude" on one would hand that prose to a
-    # job holding contents:write and the API key. This depends on the label always being applied.
+    # The gate covers who *starts* the job, not whose text it reads: invoking @claude on a fork's
+    # pull request still feeds an outsider's diff and body to a job holding contents:write and the
+    # API key. That is left to the maintainer's judgement rather than an `if:`, because the trigger
+    # this arrives through is `issue_comment`, whose payload describes an issue and carries no
+    # head repository — there is no fork flag to test. A condition that only covered the two
+    # pull_request_review* triggers would read like a guarantee while the common path stayed open.
     if: |
-      !contains(github.event.issue.labels.*.name, 'community-proposal') &&
-      !contains(github.event.pull_request.labels.*.name, 'community-proposal') &&
-      (
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association))
-      )
     runs-on: ubuntu-latest
     permissions:
       contents: write

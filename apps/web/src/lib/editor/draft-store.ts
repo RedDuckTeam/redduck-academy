@@ -12,8 +12,12 @@ export interface LessonDraft {
   key: string
   /** The whole file, frontmatter included. */
   content: string
-  /** The hash the draft was started from, restored with it so a stale draft still gets its 409. */
-  baseHash: string
+  /**
+   * The published file this draft was started from, restored with it: the freshness check asks
+   * "did the lesson move since you began?", and for a draft from last week that is last week's
+   * text, not today's. Absent on rows written before drafts carried it.
+   */
+  baseline?: string
   savedAt: number
 }
 

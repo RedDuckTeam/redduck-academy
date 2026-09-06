@@ -21,7 +21,3 @@ export * from './admin/responses'
 
 // Courses
 export * from './courses/responses'
-
-// Lesson edit proposals
-export * from './proposals/requests'
-export * from './proposals/responses'
