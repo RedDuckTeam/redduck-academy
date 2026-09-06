@@ -35,6 +35,31 @@ const MarkdownEditor = lazy(() =>
 const SPLIT_QUERY = '(min-width: 1024px)'
 const columnClass = 'flex min-h-0 min-w-0 flex-col gap-4'
 const paneHeight = 'lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)]'
+const pageClass = 'mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]'
+
+interface BackToLessonProps {
+  courseSlug: string
+  moduleSlug: string
+  lessonSlug: string
+}
+
+function BackToLesson({ courseSlug, moduleSlug, lessonSlug }: BackToLessonProps) {
+  return (
+    <Link
+      to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
+      params={{ courseSlug, moduleSlug, lessonSlug }}
+      className={cn(
+        'mt-2 flex w-full items-center gap-2 border border-border bg-transparent p-5 transition-colors hover:bg-muted',
+        focusRing,
+      )}
+    >
+      <ArrowRight className="rotate-180 [&_path]:fill-secondary" />
+      <Text variant="caps-20" className="text-secondary text-[18px]">
+        Back to the lesson
+      </Text>
+    </Link>
+  )
+}
 
 interface LessonEditorProps {
   courseSlug: string
@@ -81,8 +106,33 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     jumpToLine(line)
   }
 
+  // The lesson page hides its edit link for tests; this catches the same file opened by its URL.
+  if (published.data !== undefined && readFrontmatter(published.data)?.type === 'test') {
+    return (
+      <main className={pageClass}>
+        <div className={cn(noticeClass, 'items-start')}>
+          <Text variant="caps-12" element="span" className="flex items-center gap-2 text-primary">
+            <AlertTriangle className="size-4" />
+            Tests are edited on GitHub
+          </Text>
+          <Text variant="main-18">
+            The questions in a test lesson are written in a format this editor does not understand yet, and an edit that
+            breaks one of them deletes the answers learners have already saved.
+          </Text>
+          <Button asChild variant="outline" size="sm" className={cn('gap-2', focusRing)}>
+            <a href={githubEditUrl(path)} target="_blank" rel="noopener noreferrer">
+              Edit it on GitHub
+              <ExternalLink className="size-4" />
+            </a>
+          </Button>
+        </div>
+        <BackToLesson courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+      </main>
+    )
+  }
+
   return (
-    <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">
+    <main className={pageClass}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
           {published.isSuccess && <ViewModeTabs mode={effectiveMode} onModeChange={setMode} canSplit={canSplit} />}
@@ -168,19 +218,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         </div>
       )}
 
-      <Link
-        to="/courses/$courseSlug/$moduleSlug/$lessonSlug"
-        params={{ courseSlug, moduleSlug, lessonSlug }}
-        className={cn(
-          'mt-2 flex w-full items-center gap-2 border border-border bg-transparent p-5 transition-colors hover:bg-muted',
-          focusRing,
-        )}
-      >
-        <ArrowRight className="rotate-180 [&_path]:fill-secondary" />
-        <Text variant="caps-20" className="text-secondary text-[18px]">
-          Back to the lesson
-        </Text>
-      </Link>
+      <BackToLesson courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
 
       {changesOpen && (
         <ChangesDialog open={changesOpen} onOpenChange={setChangesOpen} baseline={baseline} source={source} />
