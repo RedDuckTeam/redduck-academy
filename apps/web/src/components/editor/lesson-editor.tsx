@@ -6,12 +6,13 @@ import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { Text } from '@/components/ui/text'
 import { CopyButton } from './copy-button'
 import { FrontmatterForm } from './frontmatter-form'
+import { HowItWorksDialog } from './how-it-works-dialog'
 import { PreviewPane } from './preview-pane'
 import { PublishDialog } from './publish-dialog'
 import { checkContentRules } from '@/lib/editor/content-rules'
 import { deleteDraft, draftKey, loadDraft, saveDraft } from '@/lib/editor/draft-store'
 import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
-import { CONTENT_REPO_LABEL, downloadMarkdown, githubEditUrl, lessonFilePath } from '@/lib/editor/github-publish'
+import { downloadMarkdown, githubEditUrl, lessonFilePath } from '@/lib/editor/github-publish'
 import { loadLessonSource, splitSource } from '@/lib/editor/lesson-source'
 import type { LessonDraft } from '@/lib/editor/draft-store'
 import type { EditorView } from '@codemirror/view'
@@ -258,32 +259,33 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   return (
     <main className="mx-5 mb-[60px] flex min-h-screen flex-col gap-4 pt-6 lg:mx-[60px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {load.status === 'ready' && isDesktop ? (
-          <div role="group" aria-label="Panes" className="flex border border-border">
-            {VIEW_MODES.filter(({ mode: value }) => value !== 'split' || canSplit).map(
-              ({ mode: value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={effectiveMode === value}
-                  onClick={() => setMode(value)}
-                  className={cn(
-                    // leading-none so the label's line box matches the icon's, otherwise the mono
-                    // font's descender pushes the text below the icon's centre.
-                    'inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[14px] leading-none transition-colors',
-                    focusRing,
-                    effectiveMode === value ? 'bg-foreground text-background' : 'hover:bg-muted',
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  {label}
-                </button>
-              ),
-            )}
-          </div>
-        ) : (
-          <span />
-        )}
+        <div className="flex flex-wrap items-center gap-4">
+          {load.status === 'ready' && isDesktop && (
+            <div role="group" aria-label="Panes" className="flex border border-border">
+              {VIEW_MODES.filter(({ mode: value }) => value !== 'split' || canSplit).map(
+                ({ mode: value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={effectiveMode === value}
+                    onClick={() => setMode(value)}
+                    className={cn(
+                      // leading-none so the label's line box matches the icon's, otherwise the mono
+                      // font's descender pushes the text below the icon's centre.
+                      'inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[14px] leading-none transition-colors',
+                      focusRing,
+                      effectiveMode === value ? 'bg-foreground text-background' : 'hover:bg-muted',
+                    )}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    {label}
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+          <HowItWorksDialog path={path} />
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Silent until there is something to report — an idle "No changes yet" is noise on a
@@ -381,7 +383,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
       {load.status === 'ready' && isDesktop && (
         <div className={cn('grid min-h-0 flex-1 gap-6 lg:items-start', effectiveMode === 'split' && 'lg:grid-cols-2')}>
           <div className={cn(columnClass, paneHeight, 'lg:overflow-y-auto', effectiveMode === 'preview' && 'hidden')}>
-            {!isDirty && <FirstRunNote path={path} />}
             <FrontmatterForm source={source} onSourceChange={setSource} />
             <Suspense
               fallback={
@@ -442,33 +443,6 @@ function LoadingSkeleton() {
     <div className="flex flex-1 flex-col gap-4" role="status" aria-label="Loading the lesson">
       <div className="h-28 animate-pulse border border-border bg-muted/40" />
       <div className="min-h-[400px] flex-1 animate-pulse border border-border bg-muted/40" />
-    </div>
-  )
-}
-
-interface FirstRunNoteProps {
-  path: string
-}
-
-/**
- * Shown only until the first keystroke. A contributor arriving from the lesson page has no idea
- * where this file lives or what "publish" will do to their GitHub account, and finding that out at
- * the last dialog is where people stop.
- */
-function FirstRunNote({ path }: FirstRunNoteProps) {
-  return (
-    <div className={quietNoticeClass}>
-      <Text variant="caps-12" element="span" className="text-muted-foreground">
-        Before you start
-      </Text>
-      <Text variant="main-14" className="text-muted-foreground">
-        This is <span className="font-mono break-all">{path}</span> from {CONTENT_REPO_LABEL}, the open repository the
-        site is built from. Edit it here, then publish: the file goes to GitHub, where it becomes a pull request for a
-        maintainer to review. You will need a GitHub account for that last step — nothing before it.
-      </Text>
-      <Text variant="main-14" className="text-muted-foreground">
-        Your work is saved in this browser as you type, so you can leave and come back.
-      </Text>
     </div>
   )
 }

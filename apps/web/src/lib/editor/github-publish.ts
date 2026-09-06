@@ -13,6 +13,7 @@ const REPO = 'redduck-academy'
 const BRANCH = 'main'
 
 export const CONTENT_REPO_LABEL = `${OWNER}/${REPO}`
+export const CONTENT_REPO_URL = `https://github.com/${OWNER}/${REPO}`
 
 /** Where the lesson lives in the repository, e.g. `content/basics/crypto/hashing.md`. */
 export function lessonFilePath(courseSlug: string, moduleSlug: string, lessonSlug: string): string {
