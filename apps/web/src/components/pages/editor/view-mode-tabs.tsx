@@ -18,7 +18,7 @@ interface ViewModeTabsProps {
 
 export function ViewModeTabs({ mode, onModeChange, canSplit }: ViewModeTabsProps) {
   return (
-    <div role="group" aria-label="Panes" className="flex w-full border border-border sm:w-auto">
+    <div role="group" aria-label="View" className="flex w-full border border-border sm:w-auto">
       {MODES.filter(({ mode: value }) => value !== 'split' || canSplit).map(({ mode: value, label, icon: Icon }) => (
         <button
           key={value}

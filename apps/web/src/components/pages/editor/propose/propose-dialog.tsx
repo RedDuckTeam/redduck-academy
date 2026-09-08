@@ -8,31 +8,32 @@ import { githubEditUrl } from '@/lib/editor/github-publish'
 import { focusRing } from '@/lib/editor/styles'
 import { cn } from '@/lib/utils'
 
-interface PublishDialogProps {
+interface ProposeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   path: string
   content: string
 }
 
-export function PublishDialog({ open, onOpenChange, path, content }: PublishDialogProps) {
+export function ProposeDialog({ open, onOpenChange, path, content }: ProposeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-[#000]">Publish your change</DialogTitle>
+          <DialogTitle className="text-[#000]">Propose your change</DialogTitle>
         </DialogHeader>
 
         <DialogBody className="gap-5 pb-6">
           <DialogDescription className="text-foreground text-[14px]">
-            Copy the file, then open GitHub and paste it in. The last two steps happen there.
+            Copy the file, then open GitHub and paste it over the old one. Downloading is optional, for keeping your own
+            copy.
           </DialogDescription>
 
           <GithubSteps path={path} />
 
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <CopyButton text={content} label="Copy .md" className={cn('w-full justify-center', focusRing)} />
+              <CopyButton text={content} label="Copy the file" className={cn('w-full justify-center', focusRing)} />
               <Button
                 type="button"
                 variant="outline"
@@ -41,7 +42,7 @@ export function PublishDialog({ open, onOpenChange, path, content }: PublishDial
                 onClick={() => downloadMarkdown(path, content)}
               >
                 <Download className="size-4 lg:size-5" />
-                Download .md
+                Download the file
               </Button>
             </div>
 

@@ -68,7 +68,6 @@ function handlePaste(event: ClipboardEvent, view: EditorView): boolean {
   if (!html) return false
 
   const converted = htmlToMarkdown(html)
-  // Whitespace-blind fallback: if converting only changes whitespace, it added no real Markdown, so use the plain-text paste instead.
   if (!converted || stripWhitespace(converted) === stripWhitespace(plain)) return false
 
   event.preventDefault()
@@ -80,7 +79,7 @@ function handlePaste(event: ClipboardEvent, view: EditorView): boolean {
 }
 
 const editorTheme = EditorView.theme({
-  // A definite height makes `.cm-scroller` the scrolling element, so CodeMirror renders only visible lines instead of the whole document.
+  // A definite height makes `.cm-scroller` the scrolling element, so CodeMirror renders only the visible lines.
   '&': { height: '100%', color: 'var(--foreground)', backgroundColor: 'transparent', fontSize: '16px' },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: 'inherit', lineHeight: '1.6', overflow: 'auto' },

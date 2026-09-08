@@ -25,7 +25,7 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
       setCopied(true)
       return
     }
-    toast.error('Could not copy to clipboard')
+    toast.error('Could not copy. Download the file instead.')
   }
 
   return (

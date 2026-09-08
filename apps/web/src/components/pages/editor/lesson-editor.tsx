@@ -11,7 +11,7 @@ import { PreviewPane } from './preview-pane'
 import { ViewModeTabs } from './view-mode-tabs'
 import { VIOLATIONS_ID, ViolationList } from './violation-list'
 import { ChangesDialog } from './changes/changes-dialog'
-import { PublishDialog } from './publish/publish-dialog'
+import { ProposeDialog } from './propose/propose-dialog'
 import { useGoToLine } from '@/hooks/editor/useGoToLine'
 import { useLessonDraft } from '@/hooks/editor/useLessonDraft'
 import { useLessonSource } from '@/hooks/editor/useLessonSource'
@@ -26,8 +26,7 @@ import { cn } from '@/lib/utils'
 import type { ViewMode } from './view-mode-tabs'
 import type { EditorView } from '@codemirror/view'
 
-// Lazy: CodeMirror and its Markdown grammar are ~171 KB gzipped, which would push the app past the
-// Worker's bundle-size limit if imported eagerly.
+// CodeMirror and its Markdown grammar are ~171 KB gzipped, which would push the app past the Worker's bundle-size limit if imported eagerly.
 const MarkdownEditor = lazy(() =>
   import('./editing/markdown-editor').then((module) => ({ default: module.MarkdownEditor })),
 )
@@ -74,7 +73,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
   const published = useLessonSource(courseSlug, moduleSlug, lessonSlug)
   const [edited, setEdited] = useState<{ source: string; baseline: string } | null>(null)
   const [mode, setMode] = useState<ViewMode>('split')
-  const [publishOpen, setPublishOpen] = useState(false)
+  const [proposeOpen, setProposeOpen] = useState(false)
   const [changesOpen, setChangesOpen] = useState(false)
   const viewRef = useRef<EditorView | null>(null)
 
@@ -99,13 +98,18 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
     [published.data, source],
   )
 
+  const blockedReason = (() => {
+    if (violations.length > 0) return 'Fix the problems listed above first'
+    if (!draft.isDirty) return 'Change something in the lesson first'
+    return undefined
+  })()
+
   const jumpToLine = useGoToLine({ view: viewRef, editorVisible: effectiveMode !== 'preview' })
   const goToLine = (line: number) => {
     if (effectiveMode === 'preview') setMode('write')
     jumpToLine(line)
   }
 
-  // The lesson page hides its edit link for tests; this catches the same file opened by its URL.
   if (published.data !== undefined && readFrontmatter(published.data)?.type === 'test') {
     return (
       <main className={pageClass}>
@@ -115,8 +119,9 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
             Tests are edited on GitHub
           </Text>
           <Text variant="main-18">
-            The questions in a test lesson are written in a format this editor does not understand yet, and an edit that
-            breaks one of them deletes the answers learners have already saved.
+            This editor does not understand the question format in a test lesson yet, and a broken question would lose
+            answers learners have already saved. GitHub's own editor can take the change, and a maintainer checks it
+            before anything reaches the site.
           </Text>
           <Button asChild variant="outline" size="sm" className={cn('gap-2', focusRing)}>
             <a href={githubEditUrl(path)} target="_blank" rel="noopener noreferrer">
@@ -143,14 +148,19 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
             type="button"
             size="sm"
             className={cn('w-full sm:w-auto', focusRing)}
-            disabled={!draft.isDirty || violations.length > 0}
+            disabled={blockedReason !== undefined}
+            title={blockedReason}
             aria-describedby={violations.length > 0 ? VIOLATIONS_ID : undefined}
-            onClick={() => setPublishOpen(true)}
+            onClick={() => setProposeOpen(true)}
           >
-            Publish on GitHub
+            Propose your change
           </Button>
         </div>
       </div>
+
+      <Text variant="main-14" className="text-muted-foreground">
+        Your edit goes to a maintainer for review, and you need a GitHub account only at the very end.
+      </Text>
 
       {published.isPending && (
         <div className="flex flex-1 flex-col gap-4" role="status" aria-label="Loading the lesson">
@@ -223,7 +233,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
         <ChangesDialog open={changesOpen} onOpenChange={setChangesOpen} baseline={baseline} source={source} />
       )}
 
-      {publishOpen && <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} path={path} content={source} />}
+      {proposeOpen && <ProposeDialog open={proposeOpen} onOpenChange={setProposeOpen} path={path} content={source} />}
     </main>
   )
 }

@@ -90,7 +90,7 @@ export function EditorToolbar({ view, className, dirty, onRevert, onShowChanges 
               className={buttonClass}
               disabled={!view}
               tabIndex={index === focused ? 0 : -1}
-              aria-label={keys ? `${label} (${keys})` : label}
+              aria-label={keys ? `${label}, ${keys}` : label}
               title={keys ? `${label} · ${keys}` : label}
               // Without this the button steals focus on click and the command runs against a selection CodeMirror already collapsed.
               onMouseDown={(event) => event.preventDefault()}

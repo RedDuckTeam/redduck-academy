@@ -10,7 +10,6 @@ interface DiffViewProps {
 
 const monoBlockClass = 'overflow-auto border border-border p-3 font-mono text-[13px] leading-[1.5]'
 
-/** Marked with −/+ as well as colour — a colour-only diff is unreadable to the ~1 in 12 men who are red-green colour-blind. */
 export function DiffView({ hunks, fallback, label, className }: DiffViewProps) {
   if (hunks === null) {
     return (

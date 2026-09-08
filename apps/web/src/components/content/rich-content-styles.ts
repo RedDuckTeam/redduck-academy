@@ -1,7 +1,3 @@
-// Shared Tailwind class strings for the two lesson-content renderers — `RichText` (the
-// legacy Lexical path) and `MarkdownContent` (the Markdown path) — so their visual
-// contract (blockquotes, inline code, anchors, diagram wrappers) stays identical.
-
 export const blockquoteStyles =
   '[&_blockquote]:text [&_blockquote]:pl-2.5 [&_blockquote]:border-l [&_blockquote]:border-border'
 
@@ -12,6 +8,4 @@ export const codeStyles =
 
 export const svgWrapperClass = 'my-4 flex w-full justify-center overflow-x-auto [&_svg]:h-auto [&_svg]:max-w-full'
 
-// Typography wrapper a lesson's prose is rendered in, on the lesson page and in the editor's
-// preview alike — the preview is only trustworthy while it wraps at the same measure.
 export const lessonProseClass = 'prose dark:prose-invert w-full max-w-none'

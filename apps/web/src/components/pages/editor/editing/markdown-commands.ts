@@ -19,7 +19,7 @@ export function toggleWrap(view: EditorView, marker: string): boolean {
   const char = marker[0]
   const run = Math.min(runBefore(state.doc, range.from, char), runAfter(state.doc, range.to, char))
 
-  // Unwrapping a single `*` from a `**` run would downgrade bold to italic instead of adding emphasis, so only unwrap a run that already carries this marker.
+  // Unwrapping a single `*` from a `**` run would downgrade bold to italic, so only unwrap a run that already carries this marker.
   const wrapped = char === '*' ? run === marker.length || run === 3 : run >= marker.length
 
   if (wrapped) {

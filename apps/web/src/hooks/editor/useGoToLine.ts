@@ -10,8 +10,7 @@ interface UseGoToLineOptions {
 export function useGoToLine({ view, editorVisible }: UseGoToLineOptions) {
   const [pending, setPending] = useState<number | null>(null)
 
-  // Recorded rather than acted on immediately: in preview-only view the editor is display:none, so
-  // scrolling and focusing it would be a no-op.
+  // Deferred: in preview-only view the editor is display:none, where scrolling and focusing it silently no-op.
   useEffect(() => {
     const editor = view.current
     if (pending === null || !editor || !editorVisible) return

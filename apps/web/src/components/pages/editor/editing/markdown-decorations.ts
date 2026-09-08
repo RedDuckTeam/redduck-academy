@@ -62,7 +62,7 @@ function decorateLink(node: SyntaxNode, doc: Text, revealed: boolean, into: Arra
 
   if (marks.length < 4 && node.getChild('LinkLabel') === null) return
 
-  // A replacing decoration can't span a line break inside a ViewPlugin — CodeMirror throws mid-update and the editor stops accepting input.
+  // A replacing decoration cannot span a line break inside a ViewPlugin: CodeMirror throws mid-update and the editor stops accepting input.
   if (doc.lineAt(marks[1].from).number !== doc.lineAt(node.to).number) return
 
   into.push(hidden.range(marks[0].from, marks[0].to))

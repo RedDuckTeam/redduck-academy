@@ -21,7 +21,7 @@ export function ChangesDialog({ open, onOpenChange, baseline, source }: ChangesD
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           <DialogDescription className="text-foreground text-[14px]">
-            Measured against the lesson as it is published right now.
+            Compared with the file you started from. Lines marked − are removed, lines marked + are added.
           </DialogDescription>
           <DiffView hunks={hunks} fallback={source} label="Your changes to this lesson" />
         </DialogBody>

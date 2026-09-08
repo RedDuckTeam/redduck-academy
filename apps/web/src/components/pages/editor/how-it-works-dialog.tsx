@@ -30,12 +30,12 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>How contributing works</DialogTitle>
+            <DialogTitle>How this works</DialogTitle>
           </DialogHeader>
 
           <DialogBody className="flex flex-col gap-4">
             <DialogDescription className="text-foreground text-[14px]">
-              You need a GitHub account for the last step. Nothing before it.
+              Only the last step needs a GitHub account, and it is free to make one.
             </DialogDescription>
 
             <Text variant="main-14" className="text-muted-foreground">
@@ -49,19 +49,18 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
                 {CONTENT_REPO_LABEL}
                 <ExternalLink className="ml-1 inline size-3.5 align-[-2px]" aria-hidden />
               </a>
-              , the open repository the site is built from. You are editing{' '}
+              , the public repository this site is built from. You are editing{' '}
               <span className="font-mono break-all">{path}</span>.
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">
-              Changes reach the site through a pull request, the same way every other change does. When you publish, you
-              copy the file and then open it on GitHub. GitHub makes your own copy of the repository for you, so there
-              is nothing to set up. Once you paste and confirm, your change becomes a pull request for a maintainer to
-              review.
+              Your edit reaches the site as a pull request, which is how GitHub offers a change to a project for review.
+              You copy the file here, then open it on GitHub and paste it in. GitHub makes your own copy of the
+              repository for you, so there is nothing to set up.
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">
-              After it is merged, the site rebuilds and your edit is live.
+              Once a maintainer accepts your pull request, the site rebuilds and your edit is live.
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">

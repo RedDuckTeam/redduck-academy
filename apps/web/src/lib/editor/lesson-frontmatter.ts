@@ -2,21 +2,13 @@ import { isMap, isNode, isScalar, parseDocument, stringify } from 'yaml'
 import { FRONTMATTER_RE } from '@/lib/content/frontmatter'
 import type { Pair, ParsedNode } from 'yaml'
 
-/**
- * Splices spans of the YAML text instead of re-emitting the block: re-emitting reflows the folded
- * `faq:` answers several lessons use, producing a diff on every file that has them.
- */
+// Splices YAML spans, never re-emits the block: re-emitting reflows the folded `faq:` answers into a diff on every file.
 
-/** Only the two keys the editor consumes — nothing else in the block is read or rewritten. */
 export interface LessonFrontmatter {
   title: string
   type: string
 }
 
-/**
- * Where a `title:` the editor *adds* is inserted. Keys already in the file keep the position they
- * have: nothing in CI checks key order, so reordering would produce a diff on files already on `main`.
- */
 const KEY_ORDER = ['id', 'title', 'type', 'order', 'isHidden', 'faq']
 
 interface Located {
@@ -57,7 +49,6 @@ export function readFrontmatter(source: string): LessonFrontmatter | null {
   }
 }
 
-/** The only key the editor may write — `id` in particular must never be authored or altered from here. */
 export function setTitle(source: string, title: string): string {
   const located = locate(source)
   if (!located) return source
@@ -99,16 +90,13 @@ function replacementEdit(pair: Pair<ParsedNode, ParsedNode | null>, yaml: string
   const range = isNode(pair.value) ? pair.value.range : null
   if (!range) return null
 
-  // `title:` parses to an empty value node sitting immediately after the colon, so the separating
-  // space has to come from the edit or the key and the value run together.
+  // `title:` parses to an empty value node right after the colon, so the separating space must come from the edit.
   const separator = range[0] === range[1] && yaml[range[0] - 1] === ':' ? ' ' : ''
-  // A block scalar's range runs to the next key, newline included; replacing that newline would
-  // glue the next key onto the value line and destroy it.
+  // A block scalar's range runs to the next key, newline included; replacing that newline glues the next key on.
   const trailing = /\r?\n$/.exec(yaml.slice(range[0], range[1]))?.[0].length ?? 0
   return { from: range[0], to: range[1] - trailing, insert: `${separator}${literal}` }
 }
 
-/** Let the YAML writer decide quoting; `lineWidth: 0` stops it folding a long title across lines. */
 function scalarSource(value: string): string {
   return stringify(value, { lineWidth: 0 }).replace(/\n$/, '')
 }

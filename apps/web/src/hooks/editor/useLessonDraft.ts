@@ -6,7 +6,6 @@ const AUTOSAVE_DELAY_MS = 800
 
 interface UseLessonDraftOptions {
   key: string
-  /** The file as published, once it has loaded. */
   published: string | undefined
   source: string
   baseline: string
@@ -23,7 +22,6 @@ export function useLessonDraft({ key, published, source, baseline, onRestore }: 
     setOffer(stored && stored.content !== published ? stored : null)
   }, [key, published])
 
-  // Typing declines the offer: leaving the banner up would let Restore discard what was written since.
   useEffect(() => {
     if (isDirty) setOffer(null)
   }, [isDirty])
@@ -32,8 +30,7 @@ export function useLessonDraft({ key, published, source, baseline, onRestore }: 
   draftRef.current = isDirty && !offer ? { key, content: source, baseline } : null
 
   useEffect(() => {
-    // While an offer is up the buffer is still the published file, and the delete branch below would
-    // throw away the very draft the banner is offering.
+    // While an offer is up the buffer is still the published file, so this would delete the draft the banner is offering.
     if (published === undefined || offer) return
     const draft = draftRef.current
     const timer = setTimeout(
@@ -43,8 +40,7 @@ export function useLessonDraft({ key, published, source, baseline, onRestore }: 
     return () => clearTimeout(timer)
   }, [source, key, published, offer])
 
-  // visibilitychange rather than beforeunload, which is unreliable on mobile and disqualifies the
-  // page from Firefox's bfcache.
+  // visibilitychange rather than beforeunload, which is unreliable on mobile and disqualifies the page from bfcache.
   useEffect(() => {
     const flush = () => {
       const draft = draftRef.current

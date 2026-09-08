@@ -1,14 +1,8 @@
 import type { ReactElement } from 'react'
 import { EmbedFrame } from '@/components/ui/embed-frame'
 
-// Shared embed handling for the two lesson-content renderers (RichText, MarkdownContent).
-// Given a link URL, decide whether it should render as an interactive embed instead of a
-// plain link. Kept in one place so both renderers agree on the host list and titles.
-
-/** Paragraph text that expands to the block-mining simulator. */
 export const BLOCK_MINING_SHORTCODE = '[[block-mining]]'
 
-/** Convert a YouTube watch/short URL to its embed URL, or null if it isn't one. */
 function youtubeEmbedUrl(raw: string): string | null {
   try {
     const url = new URL(raw.trim())
@@ -37,11 +31,6 @@ function YouTubeEmbed({ url }: { url: string }): ReactElement {
   )
 }
 
-/**
- * If `href` points at a supported interactive host (plgrnd.io, eth.build, YouTube), return
- * the element to render in place of a plain link; otherwise null. Host matching is exact
- * (parsed hostname), not substring.
- */
 export function detectEmbed(href: string): ReactElement | null {
   let host = ''
   try {

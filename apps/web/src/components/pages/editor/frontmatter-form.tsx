@@ -9,7 +9,6 @@ interface FrontmatterFormProps {
   className?: string
 }
 
-// Title is the only field exposed here — type/order/isHidden/faq are editorial calls for the PR reviewer, not a drive-by edit, and stay untouched.
 export function FrontmatterForm({ source, onSourceChange, className }: FrontmatterFormProps) {
   const frontmatter = readFrontmatter(source)
 
@@ -17,8 +16,8 @@ export function FrontmatterForm({ source, onSourceChange, className }: Frontmatt
     return (
       <div className={cn('border border-border p-4', className)}>
         <Text variant="main-14" className="text-muted-foreground">
-          This file has no frontmatter block, so its title cannot be edited here. It needs one before it can be
-          proposed.
+          This file has no frontmatter, the settings block at the top that holds the title, so there is no title to edit
+          here. A lesson without one does not pass the checks on GitHub.
         </Text>
       </div>
     )

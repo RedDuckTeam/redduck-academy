@@ -21,8 +21,6 @@ interface MarkdownContentProps {
   paragraphClassName?: string
 }
 
-// Unordered-list marker: a small square drawn with a ::before pseudo-element. Specific to
-// this renderer's list DOM shape (RichText uses an explicit <span> marker instead).
 const ulMarker =
   "[&>li]:relative [&>li]:pl-6 [&>li]:before:content-[''] [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-[0.5em] [&>li]:before:h-2.5 [&>li]:before:w-2.5 [&>li]:before:bg-black dark:[&>li]:before:bg-white"
 
@@ -40,19 +38,15 @@ export const MarkdownContent = memo(function MarkdownContent({
   className,
   paragraphClassName,
 }: MarkdownContentProps) {
-  // Mirror the TOC's slug-dedup so heading ids match its hrefs (shared implementation). It counts
-  // as it goes, so it has to start over on every render — while the components map below has to
-  // survive them: a fresh object literal is a fresh element type for every tag, which makes React
-  // unmount and rebuild the rendered tree. In the editor's live preview that meant every code block
-  // dropping back to plain text and re-running Shiki on each pause in typing.
   const dedupeRef = useRef(createSlugDeduper())
   dedupeRef.current = createSlugDeduper()
 
-  // Diagrams are multi-line raw <svg>. react-markdown/rehype-raw only reassembles a raw
-  // element reliably when it is one inline token, so collapse newlines within each
-  // <svg>…</svg> block (whitespace between SVG tags is insignificant). Nothing else changes.
+  // rehype-raw only reassembles a raw element reliably when it is one inline token, so multi-line
+  // <svg> diagrams get their newlines collapsed first (whitespace between SVG tags is insignificant).
   const prepared = useMemo(() => source.replace(/<svg[\s\S]*?<\/svg>/gi, (m) => m.replace(/\r?\n/g, ' ')), [source])
 
+  // A fresh object literal is a fresh element type for every tag, which makes React unmount and
+  // rebuild the whole tree: in the editor's preview every code block re-ran Shiki on each keystroke.
   const components = useMemo<Components>(() => {
     const heading =
       (variant: 'subtitle-32' | 'caps-24' | 'caps-20', element: 'h1' | 'h2' | 'h3') =>
@@ -70,10 +64,8 @@ export const MarkdownContent = memo(function MarkdownContent({
       h3: heading('caps-20', 'h3'),
       p: ({ node, children }) => {
         const kids = (node?.children ?? []).filter((k) => !(k.type === 'text' && !k.value.trim()))
-        // Raw <svg> diagrams parse as inline HTML inside a paragraph. react-markdown
-        // renders their children (<path>, <rect>…) in the HTML namespace, which breaks
-        // them. Serialize the already-sanitized svg node (rehype-sanitize ran in the
-        // pipeline) back to a string so the browser's parser gets the SVG namespace right.
+        // react-markdown renders an <svg>'s children in the HTML namespace, which breaks the diagram,
+        // so serialize instead. Safe as HTML only because rehype-sanitize already ran over this node.
         const svgNodes = kids.filter((k): k is Element => k.type === 'element' && k.tagName === 'svg')
         if (svgNodes.length > 0) {
           const html = svgNodes.map((n) => toHtml(n, { space: 'svg' })).join('')
@@ -91,8 +83,6 @@ export const MarkdownContent = memo(function MarkdownContent({
         )
       },
       a: ({ href, children }) => {
-        // Internal links (resolved to /courses/... paths by the dumper) navigate in the
-        // same tab; external links open in a new tab.
         const internal = typeof href === 'string' && href.startsWith('/')
         return internal ? (
           <a href={href} className="text-primary underline">
@@ -114,8 +104,6 @@ export const MarkdownContent = memo(function MarkdownContent({
       ),
       th: ({ children }) => <th className="border border-border px-3 py-2 text-left font-medium">{children}</th>,
       td: ({ children }) => <td className="border border-border px-3 py-2 align-top">{children}</td>,
-      // Fenced code -> highlighted block. We render the block here and skip <pre>'s
-      // children, so the inline `code` mapping only ever sees inline code.
       pre: ({ node }) => {
         const codeEl = (node?.children ?? []).find((c): c is Element => c.type === 'element' && c.tagName === 'code')
         const cls = ((codeEl?.properties?.className as string[] | undefined) ?? []).join(' ')
