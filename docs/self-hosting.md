@@ -192,7 +192,7 @@ All variables from the `apps/admin` env section. Sensitive flag is fine — runt
 
 ## 6. Deploy: `apps/web` → Cloudflare Workers
 
-Deploy manually with `yarn workspace web deploy` from the repo root, which runs `yarn build && wrangler deploy`. There is no GitHub Actions workflow for the web app.
+A push to `main` is built and deployed by the connected Cloudflare Git integration, so merged content goes live on its own; there is deliberately no GitHub Actions workflow for the web app. To deploy by hand, run `yarn workspace web deploy` from the repo root (`yarn build && wrangler deploy`).
 
 **Cloudflare auth:** run `wrangler login` once, or set `CLOUDFLARE_API_TOKEN` (a token with `Workers Scripts: Edit`) in your shell before deploying.
 
@@ -220,6 +220,10 @@ Worker config lives in `apps/web/wrangler.jsonc`.
 5. Visit `/admin` on the admin URL → create first Payload admin user → add courses/modules/lessons.
 6. Configure Cloudflare auth and `apps/web/.env`, then run `yarn workspace web deploy`.
 7. Verify: Google sign-in, wallet sign-in, media uploads, lessons render.
+
+One repository setting the code cannot apply for you: `main` should require the `content-verify`
+status check, with `github-actions[bot]` as a bypass actor so `content-sync.yml` can still push
+assigned ids. Without it, the validation that catches a destructive content change is advisory.
 
 ---
 

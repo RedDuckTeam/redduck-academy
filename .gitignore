@@ -27,3 +27,6 @@ apps/contracts/artifacts/
 apps/contracts/ignition/parameters/main.json
 
 .claude
+
+# Playwright MCP session artifacts
+.playwright-mcp/

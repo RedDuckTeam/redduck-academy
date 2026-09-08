@@ -1,4 +1,5 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { FilePenLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useScrollMagnet } from '@/hooks/useScrollMagnet'
 import { PageBreadcrumbs } from '@/components/common/breadcrumbs'
@@ -24,6 +25,7 @@ import {
 import { JsonLd } from '@/components/seo/json-ld'
 import { RichText } from '@/components/content/rich-text'
 import { MarkdownContent } from '@/components/content/markdown-content'
+import { lessonProseClass } from '@/components/content/rich-content-styles'
 import { loadLessonContent } from '@/lib/content/lesson-body'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
@@ -33,17 +35,12 @@ import { useLessonCompletionToast } from '@/hooks/useLessonCompletionToast'
 
 export const Route = createFileRoute('/courses/$courseSlug/$moduleSlug/$lessonSlug')({
   ssr: true,
-  // `pendingNext` is set when a learner returns here from sign-in after clicking
-  // "Next" on a lecture — it tells the page to finish the lesson and advance.
   validateSearch: (search: Record<string, unknown>): { pendingNext?: boolean } => {
     const v = search.pendingNext
     return v === true || v === 1 || v === '1' || v === 'true' ? { pendingNext: true } : {}
   },
   loader: async ({ params, context: { queryClient } }) => {
     try {
-      // Content assets are immutable per deploy, so cache them for the session
-      // (staleTime Infinity) — this stops the manifest and body being refetched on every
-      // navigation. The lesson's faq rides along with its body from the one `.md` fetch.
       const [lesson, course, content] = await Promise.all([
         queryClient.ensureQueryData({
           queryKey: queryKeys.lessons.detail(params.courseSlug, params.lessonSlug),
@@ -95,10 +92,28 @@ function LessonNotFound() {
   return <LessonNotFoundPage courseSlug={courseSlug} />
 }
 
+interface SuggestEditLinkProps {
+  courseSlug: string
+  moduleSlug: string
+  lessonSlug: string
+}
+
+function SuggestEditLink({ courseSlug, moduleSlug, lessonSlug }: SuggestEditLinkProps) {
+  return (
+    <Link
+      to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
+      params={{ courseSlug, moduleSlug, lessonSlug }}
+      title="Fix a typo or improve this lesson, then send it for review"
+      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap underline-offset-4 transition-colors hover:underline"
+    >
+      <FilePenLine className="size-3.5" aria-hidden />
+      Suggest an edit
+    </Link>
+  )
+}
+
 function LessonPage() {
   const { lesson, courseTitle, courseSlug, moduleSlug, lessonSlug, lessonBody, lessonFaq } = Route.useLoaderData()
-  // Prose is served from the open-source content/ files (static assets, resolved in the
-  // loader); fall back to the DB Lexical only if no file exists (e.g. a row not yet dumped).
   const { error: userLessonError } = useLessonForUser(courseSlug, lessonSlug)
   useLessonCompletionToast({ courseSlug, lessonSlug, lessonTitle: lesson.title })
   const isCodingChallenge = lesson.type === 'coding_task'
@@ -132,12 +147,7 @@ function LessonPage() {
       />
       <div
         id={isCodingChallenge ? 'coding-task-row' : undefined}
-        className={cn(
-          'flex min-w-0 gap-10',
-          // Coding challenge: lock the row to (almost) full viewport so editor + description
-          // get real estate even on laptops. Page scrolls to bring this into focus.
-          isCodingChallenge && 'xl:h-[calc(100vh-2.5rem)]',
-        )}
+        className={cn('flex min-w-0 gap-10', isCodingChallenge && 'xl:h-[calc(100vh-2.5rem)]')}
       >
         <LessonSidebar courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
         {isCodingChallenge ? (
@@ -152,11 +162,20 @@ function LessonPage() {
           <>
             <LessonContentContainer>
               <>
-                <LessonTitle title={lesson.title} />
+                <div className="flex w-full flex-wrap items-center justify-between gap-3">
+                  <LessonTitle title={lesson.title} />
+                  {/* Not offered for tests: a wrong edit to the question block below the prose
+                      deletes learners' saved answers on the next content sync. */}
+                  {lessonBody != null && lesson.type !== 'test' && (
+                    <SuggestEditLink courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+                  )}
+                </div>
                 {lessonBody != null ? (
-                  <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
+                  <>
+                    <MarkdownContent source={lessonBody} className={lessonProseClass} />
+                  </>
                 ) : lesson.content ? (
-                  <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
+                  <RichText data={lesson.content} className={lessonProseClass} />
                 ) : null}
               </>
 

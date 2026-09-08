@@ -1,4 +1,5 @@
 import type { Context, MiddlewareHandler } from 'hono'
+import { getClientIp } from './client-ip'
 
 // Fixed-window in-memory rate limiter. State is per-process — effective cap
 // scales with dyno count. Fine for DoS shielding; not a global budget.
@@ -32,9 +33,7 @@ function defaultKey(c: Context): string {
   const auth = c.req.header('authorization')
   if (auth?.startsWith('Bearer ')) return `t:${auth.slice(-32)}`
 
-  const xff = c.req.header('x-forwarded-for')
-  if (xff) return `ip:${xff.split(',')[0]!.trim()}`
-  return `ip:${c.req.header('cf-connecting-ip') ?? c.req.header('x-real-ip') ?? 'unknown'}`
+  return `ip:${getClientIp(c) || 'unknown'}`
 }
 
 export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {

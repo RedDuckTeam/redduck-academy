@@ -7,7 +7,8 @@ import {
   submitTestBodySchema,
 } from '@redduck/api-contracts'
 import { getLessonDesc, markLessonAsCompletedDesc, submitCodingTaskDesc, submitProjectDesc, submitTestDesc } from '../../descriptions/lessons'
-import { requireAuth, requireNotBanned, getClientIp } from '../../lib/middleware'
+import { requireAuth, requireNotBanned } from '../../lib/middleware'
+import { getClientIp } from '../../lib/client-ip'
 import type { AuthVariables } from '../../lib/types'
 import { AppError } from '../../lib/errors'
 import { CoursesTestService } from '../courses/courses-test.service'

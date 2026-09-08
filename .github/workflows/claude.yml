@@ -18,6 +18,13 @@ jobs:
     # association here stops an outside contributor from starting a privileged, API-key-consuming
     # job. (The action enforces the same permission check internally; this refuses the run before
     # it ever spins up.)
+    #
+    # The gate covers who *starts* the job, not whose text it reads: invoking @claude on a fork's
+    # pull request still feeds an outsider's diff and body to a job holding contents:write and the
+    # API key. That is left to the maintainer's judgement rather than an `if:`, because the trigger
+    # this arrives through is `issue_comment`, whose payload describes an issue and carries no
+    # head repository — there is no fork flag to test. A condition that only covered the two
+    # pull_request_review* triggers would read like a guarantee while the common path stayed open.
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||

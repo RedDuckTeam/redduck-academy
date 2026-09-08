@@ -5,18 +5,20 @@ export const queryKeys = {
     detail: (slug: string) => ['courses', slug] as const,
   },
   lessons: {
-    detail: (courseSlug: string, lessonSlug: string) =>
-      ['lessons', courseSlug, lessonSlug] as const,
+    detail: (courseSlug: string, lessonSlug: string) => ['lessons', courseSlug, lessonSlug] as const,
     body: (courseSlug: string, moduleSlug: string, lessonSlug: string) =>
       ['lessons', courseSlug, moduleSlug, lessonSlug, 'body'] as const,
   },
   user: {
     completedLessons: () => ['user', 'completed-lessons'] as const,
     progressCards: () => ['user', 'progress-cards'] as const,
-    lesson: (courseSlug: string, lessonSlug: string) =>
-      ['user', 'lesson', courseSlug, lessonSlug] as const,
+    lesson: (courseSlug: string, lessonSlug: string) => ['user', 'lesson', courseSlug, lessonSlug] as const,
     settings: () => ['user', 'settings'] as const,
     rating: () => ['user', 'rating'] as const,
+  },
+  editor: {
+    lessonSource: (courseSlug: string, moduleSlug: string, lessonSlug: string) =>
+      ['editor', 'lesson-source', courseSlug, moduleSlug, lessonSlug] as const,
   },
   certificates: {
     all: () => ['certificates'] as const,

@@ -1,17 +1,5 @@
-// Build-time content tree builder. Walks the open-source `content/` Markdown tree and
-// turns its frontmatter into the same course/module/lesson structure the app types
-// describe, so the site can render the whole program and every lecture WITHOUT a backend.
-//
-// This runs only at build time / in the dev server (imported by vite.config.ts). It must
-// stay Node-only and dependency-light: relative imports and `yaml` only, no `@/` alias
-// (vite.config is loaded before the tsconfig-paths alias exists) and no browser/React code.
-//
-// Two artifacts are emitted from the one tree (see vite.config `contentAssets`):
-//   • /_content/_courses.json          — every course, structure only (no faq), for the
-//                                         program/index pages and course-access checks.
-//   • /_content/<course>/_manifest.json — a single course's structure WITH per-lesson faq,
-//                                         loaded on a lesson page (its course only).
-// Lesson prose stays in the per-lesson `.md` files and is never inlined here.
+// Imported by vite.config.ts, which loads before the tsconfig-paths alias exists: keep this
+// Node-only, relative imports and `yaml` only, no `@/` alias and no browser/React code.
 
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -65,8 +53,7 @@ interface RawFile {
   mtime: string
 }
 
-// Deterministic id for content that has no `id:` yet (a brand-new lesson in a PR, before a
-// maintainer assigns the DB row). Negative so it can never collide with a real Payload id.
+// Negative so a placeholder id can never collide with a real Payload row id.
 function syntheticId(key: string): number {
   let h = 0
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0
@@ -103,16 +90,8 @@ async function listLessonFiles(dir: string): Promise<string[]> {
   return out.sort()
 }
 
-/**
- * Build the full course tree from the content directory. Courses, modules, and lessons
- * flagged `isHidden` are dropped (matching the backend's public projection). Ordering
- * comes from each file's `order`, and each lesson's `next` slug is computed by flattening
- * its course in reading order.
- */
 export async function buildContentTree(contentDir: string): Promise<ManifestCourse[]> {
   const courses: ManifestCourse[] = []
-  // First pass builds every course; prerequisite links are resolved in a second pass once
-  // all course ids/titles are known.
   const prereqSlugByCourseSlug = new Map<string, string>()
 
   for (const courseDir of await listDirs(contentDir)) {
@@ -121,7 +100,7 @@ export async function buildContentTree(contentDir: string): Promise<ManifestCour
     try {
       courseMeta = await readFrontmatter(path.join(courseDir, '_course.md'))
     } catch {
-      continue // a directory without _course.md is not a course
+      continue
     }
     if (isHidden(courseMeta.data)) continue
 
@@ -157,13 +136,14 @@ export async function buildContentTree(contentDir: string): Promise<ManifestCour
           : null
 
         lessons.push({
-          id: typeof meta.data.id === 'number' ? meta.data.id : syntheticId(`${courseSlug}/${moduleSlug}/${lessonSlug}`),
+          id:
+            typeof meta.data.id === 'number' ? meta.data.id : syntheticId(`${courseSlug}/${moduleSlug}/${lessonSlug}`),
           title: typeof meta.data.title === 'string' ? meta.data.title : lessonSlug,
           slug: lessonSlug,
           moduleId,
           order: typeof meta.data.order === 'number' ? meta.data.order : 0,
           type: typeof meta.data.type === 'string' ? meta.data.type : 'lecture',
-          next: null, // filled after all lessons are collected
+          next: null,
           updatedAt: meta.mtime,
           createdAt: meta.mtime,
           faq: faq && faq.length ? faq : null,
@@ -184,7 +164,6 @@ export async function buildContentTree(contentDir: string): Promise<ManifestCour
     }
     modules.sort((a, b) => a.order - b.order)
 
-    // `next` points at the following lesson slug in the course's reading order.
     const flat = modules.flatMap((m) => m.lessons)
     flat.forEach((lesson, i) => {
       lesson.next = i + 1 < flat.length ? flat[i + 1].slug : null
@@ -199,15 +178,12 @@ export async function buildContentTree(contentDir: string): Promise<ManifestCour
       createdAt: courseMeta.mtime,
       prerequisiteCourse: null,
       modules,
-      // keep order for sorting; stripped from the emitted Course JSON below
       ...(typeof courseMeta.data.order === 'number' ? { order: courseMeta.data.order } : {}),
     } as ManifestCourse & { order?: number })
   }
 
-  // Sort courses by their frontmatter order (the array order is the reading order).
   courses.sort((a, b) => ((a as { order?: number }).order ?? 0) - ((b as { order?: number }).order ?? 0))
 
-  // Resolve prerequisites now that every course id/title is known.
   const bySlug = new Map(courses.map((c) => [c.slug, c]))
   for (const course of courses) {
     const prereqSlug = prereqSlugByCourseSlug.get(course.slug)
@@ -215,12 +191,10 @@ export async function buildContentTree(contentDir: string): Promise<ManifestCour
     if (target) course.prerequisiteCourse = { id: target.id, slug: target.slug, title: target.title }
   }
 
-  // Drop the internal `order` helper from courses before returning.
   for (const course of courses) delete (course as { order?: number }).order
   return courses
 }
 
-/** Serialize the all-courses index: full structure, no per-lesson faq (program pages). */
 export function coursesIndexJson(tree: ManifestCourse[]): string {
   const stripped = tree.map((course) => ({
     ...course,
@@ -232,9 +206,8 @@ export function coursesIndexJson(tree: ManifestCourse[]): string {
   return JSON.stringify(stripped)
 }
 
-/** Serialize a single course's manifest: structure only, no per-lesson faq. faq is ~85% of
- *  the payload and only the current lesson's is ever used, so it is parsed from that lesson's
- *  own `.md` frontmatter at request time instead (see loadLessonContent). */
+/** faq is ~85% of the payload and only the current lesson's is ever used, so it is stripped here
+ *  and parsed from that lesson's own `.md` at request time instead (see loadLessonContent). */
 export function courseManifestJson(course: ManifestCourse): string {
   return JSON.stringify({
     ...course,

@@ -67,7 +67,7 @@ function classify(relPath) {
   return { role: 'unknown', parts }
 }
 
-function validate(file, raw, meta, sets) {
+function validate(file, raw, sets) {
   const errors = []
   const warn = []
   const err = (msg) => errors.push(msg)
@@ -252,7 +252,7 @@ async function main() {
   let warnings = 0
   for (const file of targets) {
     const raw = await readFile(file, 'utf8')
-    const { errors, warn } = validate(file, raw, {}, sets)
+    const { errors, warn } = validate(file, raw, sets)
     const rel = relative(ROOT, file)
     if (errors.length === 0 && warn.length === 0) {
       ok++
