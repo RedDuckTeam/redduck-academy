@@ -133,7 +133,7 @@ function buildDecorations(view: EditorView): DecorationSet {
   return Decoration.set(decorations, true)
 }
 
-const livePreviewPlugin = ViewPlugin.fromClass(
+const decorationPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet
 
@@ -150,7 +150,7 @@ const livePreviewPlugin = ViewPlugin.fromClass(
   { decorations: (plugin) => plugin.decorations },
 )
 
-const livePreviewTheme = EditorView.theme({
+const decorationTheme = EditorView.theme({
   '.cm-md-h1': { fontSize: '1.7em', fontWeight: '600', lineHeight: '1.3' },
   '.cm-md-h2': { fontSize: '1.4em', fontWeight: '600', lineHeight: '1.3' },
   '.cm-md-h3': { fontSize: '1.2em', fontWeight: '600', lineHeight: '1.35' },
@@ -178,6 +178,6 @@ const livePreviewTheme = EditorView.theme({
   '.cm-md-list-mark': { color: 'var(--primary)' },
 })
 
-export function livePreview(): Extension {
-  return [livePreviewPlugin, livePreviewTheme]
+export function markdownDecorations(): Extension {
+  return [decorationPlugin, decorationTheme]
 }

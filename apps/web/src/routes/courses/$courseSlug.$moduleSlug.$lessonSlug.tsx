@@ -25,6 +25,7 @@ import {
 import { JsonLd } from '@/components/seo/json-ld'
 import { RichText } from '@/components/content/rich-text'
 import { MarkdownContent } from '@/components/content/markdown-content'
+import { lessonProseClass } from '@/components/content/rich-content-styles'
 import { loadLessonContent } from '@/lib/content/lesson-body'
 import { LessonSidebar } from '@/components/pages/lesson/lesson-sidebar/lesson-sidebar'
 import { LessonToc, MobileToc } from '@/components/pages/lesson/toc'
@@ -193,10 +194,10 @@ function LessonPage() {
                 </div>
                 {lessonBody != null ? (
                   <>
-                    <MarkdownContent source={lessonBody} className="prose dark:prose-invert max-w-none w-full" />
+                    <MarkdownContent source={lessonBody} className={lessonProseClass} />
                   </>
                 ) : lesson.content ? (
-                  <RichText data={lesson.content} className="prose dark:prose-invert max-w-none w-full" />
+                  <RichText data={lesson.content} className={lessonProseClass} />
                 ) : null}
               </>
 

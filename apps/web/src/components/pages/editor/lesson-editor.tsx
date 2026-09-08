@@ -18,7 +18,7 @@ import { useLessonSource } from '@/hooks/editor/useLessonSource'
 import { useMediaQuery } from '@/hooks/ui/useMediaQuery'
 import { checkContentRules } from '@/lib/editor/content-rules'
 import { draftKey } from '@/lib/editor/draft-store'
-import { readFrontmatter } from '@/lib/editor/frontmatter-patch'
+import { readFrontmatter } from '@/lib/editor/lesson-frontmatter'
 import { githubEditUrl, lessonFilePath } from '@/lib/editor/github-publish'
 import { splitSource } from '@/lib/editor/lesson-source'
 import { focusRing, noticeClass } from '@/lib/editor/styles'
@@ -93,7 +93,6 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
 
   const effectiveMode = canSplit ? mode : mode === 'split' ? 'write' : mode
   const { frontmatter, body } = splitSource(source)
-  const title = readFrontmatter(source)?.title ?? lessonSlug
 
   const violations = useMemo(
     () => (published.data === undefined ? [] : checkContentRules(source)),
@@ -212,7 +211,7 @@ export function LessonEditor({ courseSlug, moduleSlug, lessonSlug }: LessonEdito
 
           {effectiveMode !== 'write' && (
             <div className={cn(columnClass, paneHeight, 'overflow-x-hidden overflow-y-auto lg:pr-1')}>
-              <PreviewPane source={source} title={title} />
+              <PreviewPane source={source} lessonSlug={lessonSlug} />
             </div>
           )}
         </div>

@@ -1,9 +1,9 @@
-// Hand-rolled rather than a converter package: the route already carries ~171 KB of CodeMirror and
-// the Worker has a size limit.
+// Hand-rolled rather than a converter package: the paste path takes on no dependency, and every
+// rule that decides what a contributor ends up staring at is here to be read and pinned by a test.
 
 const HEADINGS: Record<string, number> = { H1: 1, H2: 2, H3: 3, H4: 4, H5: 5, H6: 6 }
 
-const BLOCK_TAGS = new Set(['P', 'DIV', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR'])
+const BLOCK_TAGS = new Set(['P', 'DIV', 'UL', 'OL', 'LI', 'DL', 'DT', 'DD', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR'])
 
 const INLINE_ONLY = new Set(['A', 'CODE', 'KBD', 'SAMP', 'BR', 'IMG'])
 
@@ -31,7 +31,7 @@ function childBlocks(parent: Node): string[] {
 
   const flush = () => {
     const text = inlineRun.replace(/[ \t]+/g, ' ').trim()
-    if (text) blocks.push(text)
+    if (text) blocks.push(text.split('\n').map(escapeLineStart).join('\n'))
     inlineRun = ''
   }
 
@@ -80,6 +80,10 @@ function convertBlock(element: HTMLElement): string {
     case 'UL':
     case 'OL':
       return listItems(element)
+    case 'DT':
+      // Markdown has no definition list. Bolding the term is the least the conversion can do to
+      // keep it from running into its definition, which is most of what a `<dl>` was saying.
+      return wrap(childBlocks(element).join(' '), '**')
     case 'BLOCKQUOTE':
       return childBlocks(element)
         .join('\n\n')
@@ -139,7 +143,7 @@ function table(element: HTMLElement): string {
 function convertInline(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) {
     // HTML collapses whitespace runs; keeping them would show up as stray gaps in the buffer.
-    return (node.nodeValue ?? '').replace(/\s+/g, ' ')
+    return escapeText((node.nodeValue ?? '').replace(/\s+/g, ' '))
   }
   if (node.nodeType !== Node.ELEMENT_NODE) return ''
 
@@ -161,11 +165,50 @@ function convertInline(node: Node): string {
     const href = element.getAttribute('href') ?? ''
     return href && inner.trim() ? `[${inner.trim()}](${href})` : inner
   }
-  if (tag === 'CODE' || tag === 'KBD' || tag === 'SAMP') return inner.trim() ? `\`${inner.trim()}\`` : ''
+  if (tag === 'CODE' || tag === 'KBD' || tag === 'SAMP') return codeSpan(element)
 
   // Reading the inline style back is what makes a Google Docs paste arrive with its emphasis
   // intact: it marks bold and italic runs with `<span style>`, never with <strong>/<em>.
   return wrap(wrap(inner, isBold(element) ? '**' : ''), isItalic(element) ? '*' : '')
+}
+
+function codeSpan(element: HTMLElement): string {
+  // Deliberately not the escaped inner text: a backslash inside a code span is a backslash.
+  const code = (element.textContent ?? '').replace(/\s+/g, ' ').trim()
+  if (!code) return ''
+  const longest = Math.max(0, ...Array.from(code.matchAll(/`+/g), (match) => match[0].length))
+  const fence = '`'.repeat(longest + 1)
+  // A span whose own text touches a backtick needs padding spaces, which the renderer strips back.
+  const padding = code.startsWith('`') || code.endsWith('`') ? ' ' : ''
+  return `${fence}${padding}${code}${padding}${fence}`
+}
+
+/**
+ * What arrives on the clipboard is prose that happens to be spelled with characters Markdown reads
+ * as syntax, so a sentence mentioning `*` or `[1]` has to be handed back the characters it came
+ * with. Only text nodes go through here — never the markup this file emits, and never a code span.
+ */
+function escapeText(text: string): string {
+  return text.replace(/[\\`*[\]<_]/g, (character, index: number) => {
+    // Escaping every `snake_case` identifier a lesson mentions would read worse than the problem,
+    // and CommonMark does not treat an intraword underscore as emphasis anyway.
+    if (character === '_') {
+      return /\w/.test(text[index - 1] ?? '') && /\w/.test(text[index + 1] ?? '') ? character : '\\_'
+    }
+    // `<` only opens markup when something tag-shaped follows it; `5 < 6` is left alone.
+    if (character === '<') return /[a-zA-Z!/?]/.test(text[index + 1] ?? '') ? '\\<' : character
+    return `\\${character}`
+  })
+}
+
+/** Markdown's block syntax only bites at the start of a line, so a pasted "# " is defused there. */
+function escapeLineStart(line: string): string {
+  return (
+    line
+      .replace(/^(#{1,6}(?=\s|$)|[-+](?=\s|$)|>)/, '\\$1')
+      // `\1.` would be a literal backslash, so an ordered list loses its delimiter instead.
+      .replace(/^(\d{1,9})([.)](?=\s))/, '$1\\$2')
+  )
 }
 
 /** Applies `symbol` around the text but outside its surrounding spaces — ` **x** `, never `** x **`. */

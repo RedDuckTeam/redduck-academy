@@ -1,9 +1,10 @@
 import { Download, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CopyButton } from '@/components/ui/copy-button'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { CopyButton } from '../copy-button'
 import { GithubSteps } from './github-steps'
-import { downloadMarkdown, githubEditUrl } from '@/lib/editor/github-publish'
+import { downloadMarkdown } from '@/lib/download-markdown'
+import { githubEditUrl } from '@/lib/editor/github-publish'
 import { focusRing } from '@/lib/editor/styles'
 import { cn } from '@/lib/utils'
 
@@ -31,7 +32,7 @@ export function PublishDialog({ open, onOpenChange, path, content }: PublishDial
 
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <CopyButton text={content} label="Copy .md" className="w-full justify-center" />
+              <CopyButton text={content} label="Copy .md" className={cn('w-full justify-center', focusRing)} />
               <Button
                 type="button"
                 variant="outline"

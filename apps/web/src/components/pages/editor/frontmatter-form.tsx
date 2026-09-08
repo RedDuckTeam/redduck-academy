@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { Text } from '@/components/ui/text'
-import { patchFrontmatter, readFrontmatter } from '@/lib/editor/frontmatter-patch'
+import { readFrontmatter, setTitle } from '@/lib/editor/lesson-frontmatter'
 import { cn } from '@/lib/utils'
 
 interface FrontmatterFormProps {
@@ -29,10 +29,7 @@ export function FrontmatterForm({ source, onSourceChange, className }: Frontmatt
       <Text variant="caps-12" element="span" className="text-muted-foreground">
         Title
       </Text>
-      <Input
-        value={frontmatter.title}
-        onChange={(event) => onSourceChange(patchFrontmatter(source, { title: event.target.value }))}
-      />
+      <Input value={frontmatter.title} onChange={(event) => onSourceChange(setTitle(source, event.target.value))} />
     </label>
   )
 }

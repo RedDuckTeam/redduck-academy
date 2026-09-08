@@ -7,26 +7,15 @@ import type { Pair, ParsedNode } from 'yaml'
  * `faq:` answers several lessons use, producing a diff on every file that has them.
  */
 
-/** The lesson keys the form owns. `id` is read-only here and `faq` is left entirely to the file. */
+/** Only the two keys the editor consumes — nothing else in the block is read or rewritten. */
 export interface LessonFrontmatter {
-  id: string | number | null
   title: string
   type: string
-  order: number | null
-  isHidden: boolean
-}
-
-/** `id` is deliberately not expressible: it must never be authored or altered from the editor. */
-export interface FrontmatterPatch {
-  title?: string
-  type?: string
-  order?: number
-  isHidden?: boolean
 }
 
 /**
- * Where a key the form *adds* is inserted. Keys already in the file keep the position they have:
- * nothing in CI checks key order, so reordering would produce a diff on files already on `main`.
+ * Where a `title:` the editor *adds* is inserted. Keys already in the file keep the position they
+ * have: nothing in CI checks key order, so reordering would produce a diff on files already on `main`.
  */
 const KEY_ORDER = ['id', 'title', 'type', 'order', 'isHidden', 'faq']
 
@@ -63,24 +52,13 @@ export function readFrontmatter(source: string): LessonFrontmatter | null {
 
   const row = data as Record<string, unknown>
   return {
-    id: typeof row.id === 'string' || typeof row.id === 'number' ? row.id : null,
     title: typeof row.title === 'string' ? row.title : '',
     type: typeof row.type === 'string' ? row.type : '',
-    order: typeof row.order === 'number' ? row.order : null,
-    isHidden: row.isHidden === true,
   }
 }
 
-export function patchFrontmatter(source: string, patch: FrontmatterPatch): string {
-  // Re-parsed between keys so a second insertion sees the offsets the first one produced.
-  return KEY_ORDER.reduce((current, key) => {
-    if (!(key in patch)) return current
-    const value = patch[key as keyof FrontmatterPatch]
-    return value === undefined ? current : setKey(current, key, value)
-  }, source)
-}
-
-function setKey(source: string, key: string, value: string | number | boolean): string {
+/** The only key the editor may write — `id` in particular must never be authored or altered from here. */
+export function setTitle(source: string, title: string): string {
   const located = locate(source)
   if (!located) return source
 
@@ -88,29 +66,18 @@ function setKey(source: string, key: string, value: string | number | boolean): 
   if (!isMap(contents)) return source
 
   const items = contents.items as Array<Pair<ParsedNode, ParsedNode | null>>
-  const edit = editFor(items, located.yaml, key, value)
+  const edit = titleEdit(items, located.yaml, scalarSource(title))
   if (!edit) return source
 
   const yaml = located.yaml.slice(0, edit.from) + edit.insert + located.yaml.slice(edit.to)
   return source.slice(0, located.start) + yaml + source.slice(located.start + located.yaml.length)
 }
 
-function editFor(
-  items: Array<Pair<ParsedNode, ParsedNode | null>>,
-  yaml: string,
-  key: string,
-  value: string | number | boolean,
-): Edit | null {
-  const index = items.findIndex((pair) => isScalar(pair.key) && pair.key.value === key)
+function titleEdit(items: Array<Pair<ParsedNode, ParsedNode | null>>, yaml: string, literal: string): Edit | null {
+  const existing = items.find((pair) => isScalar(pair.key) && pair.key.value === 'title')
+  if (existing) return replacementEdit(existing, yaml, literal)
 
-  // `isHidden: false` and an absent `isHidden` mean the same thing to every reader of these files,
-  // so the falsy state is the absent one. Otherwise toggling a switch twice would leave a line behind.
-  if (value === false) return index === -1 ? null : removalEdit(items, yaml, index)
-
-  const literal = scalarSource(value)
-  if (index !== -1) return replacementEdit(items[index], yaml, literal)
-
-  const rank = KEY_ORDER.indexOf(key)
+  const rank = KEY_ORDER.indexOf('title')
   const successor = items.find((pair) => {
     if (!isScalar(pair.key)) return false
     const other = KEY_ORDER.indexOf(String(pair.key.value))
@@ -119,12 +86,12 @@ function editFor(
 
   if (successor && isScalar(successor.key) && successor.key.range) {
     const lineStart = yaml.lastIndexOf('\n', successor.key.range[0] - 1) + 1
-    return { from: lineStart, to: lineStart, insert: `${key}: ${literal}\n` }
+    return { from: lineStart, to: lineStart, insert: `title: ${literal}\n` }
   }
   return {
     from: yaml.length,
     to: yaml.length,
-    insert: yaml.length === 0 ? `${key}: ${literal}` : `\n${key}: ${literal}`,
+    insert: yaml.length === 0 ? `title: ${literal}` : `\ntitle: ${literal}`,
   }
 }
 
@@ -141,22 +108,7 @@ function replacementEdit(pair: Pair<ParsedNode, ParsedNode | null>, yaml: string
   return { from: range[0], to: range[1] - trailing, insert: `${separator}${literal}` }
 }
 
-function removalEdit(items: Array<Pair<ParsedNode, ParsedNode | null>>, yaml: string, index: number): Edit | null {
-  const key = items[index].key
-  if (!isScalar(key) || !key.range) return null
-
-  const lineStart = yaml.lastIndexOf('\n', key.range[0] - 1) + 1
-  const next = items[index + 1]?.key
-  if (isScalar(next) && next.range) {
-    return { from: lineStart, to: yaml.lastIndexOf('\n', next.range[0] - 1) + 1, insert: '' }
-  }
-
-  // Last pair: take the newline that preceded it too, or the block closes on a blank line.
-  const preceding = /\r?\n$/.exec(yaml.slice(0, lineStart))
-  return { from: lineStart - (preceding?.[0].length ?? 0), to: yaml.length, insert: '' }
-}
-
 /** Let the YAML writer decide quoting; `lineWidth: 0` stops it folding a long title across lines. */
-function scalarSource(value: string | number | boolean): string {
+function scalarSource(value: string): string {
   return stringify(value, { lineWidth: 0 }).replace(/\n$/, '')
 }

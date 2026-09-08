@@ -5,8 +5,9 @@ import { defaultHighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirr
 import { EditorState, Prec } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
-import { EDITOR_CONTENT_ID, EditorToolbar, insertLink, toggleHeading, toggleWrap } from './editor-toolbar'
-import { livePreview } from './live-preview'
+import { EDITOR_CONTENT_ID, EditorToolbar } from './editor-toolbar'
+import { insertLink, toggleHeading, toggleWrap } from './markdown-commands'
+import { markdownDecorations } from './markdown-decorations'
 import { htmlToMarkdown } from '@/lib/editor/html-to-markdown'
 import { cn } from '@/lib/utils'
 
@@ -133,7 +134,7 @@ export function MarkdownEditor({
           markdown({ base: markdownLanguage }),
           syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
           EditorView.lineWrapping,
-          livePreview(),
+          markdownDecorations(),
           editorTheme,
           EditorView.contentAttributes.of({
             id: EDITOR_CONTENT_ID,

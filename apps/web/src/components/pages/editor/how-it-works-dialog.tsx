@@ -54,10 +54,10 @@ export function HowItWorksDialog({ path, className }: HowItWorksDialogProps) {
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">
-              Changes reach the site through a pull request, the same way every other change does. When you publish,
-              this file is copied to your clipboard and GitHub opens with it. GitHub makes your own copy of the
-              repository for you, so there is nothing to set up. Once you paste and confirm, your change becomes a pull
-              request for a maintainer to review.
+              Changes reach the site through a pull request, the same way every other change does. When you publish, you
+              copy the file and then open it on GitHub. GitHub makes your own copy of the repository for you, so there
+              is nothing to set up. Once you paste and confirm, your change becomes a pull request for a maintainer to
+              review.
             </Text>
 
             <Text variant="main-14" className="text-muted-foreground">

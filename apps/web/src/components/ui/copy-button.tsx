@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { copyToClipboard } from '@/lib/editor/github-publish'
-import { focusRing } from '@/lib/editor/styles'
+import { Button } from './button'
+import { copyToClipboard } from '@/lib/clipboard'
 import { cn } from '@/lib/utils'
 
 interface CopyButtonProps {
@@ -30,7 +29,7 @@ export function CopyButton({ text, label, className }: CopyButtonProps) {
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" className={cn('gap-2', focusRing, className)} onClick={copy}>
+    <Button type="button" variant="outline" size="sm" className={cn('gap-2', className)} onClick={copy}>
       {copied ? <Check className="size-4 lg:size-5" /> : <Copy className="size-4 lg:size-5" />}
       <span aria-live="polite">{copied ? 'Copied' : label}</span>
     </Button>
