@@ -97,18 +97,19 @@ function LessonNotFound() {
   return <LessonNotFoundPage courseSlug={courseSlug} />
 }
 
-interface EditPageLinkProps {
+interface SuggestEditLinkProps {
   courseSlug: string
   moduleSlug: string
   lessonSlug: string
 }
 
 /**
- * The site's edit affordance, and deliberately shown to logged-out visitors too: nothing before the
- * final hand-off to GitHub needs an account of any kind. Kept quiet on purpose — it sits beside the
- * lesson title, where anything louder would compete with the heading it annotates.
+ * Deliberately shown to logged-out visitors too: nothing before the final hand-off to GitHub needs
+ * an account of any kind. "Suggest" rather than "Edit" because the change goes to review, and
+ * because on a site with accounts and an admin panel "Edit" reads as staff-only. Kept quiet on
+ * purpose — it sits beside the lesson title, where anything louder would compete with the heading.
  */
-function EditPageLink({ courseSlug, moduleSlug, lessonSlug }: EditPageLinkProps) {
+function SuggestEditLink({ courseSlug, moduleSlug, lessonSlug }: SuggestEditLinkProps) {
   return (
     <Link
       to="/edit/$courseSlug/$moduleSlug/$lessonSlug"
@@ -117,7 +118,7 @@ function EditPageLink({ courseSlug, moduleSlug, lessonSlug }: EditPageLinkProps)
       className="text-muted-foreground hover:text-foreground focus-visible:text-foreground inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap underline-offset-4 transition-colors hover:underline"
     >
       <FilePenLine className="size-3.5" aria-hidden />
-      Edit page
+      Suggest an edit
     </Link>
   )
 }
@@ -189,7 +190,7 @@ function LessonPage() {
                       editor does not yet understand, and a wrong edit there deletes learners' saved
                       answers on the next content sync. */}
                   {lessonBody != null && lesson.type !== 'test' && (
-                    <EditPageLink courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
+                    <SuggestEditLink courseSlug={courseSlug} moduleSlug={moduleSlug} lessonSlug={lessonSlug} />
                   )}
                 </div>
                 {lessonBody != null ? (
