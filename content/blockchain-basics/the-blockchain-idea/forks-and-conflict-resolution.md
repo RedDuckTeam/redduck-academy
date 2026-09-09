@@ -4,36 +4,30 @@ title: Forks and conflict resolution
 type: lecture
 order: 6
 faq:
-  - question: Why do two valid blocks sometimes appear at almost the same time?
-    answer: Because messages take real time to travel across the planet, a block
-      produced in one place doesn't reach every node instantly. Two qualified
-      producers in different regions can finish valid blocks at nearly the same
-      moment, each pointing back at the same parent. The network then
-      temporarily holds two competing versions of the next block, a situation
-      called a fork, until it resolves.
-  - question: When the chain splits into two versions, how does the network pick the
-      real one?
-    answer: "Every protocol includes a fork choice rule: a deterministic procedure
-      each node runs using only local information, so honest nodes reach the
-      same answer without a referee. A common approach picks the branch with the
-      most work or stake behind it. As soon as one branch gets the next block
-      first, nodes on the losing branch see it, recognize it as more credible,
-      and switch over, discarding the block that lost."
-  - question: Why do exchanges make me wait for confirmations before my crypto is
-      available?
-    answer: A brand-new block is the one most likely to be replaced if the network
-      reorganizes (a reorg), which would undo the transactions inside it. Each
-      additional block built on top makes reversal exponentially less likely,
-      because a competing branch would have to overtake an ever-growing lead. So
-      high-value transactions wait for several confirmations, and the exact
-      number is a risk choice based on the value at stake.
-  - question: What's the difference between a soft fork and a hard fork?
-    answer: Both are permanent rule changes, but they behave differently. A soft
-      fork only tightens the rules, so blocks made under the new rules are still
-      valid to old software and old nodes keep following along without
-      splitting. A hard fork changes rules in a non-backwards-compatible way, so
-      old nodes reject the new blocks and the network splits into two separate
-      chains, each with its own history and future.
+  - question: Why do two valid blocks sometimes appear at the same time?
+    answer: >-
+      Messages take time to cross the planet. Two producers in different regions can finish
+      valid blocks moments apart, both pointing at the same parent.
+  - question: The chain split in two. How does the network pick a side?
+    answer: >-
+      Every protocol has a fork choice rule that each node runs identically with no referee. A
+      common one picks the branch with more work or stake, so the branch that gets the next
+      block wins.
+  - question: My transaction was in a block and now it is gone. What happened?
+    answer: >-
+      A reorg. Your block lost the fork choice, became an orphan, and its effects on state
+      were undone.
+  - question: Why do exchanges make me wait for confirmations?
+    answer: >-
+      The newest block is the most likely to be replaced by a reorg, and each block on top
+      makes reversal exponentially less likely. How many to wait for is a risk decision about
+      the amount at stake. Some chains finalise blocks instead, and a finalised block is never
+      reorganised.
+  - question: What is the difference between a soft fork and a hard fork?
+    answer: >-
+      A soft fork only tightens the rules, so blocks made under them still look valid to old
+      software and nothing splits. A hard fork changes rules old nodes reject, and the network
+      breaks into two chains with separate histories.
 ---
 
 > The last lesson assumed the ideal case, where nothing goes wrong. One block producer proposes a block, the network accepts it, the chain grows by one. In reality, the network is geographically spread across the planet and messages take time to travel. Two qualified block producers can finish their work at almost the same instant, in different parts of the world. Each broadcasts a block. Both blocks contain different transactions but point back at the same parent block. For a few seconds, half the network thinks the chain looks like one thing and the other half thinks it looks like something else. This lesson is about what happens in those moments and why it matters even when everything goes right.

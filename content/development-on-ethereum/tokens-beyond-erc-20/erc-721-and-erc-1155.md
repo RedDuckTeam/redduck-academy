@@ -4,39 +4,32 @@ title: ERC-721 and ERC-1155
 type: lecture
 order: 1
 faq:
-  - question: Should I use ERC-721 or ERC-1155 for my NFT project?
-    answer: "Use ERC-721 when each token is a unique item and the project is one
-      collection of similar but distinct things, such as a profile-picture
-      collection or a one-of-one artwork. It stores one owner per token ID and
-      gives rich per-token metadata. Use ERC-1155 when you have several token
-      types from the start or need batch operations, such as a game with
-      currencies, weapons, and consumables in one contract. A simple test: if
-      your tokens read as 'a registry of unique items' pick ERC-721, and if they
-      read as 'balances across many item types' pick ERC-1155."
-  - question: Why is ERC-1155 cheaper than ERC-721 when sending many tokens at once?
-    answer: Every Ethereum transaction has a fixed base cost of 21,000 gas no matter
-      what it does. Transferring three NFTs with ERC-721 means three separate
-      transactions, so you pay that base cost three times. ERC-1155 has a batch
-      transfer that moves all of them in a single transaction, paying the base
-      cost once, and the savings grow with the batch size. The batch is also
-      atomic, meaning either every transfer succeeds or none do, so you never
-      end up in a half-finished state.
-  - question: Can one ERC-1155 contract hold both a unique item and a fungible
-      in-game currency?
-    answer: Yes. ERC-1155 stores a balance for each combination of token ID and
-      holder, so an ID minted in the millions and spread across many wallets
-      behaves like a fungible currency, an ID with a supply of exactly one is a
-      unique non-fungible item, and an ID with a small supply like 50 is
-      'semi-fungible.' The contract does not enforce these categories. The label
-      just emerges from how many of each ID you mint. The same code path moves
-      all of them.
-  - question: Why did my transfer of an NFT to a smart contract revert?
-    answer: "Both standards have a 'safe' transfer that calls a hook on the
-      receiving contract: ERC-721 calls onERC721Received and ERC-1155 calls
-      onERC1155Received or onERC1155BatchReceived. If the recipient is a
-      contract that does not implement the right hook, the transfer reverts on
-      purpose. This protects tokens from being sent to a contract that has no
-      logic to handle them and would trap them forever."
+  - question: Should I use ERC-721 or ERC-1155?
+    answer: >-
+      ERC-721 for one collection of distinct items, one owner per token ID, with per-token
+      metadata from tokenURI. ERC-1155 for several token types in one contract or when you
+      need batch transfers, since it stores a balance per ID and holder.
+  - question: Why is ERC-1155 cheaper when moving several tokens at once?
+    answer: >-
+      Every transaction pays 21,000 gas before doing anything. Three ERC-721 transfers pay it
+      three times. safeBatchTransferFrom does all three in one transaction, and either every
+      transfer happens or none do.
+  - question: Can one ERC-1155 contract hold a game currency and a one-of-a-kind item?
+    answer: >-
+      Yes. Supply alone decides the label. An ID minted in the millions acts as currency,
+      supply 1 is non-fungible, supply 50 is semi-fungible, and all of them live in
+      balances[id][holder].
+  - question: How do I get the list of token IDs an address owns?
+    answer: >-
+      Neither standard has that call. ERC-721's balanceOf returns a count, and ERC-1155's
+      needs an ID you already know. ERC721Enumerable adds an on-chain index at the cost of
+      storage gas on every mint and transfer. For ERC-1155, rebuild the list off-chain from
+      TransferSingle and TransferBatch events.
+  - question: Why did my NFT transfer to a contract revert?
+    answer: >-
+      The safe transfer variants call a hook on the receiver. ERC-721 calls onERC721Received,
+      ERC-1155 calls onERC1155Received or onERC1155BatchReceived. A recipient without the
+      right hook reverts on purpose, so tokens do not get trapped.
 ---
 
 > You just deployed an ERC-20. The fungible model fits a lot of things: stablecoins, governance tokens, points systems, anything where one unit of a token is interchangeable with any other. But it doesn't fit unique items. There's no way for a single ERC-20 contract to say "Alice owns this specific token and Bob owns that one." For that you need a different shape. This lesson covers the two standards that fill the gap: ERC-721 for unique tokens, and ERC-1155 for many token types in one contract. It walks through how each one stores ownership, what they're good at, and how to pick between them.

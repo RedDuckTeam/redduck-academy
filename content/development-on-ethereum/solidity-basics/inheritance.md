@@ -4,36 +4,27 @@ title: Inheritance
 type: lecture
 order: 11
 faq:
-  - question: If one Solidity contract inherits from another, do I have to deploy
-      both contracts separately?
-    answer: No. When a child contract uses the `is` keyword to inherit from a
-      parent, everything in the parent (state variables, modifiers, functions,
-      events) becomes part of the child. Only one contract ends up on chain, and
-      it contains both the inherited code and the child's own code. When it
-      deploys, the parent's constructor runs first, then the child's constructor
-      body.
-  - question: Why won't Solidity let me override a function from a parent contract?
-    answer: Overriding is opt-in and requires two keywords. The parent function must
-      be marked `virtual` to say it can be replaced, and the child function must
-      be marked `override` to say it is replacing it. If either keyword is
-      missing you get a compile error. This is deliberate so you can never
-      override a parent function by accident.
-  - question: In what order do I list parent contracts when inheriting from more
-      than one?
-    answer: List them from most base (most general) to most derived (most specific),
-      left to right. If a parent B itself inherits from A, then A must come
-      before B in any list. Getting the order wrong produces a confusing
-      'linearization' error, because Solidity uses an algorithm called C3
-      linearization to compute a single ordering of all ancestors and your
-      written order must be consistent with the inheritance graph.
-  - question: What is the difference between calling super.foo() and Parent.foo()
-      inside an override?
-    answer: "`Parent.foo()` always calls the implementation declared in that
-      specific parent. `super.foo()` calls the next function in the linearized
-      inheritance order, which in multiple-inheritance chains may not be the
-      parent you visually expect. Use the named form when you want a specific
-      parent's version, and `super` when you want each layer of a chain to run
-      in order (the pattern OpenZeppelin's token extensions rely on)."
+  - question: Do I have to deploy the parent contract separately?
+    answer: >-
+      No. One contract goes on chain, holding both. The parent's constructor runs first at
+      deployment.
+  - question: Why won't Solidity let me override a parent function?
+    answer: >-
+      Overriding is opt-in. The parent function needs virtual, the child needs override, and
+      missing either is a compile error. An override can widen visibility but never tighten
+      it.
+  - question: In what order do I list parent contracts?
+    answer: >-
+      Most base first, most derived last, left to right. If B inherits from A, then A comes
+      before B in any list naming both. The reverse fails with a linearization error.
+      Solidity orders every ancestor with the C3 algorithm, and your written order has to
+      agree with the inheritance graph.
+  - question: What is the difference between super.foo() and Parent.foo()?
+    answer: >-
+      Parent.foo() always runs the implementation declared in that parent. super.foo() runs
+      the next contract in the linearization, which under multiple inheritance is not always
+      the immediate parent. In contract D is B, C, super.f() inside D reaches C, then B,
+      then A, and each ancestor runs once.
 ---
 
 > Solidity contracts can extend other contracts the same way classes extend in object-oriented languages. A child contract gets all the state variables, modifiers, functions, and events declared in its parents. Properly used, inheritance lets you write small, focused contracts that compose into larger ones. Improperly used, it produces multi-level hierarchies that are hard to follow and audit. This lesson covers the mechanics of inheritance, the rules around overriding, and the patterns most often seen in production code.

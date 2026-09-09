@@ -4,43 +4,30 @@ title: Upgradeable contracts and proxies
 type: lecture
 order: 9
 faq:
-  - question: Smart contract code is immutable once deployed, so how do real
-      projects upgrade it?
-    answer: They use the proxy pattern, which separates where data lives from where
-      code lives. Users interact with a proxy contract that holds all the state
-      but forwards every call to a separate implementation contract using
-      `delegatecall`, so the implementation's code runs against the proxy's
-      storage. To upgrade, you deploy a new implementation and just point the
-      proxy at it. The proxy address, storage, and balances stay the same, so
-      users keep using the same address while the behavior changes.
-  - question: Why can't an upgradeable contract use a normal constructor?
-    answer: A constructor runs once when a contract is deployed and only affects
-      that contract's own storage. For a contract behind a proxy, the
-      constructor would run against the implementation's storage rather than the
-      proxy's, so whatever it set up would be invisible to the proxy. Instead,
-      upgradeable contracts use an initializer function that is called
-      separately after deployment, protected by an `initializer` modifier so it
-      can only run once.
-  - question: What is the difference between a transparent proxy and a UUPS proxy?
-    answer: "In a transparent proxy, the upgrade and admin functions live on the
-      proxy itself, and it decides where to route a call based on who is
-      calling: the admin only ever hits admin functions, everyone else is
-      forwarded to the implementation. In UUPS (Universal Upgradeable Proxy
-      Standard), the upgrade logic lives in the implementation instead, so the
-      proxy is minimal and cheaper to deploy. OpenZeppelin recommends UUPS for
-      new projects, though UUPS carries the risk that deploying an
-      implementation without upgrade logic permanently bricks the contract."
-  - question: Why do I have to be so careful about storage layout when upgrading a
-      contract?
-    answer: Because the proxy's storage is shared across every version of the
-      implementation, and variables are stored by slot number in declaration
-      order. If a new version reorders, removes, or resizes existing variables,
-      a slot that used to mean one thing now means another and your data
-      silently corrupts. The safe rule is to only add new variables at the end,
-      never remove or reorder existing ones, and keep inheritance order the
-      same. OpenZeppelin's upgrade tooling checks this automatically and refuses
-      upgrades that would break the layout, which is why you should never write
-      your own proxy from scratch.
+  - question: How do projects upgrade code that is supposed to be immutable?
+    answer: >-
+      With a proxy. The proxy holds the state and `delegatecall`s every call to a separate
+      implementation contract, so that code runs against the proxy's storage. To upgrade,
+      deploy a new implementation and point the proxy at it. Address, storage, and balances all
+      stay.
+  - question: Why can't a contract behind a proxy use a constructor?
+    answer: >-
+      A constructor writes to the implementation's own storage, and the proxy never reads that
+      storage. Upgradeable contracts call an `initialize` function after deployment, with an
+      `initializer` modifier so it runs once.
+  - question: Transparent proxy or UUPS?
+    answer: >-
+      OpenZeppelin recommends UUPS for new projects. A transparent proxy keeps the upgrade and
+      admin functions on the proxy and routes by caller. UUPS, the Universal Upgradeable Proxy
+      Standard, puts the upgrade function in the implementation, so the proxy is minimal and
+      cheaper to deploy, and an implementation deployed without upgrade logic bricks it
+      permanently.
+  - question: What breaks if I reorder variables in a new implementation?
+    answer: >-
+      Your data. Proxies hold the storage that every version shares, and variables map to slots
+      in declaration order, so a moved variable makes a slot change meaning silently. Only add
+      new variables at the end. Never remove, reorder, or resize an existing one, and keep the
+      inheritance order. OpenZeppelin's plugin refuses an upgrade that breaks the layout.
 ---
 
 > Smart contracts are immutable. Once deployed, the code at an address cannot change. This is a security feature: users can audit a contract once and trust that what they read is what they're interacting with forever. But it's also a real limitation. If you find a bug in production, you can't patch it. If you want to add a new feature, you can't add it. If the protocol evolves, your users are stuck with the version you released. The proxy pattern solves this by separating where a contract's data lives from where its code lives. Once you understand it, you'll see it underneath almost every major DeFi protocol, every NFT collection designed with future upgrades in mind, and every account abstraction wallet. This lesson covers what proxies are, how they work, the two production patterns Transparent and UUPS, and the rules you have to follow to use them safely.

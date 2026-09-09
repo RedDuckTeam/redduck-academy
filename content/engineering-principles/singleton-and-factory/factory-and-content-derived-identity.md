@@ -4,24 +4,28 @@ title: The factory pattern and content-derived identity
 type: lecture
 order: 2
 faq:
-  - question: How can two people arrive at the same identifier without coordinating?
-    answer: The identifier is computed from the object's content and nothing else, so
-      anyone who holds the same content runs the same computation and gets the same
-      result. No message passes between them, and no shared table is consulted.
-      Matching inputs produce matching identifiers every time.
-  - question: Why is a content-derived identifier stronger than a registry entry?
-    answer: A registry entry has to be trusted, because a consumer takes the mapping
-      on the registry's word and is deceived if the registry is wrong or tampered
-      with. A content-derived identifier is recomputed by each consumer from content
-      it already holds, so there is nothing to trust and nothing for an attacker to
-      corrupt in the middle. The guarantee comes from a computation anyone can
-      repeat rather than from an authority anyone has to believe.
-  - question: What happens if the content changes?
-    answer: The identifier changes with it. This makes any substitution detectable,
-      since altered content no longer matches its original identifier. It also means
-      you cannot keep one identifier while changing what it points to, so a
-      content-derived identifier is the wrong choice when you need a stable name for
-      something whose content will change.
+  - question: What goes into a Git commit's identifier?
+    answer: >-
+      The files, the message, the author, and the identifier of the commit before it, hashed
+      together. No server assigns it and no table stores it.
+  - question: How do two people get the same identifier without talking to each other?
+    answer: >-
+      Same content, same computation, same identifier. No message passes between them.
+  - question: Why is this better than a registry?
+    answer: >-
+      A registry has to be queried, kept current, and believed. If it is wrong, out of date,
+      or tampered with, every consumer that trusted it is deceived at once. A content-derived
+      identifier is recomputed by each consumer from content it already holds, so there is no
+      keeper to trust and nothing for an attacker to corrupt in the middle.
+  - question: When is a content-derived identifier the wrong tool?
+    answer: >-
+      When you need a stable name for something whose content will change. The identifier
+      cannot outlive the exact content it came from. The same tie makes substitution
+      detectable, since altered content no longer matches its identifier.
+  - question: What does a factory do?
+    answer: >-
+      The single place every instance of a kind is produced, so they are all built the same
+      way. Being the one source, it is also where each instance's name is decided.
 ---
 
 > When one part of a system creates many instances of the same kind of thing, other parts have to find a specific instance and trust that they have the right one. The usual answer is a registry, a lookup table someone keeps. A stronger answer is to derive each instance's identifier from its own content, so anyone can recompute the identifier and check it, with no registry to query and no keeper to trust.

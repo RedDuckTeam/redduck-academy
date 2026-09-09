@@ -4,16 +4,19 @@ title: Why these principles matter
 type: lecture
 order: 2
 faq:
-  - question: Why teach principles instead of concrete, ready-to-use designs?
-    answer: A concrete design solves the one problem it was built for. A principle is
-      the reasoning that produced it, so it also solves the many problems no design
-      anticipated. When you understand why a design works, you can build the right one
-      for a case nobody handed you.
+  - question: What kind of failure comes from ignoring a design principle?
+    answer: >-
+      The expensive kind. Code that trusts a value the user controls becomes the security
+      hole someone walks through. A component that remembers state it never needed becomes
+      what an attacker corrupts. A convenience bolted onto the part holding the assets becomes
+      the reason a small change leaks them.
   - question: These examples are not from my stack. Will they still help me?
-    answer: Yes. A principle is deliberately independent of any stack, which is what
-      makes it a principle. The examples use widely understood systems so the idea
-      transfers directly to whatever you build, including tools that did not exist when
-      the principle was written down.
+    answer: >-
+      Yes. A principle describes why a design is good rather than how one tool works, so it
+      outlives the framework you build on today.
+  - question: I already agree with all of this. Is that enough?
+    answer: >-
+      No. Using one, once, on a real design is where it starts to pay.
 ---
 
 A system fails in production. Someone traces it to a single place where the code trusted a value the user controlled. No algorithm was broken and no library was misused. A design principle was ignored, and that principle had a name and a well-known reason. The expensive failures in software usually look like this. The knowledge to prevent them was available all along. The principle that carried it simply went unused.

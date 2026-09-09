@@ -4,28 +4,24 @@ title: What is blockchain
 type: lecture
 order: 0
 faq:
-  - question: If everyone keeps their own copy of a blockchain, what stops someone
-      from secretly editing it?
-    answer: Each block stores the cryptographic hash (a fixed-length fingerprint) of
-      the block before it. Change anything in an old block and its hash changes,
-      so the next block's stored 'previous hash' no longer matches and the chain
-      visibly breaks. On top of that, thousands of independent computers each
-      hold their own copy, so tampering with one copy does not change any of the
-      others.
-  - question: Why is a blockchain called a 'chain' of blocks?
-    answer: Records are grouped into batches called blocks, and every block carries
-      the hash of the block before it, linking them into an ordered sequence.
-      That backward-pointing link is literally a chain of blocks, which is where
-      the name comes from. It also makes the whole history tamper-evident,
-      because breaking one link invalidates every block after it.
-  - question: How can thousands of computers with no one in charge agree on the same
-      blockchain?
-    answer: Every machine runs the same software, holds the same data, and checks
-      each new block against the same rules, so honest nodes independently reach
-      the same conclusions. When two nodes happen to produce different new
-      blocks at almost the same time, a separate mechanism called consensus
-      decides which one becomes the official version. Without consensus the
-      copies could drift apart.
+  - question: If everyone keeps their own copy of a blockchain, what stops someone from editing an old block?
+    answer: >-
+      Each block stores the hash of the block before it, a fixed-length fingerprint of its
+      contents. Change anything in an old block and its hash changes, so the next block's
+      previous-hash field stops matching and the break is visible. Every node holds its own
+      copy too, so editing one copy changes nothing anywhere else.
+  - question: What is inside a block?
+    answer: >-
+      A header and a batch of items. The header holds the previous block's hash, a 32-byte
+      Merkle root covering every item, and a timestamp. That keeps the header near 80 bytes
+      even when the block holds thousands of items.
+  - question: How do thousands of computers with no one in charge end up with the same chain?
+    answer: >-
+      Every node checks each new block against the same rules, so they all reach the same
+      verdict alone. Consensus settles the rare tie.
+  - question: Where is a blockchain stored?
+    answer: >-
+      On every node at once. None of the copies is the original.
 ---
 
 > You now have the cryptographic primitives. Hashes that uniquely identify data, keys that prove identity, signatures that bind authorship to a message, Merkle trees that commit to large sets in 32 bytes. Standing alone, none of these is a blockchain. A blockchain is what happens when you arrange those primitives in a very specific way to solve a very specific problem. This lesson builds the structure up from scratch, using only the parts you already have.

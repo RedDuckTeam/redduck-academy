@@ -4,45 +4,33 @@ title: What Solana traded for what
 type: lecture
 order: 8
 faq:
-  - question: Why is running a Solana validator so much more expensive than a
-      Bitcoin node?
-    answer: "Solana targets far higher throughput, and that speed requires demanding
-      hardware: at minimum a 12+ core CPU, 256GB+ of RAM, multiple NVMe SSDs in
-      RAID, and a 1 Gbps symmetric connection, with monthly costs in the
-      four-figure range. A Bitcoin or Ethereum full node, by contrast, can run
-      on a Raspberry Pi. The cost of Solana's choice is that fewer people can
-      afford to run validators independently, creating more centralization
-      pressure. The bet is that hardware keeps getting cheaper and faster, so
-      today's high requirements will look modest later."
-  - question: Why is Solana programming harder than Ethereum for dynamic data structures?
-    answer: Every Solana transaction must declare in advance every account it will
-      read or write, which is exactly what lets the runtime run non-conflicting
-      transactions in parallel across CPU cores. The cost is that patterns
-      needing data discovered at runtime, such as walking a linked list of
-      unknown shape, dispatching to a program chosen at runtime, or iterating a
-      collection of unknown size, are awkward and often need workarounds. In
-      short, Solana trades some programmer flexibility for execution
-      parallelism, which is a clear win for predictable DeFi-style access
-      patterns and a tax on more dynamic ones.
-  - question: Why does Solana cap compute so tightly compared to Ethereum's gas?
-    answer: Solana chose 400ms slots, and you cannot have both very fast slots and
-      generous compute budgets, so the leader must finish executing within the
-      slot. That gives a 200,000 compute-unit default per instruction and a 1.4
-      million maximum, more than an order of magnitude tighter than Ethereum's
-      roughly 30 million gas per block. This forces patterns like off-chain
-      compute with on-chain verification and splitting heavy work across
-      multiple instructions and transactions. The payoff is user-perceived
-      latency measured in seconds rather than minutes.
-  - question: Is a Solana transaction final instantly?
-    answer: No. "Good enough" confirmation is fast, but true finality is layered and
-      harder to describe than Bitcoin's or Ethereum's. Most applications treat a
-      block as confirmed once a supermajority of stake has voted on it, which
-      usually happens within a few seconds, but full cryptoeconomic finality
-      (from accumulated Tower BFT lockouts) takes around 12.8 seconds on
-      mainnet. Because each level of confirmation just adds exponentially more
-      security with no single clear threshold, bridges and exchanges pick their
-      own confirmation levels, and bridges typically wait for full finality
-      before crediting funds.
+  - question: What hardware does a validator need?
+    answer: >-
+      A 12-core CPU and 256GB of RAM as a floor, several NVMe SSDs in RAID, and a 1 Gbps
+      symmetric connection, which runs to four figures a month. Fewer people can afford that,
+      which is real centralization pressure. The bet is that hardware keeps getting cheaper.
+  - question: Why is walking a linked list awkward in a Solana program?
+    answer: >-
+      Every transaction names every account it will read or write before it runs, so anything
+      whose shape you only discover mid-execution has no way to be declared. That same rule is
+      what lets the runtime run non-conflicting transactions on separate cores. Programmer
+      flexibility was traded for execution parallelism.
+  - question: Why is the compute budget so tight?
+    answer: >-
+      Because slots are 400ms and the leader has to finish executing inside one. You get
+      200,000 compute units per instruction by default and 1.4 million at most. Heavy work
+      gets split across instructions and transactions, or moved off chain with on-chain
+      verification. What you buy is confirmation in seconds.
+  - question: Is my transaction final as soon as it confirms?
+    answer: >-
+      No. Most applications treat a block as good once a supermajority of stake has voted,
+      which takes a few seconds. Full cryptoeconomic finality from accumulated Tower BFT
+      lockouts takes about 12.8 seconds on mainnet. Bridges and exchanges pick their own
+      level, and bridges usually wait for full finality.
+  - question: Does having no mempool mean no MEV?
+    answer: >-
+      No. The ordering power moved to the leader, who can reorder inside their window or
+      accept private bundles for tips.
 ---
 
 > Every design choice behind Solana came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. What was given up to get those wins deserves an honest accounting. Every design decision in distributed systems has a cost. Solana made specific trades, and understanding them is what separates a developer who can reason about chains from one who just picks whichever chain is currently popular.

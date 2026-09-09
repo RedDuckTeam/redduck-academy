@@ -4,29 +4,24 @@ title: "Off-chain state: events, logs, and indexers"
 type: lecture
 order: 45
 faq:
-  - question: Why should I emit an event for every important state change in my
-      Solana program?
-    answer: Reading an account tells you its current state but not how it got there,
-      and once an account is closed its history is gone from the chain entirely.
-      Questions like when a position opened, or how many opened in the last day,
-      cannot be answered from current state alone. Emitting an event on each
-      meaningful change writes that fact into the permanent transaction record,
-      so off-chain consumers can reconstruct full history later even for
-      accounts that no longer exist.
-  - question: Can one Solana program read another program's events or logs on chain?
-    answer: No. Account data is the only thing programs can read from each other.
-      There is no on-chain way to subscribe to another program's logs or events.
-      So if your program needs to react to something another program did, you
-      read that program's account state. Logs and events exist purely for
-      off-chain consumers like frontends, analytics, and indexers.
-  - question: Do I have to pay a third-party service to index my Solana program's data?
-    answer: "No, though services like Helius or Triton are the fastest path and the
-      right choice for most apps early on. You can run your own indexer with far
-      less infrastructure than people expect: a small worker that polls a normal
-      RPC every few seconds, decodes transactions and accounts with your
-      program's IDL, and upserts the results into a database like Postgres.
-      Teams switch to their own when the third-party bill grows, when they need
-      data sovereignty, or when they want custom processing."
+  - question: Can my program read another program's events on chain?
+    answer: >-
+      No. Account data is the only thing one program can read from another.
+  - question: Why emit an event when the account already holds the state?
+    answer: >-
+      Current state says nothing about how it got there, and a closed account leaves no trace at
+      all. Events land in the transaction's program logs, which archival nodes and indexers
+      keep long after the account is gone.
+  - question: Do I have to pay for an indexer like Helius?
+    answer: >-
+      No. Helius webhooks and Triton's Yellowstone gRPC stream are the fast path, and most apps
+      should start there. Your own gets cheaper once the bill grows, and it is the only option
+      when you need data sovereignty.
+  - question: What does running my own off-chain indexer actually involve?
+    answer: >-
+      One worker process. It polls a normal RPC every ten seconds, decodes transactions and
+      accounts with your IDL, and upserts rows into Postgres keyed by signature. No validator,
+      no streaming plugin.
 ---
 
 > Your Solana program produces three kinds of output. Account data is what other programs read. Program logs are what off-chain consumers read. Transaction metadata records what happened. None of these are interchangeable. The rule that ties them together is "emit an event for every important state change," which is how your data actually leaves the chain and reaches your frontend.

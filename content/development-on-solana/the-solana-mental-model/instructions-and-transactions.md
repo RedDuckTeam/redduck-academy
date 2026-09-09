@@ -4,27 +4,27 @@ title: Instructions and transactions
 type: lecture
 order: 3
 faq:
-  - question: What is the difference between an instruction and a transaction on Solana?
-    answer: An instruction is a single function call on the chain, made of a
-      program_id (which program to run), an accounts list (the state it will
-      touch), and a data field holding the packed arguments. A transaction is
-      the signed envelope that carries one or more instructions to the network,
-      along with a header. Nothing changes state on Solana except through a
-      transaction, and its instructions run in order, top to bottom.
-  - question: If one instruction in my Solana transaction fails, do the other
-      instructions still take effect?
-    answer: No. The instructions in a transaction execute atomically, so either
-      every one succeeds and all their state changes commit, or one fails and
-      none of the changes happen, with no partial state. This is why bundling
-      steps like approve, swap, and refund into one transaction is useful. Note
-      that the fee is still charged even when the transaction fails, because the
-      validators did the work to try.
-  - question: Why does a Solana transaction include a recent blockhash?
-    answer: The recent_blockhash is the hash of a recent block, and it proves the
-      transaction was built recently. Validators reject any transaction whose
-      blockhash is more than about 150 blocks old, which stops someone from
-      replaying the same signed transaction far in the future. It is part of the
-      transaction header, alongside the list of signatures.
+  - question: What is the difference between an instruction and a transaction?
+    answer: >-
+      An instruction is one function call. It carries a program_id naming the program to
+      run, an accounts list naming the state it touches, and a data field holding the packed
+      arguments. A transaction is the signed envelope around one or more instructions plus a
+      header. Nothing changes state on Solana except through a transaction.
+  - question: If one instruction in my transaction fails, do the others still take effect?
+    answer: >-
+      No. Either every instruction succeeds and all their state changes commit, or one fails
+      and none of the changes happen. The fee is charged either way.
+  - question: Do the instructions in a transaction run in order?
+    answer: >-
+      Yes, top to bottom.
+  - question: Why does a transaction include a recent blockhash?
+    answer: >-
+      It proves the transaction is fresh. Validators reject any blockhash more than about
+      150 blocks old, which stops a signed transaction from being replayed later.
+  - question: What does marking an account as a signer do?
+    answer: >-
+      The runtime checks that a matching signature is present before the program loads, so
+      your code can rely on every account marked signer having signed the transaction.
 ---
 
 > Accounts hold the state. Instructions change it. A transaction is the envelope that carries one or more instructions to the chain, signed by whoever has the authority to make them happen. Nothing else on Solana changes state. Every balance update, every program deployment, every NFT mint is a transaction.

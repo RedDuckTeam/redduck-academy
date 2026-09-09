@@ -4,37 +4,29 @@ title: Randomness on chain
 type: lecture
 order: 39
 faq:
-  - question: Why can't a Solana program just generate a random number?
-    answer: The Solana runtime is a deterministic state machine, meaning every
-      validator must execute a transaction and reach the same result or
-      consensus breaks. A real random function would return different values to
-      different validators, so no rand() exists inside a program. Any randomness
-      has to come from a source that all validators can agree on yet no one can
-      manipulate, which is what a verifiable random function provides.
-  - question: Why is it unsafe to use the slot number or block timestamp as a random
-      seed?
-    answer: Those values are deterministic so consensus survives, but they are all
-      visible to or controlled by the slot leader producing the block. A leader
-      with a financial stake can simulate the outcome and simply skip publishing
-      blocks until the result favors them, paying only the lost block reward.
-      Whenever the prize is worth more than that reward the attack is
-      profitable, and real lotteries have been drained this way.
-  - question: How does a VRF stop the randomness oracle from cheating on the result?
-    answer: A verifiable random function produces both a random output and a
-      cryptographic proof that the output came from a specific seed and the
-      oracle's private key. Because the output is bound to that committed seed,
-      the oracle cannot secretly try many seeds and publish only the one it
-      likes, nor reuse an old favorable result, without the proof failing
-      on-chain verification. Either it returns the one cryptographically
-      determined value or your program rejects it.
-  - question: Why can't I use the random number in the same transaction that requests it?
-    answer: "VRF is asynchronous: your program submits a request in one transaction,
-      and the number only arrives slots later in a second transaction when the
-      off-chain oracle delivers the signed result via a callback. The number
-      does not exist yet when the request returns, so anything that depends on
-      it, like picking a winner, must happen inside the callback handler. Keep
-      that callback minimal, because if it runs out of compute or panics it
-      reverts and you get no randomness."
+  - question: Can a Solana program generate a random number on chain?
+    answer: >-
+      No. Every validator runs the transaction and must reach the same answer. A real random
+      function would give each one a different value and break consensus.
+  - question: Is the slot number or the block timestamp safe as a random seed?
+    answer: >-
+      No. The slot leader sets or sees both before publishing the block. A leader with a
+      stake in the outcome simulates the draw and skips any block whose result goes against
+      them, losing one block reward. Any prize worth more than that reward makes the attack
+      profitable.
+  - question: How does a VRF stop the oracle from picking the result it likes?
+    answer: >-
+      The proof binds the output to one committed seed and the oracle's private key. Trying many
+      seeds and publishing the best one fails verification, and so does reusing an old output.
+  - question: Why can't I use the random number in the transaction that requests it?
+    answer: >-
+      It does not exist yet. The request writes a pending PDA and returns, and the number
+      arrives slots later in a second transaction from the oracle. Everything that consumes it
+      lives in the callback handler.
+  - question: What happens if my VRF callback runs out of compute?
+    answer: >-
+      It reverts and you get no randomness, having already paid for the request. Keep callbacks
+      small, store the result, and leave heavy work to a later instruction.
 ---
 
 > Solana programs can't generate random numbers on their own. The reasons are structural rather than solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. Real randomness has to come from an external source with a cryptographic proof, which is exactly what MagicBlock VRF provides and what a consumer program wires up to receive verified random numbers in production.

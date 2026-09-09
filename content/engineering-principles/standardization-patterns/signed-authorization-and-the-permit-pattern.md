@@ -4,23 +4,30 @@ title: Signed authorization and the permit pattern
 type: lecture
 order: 2
 faq:
-  - question: How can someone act on my behalf if I am not online?
-    answer: You express your consent in advance as a message signed with your private
-      key. Anyone can carry that signed message to the target system and present it
-      together with the action it permits. The system checks the signature against your
-      public key and executes, so the only thing that has to be present at that moment is
-      your agreement, which the message carries in your place.
-  - question: What has to be inside a signed authorization?
-    answer: At a minimum it must name who is allowed to act, the exact action permitted,
-      the specific system it applies to, and a time after which it expires, plus a guard
-      so the same message cannot be replayed. A signature that omits any of these can be
-      presented in a situation the signer never intended, such as an old grant used
-      years later or a single approval spent more than once.
-  - question: Does every token support signed approvals like permit?
-    answer: No. Only a token whose contract implements the permit extension can verify an
-      offline approval signature, because that verification happens inside the token
-      contract itself. A token without it still requires the holder to send an on-chain
-      approval transaction and pay the fee for it.
+  - question: How can someone act for me when I am not online?
+    answer: >-
+      You sign the authorization in advance with your private key, offline and at no cost.
+      Whoever will act carries that message to the target system and presents it with the
+      action. The system checks the signature against your public key and executes.
+  - question: What must a signed authorization pin down?
+    answer: >-
+      Five things. Who may act, the exact action and its limits, the target system, an
+      expiry, and a one-time value against replay.
+  - question: What breaks if the message leaves the expiry out?
+    answer: >-
+      The grant stays live forever, and an old authorization still works years later. Leave
+      the target system out and a signature meant for a test system can be replayed against
+      the real one. Leave out the replay guard and one approval can be spent again and again.
+  - question: Is a pre-signed URL the same idea?
+    answer: >-
+      Yes. A link to one object with a signature attached, valid for a limited time. Amazon
+      S3 issues them, and the service checks that signature before releasing the file.
+      Whoever opens the link needs no account.
+  - question: Does every token support permit?
+    answer: >-
+      No. Only tokens whose contract implements EIP-2612, since the signature check happens
+      inside the token contract. Everyone else still sends an approve transaction and pays
+      for it.
 ---
 
 > Sometimes you need to let someone else act for you on a system you cannot reach right now. You may have no account there, no open session, or no way to pay for the action at the moment it has to happen. Your consent does not require your presence. It can be a message you sign offline, at no cost, that anyone can carry to the system and present alongside the action it permits.

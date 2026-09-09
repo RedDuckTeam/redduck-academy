@@ -4,30 +4,26 @@ title: Cross-Program Invocation (CPI)
 type: lecture
 order: 1
 faq:
-  - question: Why can't my Solana program just change token balances directly?
-    answer: "Every account has exactly one owner program, and only that owner is
-      allowed to mutate the account's data. SPL tokens live in accounts owned by
-      the Token Program, so your program can't simply overwrite balances. To
-      move them, you make a Cross-Program Invocation (CPI): you build a request
-      and hand it to the runtime, which asks the Token Program to perform the
-      change on your behalf if your request is well-formed and you have the
-      right authority."
-  - question: Can a program I call through CPI escalate its permissions on the
-      accounts I pass it?
-    answer: "No. Privileges propagate through a CPI but never grow: an account that
-      was read-only in your handler stays read-only, and a non-signer can't
-      suddenly become a signer downstream, because the runtime checks. A program
-      can only delegate authority it already holds. You can, however, drop
-      authority, for example passing a writable account as read-only to a
-      program that only needs to read it."
-  - question: What's the difference between invoke and invoke_signed on Solana?
-    answer: invoke forwards the signers that already exist in your transaction down
-      into the called program, such as a user's signature used to move their own
-      tokens. invoke_signed does the same but additionally lets your program
-      sign as a PDA it controls by passing that PDA's seeds. The runtime
-      re-derives the address, confirms it belongs to your program, and treats it
-      as a signer. This PDA-signing ability is the one exception to the rule
-      that CPIs can't add new signers.
+  - question: Why can't my program just overwrite a token balance?
+    answer: >-
+      Every account has exactly one owner program, and only that owner may change its data.
+      SPL token balances live in accounts the Token Program owns, so your program asks it to
+      move them through a Cross-Program Invocation.
+  - question: Can a program I call escalate privileges on the accounts I pass it?
+    answer: >-
+      No. A read-only account stays read-only in the called program, and a non-signer never
+      becomes a signer. The runtime checks. You can go the other way and pass a writable
+      account as read-only to a program that only needs to read it.
+  - question: What's the difference between invoke and invoke_signed?
+    answer: >-
+      invoke forwards the signers your transaction already has. invoke_signed forwards those
+      and lets your program sign as a PDA it controls. You pass the PDA's seeds, the runtime
+      re-derives the address, confirms it belongs to your program, and adds it to the signer
+      set.
+  - question: How deep can CPIs nest?
+    answer: >-
+      Four levels. Your handler is depth one, and the runtime rejects any call past depth
+      four.
 ---
 
 > Solana programs are not isolated. A program can call another program in the middle of its own execution, pass it accounts, and observe the result before continuing. This is how a swap program moves SPL tokens, how a lending program reads price oracles, how any nontrivial protocol composes services. The mechanism is called Cross-Program Invocation. The runtime gives you two syscalls, `invoke` and `invoke_signed`, plus a strict set of rules about what authority crosses with the call. Once you understand those rules, the rest of Solana's ecosystem opens up to your programs.

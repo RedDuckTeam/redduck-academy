@@ -4,32 +4,28 @@ title: Proof of History
 type: lecture
 order: 6
 faq:
-  - question: How does Proof of History work as a clock?
-    answer: It repeatedly runs a hash function (SHA-256) on its own output, so each
-      result can only have come after the one before it. Because there is no
-      shortcut, reaching a given point in the chain requires computing every
-      step in order, which takes measurable time. That long chain of hashes is
-      the clock, and each link records that real time passed between one moment
-      and the next.
+  - question: Why is Proof of History called a clock?
+    answer: >-
+      Each output is the SHA-256 hash of the one before it, with no shortcut. Reaching a
+      given point means computing every step in order, so the length of the chain measures
+      how much real time passed.
   - question: Is Proof of History Solana's consensus mechanism?
-    answer: No. Proof of History is only a clock that orders events in time.
-      Agreeing on which version of history is canonical is a separate job
-      handled by Solana's consensus mechanism, Tower BFT, which runs on top of
-      it. PoH speeds consensus up by removing the need to vote on what time it
-      is, but it does not replace consensus.
-  - question: Why does my Solana transaction expire after about a minute?
-    answer: Every transaction includes a recent_blockhash, which is a snapshot of a
-      recent point on the Proof of History chain and proves the transaction was
-      built after that point. Once that blockhash falls outside the validity
-      window of roughly 150 slots (about a minute), the network rejects any
-      transaction still referencing it. This is what stops old transactions from
-      being replayed indefinitely.
-  - question: Does Proof of History make Solana secure against double-spends?
-    answer: No. Proof of History only protects the order of past events, since
-      rewriting the order would mean redoing all the hash work in between.
-      Protection against double-spends, censorship, and invalid state changes
-      comes from the consensus layer and the runtime's validation rules, not
-      from PoH.
+    answer: >-
+      No. PoH is a clock that orders events. Tower BFT is the consensus mechanism, and it
+      runs on top of the clock.
+  - question: Why does my transaction expire after about a minute?
+    answer: >-
+      Its recent_blockhash names a point on the Proof of History chain, and that point stays
+      valid for about 150 slots, roughly a minute.
+  - question: Does Proof of History protect against double-spends?
+    answer: >-
+      No. It only fixes the order of past events, since rewriting that order would mean
+      redoing every hash in between. Double-spends, censorship and invalid state changes are
+      stopped by the consensus layer and the runtime's validation rules.
+  - question: How long is a Solana slot?
+    answer: >-
+      About 400 milliseconds. The leader bundles every 64 ticks into one slot, which is
+      Solana's block.
 ---
 
 > Most blockchains spend a lot of their throughput on the question "what time is it?" Validators have to agree on the order of events, and figuring that out usually means a lot of back-and-forth voting before any real work can begin. Solana's answer is a clock that everyone can verify after the fact, without trusting anyone in particular. That clock is called Proof of History. Understanding what it is and what it is not is the last conceptual piece before code.

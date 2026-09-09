@@ -4,28 +4,30 @@ title: Tests with solana-bankrun
 type: lecture
 order: 80
 faq:
-  - question: How can I test time-locked Solana logic without actually waiting 24 hours?
-    answer: solana-bankrun lets you fast-forward the chain's clock with
-      context.warpToSlot, jumping the slot counter to any future value. The
-      Clock sysvar inside your program updates accordingly, so code that reads a
-      timestamp behaves as if that much time has passed. A test for a 24-hour
-      lockup, a year-long vesting schedule, or a 30-day subscription runs in
-      milliseconds instead of real time.
-  - question: Why is solana-bankrun faster than solana-test-validator for running tests?
-    answer: solana-test-validator boots a real validator in a subprocess and talks
-      to it over a real RPC port, so startup takes ten to thirty seconds and
-      every transaction goes through real slot timing. solana-bankrun instead
-      runs your program's compiled bytecode in-process against an in-memory
-      Bank, so tests finish in milliseconds. Bankrun is the fast inner-loop
-      tool. You might still use the real validator right before release to check
-      full RPC integration.
-  - question: How do I fund an account in a bankrun test without an airdrop or faucet?
-    answer: Use context.setAccount, which writes account state directly into the
-      simulated chain. You pass a pubkey and the lamports, owner, and data you
-      want, and the account simply exists, no airdrop or network wait needed.
-      Use it only to seed prerequisites like funding keypairs, though, and never
-      to skip your actual initialize logic, or a test could pass even when
-      initialization is broken.
+  - question: How do I test a 24-hour lockup without waiting a day?
+    answer: >-
+      context.warpToSlot jumps the chain's slot counter forward, and the Clock sysvar your
+      program reads jumps with it. Slots run about 400ms, so a day is roughly 216,000 slots. The
+      test still finishes in milliseconds.
+  - question: Why is solana-bankrun so much faster than solana-test-validator?
+    answer: >-
+      The validator is a real one in a subprocess behind a real RPC port, ten to thirty seconds
+      to boot, with real slot timing on every transaction. Bankrun runs your compiled bytecode
+      in-process against an in-memory Bank. Transactions take microseconds.
+  - question: How do I fund a keypair in a test with no airdrop?
+    answer: >-
+      context.setAccount writes the account straight into the simulated chain. Give it a pubkey
+      plus lamports, owner, data and the executable flag, and the account exists. Use it for
+      prerequisites like funding a signer, never to hand-build the state your initialize
+      instruction is supposed to write.
+  - question: How do I assert that an instruction fails with my custom error?
+    answer: >-
+      Wrap the call in try/catch, call expect.fail right after it so a success fails the test,
+      and in the catch assert err.toString() includes the error name.
+  - question: Should I be using LiteSVM or Mollusk instead?
+    answer: >-
+      Not while bankrun fits. LiteSVM is thinner and often faster, with gaps in some sysvars.
+      Mollusk is Rust-only, built for native programs and for fuzzing one instruction at a time.
 ---
 
 When you say "I finished this program," that should mean "I covered every behavior with tests." Not "it compiles." Not "it works on the happy path I tried in the browser." Tests are the part where you go through every instruction your program exposes, every error it can return, every guard it enforces, every edge case the spec describes, and you write code that proves the program behaves the way you said it does. If you didn't test it, you didn't finish it. You wrote the first draft.

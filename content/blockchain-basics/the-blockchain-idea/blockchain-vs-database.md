@@ -5,34 +5,27 @@ type: lecture
 order: 2
 faq:
   - question: Isn't a blockchain just a slow, complicated database?
-    answer: "Structurally they are similar: both store records, both let you read
-      and write, both handle many users. The differences are deliberate, though.
-      A blockchain is append-only, every record is public, and it is replicated
-      across thousands of nodes with no single operator, which makes it far
-      slower, more expensive, and less private than a normal database. Those
-      constraints are the whole product rather than a flaw."
-  - question: Can you edit or delete data once it's on a blockchain?
-    answer: No. A normal database supports create, read, update, and delete, but a
-      blockchain only supports write and read. You cannot change or remove an
-      existing entry, and the full history is kept by design rather than as an
-      optional audit log. Once a record is deep enough in the chain, no
-      participant can convincingly claim it isn't there.
-  - question: Do blockchain transactions have all-or-nothing behavior like database
-      transactions?
-    answer: "Yes. Blockchain transactions are atomic in the same sense: when a block
-      is added, each transaction in it either applies completely or not at all,
-      with no half-finished state. If a single call would do five things and the
-      fifth fails, the first four are unwound and the call has no effect.
-      Atomicity is the one classic database guarantee that carries over
-      cleanly."
-  - question: Is it safe to store private data like medical records on a public
-      blockchain?
-    answer: No. Every record on a public blockchain is readable by every node, and
-      through them by anyone in the world. There is no private mode and no way
-      for an operator to hide some rows. The only thing shielding a user is that
-      their address is a meaningless-looking string rather than a name. That
-      makes a public chain a poor fit for medical records, internal company
-      data, or anything under data-protection rules.
+    answer: >-
+      A blockchain is a ledger, an append-only record of events, the format banks and
+      accountants have kept for centuries. It stores records and answers reads like a
+      database. Everything else differs on purpose: append-only, public, replicated across
+      thousands of nodes, no operator.
+  - question: Can I delete something once it is on the chain?
+    answer: >-
+      No. There is no delete operation and no update operation. Only write and read.
+  - question: My call does five things and the fifth fails. Do the first four still happen?
+    answer: >-
+      No. Blockchain transactions are atomic, so the whole call is unwound and leaves nothing
+      behind. Atomicity is the one ACID property that carries over from databases unchanged.
+  - question: Is a public blockchain a safe place for medical records?
+    answer: >-
+      No. Every record is readable by every node, and through them by anyone in the world.
+      There is no private mode and no operator who can hide rows. The only cover a user gets
+      is an address that carries no name.
+  - question: How much slower is a blockchain than a database?
+    answer: >-
+      A database does millions of writes per second at a fraction of a cent each. A public
+      chain does a few to a few thousand, at cents to dollars a write.
 ---
 
 > The previous lesson built up a blockchain from scratch. A reasonable reaction at this point is "interesting, but isn't that just a database?" The answer is yes, structurally. But the differences are exactly what makes a blockchain useful for the small set of things it's actually good at.

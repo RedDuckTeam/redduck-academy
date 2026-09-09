@@ -4,33 +4,34 @@ title: Account constraints
 type: lecture
 order: 4
 faq:
-  - question: What does the mut constraint do on an Anchor account?
-    answer: "It marks the account as writable during the instruction. Without mut,
-      trying to modify the account in your handler fails to compile, and the
-      account is rejected if the transaction did not mark it writable. It is the
-      most common constraint: if your handler writes to a field, put mut on that
-      field."
-  - question: Why does the init constraint need payer and space?
-    answer: init tells Anchor to create the account fresh by calling the System
-      Program, but "create" alone is ambiguous. payer names which field's
-      balance funds the rent deposit, and space says how many bytes to allocate
-      (8 bytes for the discriminator plus your struct's fields, often written 8
-      + Vault::INIT_SPACE). The three are inseparable. Drop payer or space and
-      the program will not build.
-  - question: What does has_one do in an Anchor constraint?
-    answer: "has_one = authority is a cross-field check: it reads the authority
-      field stored inside the account and verifies it equals the public key of
-      the authority account passed in the struct. The classic use is a vault
-      that stores its owner's key, letting Anchor confirm the signer really is
-      that recorded owner. It replaces a manual check you would otherwise write
-      by hand and might forget."
-  - question: Can I put multiple constraints on one Anchor account, and does their
-      order matter?
-    answer: "Yes. You list them comma-separated inside a single #[account(...)]
-      attribute, and the order does not matter because Anchor resolves
-      dependencies between them automatically. All of them run before your
-      handler executes, so together they replace the pile of defensive if-checks
-      you would otherwise write at the top of the function."
+  - question: My handler won't compile when it writes to an account. What is missing?
+    answer: >-
+      mut on that field. Without it the write fails to compile, and the account is rejected
+      anyway if the transaction never marked it writable.
+  - question: Why does init need payer and space?
+    answer: >-
+      Because "create" leaves two questions open. payer names the field whose balance funds the
+      rent deposit. space says how many bytes to allocate, 8 for the discriminator plus your
+      struct's fields, written as space = 8 + Vault::INIT_SPACE. Drop either one and Anchor
+      refuses to build.
+  - question: What does has_one = authority compare?
+    answer: >-
+      The authority field stored inside the account against the public key of the authority
+      account passed in the same struct. A vault records its owner's key, and one line makes
+      Anchor confirm the signer is that recorded owner.
+  - question: Can I stack constraints on one field, and does the order matter?
+    answer: >-
+      Yes, comma-separated inside one #[account(...)], and no. Anchor resolves the dependencies,
+      so mut, has_one, init with payer and space, seeds and bump all run before your handler.
+  - question: None of the named constraints says what I mean. What now?
+    answer: >-
+      constraint = expr takes any boolean expression, for example constraint = vault.total > 0 @
+      MyError::EmptyVault. The @ form attaches your own error, so the failure names it instead
+      of a generic constraint violation.
+  - question: How do I close an account and get its rent back?
+    answer: >-
+      close = recipient. Anchor closes the account at the end of the instruction and sends its
+      lamports to the named field.
 ---
 
 > The type of a field tells Anchor what kind of account belongs in that slot. Constraints, written inside the `#[account(...)]` attribute above the field, narrow it further. They say things like "this account must be writable," "this account must be created fresh in this instruction," "this field on the account must equal that field on another," "this account must live at this specific address." Every constraint is a check the macro generates and runs before your handler executes. Once you know the handful of constraints you'll use day to day, most Solana validation problems collapse into "which constraint says what I mean."

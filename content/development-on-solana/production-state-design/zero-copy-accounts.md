@@ -4,37 +4,28 @@ title: Zero-copy accounts
 type: lecture
 order: 1
 faq:
-  - question: Why does my Anchor program stack-overflow when an account gets large?
-    answer: By default Anchor's Account<T> deserializes the whole account into a
-      Rust struct on the stack at the start of every handler. Each Solana
-      handler only gets about 4 KB of stack, so a struct of 5 KB or 10 KB
-      physically cannot fit and either fails to compile or overflows at runtime.
-      The fixes are to move the struct to the heap with Box<Account<T>>, or
-      switch to a zero-copy account for the biggest cases.
-  - question: When should I use a zero-copy account instead of the normal Anchor account?
-    answer: Only for accounts that are both large and touched often on
-      performance-sensitive paths, like order books or big fixed-size arrays.
-      Zero-copy points a struct directly at the raw account bytes, so there is
-      no expensive copy in and out on every call. For the roughly 90 percent of
-      accounts that are small, the default Account<T> is correct and you never
-      need this.
-  - question: Why can't I use Vec, String, or bool in a zero-copy account?
-    answer: "Zero-copy works by casting the raw bytes straight to your struct, which
-      only works if the struct's memory layout exactly matches the bytes on
-      disk. That requires Plain Old Data (POD): fixed field order, fixed sizes,
-      and no dynamic types. Vec and String have variable length, and bool is
-      rejected because only the bit patterns 0 and 1 are valid. Use fixed-size
-      arrays and a u8 flag instead, and manage counts yourself with a len or
-      head/tail field."
-  - question: What's the difference between Account, Box<Account>, and AccountLoader
-      for an account?
-    answer: Account<T> copies the data onto the stack each call and is the simple
-      default. Box<Account<T>> keeps the same copy behavior and Anchor
-      convenience but puts the struct on the heap, which cures stack overflows
-      for low-kilobyte accounts. AccountLoader<T> is the zero-copy path with no
-      copy at all, but it demands the strict POD layout. The recommended order
-      is default, then Box, then zero-copy, moving on only when measurements
-      force you.
+  - question: Why does my program stack-overflow when an account gets big?
+    answer: >-
+      Account<T> copies the whole account onto the stack on every call, and a handler gets about
+      4 KB of stack. Box<Account<T>> moves it to the heap.
+  - question: Which of Account, Box<Account>, and AccountLoader should I pick?
+    answer: >-
+      Default, then Box, then zero-copy. Around 90 percent of accounts never leave the default,
+      and zero-copy is for accounts that are large and sit on a hot path, like an order book.
+  - question: Why won't a Vec or String compile inside a zero-copy account?
+    answer: >-
+      The cast only works when the struct's layout matches the on-chain bytes exactly, and
+      bytemuck::Pod enforces that with #[repr(C)], fixed sizes and fixed field order.
+      Variable-length types break it. Use fixed-capacity arrays and track how full they are with
+      your own len or head and tail fields.
+  - question: Is bool allowed in a zero-copy struct?
+    answer: >-
+      No. A bool has only two valid bit patterns and Pod requires every pattern to be valid.
+      Store a u8.
+  - question: Why does my handler panic on a CPI while a zero-copy account is loaded?
+    answer: >-
+      The RefMut from load_mut stays borrowed until it drops, and a CPI touching the same
+      account borrows it again. Scope the load_mut to a block that ends before the CPI fires.
 ---
 
 > Anchor's default `Account<'info, T>` deserializes the entire account into a Rust struct on the stack at the start of every handler, then serializes the struct back to the account at the end. For small accounts this is fine. For large accounts it is the bottleneck: stack frames blow up, compute units burn just shuffling bytes, and code size grows from monomorphization. Zero-copy is the alternative. You point a struct at the raw bytes and work in place. No copy in, no copy out.

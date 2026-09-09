@@ -4,29 +4,25 @@ title: PDAs as signers
 type: lecture
 order: 2
 faq:
-  - question: How can a program sign for a PDA that has no private key?
-    answer: A Program Derived Address has no private key, so it can't produce a
-      normal signature. Instead your program calls invoke_signed and passes the
-      PDA's seeds. The runtime appends your program's ID, re-derives the
-      address, and if it matches an account in the call, marks it as a signer
-      just as if a real signature had been given. In effect, the seeds are the
-      signature, and only the program whose ID was used to create the PDA can
-      produce them.
-  - question: Why do I get 'unauthorized signer' when trying to sign as a PDA?
-    answer: "The most common cause is a bump problem in the seeds: if the bump is
-      missing or in the wrong position, you derive a different address, the
-      runtime finds no match, and you get \"Cross-program invocation with
-      unauthorized signer.\" Always put the bump byte last in the seeds array
-      and read it from the account where you stored it at init, rather than
-      recomputing it. Also confirm the exact PDA you're signing for is actually
-      in your accounts list."
-  - question: Does the vault PDA itself hold the tokens it authorizes transfers for?
-    answer: No. The tokens live in a separate token account, and the vault PDA is
-      set as that token account's owner (the same way a user's wallet owns their
-      personal token account). To move tokens out, the Token Program requires
-      the owner to sign, so your program signs on the PDA's behalf via
-      invoke_signed. From the Token Program's point of view this looks identical
-      to a normal wallet-authorized transfer. It has no concept of PDAs at all.
+  - question: How can a program sign for an address that has no private key?
+    answer: >-
+      It passes the PDA's seeds to invoke_signed. The runtime appends the calling program's
+      ID, re-derives the address, and marks the matching account as a signer. The seeds are
+      the signature, and only the program whose ID is in the derivation can produce them.
+  - question: I get 'Cross-program invocation with unauthorized signer'. What did I break?
+    answer: >-
+      Usually the bump. It goes last in the seeds array, and you read it from the account
+      where you stored it at init. Any other seed order derives a different address, the
+      runtime finds no match, and the call is rejected. Confirm as well that the PDA you sign
+      for is in your accounts list.
+  - question: Does the vault PDA hold the tokens?
+    answer: >-
+      No. The tokens sit in a token account owned by the PDA. Your program signs as that
+      owner through invoke_signed, and the Token Program sees an ordinary authorized transfer.
+  - question: Why do my seeds fail to compile with 'temporary value dropped while borrowed'?
+    answer: >-
+      Bind the Pubkey to a local first. An inline as_ref call borrows from a temporary that is
+      dropped before the seeds are used.
 ---
 
 > A PDA has no private key. Nobody can sign a transaction with it the normal way. But programs need PDAs to be able to act on the chain, to authorize transfers out of vaults, to mint tokens from pools, to approve withdrawals from treasuries. The runtime's resolution is to let a program sign on behalf of any PDA derived under its own program ID, by submitting the seeds. The seeds are the signature. Once that one idea clicks, every pattern in real Solana code involving program-controlled funds works the same way.

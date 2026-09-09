@@ -4,36 +4,29 @@ title: Determinism and what blockchains can't do
 type: lecture
 order: 7
 faq:
-  - question: Why can't a smart contract just call an external API to fetch data?
-    answer: Every node must compute the same result from the same input, or the
-      network splits. An external API could return different data to nodes in
-      different cities, or be down for one node and up for another, which would
-      make nodes disagree on the outcome of the contract. To avoid that, smart
-      contract languages expose no network operations at all, no HTTP client, no
-      DNS, no sockets.
-  - question: How does a smart contract get the current time or a random number if
-      it can't use the system clock?
-    answer: It can't read the machine's clock or a true random source, because those
-      differ slightly on every node and would break agreement. For time,
-      contracts read the timestamp recorded in the current block, a value
-      consensus already agreed on. For randomness, they derive it from on-chain
-      data for low stakes, or use a protocol-level mechanism or a specialized
-      service so that every node ends up reading the exact same random value.
-  - question: What is an oracle and why do smart contracts need one?
-    answer: An oracle is an off-chain service that watches a real-world data source,
-      like an asset price or a sports result, and submits transactions that
-      write that data into a smart contract's on-chain state. Contracts then
-      read the value from that contract instead of fetching it themselves, and
-      by the time they read it, consensus has already agreed on it. The limitation is
-      that a contract is only as trustworthy as its oracle, which is an
-      off-chain party with the usual off-chain risks.
-  - question: What does it mean that a blockchain has to be 'deterministic'?
-    answer: It means the same code with the same inputs must produce exactly the
-      same output on every node, every time. This is required because each node
-      independently validates every block and they must all reach the same
-      answer. Any variation would immediately fork the chain. This one rule is
-      why on-chain code can't use external APIs, the wall clock, true
-      randomness, or the local file system.
+  - question: What does determinism mean for a blockchain?
+    answer: >-
+      Same code, same inputs, same output on every node, every time.
+  - question: Why can't a smart contract call an external API?
+    answer: >-
+      Every node has to compute the same result from the same input. An API can answer one
+      node differently from another, and the chain would fork. Contract languages have no HTTP
+      client, no DNS, no sockets.
+  - question: How does a smart contract know what time it is?
+    answer: >-
+      It reads the timestamp in the current block, a value consensus has already agreed on.
+      The machine's own clock is off limits, since node clocks drift by milliseconds.
+  - question: Can a smart contract generate a random number?
+    answer: >-
+      Not from the machine, since every node would roll a different number. Low-stakes
+      contracts hash on-chain data. Where someone could profit from biasing the result, chains
+      use a built-in mechanism that combines many contributions, or a service that submits
+      verifiable random values.
+  - question: What is an oracle?
+    answer: >-
+      An off-chain service that watches something real, an asset price or a match result, and
+      writes it into a contract's state with a transaction. Contracts read the stored value,
+      which consensus has already agreed on. A contract is only as trustworthy as its oracle.
 ---
 
 > Every node must compute the same result from the same input. That one sentence is the deepest constraint on every blockchain in existence, and it is easy to miss when you come from web2 development, so it is worth stating plainly. The constraint dictates what kinds of programs can run on a blockchain and what kinds cannot. It dictates why on-chain code can't call an external API. It dictates why "give me a random number" on-chain is harder than it sounds. It dictates a whole class of problems that the ecosystem solves with separate mechanisms layered on top. This lesson is about why the constraint exists, what it rules out, and how blockchains work around it.

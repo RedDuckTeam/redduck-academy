@@ -4,36 +4,31 @@ title: Pyth price feeds
 type: lecture
 order: 7
 faq:
-  - question: Why can't my Solana program just fetch a price from an API?
-    answer: Solana programs are sandboxed and must be deterministic, meaning every
-      validator has to run the transaction and get the identical result. An HTTP
-      request could return different values to different validators, which would
-      break consensus, so it is simply not available inside a program. The only
-      way to get real-world data on chain is for an off-chain oracle to write it
-      into an account your program then reads.
-  - question: How do I stop my program from using a stale Pyth price?
-    answer: A Pyth price account just holds whatever value was written last, and
-      updates can stall during network congestion or publisher outages, so you
-      must check freshness yourself. Use get_price_no_older_than with the
-      on-chain Clock, which returns the price only if it was published within
-      your chosen window, say 60 seconds, and returns nothing otherwise. Tighter
-      thresholds give fresher data but reject more often during brief delays.
-  - question: What is Pyth's confidence interval and why should I check it?
-    answer: Alongside each price, Pyth reports a confidence interval in the same
-      units, which reflects how much the many publishers disagree. In a calm
-      market they converge and the interval is tight. During a flash crash or an
-      exchange outage they diverge and it widens, signaling the price may not
-      reflect one coherent market. A risk-conscious program rejects any price
-      whose confidence is wider than a threshold like one percent, so it does
-      not act on unreliable data.
-  - question: Why is a single-source price oracle dangerous for a protocol holding funds?
-    answer: "One source and one operator can break three ways: the source can glitch
-      and report a wrong price, the operator can be malicious or have its keys
-      compromised and push a fake number, or the operator can go offline and
-      leave your program reading a stale value. Any one of these can drain a
-      whole treasury during a market move. Pyth reduces this by aggregating
-      prices from dozens of first-party publishers and rejecting outliers before
-      the value reaches your program."
+  - question: Why can't my program just call a price API?
+    answer: >-
+      Every validator must reach the same result, and an HTTP call could hand each one a
+      different value. Outside data arrives only in an account an oracle wrote.
+  - question: My program acted on an hours-old price. How do I prevent that?
+    answer: >-
+      Call get_price_no_older_than with the Clock sysvar and a window such as 60 seconds. It
+      returns the price only if publish_time falls inside that window. The account itself holds
+      whatever was written last, and congestion or a publisher outage can stall updates for far
+      longer.
+  - question: What is the conf value next to a Pyth price?
+    answer: >-
+      A one-sigma confidence interval, in the same units as the price, measuring how far the
+      publishers disagree. It widens during a flash crash or an exchange outage. Reject anything
+      wider than your threshold, commonly one percent of the price.
+  - question: The feed returned 350000000000. Where is the decimal point?
+    answer: >-
+      In expo. The raw value times ten to the power of expo gives the price, so at expo -8 that
+      reading is 3500.00.
+  - question: Why is one price source not enough for a protocol holding funds?
+    answer: >-
+      Three failure modes. The source glitches and reports a wrong price. The operator is
+      compromised and pushes a fake number. The operator goes offline and your program reads a
+      stale value. Pyth answers all three by aggregating dozens of first-party publishers and
+      rejecting outliers.
 ---
 
 > Solana programs are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. That makes the oracle a trust problem: your protocol acts on numbers it did not produce and cannot recompute. Pyth's first-party publisher architecture is built to make those numbers trustworthy, which is what lets you consume a feed safely from a Solana program.

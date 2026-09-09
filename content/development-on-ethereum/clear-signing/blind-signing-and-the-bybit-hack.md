@@ -4,30 +4,29 @@ title: Blind signing and the Bybit hack
 type: lecture
 order: 1
 faq:
-  - question: What is blind signing and why is it dangerous?
-    answer: Blind signing is when a hardware wallet cannot decode the transaction
-      you are about to approve, so instead of showing what the transaction does it
-      shows raw hexadecimal calldata and a hash. You end up approving bytes you
-      cannot read. It is dangerous because the hardware wallet screen is the one
-      place malware cannot tamper with, so if that screen cannot tell you what you
-      are signing, your last safeguard is gone. The Bybit theft of about 1.46
-      billion dollars in February 2025 happened this way.
-  - question: Why did decoding or whitelisting not stop the Bybit attack?
-    answer: A decoder or a whitelist recognizes a contract and a function and shows
-      a readable name for them. The Bybit payload called execTransaction, a
-      legitimate and well-known Safe function, so a decoder would have shown a
-      valid-looking call and flagged nothing. The dangerous part was a delegatecall
-      hidden inside that function's parameters, and naming the outer function does
-      not reveal it. Decoding also cannot keep up, because it can only read
-      contracts someone registered ahead of time, and new contracts deploy every
-      day.
-  - question: What did the Bybit transaction actually do?
-    answer: It was an execTransaction call with its operation flag set to
-      delegatecall, aimed at an attacker contract. Instead of moving tokens, that
-      contract wrote a new address into the Safe's storage slot 0, which is where a
-      proxy keeps the address of the code it runs. That single call repointed the
-      wallet to attacker-controlled code and moved zero ETH. A second transaction
-      then ran the attacker's code and swept the wallet empty.
+  - question: What is blind signing?
+    answer: >-
+      Approving a transaction your hardware wallet cannot decode. It shows raw calldata and a
+      hash instead of what the transaction does. The device screen is the one surface malware
+      cannot repaint, so when it goes blank you have no safeguard left.
+  - question: What did the Bybit transaction do?
+    answer: >-
+      An `execTransaction` call with its operation flag set to `1`, meaning delegatecall, aimed
+      at an attacker contract. That contract wrote a new address into storage slot 0, where a
+      Safe proxy keeps the address of the code it runs, and moved zero ETH. A second
+      transaction then ran the attacker's code and swept about 1.46 billion dollars out on
+      February 21, 2025.
+  - question: Why didn't calldata decoding catch the Bybit transaction?
+    answer: >-
+      A decoder shows the function name, and `execTransaction` is a legitimate Safe function,
+      so the screen looked correct. The delegatecall was hidden in its parameters. Decoding
+      also covers only contracts someone registered in advance.
+  - question: Which other wallets were drained through blind signing?
+    answer: >-
+      Radiant Capital lost about 50 million dollars in October 2024 when a compromised machine
+      showed its signers a harmless transaction while they blind-signed a malicious one. WazirX
+      lost about 235 million dollars in July 2024 to another Safe implementation swap approved
+      the same way.
 ---
 
 > A hardware wallet is supposed to be the one screen an attacker cannot reach. Your key stays on the device, and you approve each transaction by looking at what the device shows you. That protection only works if the screen can tell you what you are approving. When the device cannot decode a transaction, it falls back to showing raw bytes, and you sign something you cannot read. This is blind signing, and in February 2025 it cost one exchange about 1.46 billion dollars.

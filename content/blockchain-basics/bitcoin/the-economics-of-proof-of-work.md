@@ -4,37 +4,28 @@ title: The economics of proof of work
 type: lecture
 order: 4
 faq:
-  - question: What does it actually mean when people say Bitcoin is secured by energy?
-    answer: "It is a literal statement rather than a metaphor. Bitcoin's security comes
-      from cost rather than from cryptography being unbreakable: rewriting past
-      transactions would force an attacker to redo an enormous amount of
-      proof-of-work using real electricity and specialized hardware. Because
-      building the chain forward is cheap but rewriting it is enormously
-      expensive, forging history stays theoretically possible but practically
-      unprofitable, and that gap is the security."
   - question: If someone controls 51% of Bitcoin's mining power, can they steal my coins?
-    answer: No. A 51% attacker cannot steal coins from addresses they do not
-      control, because moving coins requires a valid signature from the coin's
-      owner, and hashrate does not break those cryptographic locks. They also
-      cannot create new BTC or change the protocol rules, since other nodes
-      reject invalid blocks. What they can do is double-spend their own recent
-      coins, censor transactions, and reorganize the very recent chain.
-  - question: Why is a transaction harder to reverse the more blocks are built on
-      top of it?
-    answer: Each block added on top required, on average, the whole network's
-      proof-of-work effort for about ten minutes. To erase your transaction, an
-      attacker must rebuild every one of those blocks while also outpacing the
-      honest network that keeps extending the chain. So a transaction six blocks
-      deep would need roughly an hour of the entire global network's effort
-      redone, which is why deeper transactions are far more expensive to
-      reverse.
-  - question: Why would a big miner not just attack Bitcoin if they have enough hardware?
-    answer: Because it would destroy the value of their own investment. Acquiring
-      majority Bitcoin hashrate means spending billions on specialized hardware
-      whose worth depends entirely on Bitcoin staying credible. A successful
-      attack would crash Bitcoin's price and devalue that hardware below scrap,
-      so the attacker would spend more than they could ever extract. This is why
-      the largest miners are usually the most invested in Bitcoin's health.
+    answer: >-
+      No. Moving coins needs a signature from the owner, and hashrate does not break
+      signatures. An attacker cannot mint BTC or change the rules either, since other nodes
+      reject invalid blocks. They can double-spend their own recent coins, censor
+      transactions, and reorganise the last few blocks.
+  - question: Why is a transaction harder to reverse the deeper it sits?
+    answer: >-
+      Each block above it cost the whole network about ten minutes of proof of work.
+      Reversing a transaction six blocks deep means redoing roughly an hour of global effort
+      while the honest network keeps extending the chain ahead of you.
+  - question: What does it mean to say Bitcoin is secured by energy?
+    answer: >-
+      Security comes from cost. Extending the chain forward is cheap. Rewriting it means
+      redoing that proof of work with real electricity and hardware bought at market prices.
+  - question: What is an ASIC?
+    answer: >-
+      A machine built for one job, computing SHA-256 hashes as fast as possible.
+  - question: Why would a miner with enough hardware not just attack Bitcoin?
+    answer: >-
+      The economics do not work. Majority hashrate costs billions in ASICs whose value
+      collapses along with Bitcoin's price, wrecking the attacker's own investment.
 ---
 
 The previous lesson explained what miners do. This one explains why they do it, and what their work gets the rest of the network. Both questions have economic answers. Mining is a competitive market where participants spend real electricity in the hope of winning block rewards, and the security of every transaction that has ever happened on Bitcoin rests on the fact that overwriting history is much more expensive than the alternative. By the end of this lesson, you should understand where Bitcoin's security guarantee actually comes from, what a 51% attack can and cannot do, and why "Bitcoin is secured by energy" is a literal statement rather than a metaphor.

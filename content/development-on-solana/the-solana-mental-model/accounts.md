@@ -4,28 +4,25 @@ title: Accounts
 type: lecture
 order: 2
 faq:
-  - question: What information does a Solana account actually store?
-    answer: "Exactly five things and nothing else: an address (a public key used to
-      look it up), a lamports balance, a data field of raw bytes whose meaning
-      is up to the owner, an owner (the one program allowed to modify that
-      data), and an executable flag that is true only when the data is runnable
-      code. Wallets, token balances, and deployed programs all use these same
-      five fields, just filled in differently."
-  - question: Where is my Solana token balance stored if it is not inside my wallet?
-    answer: Token balances live in their own separate accounts owned by the Token
-      Program. Your wallet account does not hold them. Such a token account holds 165
-      bytes recording which token it is, who the authorized user is, and the
-      current amount. You are listed inside the data as the authorized user, and
-      the Token Program enforces that nobody else can move the balance, even
-      though in the runtime sense the account is owned by the Token Program rather than by you.
-  - question: What keeps another program from writing to my account and stealing my
-      tokens?
-    answer: The owner field. Before any program code runs, the runtime checks that
-      every account a transaction marks as writable is owned by the program
-      trying to change it, and rejects the transaction if not. So if a program
-      that is not the owner tries to write directly to your balance, it is
-      stopped before it even starts, which is why you do not need defensive code
-      to check who is calling.
+  - question: What fields does a Solana account have?
+    answer: >-
+      Five. An address, which is a public key. A lamports balance. A data field of raw bytes
+      whose meaning is set by the owner. An owner, the one program allowed to change that
+      data. And an executable flag, true only when the data is runnable code. Wallets, token
+      balances and deployed programs are these same five fields filled in differently.
+  - question: Where is my token balance actually stored?
+    answer: >-
+      In its own account, owned by the Token Program. Your wallet account holds none of it.
+      The 165 bytes of data record the mint, the authorized user and the current amount, and
+      the Token Program enforces that only that user can move the balance.
+  - question: What keeps another program from writing to my account and taking my tokens?
+    answer: >-
+      The owner field. Before any code runs, the runtime checks that every account the
+      transaction marks writable is owned by the program trying to change it, and rejects
+      the transaction otherwise.
+  - question: How big can an account's data field be?
+    answer: >-
+      Zero bytes up to ten megabytes, fixed at creation.
 ---
 
 > Everything on Solana is an account. Wallets are accounts. Token balances are accounts. Deployed programs are accounts. Once this clicks, half of Solana stops being confusing.

@@ -5,30 +5,25 @@ type: lecture
 order: 1
 faq:
   - question: What is a hash function?
-    answer: A hash function takes any input, of any size, and returns a short
-      fixed-size output. SHA-256, for example, always produces 256 bits written
-      as 64 hex characters, whether you feed it the word 'hello' or an entire
-      novel. Cryptographic hash functions add extra guarantees that make them
-      safe to use in security-critical systems.
+    answer: >-
+      Any input of any size in, a fixed-size output out. SHA-256 always returns 256 bits,
+      written as 64 hex characters.
   - question: Why does changing one character produce a completely different hash?
-    answer: This is called the avalanche effect. Flipping even a single bit of the
-      input changes roughly half of the output bits in a way that looks random,
-      so 'hello' and 'hello!' share no visible structure in their hashes. There
-      is no smooth gradient, which is exactly what makes tampering easy to
-      detect.
+    answer: >-
+      The avalanche effect. One flipped input bit changes about half the output bits.
   - question: How does hashing make a blockchain tamper-evident?
-    answer: Every block stores the hash of the previous block in one of its fields.
-      If anyone changes even one bit of an old block, its hash changes, so the
-      next block's stored previous-hash no longer matches and that block plus
-      every block after it becomes invalid. Anyone holding the chain can catch
-      this by recomputing just one hash per block.
-  - question: Why do Ethereum's Keccak-256 and standard SHA3-256 give different results?
-    answer: Ethereum adopted Keccak-256 before the SHA-3 standard was finalised, and
-      the final standard ended up using slightly different padding. So the same
-      input produces different outputs even though the underlying algorithm is
-      shared. This surprises many developers the first time they compute an
-      Ethereum hash off-chain with a generic SHA-3 library and get an unexpected
-      answer.
+    answer: >-
+      Every block stores the hash of the block before it. Change one bit of an old block and
+      its hash changes, so the next block's stored previous-hash stops matching and every
+      block after it becomes invalid.
+  - question: My Keccak-256 hash does not match my SHA3-256 library. Why?
+    answer: >-
+      Different padding. Ethereum adopted Keccak-256 before NIST finalized SHA-3, and the
+      finished standard changed the padding, so the same input gives two different outputs
+      from the same underlying algorithm.
+  - question: Which hash functions do Bitcoin and Ethereum use?
+    answer: >-
+      Bitcoin uses SHA-256, and RIPEMD-160 in a few places. Ethereum uses Keccak-256.
 ---
 
 > The previous lesson ended with a promise: the next thing you'd learn is the cryptography that makes blockchains possible at all. This lesson keeps that promise by starting with the smallest, simplest cryptographic tool there is: hashing. It's a function that takes any input and returns a short, fixed-size output, and it's the foundation that every blockchain rests on. Everything else in cryptography (signatures, addresses, identity, the integrity of a block) is built on top of it.

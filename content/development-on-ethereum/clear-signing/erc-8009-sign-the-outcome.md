@@ -4,29 +4,29 @@ title: "ERC-8009: sign the outcome"
 type: lecture
 order: 2
 faq:
-  - question: How is ERC-8009 different from a wallet that just decodes calldata?
-    answer: A decoder shows a guess about what a transaction will do, and if the
-      guess is wrong or the device is fooled, the transaction still executes.
-      ERC-8009 shows the balance changes a transaction must produce and enforces
-      those same numbers on-chain, so a transaction that does something other than
-      what the screen showed reverts and costs only gas. The display and the
-      enforcement read from the same requirements, so the screen cannot promise
-      one thing while the chain does another.
-  - question: Why verify balance changes instead of which function is called?
-    answer: The function name tells you what a transaction claims to be, and the
-      Bybit payload called a legitimate, well-known Safe function with a malicious
-      delegatecall hidden in its parameters. Balance changes are what a
-      transaction actually does to your funds, and you cannot construct a
-      transaction that drains a wallet while the balances say nothing moved. This
-      also scales, because balance changes are the same regardless of how new or
-      complex the contract you are calling is.
-  - question: Could the balance display be faked by a compromised computer?
-    answer: The compromised computer can change what a browser tab shows, but the
-      numbers passed to the ERC-8009 proxy are the same numbers enforced on-chain
-      after the call runs. If the real result is worse than what was declared, the
-      whole transaction reverts and costs only gas. A hardware wallet that supports
-      ERC-8009 reads those declared changes from the proxy's own known interface
-      and shows them on its physical screen, which the attacker cannot repaint.
+  - question: How is ERC-8009 different from a decoder?
+    answer: >-
+      A decoder shows a prediction, and if it is wrong the transaction still runs. ERC-8009
+      shows the balance changes the transaction must produce and enforces those same numbers on
+      chain, so anything else reverts and costs only gas.
+  - question: What does -1.00 ETH mean on an ERC-8009 screen?
+    answer: >-
+      You will lose at most 1 ETH. Every requirement is a signed minimum change, so +2,800 USDC
+      means you end up at least 2,800 USDC richer. A swap is a pair of them, and the call
+      reverts if either floor is missed.
+  - question: In what order does the ERC-8009 proxy run a call?
+    answer: >-
+      Four steps. It runs the approvals or transfers the call needs, calls your target, moves
+      the results back to you, then requires every balance change you declared. If one of them
+      does not hold, the whole transaction reverts.
+  - question: Can a compromised computer fake the balance numbers?
+    answer: >-
+      It can lie in a browser tab. It cannot make the chain accept a result that violates your
+      requirements, because the numbers handed to the proxy are the numbers enforced after the
+      call runs. The device reads them from the proxy's own fixed interface.
+  - question: Which token address means native ETH?
+    answer: >-
+      `address(0)`. A `Balance` entry with the zero address as its token constrains native ETH.
 ---
 
 > The one thing a transaction cannot hide is what it does to your balances. ERC-8009 is built on that. You route your transaction through a single, known proxy contract and hand it the balance changes you require. The proxy makes your call, then checks those balances on-chain, and reverts the whole transaction if they did not hold. Because the numbers it checks are the same numbers a hardware wallet can read from the proxy's own interface, the screen shows you what the chain will enforce, so the two cannot disagree.

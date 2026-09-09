@@ -4,21 +4,23 @@ title: The common-sense check
 type: lecture
 order: 2
 faq:
-  - question: What does "adversarial" mean in this check?
-    answer: It means assuming at least one person in the system understands the rules
-      exactly and acts in their own interest even when it costs you. The point is to
-      test whether the design survives a single clever, self-interested person, so
-      you imagine that person and follow what they would do.
+  - question: How do I run the common-sense check?
+    answer: >-
+      Put one rational, self-interested person inside the design, give them the full rules and
+      a reason to cheat, and follow what they do. If they walk straight through, the design is
+      broken.
+  - question: My API reads a role field from the request body. What is wrong with that?
+    answer: >-
+      Any client can put "role": "admin" in the request it sends. The thing being checked is
+      also supplying the rule that decides the check, the same shape as a currency exchange
+      that accepts the list of valid currencies from the customer.
   - question: Does passing the check mean the design is secure?
-    answer: No. The check is a first filter that catches the mistakes a
-      self-interested person would find in the first minute. A design can pass it and
-      still have deeper flaws, so passing means you have cleared the obvious failures
-      and nothing more.
-  - question: The plan works as long as everyone is honest. Isn't that enough?
-    answer: Only if you can guarantee everyone is honest, and in a system open to
-      outside users you cannot. A design that depends on everyone behaving well fails
-      the first time one person does not, so the safe assumption is that at least one
-      actor will act against you.
+    answer: >-
+      No. It catches only what a self-interested person would find in the first minute.
+  - question: Why is refunding as soon as the return label is scanned a problem?
+    answer: >-
+      The store pays before it sees what came back. A customer prints the label, has it
+      scanned, ships an empty box, and keeps both the product and the refund.
 ---
 
 > Here is a check that catches a whole class of design mistakes before you write a line of code. Call it the **common-sense check**. Take the design you are about to build and ask one question: does it still make sense if one of the people in the system is clever and acting in their own interest? If a self-interested person could walk straight through it, the design is broken, however clean it looked on paper. The check costs a few seconds and saves you from building the wrong thing.

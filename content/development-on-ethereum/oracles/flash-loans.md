@@ -4,36 +4,20 @@ title: Flash loans
 type: lecture
 order: 5
 faq:
-  - question: How can someone borrow millions of dollars with no collateral in a
-      flash loan?
-    answer: "A flash loan is safe for the lender because Ethereum transactions are
-      atomic: every step either commits together or reverts together. The lender
-      sends the funds, hands control to the borrower's contract, and at the end
-      checks the balance came back plus a small fee. If it didn't, the lender
-      simply reverts the whole transaction, so the loan effectively never
-      happened and the principal was never really gone. The only limit on the
-      amount is the depth of the lender's pool, and fees are tiny (Aave charges
-      0.05%, Balancer's core flash loans are free)."
-  - question: What do people actually use flash loans for besides attacks?
-    answer: Most flash-loan volume across major providers is legitimate. The three
-      main uses are arbitrage (buying a token cheap on one exchange and selling
-      it dearer on another, which keeps prices consistent across DEXes),
-      refinancing and collateral swaps (repaying and reopening a loan in one
-      transaction to switch collateral without needing spare capital), and
-      liquidations (repaying someone's underwater loan to claim the bounty
-      without holding capital first). In each case the flash loan removes the
-      need to keep idle money on hand, improving capital efficiency.
-  - question: How are flash loans used to attack price oracles, and why isn't the
-      fix to ban them?
-    answer: "An attacker flash-borrows a large amount, dumps it into a thinly-traded
-      AMM pool to temporarily distort its spot price, then exploits some other
-      protocol that trusts that pool's price as an oracle, for example borrowing
-      far too much against collateral that now looks overvalued, before repaying
-      the loan and letting the price snap back. This has cost protocols hundreds
-      of millions, hitting bZx, Harvest Finance, Cream Finance, and others. The
-      real flaw is trusting a single pool's spot price, so the defense is at the
-      oracle layer: use an external oracle like Chainlink, a time-weighted
-      average price, or a multi-source cross-check."
+  - question: How can anyone borrow millions with no collateral?
+    answer: >-
+      The transaction is atomic. The lender sends the funds, lets your contract do what it
+      wants, and checks the balance came back with the fee. If not, everything reverts. Aave
+      charges 0.05%, Balancer's core flash loans are free, and the ceiling is the lender's pool
+      depth.
+  - question: What do people use flash loans for besides attacks?
+    answer: >-
+      Arbitrage, refinancing and collateral swaps, and liquidations.
+  - question: If flash loans enable oracle attacks, why not ban them?
+    answer: >-
+      The flaw is trusting one pool's spot price, and anyone with enough capital could always
+      move it. bZx lost about $1M over two attacks in one week in February 2020, Harvest
+      Finance $24M later that year. The fix belongs at the oracle layer.
 ---
 
 > A flash loan lets a contract borrow any amount of any token without putting up collateral, on the condition that the loan is repaid before the same transaction ends. If the borrower doesn't repay, the entire transaction reverts and the loan effectively never happened.

@@ -4,36 +4,24 @@ title: What Solana is
 type: lecture
 order: 2
 faq:
-  - question: How does Solana process many transactions at the same time when most
-      blockchains run them one by one?
-    answer: Every Solana transaction must declare up front which accounts (pieces of
-      state) it will read and which it will write. The runtime reads those
-      declarations and groups together transactions whose account sets do not
-      overlap, then runs those groups on different threads at the same time.
-      Transactions that touch the same account still have to wait for each
-      other, but unrelated work runs in parallel.
-  - question: What do I actually pay for when I send a Solana transaction?
-    answer: Every transaction pays a fixed base fee of five thousand lamports per
-      signature, half burned and half going to the validator that produces the
-      block. Computation is metered separately in compute units, and each
-      transaction has a limit it cannot exceed or it reverts. There is also an
-      optional priority fee, paid in micro-lamports per compute unit, that tells
-      the current block producer to schedule your transaction ahead of others
-      during congestion.
-  - question: Is it true that everything on Solana is an account, even programs?
-    answer: "Yes. State is broken into accounts, and each account has an address, a
-      lamports balance, some data bytes, and one owner program that is allowed
-      to change its data. There is no separate address space for contracts: a
-      program is just an account whose data is executable code and whose owner
-      is a special loader program, while a wallet is an account owned by the
-      System Program and a token balance is an account owned by the Token
-      Program."
+  - question: How does Solana run transactions in parallel?
+    answer: >-
+      Every transaction declares up front which accounts it will read and which it will
+      write. The runtime runs groups whose account sets do not overlap on separate threads.
+  - question: What do I pay for when I send a Solana transaction?
+    answer: >-
+      A base fee of 5,000 lamports per signature, half burned and half paid to the validator
+      that produced the block. Computation is metered separately in compute units, with a
+      limit each transaction cannot exceed. The priority fee on top is optional, priced in
+      micro-lamports per compute unit.
+  - question: Is a program an account?
+    answer: >-
+      Yes. Its data field holds executable code and its owner is a loader program. A wallet
+      and a token balance are the same kind of object with different owners and contents.
   - question: Do I have to keep paying to store an account on Solana?
-    answer: In practice, no. Storing data costs a fee scaled to its size, but every
-      account avoids ongoing charges by depositing enough lamports up front to
-      be permanently rent-exempt. Wallets and programs do this automatically, so
-      once the deposit is in place the account can stay on the chain without
-      further payment.
+    answer: >-
+      No. A one-time lamport deposit sized to the data makes an account permanently
+      rent-exempt.
 ---
 
 > Most blockchains run transactions one after another. Solana was designed to run them at the same time wherever it can. Every other choice in the system, the way state is stored, the way fees are priced, the cryptographic clock that orders the work, follows from that single decision. Picturing Solana as a world computer built for parallel execution is the mental model that makes the rest of the course make sense.

@@ -4,43 +4,34 @@ title: Reentrancy and denial-of-service
 type: lecture
 order: 3
 faq:
-  - question: How can an attacker drain a vault by withdrawing far more than they
-      deposited?
-    answer: This is a reentrancy attack. If a withdraw function sends ETH before it
-      zeroes out the caller's recorded balance, and the caller is a contract,
-      receiving the ETH triggers that contract's `receive()` function, which can
-      immediately call withdraw again. At that moment the balance still shows
-      the full amount, so the vault pays out repeatedly, looping until it is
-      empty. This is exactly the bug that drained The DAO of about $60M in 2016.
-  - question: What is the safest order of operations in a function that sends ETH or
-      calls another contract?
-    answer: "Follow the checks-effects-interactions pattern: first validate inputs
-      and permissions (checks), then update all of your own contract's state
-      such as balances (effects), and only then make the external call or send
-      ETH (interactions). By updating state before the external call, any code
-      that calls back into your contract sees the operation as already finished,
-      so reentrancy has nothing to exploit. This is the cheapest defense and
-      should be your default. Adding a reentrancy guard modifier on top gives
-      defense in depth."
-  - question: Can a single malicious user block a refund or payout function for
-      everyone else?
-    answer: "Yes, if the function loops through many recipients and reverts the
-      whole transaction whenever one transfer fails. An attacker deposits
-      through a contract whose `receive()` always reverts, so when the loop
-      reaches them the entire batch rolls back and no one gets paid. The fix is
-      the pull-over-push pattern: instead of the contract sending funds to
-      everyone in a loop, record what each person is owed and let each recipient
-      call a claim function to withdraw their own share. Then a malicious
-      receiver only blocks themselves."
-  - question: Does requiring tx.origin == msg.sender reliably stop these attacks?
-    answer: Only partially, and it comes with real downsides. That check forces the
-      caller to be a regular wallet (an externally owned account) rather than a
-      contract, which blocks the simple attack contracts shown for reentrancy
-      and denial-of-service. But it also blocks legitimate users on multisigs
-      and smart-contract wallets, and account abstraction (ERC-4337) makes more
-      and more real users into contracts. Treat it as a minor extra measure at
-      best. Rely on checks-effects-interactions and reentrancy guards as your
-      real protection.
+  - question: How does an attacker withdraw more than they deposited?
+    answer: >-
+      Reentrancy. If `withdraw` sends ETH before zeroing the caller's recorded balance, and the
+      caller is a contract, the transfer triggers its `receive()`, which calls `withdraw` again
+      while the balance still reads the full amount. The loop repeats until the contract is
+      empty. This drained about $60M from The DAO in June 2016.
+  - question: What order should a function that sends ETH follow?
+    answer: >-
+      Checks, effects, interactions. Validate inputs and permissions, then write every state
+      change your own contract needs, and make the external call last. A callback then finds
+      the operation already finished. A `nonReentrant` guard on top gives defense in depth.
+  - question: Can one user block a payout for everyone else?
+    answer: >-
+      Yes, when the payout loops over recipients and reverts everything if one transfer fails.
+      That is a denial-of-service. A contract whose `receive()` always reverts sits in the
+      list and rolls the batch back every time. Use pull over push: record what each address
+      is owed and let each one claim it.
+  - question: Does a nonReentrant modifier on one function protect the rest?
+    answer: >-
+      No. A lock on one function does not stop a callback entering a different unguarded
+      function that touches the same state. OpenZeppelin's `ReentrancyGuard` shares one lock
+      across every `nonReentrant` function.
+  - question: Is requiring tx.origin == msg.sender a real defense?
+    answer: >-
+      Barely. It forces the caller to be an externally owned account, blocking the simple
+      attack contracts along with every multisig and smart-contract wallet. ERC-4337 account
+      abstraction makes that worse each year. Real protection is checks-effects-interactions
+      plus a reentrancy guard.
 ---
 
 > You just fixed two bugs in a Vault contract. Eva drained the vault by doing something clever during withdraw. John blocked the admin's emergency refund just by sitting in the depositors list. This lesson explains what those attacks actually are, why they work, and why your fixes worked. The patterns are old, well-known, and still cause real losses in production every year. Every smart contract developer needs to recognize them immediately.

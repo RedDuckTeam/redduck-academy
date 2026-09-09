@@ -4,41 +4,31 @@ title: Storage layout
 type: lecture
 order: 8
 faq:
-  - question: Is a variable marked private in a Solidity contract actually secret?
-    answer: No. The `private` keyword only stops other Solidity source code from
-      referencing the variable by name. It is only a compiler rule, so it gives
-      you no real secrecy. Every full node stores every contract's storage, and anyone can
-      read any slot with a single JSON-RPC call (`eth_getStorageAt`) or a tool
-      like `cast storage`. Storing a secret code, seed, or password in a private
-      variable means it is fully readable on chain, which is a recurring source
-      of real audit findings.
-  - question: Can I save gas just by reordering the variables in my contract?
-    answer: Often yes. Storage is a series of 32-byte slots, and the compiler packs
-      adjacent variables into the same slot if their combined size fits in 32
-      bytes, assigning slots in the order you declare them. Two `uint128` values
-      declared next to each other share one slot, but if you put a full
-      `uint256` between them they can no longer be packed and you waste a slot.
-      Since each storage slot costs gas to write, declaring small, same-size
-      variables next to each other lets the compiler pack them and lowers your
-      gas.
-  - question: Where does Solidity store the values in a mapping or a dynamic array?
-    answer: Not next to your other variables. For a dynamic array, its declared slot
-      only holds the length. The elements live starting at keccak256 of that
-      slot number, with element i at that hash plus i. For a mapping, the
-      declared slot stays empty forever, and each value sits at keccak256 of the
-      key concatenated with the slot number. Because these positions come from
-      hashing, they land far away in the storage space, and anyone who knows the
-      contract address and the slot layout can still compute and read them.
-  - question: Why can't I read all the keys in a mapping or return a whole mapping
-      from a function?
-    answer: A mapping keeps no list of which keys have been set. Every possible key
-      conceptually already exists with a default value of zero, and values are
-      scattered across hash-derived slots with no index. So there is nothing to
-      iterate over, and a missing key is indistinguishable from one deliberately
-      set to zero. If you need to enumerate keys, keep a separate array of them
-      alongside the mapping. Mappings also cannot be returned from functions
-      because there is no finite way to serialize them. Expose a getter for one
-      key instead.
+  - question: Is a private variable in Solidity secret?
+    answer: >-
+      No. `private` only stops other Solidity code from referencing the variable by name.
+      Every node stores every slot, and anyone can read one with `eth_getStorageAt` or
+      `cast storage`.
+  - question: Can reordering my state variables lower gas?
+    answer: >-
+      Often. Storage is 32-byte slots, and the compiler builds the layout in declaration order,
+      packing adjacent variables into one slot when they fit. Two `uint128` values next to each
+      other share a slot. Put a `uint256` between them and they need two.
+  - question: Where do my dynamic array's elements live?
+    answer: >-
+      In its declared slot `p` you find only the length. Element `i` lives at
+      `keccak256(p) + i`, far from your other variables.
+  - question: How is a mapping's value slot computed?
+    answer: >-
+      As `keccak256(k . p)`, where `k` is the key and `p` the mapping's declared slot, each
+      padded to 32 bytes before hashing. The declared slot itself stays zero forever, because
+      a mapping tracks no length.
+  - question: How do I keep a value secret on chain?
+    answer: >-
+      Keep it off chain and have the contract verify a hash or a signature. Commit-reveal
+      stores `keccak256(value, salt)` and reveals `value` and `salt` later, so the preimage
+      stays hidden until reveal. Zero-knowledge proofs let a contract check a property of a
+      value it never sees.
 ---
 
 > Solidity state variables live in storage. So far you've been declaring them and using them without thinking about where they actually sit. They sit in a giant array of 32-byte slots, with 2^256 slots in total, indexed starting from 0. The compiler decides which variable goes in which slot, and for dynamic types like mappings and arrays the slot derivation involves hashing. This lesson walks through how storage is actually laid out: how the compiler packs small types together, where dynamic arrays put their elements, where mappings put their values, and the security implication that follows from all of this. Anyone can read any slot of any contract. Marking a state variable `private` does not make it secret.

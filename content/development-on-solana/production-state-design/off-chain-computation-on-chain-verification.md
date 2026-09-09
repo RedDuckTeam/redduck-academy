@@ -4,36 +4,32 @@ title: Off-chain computation, on-chain verification
 type: lecture
 order: 5
 faq:
-  - question: Why does my Solana program run out of compute units on a big loop?
-    answer: Every instruction has a compute-unit budget, 200,000 by default and up
-      to about 1.4 million if you explicitly raise it. A loop over a large or
-      user-controlled list can exceed that and revert, and an attacker can even
-      fill the list with junk until the function becomes unusable, a
-      denial-of-service. The fix is usually to move the heavy work off chain and
-      only verify a cheap result on chain.
-  - question: How can an airdrop confirm someone is eligible without storing
-      thousands of accounts on chain?
-    answer: Build a Merkle tree of all the (address, amount) pairs off chain and
-      store only its single 32-byte root hash on chain. When a user claims, they
-      submit their amount plus a short path of sibling hashes, and the program
-      rehashes its way up to the root and checks it matches the stored one,
-      which costs only about 14 hashes for 10,000 users. This replaces thousands
-      of rent-paying accounts with one small field.
-  - question: If the user computes the answer off chain, what stops them from
-      submitting a fake one?
-    answer: Nothing stops them from trying, but lying gains them nothing. The
-      program re-checks the claim with its own deterministic verification code,
-      and if the claim fails that check the transaction simply reverts, changing
-      no state and affecting no one else. The liar only wastes their own
-      transaction fee, so the verification step is the real security boundary
-      and must be airtight.
-  - question: When does the off-chain-compute, on-chain-verify pattern not work?
-    answer: It fails when checking the answer costs as much as computing it, since
-      then there is no saving, and when the correct answer changes faster than
-      the chain can verify it, like a live market price that is stale by the
-      time verification runs. It also pushes work onto the wallet or frontend,
-      which must build the proof for the user. For anything where verification
-      is much cheaper than the computation, though, the pattern is a strong fit.
+  - question: Why does my loop run out of compute units?
+    answer: >-
+      An instruction gets 200,000 CU by default and 1.4 million at the most. A user-controlled
+      list can blow past that, and an attacker who keeps growing it makes the handler unusable.
+  - question: How does an airdrop check 10,000 addresses without 10,000 accounts?
+    answer: >-
+      One 32-byte Merkle root in a config account. The claimer submits their amount and about 14
+      sibling hashes, the program rehashes its way to the root, and a mismatch reverts.
+  - question: How do I record that someone already claimed?
+    answer: >-
+      The claim PDA's existence is the flag. init on a PDA seeded with the claimer's address
+      fails the second time.
+  - question: What stops the user from faking the off-chain computation?
+    answer: >-
+      Nothing, and it gains them nothing. A claim that fails the program's own verification
+      reverts, changing no state. That makes the verifier the security boundary, so it has to be
+      airtight.
+  - question: Can I have the user sort the array and just verify the order?
+    answer: >-
+      Not usefully. Checking order still costs one read per element, cheaper than sorting but
+      too much on chain for a large array. Compare a claimed square root, which the program
+      confirms with two multiplications for about 50 CU.
+  - question: Does an off-chain signature fit this pattern?
+    answer: >-
+      Yes. The wallet signs off chain and the program verifies with Ed25519 natively, or
+      secp256k1 through a syscall.
 ---
 
 > Every program you've written so far does its own work. The program receives an instruction, computes a result inside the BPF runtime, and writes the answer to an account. That works as long as the work is cheap. The moment the work gets expensive, or scales with user-controlled inputs, or requires iteration over data of unknown size, the naive approach breaks. Compute unit costs become prohibitive. Loops become denial-of-service vectors. Operations that are routine off the chain become impossible on it. This lesson teaches you the most important pattern for working around this limit. You'll see it in airdrops, in compressed NFTs, in oracles, in proofs of identity, and in dozens of places you haven't met yet. Once you internalize it, problems that looked impossible become straightforward.

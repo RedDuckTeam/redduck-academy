@@ -4,37 +4,22 @@ title: Keepers and Chainlink Automation
 type: lecture
 order: 5
 faq:
-  - question: How can a smart contract run something on a schedule when it has no
-      clock or background thread?
-    answer: It cannot do this on its own. A contract only ever runs when an external
-      account or another contract sends it a transaction, so tasks like
-      liquidations, vesting releases, or limit orders need someone to push the
-      button. Chainlink Automation solves this with a decentralized network of
-      nodes that watch your registered task and send the transaction to trigger
-      it when the condition is met, charging you in LINK for the gas plus a
-      premium.
-  - question: Why does performUpkeep have to re-check the condition if checkUpkeep
-      already verified it?
-    answer: checkUpkeep runs off-chain and its result is only a hint rather than a guarantee. By
-      the time a node builds and mines the performUpkeep transaction, two or
-      three blocks have passed and prices or balances may have changed. If
-      performUpkeep trusted the stale result, it could act on a condition that
-      has already cleared, so it must re-read the data and revert if the
-      condition is no longer true.
-  - question: How do I stop random accounts from calling my performUpkeep function?
-    answer: By default performUpkeep is public, so anyone could call it. When you
-      register an upkeep, the registry generates a unique forwarder address, and
-      that is the only address the network uses to trigger your function. You
-      should store that address after registration (not in the constructor,
-      since you do not know it yet) and require msg.sender to equal the
-      forwarder inside performUpkeep.
-  - question: What happens if my Chainlink Automation upkeep runs out of LINK?
-    answer: It simply stops running. The network deducts LINK from your upkeep's
-      balance each time it executes, and when that balance hits zero the task
-      quietly stops being triggered, with no warning or revert from your
-      contract. That means critical jobs like liquidations can silently fail, so
-      monitoring the balance and topping it up is operational work you have to
-      own.
+  - question: Why does performUpkeep have to re-check what checkUpkeep already confirmed?
+    answer: >-
+      It is two or three blocks stale by the time a keeper node lands the transaction. Re-read
+      the data and revert if the condition has cleared.
+  - question: How do I stop anyone from calling performUpkeep?
+    answer: >-
+      Lock it to the forwarder. Registration produces a unique forwarder address, the only
+      sender Chainlink Automation uses. Set it after deployment through an owner-guarded
+      setter.
+  - question: What happens when my upkeep runs out of LINK?
+    answer: >-
+      It stops. No revert, no warning, the network just stops triggering it.
+  - question: Do I always have to write checkUpkeep?
+    answer: >-
+      Only for condition-based work. A time-based upkeep takes a cron schedule and a target
+      function. A log trigger uses checkLog instead, receiving the matching event.
 ---
 
 ## The passivity problem

@@ -4,38 +4,34 @@ title: Account space and layout
 type: lecture
 order: 50
 faq:
-  - question: Why can't I add a new field to a Solana account after it's created?
-    answer: A Solana account's data is a fixed slab of bytes whose size is decided
-      when the account is initialized, and you pay rent for exactly that many
-      bytes forever. The account can never grow implicitly, so you can't tack on
-      a new field later. If you truly need more room you either use the realloc
-      instruction (which costs extra rent) or split your data across several
-      accounts, each sized at creation.
-  - question: What is the 8-byte discriminator in an Anchor account and why does
-      space always start with 8?
-    answer: "Anchor puts 8 bytes at the very start of every account: a
-      discriminator, which is a hash derived from the account type's name (for
-      example the hash of \"account:Vault\"). Before reading the rest of the
-      bytes, Anchor checks those 8 bytes match the expected type, which blocks
-      \"type confusion\" bugs where an attacker passes a different account that
-      happens to be the same size. Because those 8 bytes are real storage, the
-      space formula is always 8 + the sum of your field sizes."
-  - question: How do I set the size for a String or Vec field in an Anchor account?
-    answer: "Variable-length fields can't grow on Solana, so you must cap them at
-      creation with the #[max_len(N)] attribute, which reserves 4 bytes for the
-      length plus N times the size of each element. Pick the bound carefully:
-      too low and users break when they hit the cap, too high and every account
-      pays rent for bytes it may never use. For large or unbounded collections,
-      most programs instead store each element in its own PDA rather than in a
-      single Vec."
-  - question: How many bytes does each Rust type take when calculating account space?
-    answer: "The sizes are fixed and easy to memorize: a Pubkey is 32 bytes, a bool
-      is 1 byte (Borsh does not pack bits), and fixed-width integers are their
-      bit count divided by 8 (so a u64 is 8 bytes). An Option<T> adds 1 byte for
-      a Some/None flag, and an array `[T; N]` is exactly N copies of T. In
-      practice you rarely add these up by hand, since #[derive(InitSpace)]
-      computes an INIT_SPACE constant for you and you write space = 8 +
-      YourStruct::INIT_SPACE."
+  - question: Why does every space calculation start with 8?
+    answer: >-
+      Those 8 bytes are the discriminator, a hash of the type's name, so a Vault starts with the
+      hash of "account:Vault". Anchor checks it before deserializing, which stops a Pool account
+      of the same size being read as a Vault.
+  - question: What happens if I leave the 8 bytes out of space?
+    answer: >-
+      The account is 8 bytes short and Anchor's first write of the discriminator runs past the
+      end of the data.
+  - question: How many bytes does each type take?
+    answer: >-
+      A Pubkey is 32. A bool is 1, because Borsh does not pack bits. Integers are their bit
+      count divided by 8, so u64 is 8 and u128 is 16. Option<T> is 1 + the size of T, and [T; N]
+      is N copies of T.
+  - question: Do I have to add all that up by hand?
+    answer: >-
+      No. #[derive(InitSpace)] sums your fields into an INIT_SPACE constant and you write space
+      = 8 + Vault::INIT_SPACE. A Pubkey, a u64 and a u8 bump come to 8 + 32 + 8 + 1 = 49 bytes.
+  - question: Why won't Anchor size my account when it has a Vec field?
+    answer: >-
+      Cap it with #[max_len(N)]. A Vec or String has no fixed length, and account data cannot
+      grow. The field reserves 4 bytes for the length plus N times the element size, so a
+      Vec<Pubkey> at max_len(100) costs 3,200 bytes, about 0.022 SOL of rent paid once at init.
+  - question: Can I add a field to an account type after accounts already exist?
+    answer: >-
+      Not to the accounts that already exist. Size is fixed at init. realloc resizes one account
+      in one instruction, paying or refunding rent. Migrating all of them means a new account
+      type, an instruction that copies the data, and close on the old account.
 ---
 
 > An account's data field is a fixed slab of bytes. When you initialize an account, you tell the runtime how many bytes you want, you pay rent for that many, and the size never changes. Every field on your Rust struct has to fit into that slab in a known, fixed amount of room. The math is simple: 8 bytes for a discriminator that says what type the account is, plus the size of each field added together. Everything that follows is variations on that one sentence.

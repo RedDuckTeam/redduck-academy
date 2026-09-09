@@ -4,43 +4,24 @@ title: Loops and hashing
 type: lecture
 order: 12
 faq:
-  - question: Why does my Solidity function run out of gas when it loops over an
-      array that keeps growing?
-    answer: Every Ethereum block has a maximum total gas (around 30 million), which
-      caps how much work a single transaction can do. A loop that iterates over
-      an array with no size limit will eventually need more gas than fits in a
-      block, so the transaction reverts every time and the function becomes
-      unusable. If an attacker can add entries to that array cheaply, they can
-      deliberately brick the function. This is a denial-of-service via unbounded
-      loops. Fix it with pagination, letting users pull their own funds, or
-      moving the work off chain.
-  - question: Why didn't my change to a struct save, even though the function ran
-      without errors?
-    answer: "You probably copied it into memory instead of referencing storage.
-      Writing `User memory u = users[who]` makes a throwaway copy, so `u.age +=
-      1` changes the copy and the real state stays the same. To actually update
-      stored data, declare the local as storage: `User storage u = users[who]`.
-      Both versions compile, which is why this is one of the most common
-      Solidity bugs for developers coming from languages where assignment is
-      always a reference."
-  - question: When should I use abi.encode versus abi.encodePacked before hashing
-      with keccak256?
-    answer: Use `abi.encode` whenever you hash more than one dynamic value like a
-      string, bytes, or dynamic array. `abi.encodePacked` removes the separators
-      between values, so two different inputs can produce the same bytes and
-      therefore the same hash. For example, packing ("hello","world") and
-      ("hellow","orld") both give "helloworld" and collide. `encodePacked` is
-      only safe for a single value or for fixed-size types like uint and
-      address.
-  - question: What is a function selector and why is ERC-20 transfer always 0xa9059cbb?
-    answer: A function selector is the first 4 bytes of the keccak256 hash of the
-      function's signature, meaning its name plus parenthesized argument types
-      with no spaces, like `transfer(address,uint256)`. When you call a
-      contract, the first 4 bytes of the transaction data are this selector, and
-      the contract uses it to pick which function to run. Because the hash is
-      deterministic, the same signature always yields the same selector across
-      every contract, which is why any wallet can call `transfer` on any ERC-20
-      token without special configuration.
+  - question: Why does my loop run out of gas once the array grows?
+    answer: >-
+      The block gas limit, around 30 million, caps a single transaction, and storage
+      dominates a loop at 22,100 gas per fresh slot write and 5,000 per update. An array
+      anyone can extend eventually needs more gas than a block holds, so the call reverts
+      every time and the ETH inside is stuck. Paginate, let recipients pull their own funds,
+      or move the work off chain.
+  - question: abi.encode or abi.encodePacked for keccak256 hashing?
+    answer: >-
+      abi.encode whenever two or more dynamic values go in. encodePacked drops the
+      separators between them, so "hello" plus "world" and "hellow" plus "orld" both encode
+      to helloworld and hash the same. encodePacked is safe for a single value, or for
+      fixed-size types like uint256 and address.
+  - question: Why is the ERC-20 transfer selector always 0xa9059cbb?
+    answer: >-
+      It is the first 4 bytes of keccak256 of "transfer(address,uint256)". A selector hashes
+      the function name plus parenthesized argument types with no spaces, so the same
+      signature yields the same 4 bytes in every contract.
 ---
 
 > Three language features that show up across nearly every Solidity contract. Loops iterate over data and run code repeatedly, with a constraint that doesn't exist outside Solidity: every iteration costs gas, and the total gas available in a transaction is bounded by the block. Data locations control where values live during execution, which determines what they cost and whether changes to them persist. Hashing produces a fixed-length hash of arbitrary data, and `keccak256` is the primary one used for storage slot derivation, function selectors, event topics, commitment schemes, and signature verification. All three are simple in their basic form and trickier than they look in production.

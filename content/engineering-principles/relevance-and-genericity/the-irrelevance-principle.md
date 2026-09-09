@@ -4,24 +4,29 @@ title: The irrelevance principle
 type: lecture
 order: 1
 faq:
-  - question: How is the Irrelevance Principle different from just writing generic code?
-    answer: Generic code is one way the principle shows up inside a program, where a
-      single function works for many types. The principle is broader. It applies to
-      any system, a protocol, an interface, or a check, and says to constrain only the
-      properties the outcome actually depends on. Genericity is the programming
-      instance of that wider design rule.
-  - question: Does ignoring a property ever make a system less safe?
-    answer: Only if the outcome actually depends on that property, in which case the
-      property was never irrelevant and you keep the check. The principle is about
-      properties the result does not depend on. When a check guards nothing that
-      affects whether the result is correct, removing it lowers complexity without
-      lowering safety.
-  - question: What is parametricity in plain terms?
-    answer: It is the guarantee that a function written to work for any type, without
-      reading what the values mean, must behave the same way for every type. Because the
-      function has no way to tell one type from another, it cannot treat them
-      differently. You get uniform behavior for free, purely from the fact that the
-      function knows nothing about the type it is handed.
+  - question: Does a generic sort need to know it is sorting prices?
+    answer: >-
+      No. It needs one thing, a way to compare two values.
+  - question: Why not make the sort accept only prices?
+    answer: >-
+      The check would grow the routine, force you to decide what happens when it fails, and
+      fix nothing. The routine already sorts timestamps and temperatures correctly, because
+      the domain of the data never affected the result.
+  - question: What is parametricity?
+    answer: >-
+      The guarantee that a function written to work for any type, without reading what the
+      values mean, behaves the same way for every type. It has no way to tell one type from
+      another, so it cannot treat them differently. Everyday programming calls the same idea
+      genericity, or parametric polymorphism.
+  - question: Is the Irrelevance Principle just a fancy name for generics?
+    answer: >-
+      Generics are one instance of it, inside a program. The principle covers any system. TCP
+      delivers a stream of bytes reliably and in order without reading them, because what the
+      bytes carry has no bearing on delivering them.
+  - question: How do I know a check is buying me nothing?
+    answer: >-
+      Run it in your head with the check removed. If the result is still correct for every
+      input you care about, the check was guarding nothing.
 ---
 
 > A system should only constrain what it actually cares about. When it starts checking a property that has no effect on the result, that check adds complexity and buys no correctness. The skill is spotting the properties a system is free to ignore, and leaving them unconstrained.

@@ -4,33 +4,28 @@ title: Errors and events
 type: lecture
 order: 60
 faq:
-  - question: How do I make an Anchor instruction fail with a custom error message?
-    answer: 'Define a Rust enum tagged with #[error_code], where each variant has a
-      human-readable #[msg("...")] message that clients will see. In your
-      handler, guard preconditions with the require! macro, for example
-      require!(amount > 0, MyError::ZeroAmount). If the condition is false, the
-      named error fires and the whole transaction aborts cleanly. The standard
-      pattern is to run all your require! checks first, then change state last.'
-  - question: Why does my Anchor custom error come back as code 6000 instead of 0?
-    answer: Anchor reserves error codes 0 through 5999 for its own framework errors,
-      so your custom variants start numbering at 6000. The variant order is
-      positional, which means that once a program is deployed you can safely add
-      new variants at the end, but reordering or inserting them will shift the
-      codes and break existing clients.
-  - question: Can another instruction read a value I emitted with an Anchor event?
-    answer: "No. Events (structs marked #[event] and sent with emit!) are written to
-      the transaction's logs and can only be read by off-chain consumers like
-      indexers, frontends, or Discord bots, never by on-chain code. The rule of
-      thumb is: if another instruction needs to read a value, it must live in
-      account state. If only humans and dashboards need it, emit it as an
-      event."
-  - question: When should I use require_keys_eq! instead of plain require! in Anchor?
-    answer: Use require_keys_eq! (and require_neq for the opposite) whenever you're
-      comparing two Pubkeys, such as an authority check confirming the signer
-      matches the stored admin. Its advantage over plain require! is that on
-      failure it logs both keys in base58, making debugging far easier. Use
-      require_eq! for the same reason when comparing integers or byte arrays,
-      and reserve plain require! for simple boolean conditions.
+  - question: How do I make an instruction fail with my own error message?
+    answer: >-
+      Define a Rust enum tagged with #[error_code], each variant carrying the #[msg("...")] line
+      clients display. Guard the handler with require!(amount > 0, MyError::ZeroAmount). A false
+      condition aborts the transaction, so run every check before you touch state.
+  - question: Why is my custom error code 6000 instead of 0?
+    answer: >-
+      Anchor reserves 0 through 5999 for its own errors, so your first variant is 6000. Codes
+      follow variant order, so append new variants and never reorder them.
+  - question: My require! failure only logs the error name. How do I see the values?
+    answer: >-
+      Switch to the comparing forms. require_eq! logs both sides, "SizeMismatch. Left: 100.
+      Right: 250." require_keys_eq! does the same for two Pubkeys and prints them in base58,
+      which is what an authority check needs.
+  - question: Can another instruction read a value I emitted with emit!?
+    answer: >-
+      No. An #[event] struct goes to the transaction's logs, and on-chain code cannot read logs.
+      Anything a later instruction has to check belongs in account state.
+  - question: How do I add to a u64 without overflowing?
+    answer: >-
+      checked_add returns an Option, so chain ok_or onto it:
+      counter.value.checked_add(by).ok_or(CounterError::Overflow)?
 ---
 
 > You're about to write a handler. Half the work is the happy path: read accounts, do the operation, write state. The other half is everything else: someone passed a zero amount, the caller isn't authorized, the lockup hasn't expired, the vault is empty. Every one of these conditions needs to abort the transaction cleanly with a message the user can actually read. Separately, when the happy path succeeds, off-chain consumers want to know what changed: who deposited, who withdrew, how much. The first half is errors. The second half is events. Both come down to a handful of mechanical tools.

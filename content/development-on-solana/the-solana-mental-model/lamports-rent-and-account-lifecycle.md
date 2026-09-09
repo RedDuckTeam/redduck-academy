@@ -4,30 +4,29 @@ title: Lamports, rent, and account lifecycle
 type: lecture
 order: 4
 faq:
+  - question: How many lamports are in one SOL?
+    answer: >-
+      One billion. Every balance, fee and storage deposit on Solana is counted in lamports.
   - question: Do I have to keep paying rent to store an account on Solana?
-    answer: No. Although the chain charges for storage, every account today is
-      rent-exempt, meaning it holds a one-time minimum lamport deposit sized to
-      its data and stays on the chain for free after that. The old mode of
-      paying rent each epoch until the account ran out was deprecated, so when
-      developers say rent they now mean this single up-front deposit rather than an
-      ongoing fee.
-  - question: Can I get back the SOL I paid to create a Solana account?
-    answer: "Yes. The rent deposit works like a security deposit: you pay it when
-      the account is created and get it back when the account is closed. Closing
-      an account zeros its data and transfers its full lamports balance to a
-      recipient you choose, so an application like a staking program or raffle
-      can refund users when they exit, making their net storage cost effectively
-      zero."
-  - question: How much does it cost to store data on Solana, and why must I set an
-      account's size when I create it?
-    answer: The deposit scales with the bytes the account holds, roughly 6,960
-      lamports per byte plus 128 bytes of overhead, so an empty wallet costs
-      about 890,000 lamports and a 165-byte token account about 2,040,000
-      lamports. Because the cost is tied to size, every account is sized at
-      creation and cannot grow without bound. Making it bigger later means
-      paying an additional deposit to cover the new bytes, and the payer is
-      whoever creates it, usually the user, never the program from its own
-      balance.
+    answer: >-
+      No. Every account holds a one-time deposit sized to its data and then sits on the
+      chain for free. Paying rent each epoch until the balance ran out was deprecated, so
+      rent now means that up-front deposit.
+  - question: How much does an account's rent deposit cost?
+    answer: >-
+      Roughly 6,960 lamports per byte, plus 128 bytes of overhead per account. An empty
+      wallet needs about 890,000 lamports, a 165-byte token account needs 2,039,280, and a
+      200 KB program account needs about 1.4 SOL. Because the price is per byte, every
+      account is sized at creation and growing it later costs an extra deposit.
+  - question: Can I get back the SOL I paid to create an account?
+    answer: >-
+      Yes. Closing the account zeros its data and sends the whole lamports balance to a
+      recipient you name. Applications holding user deposits refund them this way, so the
+      user's net storage cost is zero.
+  - question: Does my program pay for the accounts it creates?
+    answer: >-
+      No. The payer is an account listed in the transaction, almost always the user whose
+      action triggered the creation.
 ---
 
 > Every account on Solana has a balance. Every account costs something to keep on the chain. Both numbers are measured in the same tiny unit, and both work the way a security deposit at an apartment works: you pay it up front, the chain holds it while the account exists, and you get it back when the account closes. Once that picture is in place, "rent" stops being a worry and becomes a one-time number you look up.

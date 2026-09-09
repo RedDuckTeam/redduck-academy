@@ -4,31 +4,28 @@ title: Public-key cryptography
 type: lecture
 order: 4
 faq:
-  - question: How can two keys be mathematically linked if one can't reveal the other?
-    answer: "They rely on a one-way function: something easy to compute forward but
-      effectively impossible to reverse, like mixing two paint colours where
-      combining them is trivial but separating the mixture is hopeless. Deriving
-      the public key from the private key takes microseconds, but working
-      backward from the public key to the private key would take longer than the
-      lifetime of the universe."
-  - question: What is the difference between a private key and a public key?
-    answer: The private key is a random 32-byte secret that you keep hidden, and the
-      public key is derived from it and shared freely. You use the private key
-      to sign or decrypt in a way only you can, while anyone can use your public
-      key to verify or encrypt without ever holding your secret. Your blockchain
-      address is derived from the public key.
+  - question: How can two keys be mathematically linked if neither reveals the other?
+    answer: >-
+      Public-key cryptography uses a one-way function. Computing the public key from the
+      private key takes microseconds. Reversing that step would take longer than the lifetime
+      of the universe.
+  - question: What is a private key, exactly?
+    answer: >-
+      32 random bytes from a secure entropy source. Your public key is derived from it, and
+      your address from the public key. Predictable bytes make a guessable key, and most
+      wallet compromises came from weak entropy.
   - question: What are secp256k1 and Ed25519?
-    answer: They are the two elliptic-curve schemes that do almost all the
-      public-key work in blockchains. secp256k1 is used by Bitcoin, Ethereum,
-      and most chains that followed them, while Ed25519 is a newer scheme with
-      cleaner, faster maths used by Solana and many recent chains. Both use a
-      32-byte private key and are believed secure against any ordinary computer.
-  - question: If there's no password reset, what happens if I lose my private key?
-    answer: There is no recovery. On a blockchain the private key is your entire
-      identity. The network knows only the public key that pairs with the key
-      you control, never your name or email. Lose the private key and no one can
-      restore access, and if someone steals it there is no insurance and no
-      customer support to call.
+    answer: >-
+      The two elliptic-curve schemes behind almost all blockchain keys. Bitcoin and Ethereum
+      use secp256k1. Solana uses Ed25519, published in 2011 and also used by SSH and Signal.
+      Both take a 32-byte private key.
+  - question: What happens if I lose my private key?
+    answer: >-
+      Nothing can be done. There is no reset and no support line. The network knows only the
+      public key that pairs with your key, never your name.
+  - question: Can a quantum computer break these keys?
+    answer: >-
+      A large enough one running Shor's algorithm, yes. No ordinary computer can.
 ---
 
 > The previous lesson introduced the idea of a key pair without explaining how such a thing is possible. Two keys, mathematically linked, where knowing one tells you nothing useful about the other. This lesson is about what makes that work, what specific schemes blockchains use, and why this single mathematical trick is the foundation for almost everything cryptographic that the chain actually relies on.

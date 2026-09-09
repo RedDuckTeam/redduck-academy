@@ -4,17 +4,10 @@ title: Congratulations
 type: lecture
 order: 1
 faq:
-  - question: I just finished the Ethereum track, what should I learn next?
-    answer: The natural next step is the Solana track, where you write programs in
-      Rust against a different account model and execution environment. If you
-      are not ready for that, you can keep building on Ethereum instead, for
-      example reading a protocol's codebase end to end, building your own
-      project, or applying for an audit role.
-  - question: Will moving from Ethereum to Solana mean starting over from scratch?
-    answer: No. Most of the mental models you built on Ethereum carry over, even
-      though some have to rewire, such as Solana's idea that everything is an
-      account. Learning a second blockchain ecosystem is generally faster than
-      learning the first, because the core instincts transfer cleanly.
+  - question: I finished the Ethereum track. What should I do next?
+    answer: >-
+      Keep building. Read one protocol's codebase end to end, build something of your own, or
+      apply for an audit role.
 ---
 
 You finished the Ethereum track. That's a real milestone. You went from "what is a smart contract" to writing them, reading them, and understanding the protocols that move billions of dollars on the blockchain every day. That kind of fluency takes serious work, and you did it.

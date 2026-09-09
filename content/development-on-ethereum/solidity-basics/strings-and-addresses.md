@@ -5,35 +5,24 @@ type: lecture
 order: 3
 faq:
   - question: Why can't I compare two strings with == in Solidity?
-    answer: "A Solidity string is a sequence of UTF-8 bytes rather than a simple character
-      array, and the language deliberately omits ==, .length, indexing, and +
-      concatenation on strings because the 'right' answer depends on what you
-      mean by a character. When you genuinely need to compare two strings, hash
-      their bytes and compare the hashes: keccak256(bytes(a)) ==
-      keccak256(bytes(b)). Before doing that, ask whether the comparison could
-      happen off chain instead, since string work on chain is expensive."
-  - question: What is the difference between address and address payable in Solidity?
-    answer: A plain address identifies an account but cannot receive ETH through the
-      .transfer() method, while address payable can. Solidity makes you opt into
-      moving money explicitly, so if you have a plain address and want to send
-      ETH to it, you cast it at the call site with payable(addr). Many address
-      sources, like function arguments from external callers, give you a plain
-      address, which is why the cast is common.
+    answer: >-
+      Solidity defines no == for strings. Hash the bytes, keccak256(bytes(a)) ==
+      keccak256(bytes(b)). A string is a sequence of UTF-8 bytes, so .length, indexing and +
+      are left out too. To join two strings, use string.concat, added in 0.8.12.
+  - question: When do I need payable(addr) instead of a plain address?
+    answer: >-
+      Whenever you call .transfer() on it. Only address payable carries that method.
+      msg.sender and function arguments from external callers arrive as plain addresses, so
+      the cast at the call site is common.
   - question: Why is .transfer() no longer the recommended way to send ETH?
-    answer: 'The .transfer() method forwards a fixed 2300 gas stipend to the
-      recipient, which used to be enough but became unreliable after a 2019
-      upgrade (EIP-1884) raised the cost of certain operations. As a result,
-      sending ETH to a contract such as a multisig or proxy can fail
-      unexpectedly. Modern Solidity instead uses a low-level call, checking the
-      returned success flag: (bool ok, ) = payable(target).call{value:
-      amount}(""); require(ok, "send failed");'
+    answer: >-
+      It forwards a fixed 2300 gas stipend, and EIP-1884 raised opcode costs in 2019. A
+      multisig or proxy that runs logic on receipt now needs more, so the send fails. Use a
+      low-level call, (bool ok, ) = payable(target).call{value: amount}(""), then require ok.
   - question: Why does sending ETH to my contract revert?
-    answer: A contract only accepts incoming ETH if it has at least one function
-      marked payable. Without one, every ETH transfer to it reverts. The payable
-      keyword signals to the compiler and the EVM that the function may receive
-      attached value, which then shows up as msg.value in wei. If you control
-      the contract, expose a payable function to accept deposits. If you do not,
-      it simply cannot receive the transfer.
+    answer: >-
+      The contract has no function marked payable. Without one, every incoming ETH transfer
+      is rejected.
 ---
 
 Two types you'll meet in the first hour of any non-trivial contract. They handle the two kinds of external data a contract sees. Strings carry text from humans. Addresses carry identifiers from the chain itself. Both behave in ways that catch developers coming from other languages. Strings have limitations: operations you'd expect to work simply don't. Addresses come in two forms, and you have to pick the right one to move money.

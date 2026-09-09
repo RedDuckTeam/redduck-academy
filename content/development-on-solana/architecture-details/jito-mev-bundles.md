@@ -4,44 +4,34 @@ title: Jito, MEV, Bundles
 type: lecture
 order: 47
 faq:
-  - question: What is MEV on Solana if there's no public mempool to front-run?
-    answer: MEV (maximum extractable value) is profit that comes from controlling
-      the order of transactions in a block, for example buying a token right
-      before a large swap pushes its price up, then selling right after. Solana
-      has no public mempool, so outsiders cannot scan for pending transactions
-      from the outside, but the leader still sees every transaction they are
-      about to include and still chooses the order, so the MEV exists and flows
-      to whoever has the closest relationship with the leader. Jito was built to
-      turn that hidden advantage into an open market with clear rules.
-  - question: What is a Jito tip, and how is it different from a priority fee?
-    answer: A Jito tip is just a plain SOL transfer to one of eight special Jito
-      accounts, added to your transaction. Leaders running the Jito-Solana
-      client watch for these and include higher-tipped transactions earlier. It
-      is separate from a priority fee, which is set via the ComputeBudget
-      program and reaches the leader through normal fee processing. A
-      transaction can carry both, and most production wallets and routers attach
-      both to maximize the chance it lands. The eight accounts exist so that
-      tipped transactions do not all serialize on writes to a single account.
-  - question: What is a Jito bundle, and why would I want transactions to be atomic?
-    answer: "A Jito bundle is a group of up to 5 transactions that the leader
-      includes together in the exact order you specify, all-or-nothing: if any
-      one fails, none of them land. Atomicity matters for sequences that only
-      make sense together, such as arbitrage where you buy a token on one DEX
-      and sell it on another. Landing only half would leave you stuck holding
-      tokens or short the ones you needed to sell. Searchers submit bundles to
-      Jito's off-chain block engine, which runs an auction by tip size,
-      simulates the winners, and forwards them to the current Jito-Solana
-      leader."
-  - question: Do I need to add Jito tips for my users' transactions to land?
-    answer: When the network is calm, a normal transaction with a small priority fee
-      lands easily, but during busy periods untipped transactions often get
-      dropped while tipped ones go through, so attaching a Jito tip greatly
-      improves reliability. Most wallet SDKs and transaction-building libraries
-      support this directly, and aggregators like Jupiter also route swaps
-      through Jito to protect users from MEV when protection is enabled.
-      Understanding this mechanism is what lets you debug "why isn't my
-      transaction landing" and "why did my user get a worse price than
-      expected."
+  - question: What is MEV if there is no public mempool to watch?
+    answer: >-
+      MEV is maximum extractable value, the profit from controlling the order of transactions
+      in a block. Buy a token right before a large swap lifts its price, sell right after. The
+      leader sees every transaction they are about to include and picks the order, so the
+      value goes to whoever is closest to the leader. Jito turned that into an open auction.
+  - question: How is a Jito tip different from a priority fee?
+    answer: >-
+      A tip is a plain SOL transfer to one of eight Jito tip accounts, added to your
+      transaction. Leaders running the Jito-Solana client watch for it and include
+      higher-tipped transactions earlier. A priority fee is set through the ComputeBudget
+      program and reaches the leader through normal fee processing.
+  - question: Why are there eight tip accounts?
+    answer: >-
+      The runtime serializes writes to one account, so eight of them spread the load.
+  - question: What is a bundle for?
+    answer: >-
+      A bundle is up to 5 transactions that land together, in the order you set, or not at
+      all. Arbitrage across two DEXes needs that, since landing only the buy leaves you
+      holding tokens you did not want. Searchers submit bundles to Jito's off-chain block
+      engine, which auctions them by tip size, simulates the winners, and forwards them to the
+      current Jito-Solana leader.
+  - question: Do my users' transactions need tips to land?
+    answer: >-
+      When the network is calm, a small priority fee is enough. When it is busy, untipped
+      transactions get dropped while tipped ones go through. Most wallet SDKs attach a tip
+      directly, and aggregators like Jupiter route swaps through Jito when MEV protection is
+      on.
 ---
 
 > When a leader produces a block, they choose which transactions to include and in what order. That choice has value, because the right ordering can capture real profit from things like DEX arbitrage. The name for this profit is MEV: maximum extractable value. Jito is the system most of the Solana network uses to organize how MEV gets captured. It does this through two mechanisms, tips and bundles.

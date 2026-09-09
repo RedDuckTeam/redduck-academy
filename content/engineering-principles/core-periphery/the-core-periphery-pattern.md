@@ -4,24 +4,30 @@ title: The core and periphery pattern
 type: lecture
 order: 1
 faq:
-  - question: How do I decide what belongs in the Core and what belongs in the Periphery?
-    answer: Find the smallest piece of code that must touch the valuable state or
-      enforce a rule that can never break, and make that the Core. Everything that
-      only adds convenience and could be rebuilt next month belongs in the
-      Periphery. If a component does not need to hold the valuable state to do its
-      job, keep it outside the Core.
-  - question: Why can the Periphery be replaced but not the Core?
-    answer: The Periphery holds nothing critical, so replacing it cannot endanger the
-      valuable state or the rules that guard it. The Core holds all of that, so any
-      change to it has to pass the highest level of review. The property that makes
-      one cheap to replace and the other expensive to change is simply which side
-      holds the assets.
+  - question: Where do I draw the line between Core and Periphery?
+    answer: >-
+      Around the smallest piece of code that must touch the valuable state or enforce a rule
+      that can never break. In a payment system that is the one component that reads and
+      stores card numbers. Checkout, discounts, receipts and integrations stay outside it and
+      reach it only through a narrow, fixed interface, with no special powers inside.
+  - question: What does the Core hand back to a checkout page?
+    answer: >-
+      A yes or no, a masked number, or a token. Never the full number.
+  - question: How does this map onto an operating system?
+    answer: >-
+      The kernel is the Core, the programs are the Periphery. The kernel has total authority
+      over hardware, memory, disk and network. A program has none, and asks through a narrow,
+      fixed set of calls to write a file.
+  - question: Why is the Periphery cheap to replace when the Core is not?
+    answer: >-
+      The Core holds the assets, the Periphery holds nothing. A redesigned checkout page does
+      not touch the card vault and needs no re-audit of it. Changing the Core goes through
+      the highest level of review.
   - question: Does putting card handling in one small component make a system PCI compliant?
-    answer: No. Shrinking the part that touches card data reduces what a PCI DSS
-      assessment has to cover, which is the idea PCI calls scope reduction. It lowers
-      cost and risk, but compliance still depends on meeting the standard's
-      requirements for whatever remains in scope. The pattern reduces the scope. It
-      does not replace the assessment.
+    answer: >-
+      No. PCI DSS applies to every system that stores, processes, or transmits cardholder
+      data, and shrinking that set is what the standard calls scope reduction. It makes the
+      assessment smaller. It does not pass it for you.
 ---
 
 > A system often has to do two jobs that pull in opposite directions. It has to guard something valuable and never leak it, and it has to keep changing to please users. When both share the same code and access, every change to the second endangers the first. The answer is to split the system into a small, rarely changed part that holds the valuable state, and a large, fast-moving part that holds nothing worth stealing.

@@ -5,31 +5,30 @@ type: lecture
 order: 3
 faq:
   - question: What is the Rust borrow checker actually doing?
-    answer: It tracks who owns each piece of memory at compile time and enforces a
-      small set of rules about how memory can be shared, rejecting code that
-      would cause a runtime bug in a language like C. There is no garbage
-      collector and no runtime cost. The price is that you sometimes have to
-      restructure code so the compiler can prove it is safe.
+    answer: >-
+      Tracking ownership of each piece of memory at compile time and enforcing a small set of
+      rules about how that memory is shared. No garbage collector, no runtime cost. The
+      price is that you sometimes restructure code so the compiler can prove it is safe.
   - question: What are the two borrowing rules in Rust?
-    answer: First, you can have any number of immutable (read-only) references to a
-      value at the same time. Second, if you have a mutable reference, you can
-      have no other references to that value at once. These rules prevent data
-      races and aliasing bugs at compile time, and nearly every borrow-checker
-      error comes down to breaking one of them.
-  - question: Why does Rust say "cannot borrow ctx.accounts as mutable more than once"?
-    answer: "Taking a &mut reference to one field and then another (like &mut
-      ctx.accounts.user_state and &mut ctx.accounts.position) makes the compiler
-      treat the whole ctx.accounts as borrowed twice. The simplest fix is to not
-      create separate references: just write ctx.accounts.user_state.count += 1
-      and ctx.accounts.position.amount = 100 directly, and the compiler scopes
-      each access narrowly enough to avoid the conflict. You can also
-      destructure the accounts struct once."
-  - question: What does the 'info lifetime in every Anchor Accounts struct mean?
-    answer: A lifetime is the span during which a reference stays valid. 'info says
-      that every account reference in the struct lives for the same span, namely
-      the duration of the instruction. It is mostly boilerplate that Anchor's
-      convention established, so you write 'info when you copy an Accounts
-      struct and let the macro tie it to the right thing.
+    answer: >-
+      Many readers or one writer. Any number of immutable references to a value can exist at
+      once, and a mutable reference must be the only reference to that value.
+  - question: Why does the compiler say I cannot borrow ctx.accounts as mutable more than once?
+    answer: >-
+      Taking a &mut reference to one field and then another to a second field makes the
+      compiler treat the whole of ctx.accounts as borrowed twice. Write
+      ctx.accounts.user_state.count += 1 and ctx.accounts.position.amount = 100 directly and
+      each access is scoped narrowly enough to pass. Destructuring the accounts struct once
+      also works.
+  - question: What does the 'info lifetime mean in an Anchor Accounts struct?
+    answer: >-
+      A lifetime is the span during which a reference stays valid. 'info marks every account
+      reference in the struct as living for the duration of the instruction. It is
+      boilerplate that Anchor's macro layer ties to the right thing.
+  - question: Can I modify a vector while iterating over it?
+    answer: >-
+      No. Collect the indices during the loop, then remove them afterwards in reverse order
+      so the earlier indices stay valid.
 ---
 
 > Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. Underneath, it enforces just two rules, and the `'info` lifetime on every Anchor account is a direct consequence of them. A handful of borrow patterns trip up almost every new Solana developer, and each one traces back to those same two rules. Once you see what the checker is actually doing, the compiler error messages start making sense and you spend fewer hours fighting the compiler.

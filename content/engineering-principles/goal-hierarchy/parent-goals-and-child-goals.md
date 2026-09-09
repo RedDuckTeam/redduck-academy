@@ -4,20 +4,30 @@ title: Parent goals and child goals
 type: lecture
 order: 1
 faq:
-  - question: How is this different from the parent and child goals I already met?
-    answer: The earlier idea named the two kinds of goal. This turns the pair into a
-      repeatable step. Before committing to a design choice, trace the full chain of
-      goals it serves up to the parent, and judge whether it still serves the parent
-      or only a child goal that has stopped mattering.
-  - question: Isn't removing a working feature always a loss?
-    answer: No. A feature that serves only a small child goal while adding complexity
-      that slows the parent goal is a net cost. Removing it gives up the child to serve
-      the parent, which is often the right call even though it feels like a loss.
   - question: How do I tell a parent goal from a child goal?
-    answer: Ask what each goal is for. If a goal is worth pursuing on its own, it is
-      closer to the parent. If it is worth pursuing only because it serves a bigger
-      goal, it is a child goal, and it keeps its value only while that bigger goal is
-      still being served.
+    answer: >-
+      Ask what each goal is for. A goal worth pursuing on its own sits near the parent. A goal
+      worth pursuing only because it serves a bigger one is a child. In chess, winning is the
+      only goal that matters by itself, and capturing pieces is worth doing while it still
+      builds strength.
+  - question: Can optimizing a child goal be wrong?
+    answer: >-
+      Yes. If it makes the parent goal above it worse, you have improved nothing.
+  - question: Is enforcing a commit naming convention a good use of a team's time?
+    answer: >-
+      Trace it up first. A tidy commit label serves readable history, which serves a
+      maintainable codebase, which serves a product that keeps working. One team enforced the
+      labels while the same codebase crashed the product's main function whenever an optional
+      external API call failed.
+  - question: One response returns twelve thousand items. Should I page it?
+    answer: >-
+      Weigh the data before you decide. Twelve thousand items came to about 125 kilobytes,
+      less than one photo already on the same screen, and arrived in one go with nobody
+      noticing. The count was the loud number. Load time decided the outcome.
+  - question: Is it ever right to delete a feature someone depends on?
+    answer: >-
+      Yes. A dashboard feature one department uses for a single edge case is a child goal, and
+      keeping it slows every release of the main function all users depend on.
 ---
 
 > You already met the **parent goal** and the **child goal** in [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not). Here that pair becomes a method. Trace any design choice up the chain of goals it serves, keep it while it serves the parent, and drop it the moment it serves only a child that has stopped serving the parent.

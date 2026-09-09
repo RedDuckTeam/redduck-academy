@@ -4,28 +4,32 @@ title: Bitcoin-specific forks
 type: lecture
 order: 5
 faq:
-  - question: What is the difference between a soft fork and a hard fork in Bitcoin?
-    answer: A soft fork is a backwards-compatible change where the new rules are
-      stricter, so anything valid under the new rules is still valid under the
-      old ones. Old nodes do not even notice, and the network stays a single
-      chain. A hard fork introduces blocks that old nodes reject as invalid, so
-      if both groups keep mining, the chain permanently splits into two.
-  - question: Who actually decides whether a Bitcoin upgrade happens, miners or
-      someone else?
-    answer: Nodes are the real backstop rather than miners. Miners produce blocks, but the
-      people running nodes, especially exchanges, custodians, and large
-      merchants, decide which blocks count as valid. During the SegWit fight in
-      2017, users ran software that would reject non-signaling blocks, and
-      miners quickly gave in because they need someone to buy their freshly
-      mined bitcoin.
-  - question: When Bitcoin split into Bitcoin Cash, why did holders suddenly own
-      coins on both chains?
-    answer: Because both chains shared the exact same history up to the moment of
-      the split, including every balance. When Bitcoin Cash forked off in 2017,
-      the same private key that controlled your BTC also controlled an equal
-      amount of BCH on the new chain. These fork airdrops are not gifts from
-      anyone, just the automatic result of two chains inheriting the same state
-      before diverging.
+  - question: What is the difference between a soft fork and a hard fork?
+    answer: >-
+      A soft fork only tightens the rules, so old nodes keep accepting new blocks and the
+      chain stays whole. A hard fork produces blocks old nodes reject, and the chain splits
+      if both sides keep mining.
+  - question: What did SegWit fix?
+    answer: >-
+      Transaction malleability. Anyone could rewrite a signed transaction's signature so it
+      stayed valid but carried a different transaction ID, which broke software that tracked
+      transactions by ID and blocked the Lightning Network. SegWit moved signatures out of
+      the ID calculation and made room for more transactions per block, activating in August
+      2017.
+  - question: Do miners decide Bitcoin's rules?
+    answer: >-
+      No. Miners produce blocks, but node operators decide which blocks count as valid, and
+      exchanges, custodians, and large merchants run the ones that matter. In 2017 users ran
+      software set to reject blocks that did not signal for SegWit, and miner support jumped
+      within weeks.
+  - question: Where do fork airdrops like Bitcoin Cash come from?
+    answer: >-
+      Shared history. Both chains hold every block up to the split, so the key that
+      controlled your BTC controls the same amount of BCH on the new chain.
+  - question: Has Bitcoin upgraded successfully since the SegWit fight?
+    answer: >-
+      Yes. Taproot activated in November 2021 with broad agreement and no drama, roughly
+      four years after the ideas behind it were proposed.
 ---
 
 Bitcoin's rules can change, but the way they change is unusual. There's no CEO, no board, no committee that votes. The protocol moves when enough people running nodes voluntarily upgrade their software, and that's it. If consensus breaks, the network splits. This lesson walks through three real upgrade stories from Bitcoin's history to show what that looks like in practice.

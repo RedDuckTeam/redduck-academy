@@ -4,32 +4,33 @@ title: The core and its routers
 type: lecture
 order: 3
 faq:
-  - question: What vulnerability forced ERC-8009 to split into a core and routers?
-    answer: An early version was a single proxy that let any caller pass in the
-      target to call and the calldata to send, both chosen freely, while it also
-      held standing token approvals from its users. An attacker could point that
-      trusted proxy at a token contract and tell it to move a victim's balance, and
-      the token obeyed because the victim had approved the proxy. The balance check
-      did not help, because it only checks the caller's declared changes and the
-      attacker declared nothing about the victim. The fix split the proxy into a
-      minimal core that only enforces balances and replaceable routers that arrange
-      how each call is paid for.
-  - question: Does ERC-8009 protect a multisig like the one Bybit used?
-    answer: Yes, through a router built for Safe, added in mid-2026. The Safe router
-      is added as one of the Safe's owners and takes one slot of the signature
-      threshold. The executor who submits the transaction sees the clear-signed
-      balance requirements on their hardware wallet, and the required changes are
-      checked after the Safe executes, so a violation reverts the whole bundle. The
-      standard specifies what the executor sees at execution time, and does not
-      fully specify what each earlier co-signer sees on their own device.
+  - question: What went wrong with the original single ERC-8009 proxy?
+    answer: >-
+      It let any caller choose both the target and the calldata while it held standing token
+      approvals. An attacker could aim it at a token contract and move a victim's balance,
+      because the victim had approved the proxy. The balance check enforces only what the
+      caller declares, and the attacker declared nothing about the victim.
+  - question: How does the permit router avoid standing approvals?
+    answer: >-
+      The approval is per transaction. The owner signs an EIP-712 message granting a spend for
+      a single transaction, so no lasting approval sits on the router or the core for an
+      attacker to reach.
+  - question: Does ERC-8009 cover a multisig like Bybit's?
+    answer: >-
+      Yes, through the Safe router added in mid-2026. The router becomes one of the Safe's
+      owners and takes one slot of the signature threshold. The executor sees the clear-signed
+      balance requirements on their own device, and the required changes are checked after the
+      Safe executes, so a violation reverts the whole bundle. What each earlier co-signer sees
+      is not specified.
   - question: What does ERC-8009 not protect?
-    answer: It constrains native ETH and ERC-20 token balances, and nothing else. A
-      transaction can satisfy every ETH and token requirement you set and still move
-      an NFT you did not think to constrain, or change a lending or staking position
-      that is not a plain balance. The screen tells you the truth about the balances
-      you asked about and stays silent about the rest, so the balance requirements
-      are a strong floor rather than a full description of everything a transaction
-      can do.
+    answer: >-
+      Anything that is not native ETH or an ERC-20 balance. A transaction can meet every
+      requirement you set and still move an NFT you did not constrain, or change a lending or
+      staking position.
+  - question: What happens to funds left in the ERC-8009 core?
+    answer: >-
+      They belong to whoever withdraws them next. The core is stateless, so a correct
+      transaction never leaves a balance behind.
 ---
 
 > The single proxy that enforces your balance changes was not always safe. An early version had a hole that let an attacker spend other people's token approvals, and closing it forced ERC-8009 into the shape it has now: one small trusted core that enforces balances, with one replaceable router for each way a call can be paid. One of those routers is what finally covers a multisig like Bybit's. And even with all of it in place, the guarantee still has a limit worth knowing.

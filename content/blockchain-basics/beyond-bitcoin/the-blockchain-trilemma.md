@@ -4,37 +4,30 @@ title: The blockchain trilemma
 type: lecture
 order: 2
 faq:
-  - question: What is the blockchain trilemma and why can't a chain just have everything?
-    answer: The blockchain trilemma is the observation that a chain trades off
-      between security, decentralization, and scalability, and improving one
-      tends to weaken at least one other. For example, boosting scalability with
-      bigger blocks raises the cost of running a node, which thins out node
-      operators and weakens decentralization. These are not strict laws but
-      consistent patterns in how the design choices interact, and no design has
-      eliminated the trade-off entirely.
+  - question: What is the blockchain trilemma?
+    answer: >-
+      A chain trades security, decentralization, and scalability against each other, and
+      pushing one usually costs at least one of the others. Bigger blocks raise throughput and
+      also raise the cost of running a node, which reduces the number of node operators.
   - question: What is the difference between Layer 1 and Layer 2 in blockchain?
-    answer: A Layer 1 (L1) is a base blockchain that runs by itself and does not
-      depend on another chain for security. Bitcoin, Ethereum, and Solana are
-      all L1s. A Layer 2 (L2) is a system built on top of an L1 that handles
-      transactions separately, then periodically writes its state back down to
-      the L1 to inherit its security. An L2 is not a standalone chain, since it
-      relies on the L1 as its foundation.
-  - question: How does Layer 2 help a blockchain scale without weakening security?
-    answer: The idea is to use the slow, expensive, very secure L1 only for final
-      settlement that nobody can roll back, while a faster system on top handles
-      the actual transaction volume and regularly anchors its state to the L1.
-      This lets the fast layer inherit the L1's security without being limited
-      by its throughput. It does not break the trilemma, but it lets different
-      layers make different bets, with the most security-sensitive operations
-      anchored to the slowest, most decentralized layer.
+    answer: >-
+      An L1 runs by itself and secures itself. Bitcoin, Ethereum, and Solana are L1s. An L2
+      sits on top of an L1, handles transactions separately, and periodically writes its state
+      back down to inherit the L1's security. Lightning is Bitcoin's main L2.
   - question: What is the difference between optimistic rollups and ZK rollups?
-    answer: Both execute many transactions off the L1, batch them, and post the
-      result to the L1, but they prove correctness differently. Optimistic
-      rollups assume each batch is valid unless someone challenges it within a
-      fixed window, typically about a week, so withdrawals back to L1 take that
-      long to finalize. ZK rollups instead post a cryptographic proof that the
-      off-chain execution was correct, which the L1 verifies immediately, so
-      withdrawals are fast but the system is more complex to operate.
+    answer: >-
+      How they prove a batch is correct. An optimistic rollup treats each batch as valid
+      unless someone challenges it inside a window of about a week, so a withdrawal to L1
+      takes that long to finalize. A ZK rollup posts a cryptographic proof that the L1
+      verifies immediately, so withdrawals are fast and the system is harder to operate.
+  - question: Does Layer 2 break the trilemma?
+    answer: >-
+      No. It lets each layer trade the three properties differently, with the most
+      security-sensitive operations anchored to the slowest and most decentralized layer.
+  - question: How do I tell whether a chain is really decentralized?
+    answer: >-
+      Ask whether a motivated hobbyist can run a full node on a laptop. If the hardware rules
+      that out, the chain is at best partially decentralized.
 ---
 
 > Every blockchain has to make a trade-off between three things it would ideally have all of: security, decentralization, and scalability. Improving any one of them tends to weaken at least one of the others. This trade-off is so consistent across designs that it has a name: the blockchain trilemma. Once you have this framework, every chain you meet becomes a point in the same triangle. You can read its design choices as a specific bet about which two corners to prioritize. This lesson walks through the trilemma, places the major chains inside it, then looks at one of the ways modern designs try to escape it. That way out is called Layer 2.

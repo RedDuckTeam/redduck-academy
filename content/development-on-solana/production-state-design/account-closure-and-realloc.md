@@ -4,36 +4,29 @@ title: Account closure and realloc
 type: lecture
 order: 2
 faq:
-  - question: How do I get back the SOL locked in a Solana account I no longer need?
-    answer: You close the account, which drains its rent SOL to a recipient you
-      choose, zeroes the data, and marks it as closed. Solana never
-      garbage-collects accounts, so that locked SOL sits there forever until
-      someone explicitly reclaims it. In Anchor you add the close = recipient
-      constraint to the account and Anchor performs all the cleanup steps for
-      you.
-  - question: What is a revival attack and how does closing an account safely prevent it?
-    answer: After an account's lamports are drained, anyone can send SOL back to its
-      address to keep it alive, and if the program then re-reads it as fresh it
-      can be tricked with stale or adversarial values. To block this, a safe
-      close overwrites the account's 8-byte discriminator with a special closed
-      marker of all 0xFF bytes, so any later attempt to deserialize it as its
-      original type fails immediately. Anchor's close constraint writes this
-      closed discriminator automatically.
-  - question: Can I make a Solana account bigger after I create it?
-    answer: Yes, using realloc, which resizes the account's buffer in place while
-      keeping the same address. When you grow it, the payer covers the extra
-      rent needed to stay rent-exempt, and a single realloc can add at most 10
-      KB, so bigger growth needs several instructions. Shrinking an account does
-      not refund any SOL. If you want the SOL back you have to close the account
-      entirely.
-  - question: Should I use realloc, many small PDAs, or close-and-recreate for
-      growing data?
-    answer: It depends on why the data grows. If it grows in lockstep with one
-      entity and stays under a small bound, grow one account with realloc. If it
-      grows because more entities show up, like more donations or orders, give
-      each its own small PDA, which is the usual Solana default. If the data has
-      a clear end of life, such as an expired subscription, close-and-recreate
-      fits best.
+  - question: How do I get back the SOL locked in an account I no longer need?
+    answer: >-
+      Close it. Solana reclaims nothing on its own, so that SOL sits locked until you do.
+      Anchor's close = recipient constraint drains the lamports to a recipient you name, zeroes
+      the data, and writes all-0xFF over the discriminator.
+  - question: Does Anchor's close constraint stop a revival attack?
+    answer: >-
+      Yes. A zero balance protects nothing, since anyone can send lamports back to the address
+      and keep it alive. The closed marker is what blocks reuse. Anchor writes all 0xFF over the
+      8-byte discriminator, so the account can never deserialize as its original type again.
+  - question: How much can one realloc grow an account?
+    answer: >-
+      10 KB per instruction. Growing by 50 KB takes five of them, and realloc::payer names the
+      signer who covers the rent delta each time.
+  - question: Does shrinking an account refund rent?
+    answer: >-
+      No. The surplus lamports stay put. Closing is the only way to get SOL back.
+  - question: Should I grow one account with realloc or give each item its own PDA?
+    answer: >-
+      Ask why the data grows. Growth tied to one entity, bounded and small, fits realloc.
+      Growth because more entities arrive, more donations or more orders, fits one PDA each,
+      the usual Solana layout. A clear end of life, like an expired subscription, fits
+      close-and-recreate.
 ---
 
 > Solana accounts are not garbage-collected. Every byte you allocate stays paid for forever, and the SOL locked for rent-exemption stays locked until someone explicitly reclaims it. Closing an account is the deliberate act of saying "I'm done, give the SOL back, and make sure nobody can resurrect this slot with stale state." Resizing an account is the inverse: keeping the account alive but changing how many bytes it holds. Both are operations the default Anchor model does not perform automatically, and getting them wrong has real consequences. Doing both safely comes down to a small set of mechanics.

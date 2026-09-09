@@ -4,36 +4,31 @@ title: The EVM
 type: lecture
 order: 3
 faq:
-  - question: Why can't a smart contract make an API call or generate a random number?
-    answer: "The Ethereum Virtual Machine (EVM), the computer that runs every
-      contract, must be deterministic: the same code with the same input has to
-      produce the same result on every node, or the network would split into
-      incompatible chains. Anything non-deterministic is therefore forbidden, so
-      a contract cannot make HTTP requests, read the system clock, generate true
-      randomness, or read files. It can only see data the protocol provides,
-      such as the transaction input, the contract's storage, and basic block
-      information."
-  - question: What are the four places data can live during EVM execution?
-    answer: Data lives in the stack, memory, storage, or calldata. The stack is the
-      scratch surface for arithmetic, memory is a temporary buffer that is wiped
-      when the call ends, and calldata is the read-only input sent with the
-      transaction. All three last only for a single call and are cheap. Storage
-      is the contract's permanent state that survives forever, and it is by far
-      the most expensive place to put data.
-  - question: Will the same Solidity contract run on other chains like Polygon or
-      Arbitrum?
-    answer: Usually yes. The EVM specification is open and has been adopted by many
-      other chains, including Polygon, BNB Chain, Avalanche's C-Chain, Arbitrum,
-      Optimism, and Base. When a chain is called 'EVM-compatible', it means the
-      same bytecode you deploy on Ethereum will run there too, sometimes with
-      small differences in opcode behavior or gas pricing.
-  - question: When one contract calls another, what does msg.sender point to?
-    answer: Each call gets a fresh execution context, and msg.sender is the address
-      that made the current call rather than the original user. If contract A calls
-      contract B, then inside B the value of msg.sender is A, and the original
-      wallet that started the transaction is invisible from inside B. If B then
-      calls C, then C sees B as its msg.sender, so the chain of msg.sender
-      values mirrors the call stack.
+  - question: Why can't a contract call an API or generate a random number?
+    answer: >-
+      The EVM has to be deterministic. Same input, same result on every node, or the network
+      splits into incompatible chains. So no HTTP requests, no system clock, no true
+      randomness, no file reads. A contract sees the transaction input, its own storage, the
+      chain state, and block metadata like block.timestamp and block.number.
+  - question: Where does data live while a contract runs?
+    answer: >-
+      Stack, memory, storage, calldata. The stack is the arithmetic surface, 1024 slots of 32
+      bytes. Memory is a byte-addressable buffer wiped when the call ends. Calldata is the
+      read-only transaction input. Storage is permanent and costs 22,100 gas to write a new
+      word, 100 or 2,100 gas to read one.
+  - question: Why is everything in the EVM 32 bytes?
+    answer: >-
+      Each stack slot holds one 256-bit word, sized to match what Keccak hashing produces. A
+      bool is a word with 1 or 0 in the last byte, and an address is 20 bytes padded with
+      zeros.
+  - question: When contract A calls contract B, what is msg.sender inside B?
+    answer: >-
+      A. msg.sender is whoever made the current call, so the wallet that started the
+      transaction is invisible inside B. If B calls C, C sees B.
+  - question: What happens to storage writes when a call reverts?
+    answer: >-
+      Discarded. The EVM snapshots the state when the call starts and restores it on a
+      revert.
 ---
 
 > Every Ethereum contract you'll ever write runs on the same virtual machine, the Ethereum Virtual Machine, or EVM. It's a deterministic, stack-based computer that exists only as a specification. Every Ethereum node implements it, and every node implementation must produce the same output on the same input, or the network would split into incompatible chains. Understanding the shape of this machine, even at a high level, makes everything else in Solidity easier to reason about.
