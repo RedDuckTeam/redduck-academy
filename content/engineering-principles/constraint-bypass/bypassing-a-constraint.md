@@ -4,24 +4,28 @@ title: Bypassing a constraint instead of fighting it
 type: lecture
 order: 1
 faq:
-  - question: How is bypassing a constraint different from finding a clever workaround?
-    answer: A workaround still pays the constraint somewhere in the final design, so
-      you can point to the cost it added. A bypass removes the constraint from the
-      problem, so no part of the design has to account for it and there is no cost
-      to point to. The test is whether the constraint still shapes any tradeoff in
-      the finished solution.
-  - question: Does Diffie-Hellman mean an eavesdropper can never learn the secret?
-    answer: It means a passive eavesdropper who reads every message still cannot
-      compute the shared secret, because that would require solving a problem
-      believed to be computationally infeasible. It does not claim safety against
-      every kind of attacker. Someone who can intercept and alter the messages,
-      rather than only read them, is a different threat and needs a different
-      defense.
+  - question: What question finds the bypass?
+    answer: >-
+      Is this constraint intrinsic to the outcome I need, or only to one way of reaching it?
+  - question: How do I know whether I bypassed a constraint or worked within it?
+    answer: >-
+      Ask where the design pays the constraint. Stronger encryption still costs computation,
+      so you can point to the line where it is paid. A zero-knowledge proof pays it nowhere,
+      because proving knowledge while revealing nothing takes the constraint out of the
+      problem.
+  - question: Can an eavesdropper on a Diffie-Hellman exchange work out the shared secret?
+    answer: >-
+      Not by reading. Both sides exchange ordinary messages over a fully public channel and
+      still arrive at a secret an observer cannot compute, because computing it means solving
+      a problem believed to be computationally infeasible. The exchange was published in 1976.
+      An attacker who can alter the messages rather than only read them is a different threat.
+  - question: Isn't a lock the only way to stop two people overwriting each other's edits?
+    answer: >-
+      No. Optimistic concurrency lets everyone edit freely and checks for a conflict at the
+      moment a write is saved. The lock guarded one method, and the goal never required it.
   - question: Can every constraint be bypassed?
-    answer: No. Some constraints are real properties of the outcome you need, and no
-      design removes them. The pattern applies when a constraint belongs to one way
-      of reaching the outcome rather than to the outcome itself, and the whole skill
-      is telling those two apart.
+    answer: >-
+      No. Some constraints are real properties of the outcome you need.
 ---
 
 > Every hard problem seems to contain a wall, a constraint that fixes the shape of every solution. The common response is to push against the wall and do better work inside it. The rarer and stronger response is to make the wall irrelevant, so that nothing in the solution has to account for it. That second move is the most dependable source of real architectural breakthroughs, and it is closer to a method than to a talent.

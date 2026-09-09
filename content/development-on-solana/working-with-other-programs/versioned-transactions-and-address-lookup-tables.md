@@ -4,38 +4,33 @@ title: Versioned transactions and address lookup tables
 type: lecture
 order: 7
 faq:
-  - question: Why is there a 1,232-byte limit on Solana transactions?
-    answer: "A Solana transaction has to fit in a single UDP packet, and 1,232 bytes
-      is the maximum, derived from the IPv6 minimum MTU minus protocol headers.
-      That cap covers everything in the transaction: signatures, header, the
-      account list, the recent blockhash, and instruction data combined. Because
-      each account address is 32 bytes, a legacy transaction runs out of room at
-      roughly 30 accounts, which is why composing several DeFi programs quickly
-      hits the ceiling."
-  - question: How do address lookup tables let a transaction reference more accounts?
-    answer: An Address Lookup Table (ALT) is an on-chain account that stores up to
-      256 pubkeys at fixed offsets. A versioned (v0) transaction names the ALT
-      once at full size, then refers to each address inside it with a 1-byte
-      index instead of a full 32-byte pubkey. Replacing 32-byte copies with
-      1-byte indices frees up huge amounts of space, raising the practical
-      ceiling from about 30 accounts to around 256. The runtime resolves the
-      indices into full pubkeys before execution, so on-chain code sees no
-      difference.
-  - question: Can a signer account come from an address lookup table?
-    answer: No. Signers must always live in the transaction's static account list,
-      not in an ALT, because the runtime has to verify signatures before it does
-      any account resolution. Only non-signing accounts can be pulled from a
-      lookup table by index. A single transaction can reference up to four ALTs
-      at once, for example one for token program IDs and mints, one for a DEX,
-      and one for oracles.
-  - question: Why can't I use an address lookup table right after I create it?
-    answer: "A newly created ALT requires one slot to pass before any transaction
-      can reference it, which protects against last-second changes that would
-      alter the meaning of in-flight transactions. Filling a large table also
-      takes several transactions, since the extend instruction is itself bound
-      by the 1,232-byte limit (roughly 30 pubkeys per call). Closing a table
-      isn't instant either: rent is released only after a cooldown of about 500
-      slots, roughly 5 minutes."
+  - question: Why 1,232 bytes?
+    answer: >-
+      A transaction has to fit in one UDP packet, and 1,232 bytes is what the IPv6 minimum MTU
+      leaves after protocol headers. Signatures, header, account list, blockhash and
+      instruction data all share that budget. At 32 bytes per address, a legacy transaction
+      runs out of room near 30 accounts.
+  - question: How does a lookup table fit more accounts into the same packet?
+    answer: >-
+      It stores up to 256 pubkeys on chain at fixed offsets. A v0 transaction names the table
+      once at full size, then points at each address inside it with a 1-byte index. Swapping
+      32 bytes for 1 raises the practical ceiling from about 30 accounts to around 256, and
+      the runtime resolves the indices before execution, so on-chain code sees no difference.
+  - question: Can a signer come from a lookup table?
+    answer: >-
+      No. Signers stay in the versioned transaction's static account list, because the runtime
+      verifies signatures before it resolves any table reference. One transaction can reference
+      up to four tables.
+  - question: I created a lookup table and my transaction still fails. Why?
+    answer: >-
+      One slot has to pass before any transaction can reference a new table, which stops
+      last-second changes from altering in-flight transactions. Filling a large table also
+      takes several calls, since extend is bound by the same 1,232-byte limit and fits roughly
+      30 pubkeys at a time.
+  - question: When do I get the rent back from a closed table?
+    answer: >-
+      After a cooldown of about 500 slots, roughly 5 minutes. The cooldown keeps the address
+      from being reused while transactions that reference the old table are still in flight.
 ---
 
 > Solana transactions have a hard 1,232-byte size limit at the wire level. Legacy transactions put every account's full 32-byte pubkey directly in the message, so a 30-account transaction spends close to a kilobyte on pubkeys alone. The v0 transaction format introduced Address Lookup Tables: accounts that store pubkeys at fixed offsets, referenced from the transaction by a 1-byte index instead of a 32-byte pubkey. The same 30-account transaction now fits comfortably with hundreds of bytes to spare.

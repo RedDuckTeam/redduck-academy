@@ -4,38 +4,36 @@ title: Contracts and gas
 type: lecture
 order: 2
 faq:
-  - question: Why do I still pay gas when my Ethereum transaction fails?
-    answer: "If you set the gas limit too low, execution stops partway through and
-      the transaction reverts, rolling back every change it tried to make. Even
-      so, the sender is not refunded the gas already spent: the validator keeps
-      the priority fee for the work it did, and the base fee is still burned.
-      From the chain's point of view the transaction happened and consumed a
-      slot in a block, it just did not achieve its intended effect."
-  - question: What is the difference between the base fee and the priority fee on
-      Ethereum?
-    answer: Since the EIP-1559 upgrade in 2021, the gas price is split into two
-      parts. The base fee is set by the protocol and moves up or down with
-      network congestion. It is burned, meaning it is destroyed and no one
-      receives it. The priority fee, or tip, is what you add on top to
-      incentivize a validator to include your transaction faster, and it goes to
-      the validator who produced the block.
-  - question: My transaction is stuck pending in the mempool. Can I speed it up or
-      cancel it?
-    answer: Yes. A pending transaction sits in a public waiting area called the
-      mempool, and you can replace it by submitting a new transaction with the
-      same nonce and a higher fee. Validators simply pick the more profitable
-      one. Wallets expose this as a 'speed up' button, and you can 'cancel' a
-      stuck transaction by sending a do-nothing transaction with the same nonce
-      and a higher fee. Note that a later transaction cannot confirm until the
-      earlier nonce clears, so a single stuck transaction blocks everything
-      behind it from the same account.
-  - question: Why is storing data on Ethereum so much more expensive than doing math?
-    answer: "Every full node on the network has to hold stored data forever until it
-      is overwritten, while a computation disappears once the transaction ends.
-      The protocol prices this asymmetry: adding two numbers costs a few gas,
-      but writing a new word to storage costs around 22,100 gas. This is why
-      experienced Solidity developers keep only what is essential on chain and
-      push everything else off chain."
+  - question: Why do I pay gas for a transaction that failed?
+    answer: >-
+      Every node already did the work. The validator keeps the priority fee, the base fee is
+      burned, and the reverted transaction still took a slot in a block.
+  - question: What does a transaction cost in ETH?
+    answer: >-
+      Gas used times gas price. Prices are quoted in gwei, one billionth of an ETH. A plain
+      transfer uses about 21,000 gas and a complex DeFi call 200,000 to 500,000, at 10 to 50
+      gwei per unit on mainnet in 2025.
+  - question: What is the difference between the base fee and the priority fee?
+    answer: >-
+      The base fee is set by the protocol and burned, so nobody receives it. It targets blocks
+      that are 50% full and moves up or down by at most 12.5% per block. The priority fee is
+      your tip and goes to the validator who produced the block. EIP-1559 introduced the split
+      in August 2021.
+  - question: My transaction is stuck pending. Can I cancel it?
+    answer: >-
+      Yes. Send a new transaction with the same nonce and a higher fee, and validators take
+      the more profitable one. A do-nothing transaction cancels the original. Until that nonce
+      clears, everything behind it from the same account is stuck.
+  - question: Why does storing a value cost so much more than adding two numbers?
+    answer: >-
+      Every full node holds stored data forever until something overwrites it, while a
+      computation disappears when the transaction ends. Adding two numbers costs 3 gas,
+      multiplying 5, writing a new word to storage 22,100. Clearing a slot back to zero earns
+      a partial refund.
+  - question: How is a contract's address decided?
+    answer: >-
+      The lowest 20 bytes of keccak256 over the sender and the sender's nonce. CREATE2
+      substitutes a salt you choose, so the address can be computed before deploying.
 ---
 
 > A smart contract is a piece of code that lives at an address on the chain, has its own storage, and runs whenever someone calls it. Running it is not free. Every operation the code performs costs a small amount of a metering unit called gas, and gas is paid in ETH. These two facts, contracts and gas, are inseparable: gas exists because contracts exist, and contracts only work because gas keeps their execution bounded.

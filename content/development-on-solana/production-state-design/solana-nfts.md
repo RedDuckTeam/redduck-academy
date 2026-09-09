@@ -4,28 +4,23 @@ title: Solana NFTs
 type: lecture
 order: 29
 faq:
-  - question: What actually makes a Solana token an NFT rather than a normal coin?
-    answer: "An NFT is just a regular SPL Token configured three ways: its supply is
-      exactly 1, it has 0 decimals so no fractions exist, and its mint authority
-      is permanently renounced so no more can ever be created. The token program
-      treats it like any other token and does not know it represents a picture.
-      Transferring an NFT is just the standard SPL transfer on a token account
-      whose balance is 1."
-  - question: Where is an NFT's name and image stored if not on the token itself?
-    answer: The token mint only tracks supply and ownership, so the descriptive data
-      lives in a separate Metaplex metadata account, a PDA derived from the
-      mint's address. That account holds the name, symbol, creators, collection,
-      and a URI. The URI points to a JSON file on Arweave or IPFS, which in turn
-      links to the actual image, so the chain really stores a pointer to a
-      pointer to the picture rather than the image bytes.
-  - question: Why are compressed NFTs so much cheaper than regular ones?
-    answer: Every regular NFT needs at least two on-chain accounts, so a 10,000-item
-      collection locks roughly 70 SOL of rent just to exist. Compressed NFTs
-      instead store the whole collection as a Merkle tree and keep only the
-      tree's root hash on chain in a single account, making them around 700x
-      cheaper, near 0.1 SOL. The trade-off is that the individual NFT data lives
-      off chain, so reading a cNFT requires querying an indexer rather than
-      fetching accounts directly.
+  - question: What makes an SPL Token an NFT?
+    answer: >-
+      Supply of 1, decimals of 0, and a permanently renounced mint authority. Transferring one
+      is the ordinary SPL transfer of a balance of 1.
+  - question: Where does a Solana NFT's name and image actually live?
+    answer: >-
+      In a Metaplex metadata account, a PDA derived from the mint address. It holds the name,
+      symbol, creators, collection and a URI that points at JSON on Arweave or IPFS, which links
+      to the image.
+  - question: Why is a compressed NFT so much cheaper?
+    answer: >-
+      Every regular NFT is at least two accounts, about 0.007 SOL of rent, so 10,000 of them
+      lock roughly 70 SOL. A compressed collection keeps one Merkle root in a single account,
+      near 0.1 SOL, and a depth-14 tree holds 16,384 leaves.
+  - question: What do I give up with cNFTs?
+    answer: >-
+      Direct reads. Fetching one means querying an indexer instead of reading two accounts.
 ---
 
 ## An NFT is just an SPL Token with three constraints

@@ -4,38 +4,31 @@ title: What is ERC-20
 type: lecture
 order: 1
 faq:
-  - question: What does the decimals value on an ERC-20 token actually mean?
-    answer: The EVM only handles whole integers, so tokens store balances as large
-      integers and use `decimals` to know where the decimal point goes for
-      display. The displayed amount is the stored amount divided by 10 to the
-      power of `decimals`. Most tokens use 18, so one whole token is stored as 1
-      followed by 18 zeros, but USDC uses 6 and WBTC uses 8. Because this
-      varies, code that works with arbitrary tokens must read each token's
-      `decimals()` rather than assuming 18.
-  - question: Why does ERC-20 need both approve and transferFrom instead of just a
-      transfer?
-    answer: Smart contracts cannot start their own transactions. They can only react
-      when called. So a contract like a decentralized exchange cannot reach into
-      your wallet and take your tokens. Instead you call `approve` to authorize
-      that contract to spend up to a certain amount, and the contract later
-      calls `transferFrom` to actually move the tokens during the swap. This
-      two-step approval is the only way to let one address spend tokens that
-      belong to another.
-  - question: Is it safe to lower an existing ERC-20 allowance?
-    answer: Increasing an allowance is safe, but decreasing it has a known risk
-      called the approval race condition. If you lower a spender's allowance,
-      the spender can watch the pending transaction and quickly spend the old,
-      larger amount before your change is mined, then spend the new amount
-      afterward, taking more than you intended. The common workaround is to
-      first set the allowance to zero, then set the new value in a second
-      transaction, or to use EIP-2612 `permit` if the token supports it.
-  - question: Why does an ERC-20 token contract emit a Transfer event from the zero
-      address?
-    answer: By convention, creating (minting) new tokens is represented as a
-      `Transfer` event from `address(0)`, the zero address. Block explorers and
-      indexers rely on this to display where a token's initial supply came from.
-      If a token contract mints tokens without emitting this transfer, explorers
-      will show no initial supply at all, even though the balances exist.
+  - question: My wallet shows 1000 tokens but totalSupply returns a huge number. Why?
+    answer: >-
+      Balances are stored as integers, and the ERC-20 `decimals` value says where the display
+      point sits. 1000 tokens at 18 decimals is stored as 1000 * 10**18. Most tokens use 18,
+      USDC uses 6, WBTC uses 8. Code that handles arbitrary tokens reads `decimals()` instead
+      of assuming 18.
+  - question: Why can't a DEX just take my tokens directly?
+    answer: >-
+      Contracts cannot start their own transactions, so a DEX cannot reach into your wallet.
+      You `approve` a spender for an amount, and the spender calls `transferFrom` to move the
+      tokens when the swap runs.
+  - question: Is it safe to lower an allowance I already gave?
+    answer: >-
+      Not directly. This is the approval race condition. A spender who sees your `approve`
+      pending can spend the old, larger allowance first, then the new amount once it lands.
+      Zero the allowance first, then set the new value, or use EIP-2612 `permit`.
+  - question: Why does my token emit a Transfer from address(0)?
+    answer: >-
+      Minting. Creating tokens is emitted as a `Transfer` from `address(0)`, and explorers read
+      that to show a token's initial supply. Skip it and the supply exists but no explorer
+      shows it.
+  - question: What does approving type(uint256).max do?
+    answer: >-
+      It sets an unlimited allowance. OpenZeppelin's `transferFrom` treats `type(uint256).max`
+      as approve forever and skips the allowance write, which saves gas on every transfer.
 ---
 
 > You just built one. Now the conceptual frame. ERC-20 is the standard that defines what a fungible token contract looks like on Ethereum. Every common token you've heard of (USDC, DAI, UNI, LINK, WETH) implements the same six functions and two events you just wrote. This lesson covers what makes ERC-20 the standard, why standardization mattered for Ethereum's growth, what the `decimals` system actually means, what production implementations add beyond the bare spec, and the one security quirk in the standard you should know about before deploying anything to mainnet.

@@ -4,20 +4,24 @@ title: Outcome enforcement as a guarantee
 type: lecture
 order: 2
 faq:
-  - question: Is this lesson required, or can I skip it?
-    answer: You can skip it. It is an optional preview for readers going on to the
-      security courses. The engineering principle it rests on, all-or-nothing execution,
-      was already covered, so skipping the Ethereum details here costs you nothing.
-  - question: How is ERC8009 related to a flash loan?
-    answer: Both rely on the same guarantee that a transaction either reaches a required
-      end state or reverts completely. A flash loan reverts if the borrowed funds are
-      not repaid inside the transaction. ERC8009 reverts if the declared balance is not
-      present after the call. The enforcing mechanism is the same.
-  - question: Why is enforcing the outcome better than simulating the transaction first?
-    answer: A simulation predicts what should happen and then asks you to trust that the
-      real execution matches the prediction. Enforcing the outcome checks the actual
-      state after the call has run, so there is nothing to trust in advance. If the
-      promised result is missing, the transaction leaves no trace.
+  - question: Do I need ERC8009 to understand all-or-nothing execution?
+    answer: >-
+      No. It is one Ethereum application of the guarantee, aimed at the security courses.
+  - question: What does ERC8009 check after a call?
+    answer: >-
+      The caller declares the outcome it requires, that after this call address X holds at
+      least Y of token Z. When the call finishes, the EVM compares that declaration against
+      real state and reverts the whole transaction if the outcome is missing. BalanceProxy,
+      the proxy that runs it, sits at one deterministic address per chain.
+  - question: Is this the same mechanism as a flash loan?
+    answer: >-
+      Yes. One revert, two different declared outcomes. A flash loan enforces that the
+      borrowed funds came back by the end of the transaction. ERC8009 enforces that address X
+      holds at least Y of token Z.
+  - question: Why enforce the outcome instead of simulating the transaction first?
+    answer: >-
+      A simulation is a prediction you then have to trust. Checking afterwards reads the state
+      that exists once the call has run, and a missing result reverts everything.
 ---
 
 > This lesson is optional. It is for readers going on to the security courses, and it shows how the all-or-nothing guarantee becomes a concrete tool on Ethereum. If you only wanted the principle, you already have it, and you can stop here.

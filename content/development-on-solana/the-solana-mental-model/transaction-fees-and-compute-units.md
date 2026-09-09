@@ -4,31 +4,31 @@ title: Transaction fees and compute units
 type: lecture
 order: 5
 faq:
-  - question: What is the difference between the base fee and the priority fee on Solana?
-    answer: "The base fee is fixed at 5,000 lamports per signature, mandatory, and
-      covers signature verification and spam prevention. Half of it is burned
-      and half goes to the validator. The priority fee is optional and variable:
-      it tells the block leader to schedule your transaction ahead of others,
-      and all of it goes to the validator, none burned."
-  - question: Do I still pay Solana fees if my transaction fails?
-    answer: Yes. Both the base fee and the priority fee are charged up front, before
-      the transaction runs. If it succeeds, the fees are kept and your changes
-      commit. If it fails, the fees are still kept and the changes roll back.
-      You pay for the attempt regardless of the outcome.
-  - question: Why does my Solana transaction pay priority fee on compute units it
-      never used?
-    answer: The priority fee is calculated from the CU limit you reserved, rather than from
-      the compute units your program actually spent. If you set a 200,000 CU
-      limit but only use 60,000, you still pay on all 200,000, because the
-      leader had to plan for the full cap. The fix is to simulate the
-      transaction first, see the real usage, add a 10-20% margin, and set the
-      limit to that.
-  - question: How do I set the compute unit limit and price for a transaction?
-    answer: "Use the built-in Compute Budget program: add a SetComputeUnitLimit
-      instruction to cap the compute units and a SetComputeUnitPrice instruction
-      to set the per-unit rate in micro-lamports. Set the limit too high and you
-      overpay and dilute your effective bid. Set it too low and the transaction
-      reverts with a compute budget exceeded error while still charging you."
+  - question: What is the difference between the base fee and the priority fee?
+    answer: >-
+      The base fee is fixed at 5,000 lamports per signature and always charged, half burned
+      and half paid to the validator. The priority fee is optional, set by you, and buys
+      earlier scheduling from the block leader. All of it goes to the validator.
+  - question: Do I still pay fees if my transaction fails?
+    answer: >-
+      Yes. Both fees are taken up front, before the transaction runs. A failure rolls the
+      state changes back and keeps the fees.
+  - question: Why does my transaction pay priority fee on compute units it never used?
+    answer: >-
+      The priority fee is computed from the CU limit you reserved. Reserve 200,000 and spend
+      60,000 and you still pay on all 200,000, because the leader had to plan for the full
+      cap. Simulate the transaction, read the real usage, add ten or twenty percent, and set
+      the limit to that.
+  - question: How do I set the compute unit limit and price?
+    answer: >-
+      Add two Compute Budget instructions to the transaction. SetComputeUnitLimit caps the
+      compute units and SetComputeUnitPrice sets the per-unit rate in micro-lamports, each
+      micro-lamport being one millionth of a lamport.
+  - question: What is the default compute unit limit?
+    answer: >-
+      200,000 CU per instruction, with a hard ceiling of 1,400,000 CU for the whole
+      transaction. Passing your limit reverts the transaction with a compute budget exceeded
+      error and still charges you.
 ---
 
 > A Solana transaction pays for two separate things. It pays a small fixed amount for the right to land in a block at all, and an optional extra amount for the leader to schedule it ahead of competing transactions. The first is the base fee. The second is the priority fee. Understanding which one is which, and why both exist, is what makes the rest of the cost story stop feeling random.

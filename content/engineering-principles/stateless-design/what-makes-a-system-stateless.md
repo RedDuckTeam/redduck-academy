@@ -4,22 +4,24 @@ title: What makes a system stateless
 type: lecture
 order: 1
 faq:
-  - question: How do I decide whether a component should be stateless?
-    answer: Ask whether it needs to remember anything between calls to do its job. If
-      it does not, it should hold nothing, because every stored value is something an
-      attacker can target and something two users can collide over. If it does, like
-      a ledger that must track balances, it is stateful for a reason and you protect
-      that state with care.
-  - question: Does stateless mean the whole system stores nothing?
-    answer: No. It means a particular component holds nothing between calls. The system
-      can still keep state where it belongs, such as a ledger or a database, while the
-      components in front of it stay stateless and pass every value through with each
-      call.
-  - question: Why is statelessness a security property and not only a performance one?
-    answer: Because every value a component stores is a value an attacker can try to
-      reach or change, and a stateless component has none. Attacks like session
-      fixation depend on server-side state to aim at, so removing the state removes
-      the attack. The scaling and reliability benefits come along with that.
+  - question: If a component is stateless, where does the state go?
+    answer: >-
+      Wherever it belongs, a ledger or a database behind it. Statelessness is a property of
+      one component. The components in front of it hold nothing and pass every value through
+      with each call.
+  - question: How is statelessness a security property?
+    answer: >-
+      A session-fixation attack works only because the server keeps a session record between
+      requests. The attacker plants a session identifier, waits for the victim to log in
+      under it, then rides the same record. With no server-side session there is nothing to
+      plant and nothing to ride.
+  - question: What do I get by making a component stateless?
+    answer: >-
+      Any copy answers any request. Scale by adding copies, and a crash loses nothing.
+  - question: Should everything be stateless?
+    answer: >-
+      No. A running game server has to remember where each player is between messages. One
+      that forgot every position would be unplayable.
 ---
 
 > A stateless component keeps nothing between calls. Every call arrives carrying everything the component needs to answer it, and the moment the call returns, the component forgets it. This sounds like a point about efficiency. It is really a point about security and reliability, because any state a component holds is state an attacker can reach and two users can collide over.

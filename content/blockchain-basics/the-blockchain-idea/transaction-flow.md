@@ -4,32 +4,23 @@ title: Transaction flow
 type: lecture
 order: 5
 faq:
-  - question: What happens step by step when I send a blockchain transaction?
-    answer: Your wallet builds a request describing the action, a fee, and a
-      one-time-use value, then signs it with your private key and sends it to
-      one node. That node checks it and gossips it across the network into a
-      pool of pending requests. Later a block producer bundles it into a block
-      and broadcasts it, every node re-validates the block, and once accepted
-      the block becomes the new tip of the chain and your change is recorded.
+  - question: What happens between clicking send and my transaction landing on the chain?
+    answer: >-
+      Your wallet builds a request with the sender, the action, a fee, and a one-time value
+      that blocks replays, then signs it with your private key. A node checks it and gossip
+      carries it to the rest, into their pending pools. A block producer bundles it into a
+      block and broadcasts that, every node revalidates, and the block becomes the new tip.
   - question: What is the mempool?
-    answer: When a node accepts a valid transaction that hasn't been confirmed yet,
-      it holds it in a local buffer of pending requests called the mempool.
-      Gossip spreads the transaction so most nodes keep it in their own
-      mempools. When a block producer earns the right to make the next block, it
-      picks transactions out of this buffer, usually favoring the ones offering
-      the highest fees.
-  - question: Do I have to trust the node I first send my transaction to?
-    answer: No. The first node does check your transaction, but as it spreads
-      through the network every other node independently re-validates it, and
-      every node checks it yet again when it arrives inside a block. Because the
-      same validation is repeated everywhere, no single node has to be trusted
-      for the system to be safe.
-  - question: Why does signing a transaction stop anyone from tampering with it?
-    answer: Your wallet computes a signature over the entire request using your
-      private key. That signature mathematically proves you approved the exact
-      contents, and changing even one bit of the request afterward makes the
-      signature invalid. So any node or relay that altered your transaction
-      would have it rejected by everyone downstream.
+    answer: >-
+      A node's local buffer of valid transactions waiting for a block. A block producer picks
+      from it, usually highest fees first.
+  - question: Do I have to trust the node I send my transaction to?
+    answer: >-
+      No. Every other node validates it again, and again inside the block.
+  - question: Can a node change my transaction before passing it on?
+    answer: >-
+      No. Your signature covers the whole request, so flipping one bit makes the signature
+      invalid and every node downstream rejects it.
 ---
 
 > By now you have all the parts. Cryptographic primitives that let identities exist and signatures bind authorship to messages. A hash-linked block structure that makes the past tamper-evident. A consensus mechanism that lets strangers agree without an operator. A network of nodes that hold copies, validate everything, and gossip new information to each other within seconds. None of these pieces is a blockchain by itself. This lesson takes the pieces and shows them assembling, in real time, into one operation: a single change to the chain, from the moment a user clicks something in their wallet to the moment that change is part of the permanent record. Every term used in this lesson is something you already understand. The lesson is where they snap together.

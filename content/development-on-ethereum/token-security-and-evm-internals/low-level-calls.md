@@ -4,41 +4,29 @@ title: Low-level calls
 type: lecture
 order: 4
 faq:
-  - question: Why is call now recommended over transfer for sending ETH in Solidity?
-    answer: 'The older `transfer` and `send` only forward 2300 gas to the receiver,
-      which was meant to block reentrancy. In 2019 the Istanbul hard fork raised
-      the cost of some operations, so legitimate contracts doing simple
-      bookkeeping in their receive function could no longer afford to accept ETH
-      via `transfer`. The modern advice is to use `recipient.call{value:
-      amount}("")`, which forwards all gas, and to protect against reentrancy
-      explicitly with checks-effects-interactions and reentrancy guards.'
-  - question: If a low-level call fails, does my transaction automatically revert?
-    answer: 'No. Unlike a normal function call, `call` does not revert on failure.
-      It returns a boolean success flag (and any return data), and your code
-      keeps running even if the call failed. You must check that flag yourself
-      and revert if it is false, for example `(bool ok, ) =
-      recipient.call{value: 1 ether}(""); require(ok, "transfer failed");`.
-      Forgetting this check is a common bug where you think ETH was sent but it
-      silently failed.'
+  - question: Why is a low-level call preferred over transfer for sending ETH?
+    answer: >-
+      `transfer` and `send` forward only 2300 gas, a limit meant to block reentrancy. The 2019
+      Istanbul hard fork raised the cost of some storage operations, and contracts doing
+      ordinary bookkeeping in `receive` stopped fitting inside it. Use
+      `recipient.call{value: amount}("")` and handle reentrancy with checks-effects-interactions
+      and a guard.
+  - question: My call failed but the transaction succeeded. Why?
+    answer: >-
+      `call` does not revert on failure. It returns a success flag and your code keeps running,
+      so you check the flag and revert yourself with `require(ok)`.
   - question: What is the difference between call and delegatecall?
-    answer: "With `call`, the target contract's code runs in the target's own
-      context: its storage, its address, and it sees your contract as the
-      caller. With `delegatecall`, the target's code runs but in your context:
-      it reads and writes your storage, uses your address, and keeps the
-      original caller as `msg.sender`. In short, `call` means 'run their
-      function on their stuff' while `delegatecall` means 'borrow their code and
-      run it on our stuff'. This is why delegatecall is the foundation of
-      proxies and libraries."
-  - question: How did the Parity wallet lose $150 million to a delegatecall bug?
-    answer: Because delegatecall runs another contract's code against your own
-      storage, the two contracts must agree on which variable lives in which
-      numbered storage slot. If they don't match, the borrowed code can
-      overwrite a critical slot such as the one holding the owner address. In
-      the 2017 Parity multisig incident, an attacker triggered a library
-      function through delegatecall that wrote to a sensitive slot, took
-      ownership, and ultimately froze about $150M permanently. The defenses are
-      strict storage-layout discipline and never delegatecalling to untrusted
-      contracts.
+    answer: >-
+      Whose context the code runs in. `call` runs the target's code in the target's storage
+      with your contract as `msg.sender`. `delegatecall` runs the target's code in your
+      storage, at your address, keeping the original `msg.sender`. Proxies and libraries are
+      built on the second.
+  - question: How did a delegatecall bug freeze $150 million in the Parity wallet?
+    answer: >-
+      Storage layout. Delegatecall writes by slot number, so borrowed code expecting its
+      counter at slot 0 overwrites whatever the calling contract keeps there, such as the owner
+      address. In the 2017 Parity multisig incident an attacker reached a library function that
+      way, took ownership, and about $150M in ETH was frozen permanently.
 ---
 
 > You've already used `.call{value: amount}("")` in the reentrancy lesson to send ETH. You did that without anyone explaining what `call` really is or what alternatives exist. This lesson fills that gap and introduces a sibling function called `delegatecall` that looks similar but works in a way most people find surprising the first time they see it. `delegatecall` is the foundation of every proxy contract and every Solidity library, and it's also the source of one of the more devastating attack patterns in smart contract history. Both functions are important. Both are easy to misuse.

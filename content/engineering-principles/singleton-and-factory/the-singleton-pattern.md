@@ -4,23 +4,27 @@ title: The singleton pattern
 type: lecture
 order: 1
 faq:
-  - question: When is a singleton the wrong choice?
-    answer: When the shared component's logic still changes often, when the review
-      behind it is no better than the review the separate copies would get, or when
-      the promised simplicity cannot be pointed to. In those cases you have built a
-      single point of failure without the concentrated scrutiny that makes one
-      shared component safe.
-  - question: Doesn't putting everything behind one component make the system more fragile?
-    answer: It concentrates the risk, so a critical bug in the shared component now
-      reaches everything that depends on it. The trade is worth taking only when
-      that component gets far more review than the many separate copies would, so a
-      bug is more likely to be caught before anything relies on it. Concentrated
-      risk and concentrated review are accepted together.
+  - question: What does one shared login service save?
+    answer: >-
+      Fifty password stores become one. A verification flaw is fixed once instead of applied
+      fifty times, with no team left to miss it. And a new application joins by pointing at
+      the endpoint every other application already uses.
+  - question: Doesn't everything depending on one component make the system more fragile?
+    answer: >-
+      It concentrates the risk. A critical bug in the shared authentication service now
+      reaches all fifty applications at once, and a compromised certificate authority exposes
+      a large slice of the web through it. That is why those components get the most
+      intensive security review in their ecosystem. Concentrated risk and concentrated review
+      are the same decision.
+  - question: When is a singleton the wrong call?
+    answer: >-
+      When its logic still changes often, when the review behind it is no better than fifty
+      separate copies would get, or when the integration benefit is imaginary. Then you have
+      a single point of failure and nothing that pays for it.
   - question: What is single sign-on?
-    answer: It is one shared authentication service that every application delegates
-      login to, so a person signs in once and reaches every connected application
-      without signing in again. Passwords are stored in one place, and a security
-      fix is applied once rather than repeated across every application.
+    answer: >-
+      One shared authentication service every application delegates login to. Sign in once,
+      reach all of them.
 ---
 
 > A **singleton** concentrates one critical function into a single shared component that everything else depends on. The name comes from keeping exactly one of a thing where a system might otherwise have had many. This costs you something real, because a bug in that one component now reaches everything at once, where before a bug reached one thing. You accept the cost because concentrating the function in one place also concentrates the review effort on it, and one heavily-reviewed component can be safer than fifty lightly-reviewed ones.

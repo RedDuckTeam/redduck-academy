@@ -4,35 +4,29 @@ title: Consensus on Ethereum
 type: lecture
 order: 4
 faq:
-  - question: Does Ethereum still use mining like Bitcoin?
-    answer: No. Since an upgrade called the Merge in September 2022, Ethereum uses
-      proof of stake instead of proof of work. Block producers are no longer
-      miners burning electricity but validators who lock up 32 ETH as
-      collateral, take turns proposing blocks, and lose part of their stake if
-      they cheat. This cut the network's energy use by roughly 99.95%.
-  - question: How long does it take for an Ethereum transaction to become truly final?
-    answer: "Ethereum produces a block every 12 seconds, so a transaction with a
-      sufficient tip usually appears within a block or two. Full finality takes
-      longer: a block becomes finalized after two consecutive epoch checkpoints
-      are confirmed, which is about 12.8 minutes. High-value applications like
-      bridges and exchanges wait for that finalization before treating a
-      transaction as settled, while smaller apps often accept one or two
-      confirmations."
-  - question: What happens to a validator that cheats or just goes offline?
-    answer: "A validator that misbehaves in a provable way, such as signing two
-      conflicting attestations or proposing two blocks for the same slot, is
-      'slashed' and loses stake, with a minimum penalty of 1 ETH. A correlation
-      penalty scales that up if many validators are slashed at once, so a
-      coordinated attack can cost each participant their entire 32 ETH. Simply
-      going offline is far milder: the validator just misses its slot, earns no
-      reward, and pays a small penalty."
-  - question: How is Ethereum's finality different from Bitcoin's?
-    answer: "Bitcoin has probabilistic finality: the chance a block gets reverted
-      shrinks as more blocks pile on top, but it never reaches zero. Ethereum
-      has economic finality: after about 12.8 minutes the protocol guarantees a
-      block stays unless attackers deliberately destroy at least a third of all
-      staked ETH, which is tens of billions of dollars. The first kind of
-      finality is statistical. The second is closer to a contractual guarantee."
+  - question: How long is a slot on Ethereum?
+    answer: >-
+      12 seconds. An epoch is 32 slots, about 6.4 minutes.
+  - question: Is Ethereum still mined?
+    answer: >-
+      No. Since the Merge in September 2022 Ethereum reaches consensus through proof of stake.
+      Validators lock 32 ETH as collateral, take turns proposing blocks, and lose stake if they
+      cheat. Energy use dropped by about 99.95%.
+  - question: How long until a transaction is truly final?
+    answer: >-
+      About 12.8 minutes. A transaction with a decent tip lands within a slot or two, but
+      finality waits for two consecutive epoch checkpoints, each justified by two-thirds of
+      the staked ETH. Bridges and exchanges wait for it.
+  - question: What happens to a validator that goes offline or double-signs?
+    answer: >-
+      Going offline costs it a missed slot, no reward, and a small penalty, and around 1% of
+      slots are missed for ordinary reasons. Double-signing is slashable: at least 1 ETH, plus
+      a correlation penalty that can reach the whole 32 ETH when many validators are slashed
+      together.
+  - question: Does the validator chosen for a slot build the block?
+    answer: >-
+      Usually not. Specialized builders assemble blocks and compete on how much they pay, and
+      the proposer signs the highest-paying one. Most validators run MEV-Boost.
 ---
 
 > Ethereum doesn't use proof of work anymore. Since September 2022, it has used proof of stake. Validators put up 32 ETH as collateral, take turns proposing blocks, and lose part of their stake if they cheat. The mechanics are different from Bitcoin in almost every detail, but the goal is the same. Get a network of independent nodes to agree on which blocks count, without anyone in charge.

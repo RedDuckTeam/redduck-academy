@@ -4,43 +4,38 @@ title: Detailed Solana architecture
 type: lecture
 order: 1
 faq:
-  - question: What is Proof of History, and is it how Solana reaches consensus?
-    answer: "Proof of History is a verifiable clock: the network runs SHA-256 over
-      and over, feeding each hash's output into the next to form a long chain
-      that takes real time to compute, so the chain itself proves that time
-      passed. Transactions are woven in by being hashed into a step, which pins
-      each one to a fixed position in the sequence without anyone agreeing on
-      wall-clock time. Crucially, PoH is not consensus. It only orders events
-      within a single chain, and a separate mechanism (Tower BFT) decides which
-      chain is the canonical one."
-  - question: Why doesn't Solana have a mempool like Ethereum?
-    answer: "Instead of a shared pool of pending transactions, Solana uses Gulf
-      Stream: RPC nodes look up the publicly known upcoming leaders and forward
-      each transaction straight to them, so it is already queued when their slot
-      opens. This removes startup latency inside the 400ms slot and eliminates
-      mempool front-running, because there is no public queue for others to
-      watch and wrap transactions around. The trade-off is that ordering power
-      moves to the leader, who sees every incoming transaction and can order
-      them within their own slot."
-  - question: How does Solana get a block to thousands of validators in 400 milliseconds?
-    answer: "It uses Turbine, which splits each block into many small (~1,000-byte)
-      pieces called shreds and sends them down a tree: the leader gives shreds
-      to a few neighbors, who forward to the next layer, so every validator
-      receives the block in about log(N) hops instead of the leader mailing it
-      to everyone. The shreds are erasure-coded, meaning a validator can rebuild
-      the full block from a sufficient subset even if some shreds are dropped,
-      without asking for retransmissions. This tree propagation is also part of
-      why Solana validators need substantial network bandwidth."
-  - question: How can Solana execute many transactions at the same time?
-    answer: Every Solana transaction declares up front every account it will read or
-      write, so the runtime can group transactions whose writable account sets
-      do not overlap and run each group on a different CPU core simultaneously.
-      Two SOL transfers between unrelated wallets, or a token swap and an NFT
-      mint that share no accounts, run in parallel. The cost is that access
-      patterns must be known statically, which makes patterns like walking a
-      linked list of unknown shape awkward on Solana. In exchange, throughput
-      scales with CPU cores rather than being capped at single-threaded
-      execution.
+  - question: What are the main parts of Solana's architecture?
+    answer: >-
+      Proof of History for ordering, Tower BFT for consensus, Gulf Stream for pushing
+      transactions to upcoming leaders, Turbine for spreading blocks, and parallel execution
+      over non-overlapping accounts.
+  - question: Is Proof of History how Solana reaches consensus?
+    answer: >-
+      No. PoH is a clock. The network runs SHA-256 over its own output again and again, and
+      because each hash needs the one before it, the chain proves real time passed. A
+      transaction hashed into a step is pinned to that position. Tower BFT picks the canonical
+      chain.
+  - question: Where do pending transactions wait if there is no mempool?
+    answer: >-
+      Nowhere public. RPC nodes read the published leader schedule and send each transaction
+      straight to the upcoming leaders, so it is queued before the slot opens. With no public
+      queue, nobody outside can watch pending transactions and wrap their own around them. The
+      ordering power sits with the leader instead.
+  - question: How does a block reach thousands of validators in 400 milliseconds?
+    answer: >-
+      Turbine splits the block into shreds of about 1,000 bytes and sends them down a tree. The
+      leader hands shreds to a few neighbors, who forward to the next layer, so the block
+      arrives everywhere in about log N hops. Erasure coding lets a validator rebuild it from
+      a large enough subset.
+  - question: Which transactions can the runtime execute in parallel?
+    answer: >-
+      Any set whose writable accounts do not overlap. Each transaction declares every account
+      it will read or write up front, and non-conflicting groups run on separate cores. The
+      price is that access patterns must be known before execution.
+  - question: How long until a block is final?
+    answer: >-
+      About 12.8 seconds, after 32 slots of accumulated Tower BFT lockouts. Most applications
+      act sooner, once a supermajority of stake has voted.
 ---
 
 > Underneath everything you've built sits a protocol layer. How does a transaction actually get from your wallet into a block, and how do thousands of validators agree on the result, in 400 milliseconds? These names may have come up before without a full explanation: Proof of History, Tower BFT, Turbine, Gulf Stream. None of them are magic. Each is an engineering answer to a specific bottleneck that other chains hit and didn't solve. Putting them together shows why Solana looks the way it does and what trade-offs the design accepted along the way.

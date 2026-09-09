@@ -4,36 +4,34 @@ title: AMM
 type: lecture
 order: 6
 faq:
-  - question: How does an AMM set a swap price without any order book?
-    answer: "A constant-product AMM holds reserves of two tokens and enforces one
-      rule: the product of the two reserves, x times y, stays constant at k.
-      When you add some of one token, the program gives back exactly enough of
-      the other token to keep that product unchanged. There is no order matching
-      and no price quote. The output is just whatever amount preserves the
-      invariant."
-  - question: Why do I get a worse rate on a large AMM trade than a small one?
-    answer: Each unit you swap moves the pool further along its price curve, and the
-      deeper you push in one trade the more the price shifts against you, so
-      your average rate worsens. A small swap against a deep pool barely moves
-      the price, while a swap that is a big fraction of the pool gets a
-      noticeably worse rate. This effect is called price impact, and the program
-      cannot avoid it. It is just what the invariant produces.
-  - question: How do liquidity providers actually earn money from an AMM pool?
-    answer: Swaps charge a fee, typically 0.3 percent of the input, and instead of
-      paying it out the pool just keeps it in the reserves. No new LP tokens are
-      minted for the fee, so the total LP supply stays fixed while the reserves
-      grow, meaning each LP token now claims a slightly bigger slice of the
-      pool. LPs never have to claim anything. Their tokens simply become worth
-      more, and they redeem by burning them for their share.
-  - question: What is impermanent loss and why do liquidity providers suffer it?
-    answer: The constant-product rule rebalances the pool every time the price
-      moves, effectively selling whichever token is rising and buying whichever
-      is falling, so an LP ends up with more of the loser and less of the winner
-      than if they had just held. That gap versus holding is impermanent loss,
-      and it depends only on how far the price ratio moves. A 2x or 0.5x move
-      both cost about 5.7 percent. It is called impermanent because it vanishes
-      if the price returns to your entry, but it becomes permanent once you
-      withdraw at a different price.
+  - question: How does an AMM price a swap with no order book?
+    answer: >-
+      One rule. The two reserves multiply to a constant k, and you get back whatever amount
+      keeps that product unchanged. Nothing is quoted and nothing is matched.
+  - question: Why does a bigger trade get a worse rate?
+    answer: >-
+      Each unit you put in moves the pool further along the curve, so a larger trade finishes at
+      a worse average rate. Splitting it into pieces changes nothing, since the pool lands at
+      the same point either way. That is price impact.
+  - question: Where do LP fees go if there is no claim instruction?
+    answer: >-
+      Into the reserves. The 0.3 percent stays in the pool and no LP tokens are minted against
+      it, so the supply stays flat while the reserves grow and every LP token claims a bigger
+      slice.
+  - question: How much does impermanent loss cost?
+    answer: >-
+      It tracks the price ratio and nothing else. A 2x move and a 0.5x move both cost about 5.7
+      percent against holding, 3x costs 13.4 percent, 4x costs 20 percent. The pool sells
+      whatever rises and buys whatever falls.
+  - question: If the loss is impermanent, does it go away?
+    answer: >-
+      Only if price returns to your entry. Withdraw anywhere else and it is realized.
+  - question: Why does the first deposit into a pool lock 1000 LP tokens?
+    answer: >-
+      Without the lock, an attacker deposits dust as the first LP, takes 1 base unit of LP
+      token, then donates tokens straight into the vaults. The next depositor's share rounds
+      down to zero and their money goes to the attacker. Locking 1000 base units keeps a
+      baseline supply nobody owns.
 ---
 
 ## The problem: trading without an order book

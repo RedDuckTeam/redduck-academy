@@ -4,30 +4,23 @@ title: The account model
 type: lecture
 order: 1
 faq:
-  - question: What is the difference between Bitcoin's UTXO model and Ethereum's
-      account model?
-    answer: "Bitcoin tracks money as discrete coins (UTXOs) that get consumed and
-      recreated: spending references old outputs as inputs and creates new
-      outputs, often including change back to yourself. Ethereum instead tracks
-      account balances that change in place, so sending 3 ETH just subtracts 3
-      from one balance and adds 3 to another, with no outputs, change addresses,
-      or coins consumed. The account model is what lets contracts hold their own
-      persistent state."
-  - question: Why do Ethereum transactions need a nonce?
-    answer: The nonce is a per-account counter that stops transactions from being
-      replayed. In Bitcoin, replaying a transaction fails because its inputs
-      were already spent, but in Ethereum a message like "send 3 ETH from Alice
-      to Bob" could otherwise be rebroadcast. The network only accepts a
-      transaction whose nonce matches what it expects, rejecting duplicates, and
-      it also enforces ordering, since a transaction with nonce 6 cannot be
-      processed until nonce 5 is in a block.
-  - question: Why can contracts store their own data on Ethereum but not on Bitcoin?
-    answer: "In Bitcoin's UTXO model there is nowhere for a program's data to live
-      between transactions, since the chain's state is just a set of locked
-      coins. In Ethereum's account model each account has its own slice of
-      storage that the protocol tracks, so a contract account can keep key-value
-      pairs that persist across calls. That is what makes Ethereum programmable:
-      a single contract can hold a million users' balances in its own storage."
+  - question: What does an Ethereum account store?
+    answer: >-
+      Four fields. A balance in wei, where one ETH is 10^18 wei. A nonce that counts the
+      transactions it has sent. A code hash and a storage root, empty for user accounts and
+      pointing at the deployed bytecode and the storage tree for contract accounts.
+  - question: Why does every transaction need a nonce?
+    answer: >-
+      To stop replays and fix ordering. The chain accepts a transaction only when its nonce
+      matches what it expects from that account. Nonce 6 waits until nonce 5 is in a block.
+  - question: Can anyone sign a transaction from a contract account?
+    answer: >-
+      No. A contract account has no private key. Its code runs only when another account
+      calls it, and that code decides what happens to the balance and the storage.
+  - question: Do the transactions in a block run in parallel?
+    answer: >-
+      No. Two of them can touch the same account, so the protocol applies them one after
+      another in block order.
 ---
 
 > Bitcoin tracks money as discrete coins that get consumed and recreated. Ethereum tracks money as account balances that get modified in place. This change cascades into everything else: how transactions look, what state means, how contracts hold funds, why nonces exist. If you only take one new idea from this module, take this one.

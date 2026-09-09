@@ -4,33 +4,19 @@ title: TWAP oracles
 type: lecture
 order: 6
 faq:
-  - question: What is a TWAP oracle and why is it harder to manipulate than a spot price?
-    answer: A TWAP, or time-weighted average price, reports the average price of an
-      AMM pool over a window of time instead of its instantaneous price. To move
-      a spot price an attacker only needs one large swap in one block, which a
-      flash loan makes free. To move a TWAP they would have to hold the pool
-      away from the real market price for the whole window, say 30 minutes,
-      which a flash loan cannot do. A one-block spike contributes only about
-      0.7% to a 30-minute average, so it barely shifts the reported number.
-  - question: How does a pool compute an average price without storing every past price?
-    answer: "Storing every observation would cost a storage write on every price
-      change, which is unworkable. Instead the pool keeps one running total
-      called priceCumulative: on each change it adds the old price multiplied by
-      the time it held, then updates the timestamp. To get the average between
-      any two times you read priceCumulative at the start and end, subtract, and
-      divide by the elapsed time, without needing any of the prices in between.
-      It works like an odometer: sample it twice and divide to get the average
-      speed."
-  - question: When should I not use a TWAP oracle?
-    answer: A TWAP is only as safe as the pool underneath it, so a low-liquidity
-      pool can still be cheap to manipulate even over a 30-minute window. It
-      also lags the real price by design, so it is wrong for anything needing
-      the current price, like quoting a live swap, and is best for collateral
-      valuation or liquidation thresholds that tolerate latency. It stops
-      advancing if nobody trades the pool for a while, leaving stale data, and a
-      Uniswap V2 TWAP only gives you one token priced in the other, so getting a
-      true USD value may mean chaining feeds or trusting that a stablecoin
-      equals a dollar.
+  - question: Why doesn't a flash loan move a TWAP?
+    answer: >-
+      A one-block spike is only about 0.7% of a 30-minute window, roughly 150 blocks.
+  - question: How does a pool average prices without storing them?
+    answer: >-
+      It keeps one running total. Every swap, mint or burn adds the last price times the
+      seconds it held to price0CumulativeLast. Read that total at two times, subtract, and
+      divide by the elapsed seconds. Values are UQ112x112, so shift right by 112 bits.
+  - question: When is a TWAP the wrong oracle?
+    answer: >-
+      When you need the price right now, for quoting a live swap. It inherits the pool's depth,
+      freezes when nobody trades, and prices one token in the other rather than in dollars.
+      Five-minute windows have been broken, and 10 minutes to an hour is usual.
 ---
 
 > The previous lecture argued that production protocols use Chainlink because reading prices from a single AMM pool is dangerous. That's true. But Chainlink doesn't have a feed for every asset, and even when it does, sometimes you want an oracle that lives inside your own protocol, on the same chain, with no external dependency. The pattern that makes that workable is the **time-weighted average price**, or TWAP. This lecture covers what a TWAP is, why it's harder to manipulate than spot price, exactly how Uniswap V2's TWAP works, and where it still falls short.

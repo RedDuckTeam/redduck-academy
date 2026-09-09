@@ -4,30 +4,31 @@ title: Where Ethereum came from
 type: lecture
 order: 3
 faq:
-  - question: Why was Ethereum created instead of just adding features to Bitcoin?
-    answer: Vitalik Buterin, then nineteen, was frustrated that Bitcoin's scripting
-      language was deliberately too limited to build real applications on, and
-      the Bitcoin developers wanted to keep it minimal to keep the protocol
-      small and secure. After failing to convince them to add the features he
-      wanted, he wrote a whitepaper in November 2013 proposing a new chain
-      designed to run arbitrary programs, and a small group of co-founders
-      formed to build it.
-  - question: What was the DAO hack and why did it split Ethereum into two chains?
-    answer: "The DAO was an on-chain investment fund holding about 11.5 million ETH,
-      roughly fifteen percent of all ETH at the time. It had a reentrancy bug:
-      it sent a user their ETH before updating its records, so an attacker
-      called the withdrawal repeatedly and drained about 3.6 million ETH. The
-      community hard-forked to reverse the theft. The minority who rejected the
-      fork kept the original chain, now called Ethereum Classic, while the
-      majority continued as Ethereum."
-  - question: When did Ethereum switch from proof of work to proof of stake?
-    answer: In September 2022, in an event called the Merge. A separate
-      proof-of-stake chain called the Beacon Chain had launched in December 2020
-      and run in parallel for nearly two years to test staking without real
-      transactions. At the Merge the original Ethereum chain stopped mining and
-      started taking its consensus from the Beacon Chain, switching from proof
-      of work to proof of stake from one block to the next without interrupting
-      any contract.
+  - question: Why did Vitalik Buterin start a new chain instead of extending Bitcoin?
+    answer: >-
+      Bitcoin's scripting language was deliberately limited and its developers wanted the
+      protocol to stay small. Buterin, then nineteen, wrote a whitepaper in November 2013 for
+      a chain designed to run arbitrary programs instead.
+  - question: Where does the name Ethereum come from?
+    answer: >-
+      Luminiferous ether, the medium nineteenth-century physicists thought light travelled
+      through. Buterin wanted the image of an invisible substrate everything else runs on.
+  - question: When did Ethereum launch and how was it funded?
+    answer: >-
+      July 30, 2015, in a release called Frontier. The 2014 crowdsale raised about 31,000
+      BTC, around eighteen million dollars then, and distributed sixty million ETH.
+  - question: What was the DAO hack and why did it split the chain?
+    answer: >-
+      An on-chain investment fund holding about 11.5 million ETH, roughly fifteen percent of
+      the supply, sent users their ETH before updating its records. An attacker called the
+      withdrawal repeatedly and drained about 3.6 million ETH. A hard fork in July 2016
+      reversed the theft, and the minority who refused it kept running the original chain,
+      now called Ethereum Classic.
+  - question: When did Ethereum switch to proof of stake?
+    answer: >-
+      September 2022, in an upgrade called the Merge. The Beacon Chain had run proof of stake
+      in parallel since December 2020, and the main chain switched to it from one block to
+      the next.
 ---
 
 > Ethereum exists because someone looked at Bitcoin in 2013 and got frustrated. The frustration was specific: Bitcoin's scripting language was deliberately too limited to build real applications on top of, and the Bitcoin community wanted to keep it that way. The someone was a nineteen-year-old named Vitalik Buterin, who had been writing for Bitcoin Magazine and trying to convince the Bitcoin developers to add the features he wanted. When that didn't work, he wrote a whitepaper proposing his own chain.

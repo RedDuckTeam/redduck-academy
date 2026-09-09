@@ -4,35 +4,19 @@ title: What Ethereum is
 type: lecture
 order: 2
 faq:
-  - question: What is the difference between Ethereum and Bitcoin in simple terms?
-    answer: "Bitcoin is a network for moving one specific asset securely. Ethereum
-      starts from the same architecture but asks for more: arbitrary state and
-      arbitrary programs that touch that state. The useful shorthand is that
-      Ethereum is a single global computer the whole world shares, where anyone
-      can submit a request to change its state as long as they pay for the work,
-      with no operator, admin, or off-switch."
-  - question: What is gas on Ethereum and why do I have to pay it?
-    answer: "Gas is the unit of cost for running operations on Ethereum: adding
-      numbers is cheap, reading storage is medium, and writing storage is
-      expensive. Each transaction sets a maximum gas it will use and a price per
-      unit, and the fee equals gas-used times gas-price, paid in ETH. Gas exists
-      so that computation on every node gets paid for and cannot be spammed, and
-      so a transaction cannot run forever, since it reverts when it runs out of
-      gas."
-  - question: What is the difference between an EOA and a smart contract account on
-      Ethereum?
-    answer: "An externally owned account (EOA) is a regular user account controlled
-      by a private key, holding only an ETH balance and a nonce, and you sign
-      transactions with the key to spend ETH or call contracts. A smart contract
-      account is controlled by code rather than a key: its code deploys to an address and
-      stays there as long as the chain runs, and when anyone sends it a transaction the code runs, reads and
-      writes its own storage, and can move ETH or call other contracts."
-  - question: If a transaction runs out of gas halfway, do I lose the gas I already paid?
-    answer: Yes. When the gas runs out, the transaction is reverted, meaning every
-      state change it made is undone, but the gas spent up to that point is kept
-      by the block producer as the cost of the attempt. Gas therefore also
-      bounds execution, because a transaction can never consume more gas than it
-      brought with it, so it cannot run forever.
+  - question: What is gas on Ethereum and why do I pay it?
+    answer: >-
+      The unit of cost for running an operation. Adding numbers is cheap, writing storage is
+      expensive. Your fee is gas used times gas price, paid in ETH. Gas pays every node for
+      the work and keeps a transaction from running forever.
+  - question: How does a contract account differ from a user account?
+    answer: >-
+      An externally owned account, the user kind, is controlled by a private key and holds an
+      ETH balance and a nonce. A contract account is controlled by code deployed at its
+      address and has storage of its own.
+  - question: If my transaction runs out of gas, do I get that gas back?
+    answer: >-
+      No. Every state change it made is undone and the block producer keeps what you spent.
 ---
 
 > Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. Think of Ethereum as a single computer that the entire world shares. Every program written for it runs forever, and no single party can switch the network off.

@@ -4,45 +4,27 @@ title: Uniswap V3
 type: lecture
 order: 2
 faq:
-  - question: What is concentrated liquidity and why does it make Uniswap V3 more
-      capital efficient than V2?
-    answer: In Uniswap V2 your deposit is spread across every possible price from
-      zero to infinity, so most of it sits idle at prices that will never trade.
-      Empirically, often under 5% is active near the current price. V3 lets you
-      concentrate your capital in a chosen price range, say $3,000 to $4,000, so
-      all of it provides depth where trading actually happens. The same $10,000
-      in a tight V3 range can provide the depth of roughly $100,000 or more in
-      V2. The tradeoff is that if the price leaves your range, your position
-      earns no fees until it returns or you reposition.
-  - question: Why does Uniswap V3 sometimes let me add liquidity with only one token?
-    answer: The token mix you must deposit is forced by where your chosen range sits
-      relative to the current price, because the pool sells whichever token the
-      market is buying. If your whole range is above the current price, the
-      price must rise through it, meaning the pool will be selling that token
-      the entire time, so you deposit only that token. If your range is entirely
-      below, you deposit only the other token. Only a range that straddles the
-      current price needs both tokens. At the lower boundary a position holds
-      100% of one token and at the upper boundary 100% of the other.
-  - question: Can I place a limit order on Uniswap V3?
-    answer: Yes, using a 'range order', which exploits the single-sided deposit
-      behavior. To sell ETH at $4,000 you create a tight position just above the
-      current price and deposit only ETH. If the price passes through that
-      narrow range your ETH is swapped to USDC, and by the time the price exits
-      the top your position is all USDC at roughly your target. It isn't an
-      exact fill, since the execution price is an average across the range, but
-      unlike a true limit order it also earns fees while filling. Tighter ranges
-      give closer fills but smaller fee income.
-  - question: Why are Uniswap V3 LP positions NFTs instead of fungible ERC-20 tokens
-      like in V2?
-    answer: In V2 every liquidity provider in a pool has the same kind of claim, so
-      LP shares could be a fungible ERC-20. In V3 two providers can pick
-      completely different price ranges and therefore have completely different
-      exposures, so there is no single representative position to tokenize. Each
-      V3 position is instead a non-fungible ERC-721 whose data includes the
-      pool, the range, the liquidity, and accrued fees, managed through the
-      NonfungiblePositionManager. This makes positions transferable and usable
-      as collateral, but it also makes integrations more complex than V2's
-      fungible LP tokens.
+  - question: How much more capital efficient is a V3 range than a V2 position?
+    answer: >-
+      In V2 your deposit covers every price from zero to infinity, and often under 5% of it
+      sits near the current price. The same $10,000 concentrated into $3,000 to $4,000 gives
+      the depth of roughly $100,000 in V2. Out of range you earn nothing.
+  - question: Why are there four ETH/USDC pools on V3 instead of one?
+    answer: >-
+      One per fee tier, each with its own tick spacing. 0.01% with spacing 1 for pairs that
+      should trade at almost the same price, 0.05% with 10 for correlated assets, 0.30% with
+      60 for typical pairs, 1.00% with 200 for exotic ones. A tick is one 0.01% price step.
+  - question: Why did Uniswap only let me deposit one of the two tokens?
+    answer: >-
+      Your range sits entirely on one side of the current price.
+  - question: Can I use a V3 position as a limit order?
+    answer: >-
+      Close to one. A narrow range above the current price, funded with only ETH, comes out as
+      USDC once price crosses it.
+  - question: Why is my LP position an NFT?
+    answer: >-
+      Ranges differ, so no two positions are alike. Each one is an ERC-721 minted through the
+      NonfungiblePositionManager.
 ---
 
 ## What's wrong with V2

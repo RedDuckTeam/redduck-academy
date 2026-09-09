@@ -4,37 +4,25 @@ title: Gasless approvals
 type: lecture
 order: 1
 faq:
-  - question: How can someone approve a token to be spent without paying gas or even
-      holding ETH?
-    answer: ERC-2612 adds a permit function that accepts an off-chain signature
-      instead of an on-chain approve transaction. The token owner signs a
-      message saying 'I authorize this spender for this amount' at zero cost,
-      then anyone (the spender, the dApp, or a relayer) can submit that
-      signature on chain and pay the gas. The token contract verifies the
-      signature and sets the allowance exactly as if the owner had called
-      approve directly. This lets a first-time user who received a stablecoin
-      but has no ETH still authorize spending it, and lets a DEX swap drop from
-      two wallet pop-ups to one signature.
-  - question: Why does EIP-712 show me a readable message instead of a scary hex
-      blob when I sign?
-    answer: Signing a raw hash is dangerous because the wallet only sees opaque
-      bytes, so scammers have tricked users into signing hashes that secretly
-      authorize transfers. EIP-712 defines a way to sign typed structured data
-      with a 'domain' and a 'message', so the wallet knows the fields and can
-      show something human-readable like 'Approve 0xBob to spend 100 USDC.' The
-      domain also binds the signature to a specific contract name, version,
-      chain ID, and address, so a signature meant for USDC on mainnet won't
-      validate on a clone or a different chain.
-  - question: Can a permit signature be replayed or front-run by someone else?
-    answer: "A permit can't be replayed on the same contract because each signature
-      includes a nonce that the contract increments after use, so submitting it
-      twice fails. It can, however, be front-run: since the signature is just
-      bytes, anyone who sees it can submit it first, which sets the allowance
-      but consumes the nonce so the user's intended follow-up transaction fails.
-      Production code usually checks whether the allowance already matches
-      before calling permit. You should also set a short deadline so an old
-      forgotten signature can't be used against you later, and be wary of
-      signing infinite (max value) approvals to untrusted contracts."
+  - question: I hold USDC but no ETH. Can I still approve a spender?
+    answer: >-
+      Yes, with a gasless approval. Sign an ERC-2612 permit off chain and let someone else pay
+      the gas.
+  - question: What does EIP-712 add over signing a plain hash?
+    answer: >-
+      Structure the wallet can display, and a domain that binds the signature. The domain
+      carries name, version, chain ID and verifying contract, so the same signature validates
+      nowhere else. The digest is keccak256 over 0x1901, the domain separator and the message
+      hash.
+  - question: My permit call reverts with an invalid signer. What is wrong?
+    answer: >-
+      Almost always the domain. Name, version, chain ID and verifying contract have to match
+      the token byte for byte, and a mismatch reverts with no hint which field is wrong.
+  - question: Can someone front-run my permit?
+    answer: >-
+      Yes. Anyone who sees it can submit it first, setting the allowance and consuming the
+      nonce, so your own call fails. Check the allowance first, and keep deadlines short, 30
+      minutes for a swap.
 ---
 
 > Approving an ERC-20 has always cost a transaction. The owner has to call `approve(spender, amount)` on the token contract, which means they need ETH for gas. If someone receives USDC and has no ETH, they can't authorize anyone to spend it. **ERC-2612** fixes this by letting the owner sign a message off-chain that says "I authorize this spender for this amount."

@@ -4,21 +4,16 @@ title: What Ethereum course is about
 type: lecture
 order: 1
 faq:
-  - question: Why is Ethereum development taught as a separate track from the
-      blockchain basics?
-    answer: Because there is a real gap between understanding how a blockchain works
-      and being able to build something on one that holds funds without losing
-      them. The basics module explains what Ethereum is. This track teaches you
-      to actually write the contracts that run on it. Closing that gap between
-      knowledge and safe, working code is the whole point of these lessons.
-  - question: How is security taught in this Ethereum course?
-    answer: Security runs through the entire course rather than being a single
-      lecture at the end. You build vulnerable versions of real patterns, watch
-      them get drained, and then fix them with the test that would have caught
-      the original bug. Testing runs alongside every project too, starting with
-      simple unit tests and moving to fuzz and invariant tests, so the goal is
-      developing mental models for what your contract does when an attacker runs
-      it, rather than memorizing syntax.
+  - question: What does the Ethereum track cover?
+    answer: >-
+      Solidity first, from syntax and types through functions, errors, events, modifiers, and
+      inheritance. Then the patterns production contracts are built from: tokens, access
+      control, upgradeability, oracles, AMMs, lending, governance.
+  - question: Is security a separate module or part of every topic?
+    answer: >-
+      Part of every topic. You build vulnerable versions of real patterns, watch them get
+      drained, and fix them with the test that would have caught the bug. Testing runs
+      alongside every project, unit tests early, fuzz and invariant tests later.
 ---
 
 This is the part of the course where you stop reading about blockchains and start building on one. The basics module taught you what Ethereum is and how it works. This track teaches you how to write the contracts that run on it. It is a separate track because there is a real gap between understanding a blockchain and being able to build something on one that holds funds without losing them. Closing that gap is what these lessons are for.

@@ -4,41 +4,34 @@ title: Front-running and MEV
 type: lecture
 order: 6
 faq:
-  - question: How can a bot profit from my trade before it even executes?
-    answer: When you submit a transaction it does not run immediately. It waits in a
-      public pool of pending transactions called the mempool, which anyone can
-      watch. A bot sees your pending swap, calculates how it will move the
-      price, and inserts its own transactions around yours by paying gas fees
-      that make them land in the right order. In a sandwich attack it buys just
-      before you (pushing the price up), lets your trade execute at that worse
-      price, then sells just after, pocketing the difference. This is a
-      structural property of transparent blockchains, and it happens even when
-      your contract has no bug.
-  - question: What is slippage tolerance and why does setting it wrong cost me money?
-    answer: Slippage is the gap between the price you expected and the price you
-      actually get, because the pool can change between when you submit and when
-      your trade runs. Slippage tolerance is the minimum output you will accept,
-      and the trade reverts if it would do worse. Set it too tight and normal
-      price movement makes your transactions fail. Set it too loose and you are
-      advertising exactly how much a sandwich bot is allowed to extract from you
-      before your trade still goes through.
-  - question: What does a deadline parameter on a swap actually protect against?
-    answer: A deadline is a block timestamp after which the transaction must revert.
-      Without it, a transaction can sit in the mempool for a long time during
-      congestion and then execute much later at a stale, unfavorable price.
-      Setting a deadline (often 10 to 30 minutes ahead) means the trade simply
-      expires instead of executing on outdated conditions, and you can resubmit
-      at the current price. It also shortens the window in which a bot can
-      target your transaction.
-  - question: Can I hide my transaction from front-running bots entirely?
-    answer: You can reduce exposure by sending it through a private relay instead of
-      the public mempool. A service like Flashbots Protect gives you a special
-      RPC endpoint. Transactions sent through it go straight to block builders
-      and never appear publicly, so searchers cannot see or sandwich them. This
-      protection lives at the wallet level, so as a developer you can recommend
-      it but cannot enforce it from the contract. Note that MEV can never
-      be fully eliminated, because as long as pending transactions are visible
-      and someone chooses their order, some value extraction remains possible.
+  - question: How does a bot profit from my swap before it runs?
+    answer: >-
+      Your transaction sits in the public mempool first, where anyone can read it. A sandwich
+      bot computes how the swap will move the price, buys just before you, lets you trade at
+      the worse price, then sells right after. Gas fees put its two transactions on either side
+      of yours.
+  - question: What does slippage tolerance control?
+    answer: >-
+      The worst price you accept. It is a minimum output enforced on chain, and the trade
+      reverts below it. Too tight and normal price movement kills your transactions. Too loose
+      and you have told a sandwich bot how much it may take.
+  - question: What is a deadline parameter for?
+    answer: >-
+      A block timestamp past which the transaction reverts, usually 10 to 30 minutes out. It
+      stops a swap that sat in the mempool through congestion from executing later at a stale
+      price.
+  - question: Does commit-reveal stop sandwich attacks on a DEX?
+    answer: >-
+      No. The reveal transaction carries the full trade parameters in the clear, so a searcher
+      can sandwich the reveal itself. Commit-reveal does defeat front-running, where the
+      attacker only needs to learn what you will do. For swaps it needs extra mechanics, such
+      as batch auctions that settle many trades at one uniform price.
+  - question: Can I hide my transaction from bots entirely?
+    answer: >-
+      Not entirely. A private relay such as Flashbots Protect gives your wallet an RPC endpoint
+      that routes straight to block builders, so the transaction never reaches the public
+      mempool and MEV searchers cannot sandwich it. It is a wallet setting, so a contract
+      cannot require it.
 ---
 
 ## How transactions actually get into blocks

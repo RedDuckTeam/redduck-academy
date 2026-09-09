@@ -5,31 +5,29 @@ type: lecture
 order: 3
 faq:
   - question: Is my data on a public blockchain encrypted?
-    answer: No. Public blockchains do not encrypt transactions, balances, or
-      contract storage at the protocol level, so every byte of state is readable
-      by anyone running a node. What actually protects you is authentication,
-      proving you authorised an action, and integrity, proving data was not
-      tampered with. Those come from hashing and digital signatures rather than from
-      encryption.
+    answer: >-
+      No. Every byte of state on a public chain is readable by anyone running a node.
+      Authentication and integrity protect you, and both come from hashing and digital
+      signatures.
   - question: What's the difference between symmetric and asymmetric encryption?
-    answer: "Symmetric encryption uses one shared key for both encrypting and
-      decrypting, which is very fast but requires both sides to already share
-      the key safely. Asymmetric encryption uses a key pair: a public key that
-      anyone can use to encrypt a message and a private key that only the owner
-      uses to decrypt. Asymmetric solves the key-sharing problem but is much
-      slower, so real systems often combine the two."
+    answer: >-
+      One key or two. Symmetric uses the same key to encrypt and decrypt, so both sides must
+      already share it safely. Asymmetric uses a key pair, a public key anyone can encrypt
+      with and a private key only the owner decrypts with.
+  - question: Which algorithms do these two families use?
+    answer: >-
+      AES-256 for symmetric, which moves gigabytes per second. RSA with 2048 to 4096 bit keys
+      for asymmetric, or ECDH on an elliptic curve for the same strength with much smaller
+      keys. Asymmetric runs 100 to 1000 times slower.
   - question: If the blockchain is public, why does my wallet still ask for a password?
-    answer: The password protects your private key on your own device rather than the
-      chain. Your wallet encrypts the key file on disk with your password using
-      symmetric encryption, so if you forget the password that file stays locked
-      and unreadable. The blockchain itself does not know or care about this
-      local security measure.
+    answer: >-
+      It encrypts your private key on your own disk. The wallet runs your password through a
+      key-derivation function and locks the key file with AES. Forget the password and that
+      file stays unreadable.
   - question: Why do HTTPS connections use both symmetric and asymmetric encryption?
-    answer: "This pattern is called hybrid encryption. The slow asymmetric step runs
-      once at the start to safely agree on a fresh symmetric key using the
-      site's public key, then the fast symmetric key encrypts the rest of the
-      session. You get the best of both worlds: no pre-shared secret is needed,
-      and it is still fast enough for real traffic."
+    answer: >-
+      Hybrid encryption. Asymmetric agrees a fresh symmetric key once, then symmetric
+      encrypts the session.
 ---
 
 > A common assumption is that the blockchain "encrypts" your data. It doesn't. Almost nothing on a public chain is encrypted at the protocol level, and understanding why that's true is the difference between a working mental model and a confused one. This lesson starts with what encryption actually is, then explains where it lives in your stack and where it doesn't.

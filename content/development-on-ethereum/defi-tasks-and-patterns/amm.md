@@ -4,41 +4,27 @@ title: AMM
 type: lecture
 order: 5
 faq:
-  - question: Why do I get a worse exchange rate when I make a big swap on Uniswap?
-    answer: A Uniswap V2 pool prices trades with the rule that the product of its
-      two token reserves stays constant (x * y = k). Each token you pull out
-      makes that token scarcer in the pool, so the price rises as your trade
-      proceeds. A large swap pushes deep into the unfavorable part of the curve
-      in one move, so its average rate is worse than several small swaps against
-      a fresh pool. This effect is called price impact, and it is larger the
-      bigger your trade is relative to the pool's size.
-  - question: Can I lose money by providing liquidity to an AMM pool even if fees
-      are paid to me?
-    answer: Yes, through impermanent loss. Because the pool automatically sells
-      whichever token is rising and buys whichever is falling, a liquidity
-      provider ends up holding more of the losing asset and less of the winner
-      compared with simply holding the two tokens. A 2x price move costs about
-      5.7% versus holding, and the loss is symmetric (a 0.5x move costs the same
-      5.7%). You only come out ahead if the trading fees you collect over time
-      exceed this loss, which tends to happen on high-volume pools and
-      stablecoin pairs but not on quiet, volatile ones.
-  - question: How do Uniswap V2 liquidity providers earn the 0.3% fee if there is no
-      claim function?
-    answer: The fee is never sent anywhere. On each swap the pool keeps the full
-      input amount but only pays the trader as if 99.7% had been added, so the
-      extra 0.3% simply stays in the reserves. No new liquidity-provider (LP)
-      tokens are minted for it, so the reserves grow while the LP token supply
-      stays flat, and each LP token comes to represent a slightly larger slice
-      of the pool. Providers do not call anything. Their tokens just become
-      worth more as fees accrue.
-  - question: Why can't a Uniswap V2 pool hold plain ETH, and why do I have to wrap
-      it into WETH?
-    answer: "A V2 pair contract only accepts ERC-20 tokens, and native ETH is not an
-      ERC-20. To trade ETH against a token you first wrap it into WETH, the
-      ERC-20 version of ETH, and trade the WETH/token pair. This is a deliberate
-      design choice: supporting only ERC-20s gives the pool a single code path
-      for moving tokens, instead of doubling the complexity to also handle
-      native ETH and its edge cases."
+  - question: Why did my large swap get a worse rate than a small one?
+    answer: >-
+      Price impact. A V2 AMM pool holds x * y = k, so each token you take out makes the next
+      one dearer, and a big trade travels the whole curve in one move.
+  - question: Where does the 0.3% fee go if there is no claim function?
+    answer: >-
+      Nowhere. The pool pays out as if only 99.7% arrived, so the fee stays in the reserves,
+      and no LP tokens are minted against it.
+  - question: Can I lose money as an LP even while collecting fees?
+    answer: >-
+      Yes, impermanent loss. The pool sells whatever is rising and buys whatever is falling. A
+      2x move costs 5.7% against holding, 3x costs 13.4%, 4x costs 20%, and 0.5x costs 5.7%
+      again.
+  - question: Why does the first deposit burn 1,000 wei of LP tokens?
+    answer: >-
+      To stop share-price inflation. An attacker otherwise deposits dust, mints one wei of LP,
+      donates a large amount straight into the pool, and the next depositor's share rounds down
+      to zero.
+  - question: Why do I have to wrap ETH into WETH first?
+    answer: >-
+      A pair holds ERC-20s only, and native ETH is not one.
 ---
 
 ## The problem: trading without an order book

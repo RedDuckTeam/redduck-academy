@@ -4,45 +4,28 @@ title: Account abstraction
 type: lecture
 order: 3
 faq:
-  - question: What is account abstraction and what's so limiting about a normal
-      Ethereum wallet?
-    answer: "A normal wallet is an externally owned account (EOA) controlled by one
-      private key, and the protocol accepts exactly one kind of authorization:
-      an ECDSA signature from that key. It can start transactions but its
-      behavior is fixed and can't be customized. A smart-contract account can
-      enforce any logic you can write, such as multisig, passkeys, daily
-      spending limits, key rotation, or social recovery, but on its own it can't
-      initiate a transaction. Account abstraction is the work of bridging that
-      gap so code-controlled accounts can both be flexible and send
-      transactions."
-  - question: What's the difference between ERC-4337 and EIP-7702?
-    answer: "ERC-4337 is an application-layer approach live since March 2023 that
-      needs no protocol change: users sign an off-chain 'UserOperation', a
-      service called a bundler batches these into a real transaction routed
-      through a singleton EntryPoint contract, and optional paymasters can cover
-      gas. EIP-7702 is a protocol-level change from the Pectra upgrade (May
-      2025) that lets an existing EOA delegate its code to a smart-wallet
-      contract via a new transaction type, so the same address gains
-      smart-account behavior without moving funds. 4337 fits users starting
-      fresh with a new contract account, 7702 fits existing EOAs, and serious
-      wallets increasingly use both together."
-  - question: Can a dApp pay my gas for me, or can I pay gas in USDC instead of ETH?
-    answer: Yes, account abstraction makes both possible. With ERC-4337 a paymaster
-      contract can agree to cover the gas, either sponsoring first-time users
-      entirely or accepting payment in a token like USDC and paying the actual
-      ETH cost on your behalf. With EIP-7702 a relayer can submit the
-      transaction for you. This turns onboarding from 'first buy ETH, then use
-      our app' into 'just use our app, we'll cover gas,' and lets users hold and
-      spend stablecoins without ever needing ETH in their wallet.
-  - question: Can I recover my wallet or avoid seed phrases with a smart account?
-    answer: Yes. A smart account can implement social recovery, where trusted
-      guardian addresses you designate can collectively replace your signing key
-      after a delay if you lose access, so a single lost key doesn't wipe you
-      out. It can also authenticate with passkeys, accepting a WebAuthn
-      signature from your phone's secure enclave so there is no seed phrase to
-      lose. Other unlocked features include session keys that grant a temporary,
-      spending-limited key to a specific app, and batching several actions like
-      approve-swap-stake into one signed operation.
+  - question: What is the difference between ERC-4337 and EIP-7702?
+    answer: >-
+      Two routes to account abstraction. ERC-4337 sits on top of the protocol, live since March
+      2023. You sign a UserOperation, a bundler batches it into a real transaction, and a
+      singleton EntryPoint enforces validation and payment. EIP-7702 came with Pectra in May
+      2025, a type 0x04 transaction carrying an authorization signed by your own key that
+      points your existing EOA at a smart-wallet contract.
+  - question: Can a dApp pay my gas, or can I pay it in USDC?
+    answer: >-
+      Both, through a paymaster. It covers the gas for a UserOperation, either sponsoring you
+      outright or taking USDC and paying the ETH itself. Under EIP-7702 a relayer pays instead.
+  - question: If I sign a 7702 authorization, do I lose my address?
+    answer: >-
+      It stays yours. The code becomes 0xef0100 followed by the implementation address, so
+      calls to you run that contract against your storage. Your key still signs normal
+      transactions.
+  - question: I lost my signing key. Can a smart account recover?
+    answer: >-
+      Only if you named guardians first. They can replace the signing key after a delay.
+  - question: Can I use a passkey instead of a seed phrase?
+    answer: >-
+      Yes. The account validates a WebAuthn signature from your phone's secure enclave.
 ---
 
 > Every Ethereum account today is one of two things: an **EOA** controlled by a private key, or a **contract account** controlled by code. EOAs can initiate transactions but their behavior is fixed by the protocol. Contracts can have any behavior but cannot initiate transactions on their own. **Account abstraction** is the umbrella term for changing this. The goal is to let accounts be controlled by arbitrary code while still being able to send transactions. This lecture covers what AA is, the two production approaches today (ERC-4337 and EIP-7702), and the kinds of features they unlock: passkeys, social recovery, sponsored gas, batched operations, and session keys.

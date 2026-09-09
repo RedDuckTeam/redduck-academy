@@ -4,31 +4,28 @@ title: Composing programs in practice
 type: lecture
 order: 6
 faq:
-  - question: Why does a single swap transaction have to pass so many accounts?
-    answer: On Solana every account that any layer of a call will read or write must
-      be listed in the outer transaction up front. Inner programs never request
-      accounts dynamically. So when an aggregator calls a swap, which calls the
-      Token Program, the transaction must include the pool state, the pool
-      authority PDA, all the token accounts, and every program ID involved. This
-      explicit, up-front naming is the trade Solana made so the runtime can
-      schedule transactions in parallel without surprise dependencies.
-  - question: Why do complex Solana transactions fail with a too-many-accounts or
-      size error?
-    answer: A legacy transaction must fit in 1,232 bytes, and each account address
-      costs 32 bytes, which works out to a hard ceiling of roughly 35 accounts,
-      fewer once you add instruction data. Multi-hop aggregator routes can
-      reference 27, 40, or more accounts and blow past that. The fix is
-      versioned transactions plus Address Lookup Tables, which reference
-      accounts by a 1-byte index instead of a full 32-byte address and raise the
-      practical ceiling to about 256 accounts.
-  - question: Do I need to change my program code to support address lookup tables?
-    answer: "No. For program authors nothing changes: you write the same handlers,
-      Accounts structs, and CPIs, and the runtime expands the lookup-table
-      indices into full pubkeys before your handler runs, so your code still
-      sees the complete AccountInfo for every account. The change is only on the
-      client side, where you build a VersionedTransaction and supply the lookup
-      tables you're referencing. It's purely a wire-format optimization that
-      leaves the programming model unchanged."
+  - question: Why does a swap transaction carry so many accounts?
+    answer: >-
+      Every account any layer of the call will touch has to be named in the outer transaction,
+      because inner programs never request accounts at runtime. An aggregator calling a swap
+      that calls the Token Program therefore lists the pool state, the pool authority PDA,
+      every token account and every program ID. That up-front naming is what lets the runtime
+      schedule transactions in parallel.
+  - question: My aggregator transaction is too large. What is the limit?
+    answer: >-
+      1,232 bytes for the whole legacy transaction, with each account address costing 32
+      bytes. That caps you around 35 accounts, and a multi-hop route passes 40 easily.
+      Versioned transactions with address lookup tables reference an account by a 1-byte index
+      and raise the ceiling to roughly 256.
+  - question: Do I need to change my program to support lookup tables?
+    answer: >-
+      No. The runtime expands the indices into full pubkeys before your handler runs, so your
+      Accounts struct still sees a complete AccountInfo for every account. Only the client
+      changes, building a VersionedTransaction and supplying the tables it references.
+  - question: How many lookup tables can one transaction reference?
+    answer: >-
+      Several. Production transactions commonly use two or three, one global table of token
+      programs and common mints plus protocol-specific ones for pool addresses.
 ---
 
 > The pieces you've been learning add up to one capability: a program on Solana can call another program, which can call another, with strict rules about authority and a complete accounting of which accounts each call touches. That capability is what makes Solana an ecosystem rather than a collection of isolated contracts. A swap calls the Token Program. A lending protocol calls the swap. An aggregator calls the lending protocol. The composition runs deep, and what reaches the chain is a single transaction that carries every account every layer needs. That single transaction runs into a practical limit as the composition deepens, and versioned transactions with address lookup tables are the answer.

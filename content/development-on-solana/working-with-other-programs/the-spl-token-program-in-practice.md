@@ -4,34 +4,28 @@ title: The SPL Token program in practice
 type: lecture
 order: 3
 faq:
-  - question: What's the difference between a Mint and a token account on Solana?
-    answer: "A Mint account describes the token itself, like a currency: its total
-      supply, its decimal precision, and the authorities allowed to mint or
-      freeze. A token account (TokenAccount) is one holder's balance of that
-      token. It references a mint, names an owner, and tracks an amount. The
-      relationship is one-to-many: a single USDC mint has many token accounts
-      pointing at it, one per wallet, each holding that wallet's balance."
-  - question: Why does my token balance show a huge number like 100000000 instead of 100?
-    answer: Token balances are stored as raw integers scaled by ten to the power of
-      the mint's decimal precision. The number you see on screen is that raw
-      value converted for display. USDC has 6 decimals,
-      so a stored balance of 100,000,000 means 100 USDC on screen. To convert,
-      divide by 10^6 to display and multiply by 10^6 to send. Do this conversion
-      only at the edges (frontend or tests). Inside program logic every amount
-      is a raw integer.
-  - question: Does holding a token's mint authority let me move other people's tokens?
-    answer: "No. The mint authority only controls MintTo, which creates new tokens,
-      and it lives on the Mint account. Moving or burning an existing balance
-      requires the token account owner, which is a separate authority set on
-      each individual token account. These are independent powers: minting
-      tokens and spending someone's balance are gated by different keys, and
-      blurring them leads to broken access control."
-  - question: How do I permanently fix a token's supply so no more can ever be minted?
-    answer: "Set the mint authority to None. Once the mint authority is None, no one
-      can call MintTo against that mint, so the supply is frozen at whatever it
-      currently is. This is a one-way change: you cannot reinstate a mint
-      authority afterward, so the supply you have becomes the supply you will
-      always have."
+  - question: What's the difference between a mint and a token account?
+    answer: >-
+      The mint is the currency. It stores the total supply, the decimal precision, and the
+      authorities that can mint or freeze. A token account is one holder's balance of that
+      currency, naming a mint, an owner, and an amount. One mint, many token accounts.
+  - question: My balance reads 100000000 but the wallet shows 100. Why?
+    answer: >-
+      Balances are stored as raw integers scaled by the mint's decimals. USDC has 6 decimals,
+      so 100,000,000 raw is 100 USDC. Multiply by 10^6 to send and divide by 10^6 to display.
+      Every amount inside program logic is raw.
+  - question: Does holding the mint authority let me move someone else's tokens?
+    answer: >-
+      No. It only gates MintTo. The SPL Token program's Transfer, Burn and CloseAccount need
+      the token account's owner.
+  - question: How do I fix a token's supply so no more can ever be minted?
+    answer: >-
+      Set the mint authority to None. Nobody can call MintTo after that, and the change cannot
+      be undone, so the supply you have is the supply you keep.
+  - question: Can I get back the rent on token accounts I no longer use?
+    answer: >-
+      Yes. CloseAccount refunds the deposit, about 0.002 SOL per account. The balance has to
+      be zero first, and the owner signs.
 ---
 
 > Most of what makes Solana useful flows through one program: the SPL Token Program. USDC, USDT, every project's governance token, every meme coin, every staking receipt, every wrapped asset, every position token from every protocol. The same program manages all of them. You've already called it twice through CPI without seeing its formal shape. Its formal shape comes down to three things: the state that lives in its accounts, the instructions it accepts, and the authorities that gate each action. Once you have these pieces, working with tokens in your own programs becomes mechanical.

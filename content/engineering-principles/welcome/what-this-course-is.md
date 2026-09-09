@@ -5,14 +5,22 @@ type: lecture
 order: 1
 faq:
   - question: Do I need to know blockchain to take this course?
-    answer: No. Every principle is taught with plain examples from software, databases,
-      networks, and the physical world. Some lessons end with an optional note on how
-      the principle appears in a blockchain system, and you can skip it with nothing
-      lost.
-  - question: What is the difference between a principle and a rule I could just memorize?
-    answer: A rule tells you what to do in one situation. A principle is the reason
-      under many rules, so it decides cases no rule anticipated. Learn the principle
-      and you can work out the answer instead of looking it up.
+    answer: >-
+      No. Every principle is taught with examples from software, databases, networks,
+      operating systems, and everyday physical systems. Some lessons close with an optional
+      section headed Blockchain application, and skipping it costs you none of the principle.
+  - question: What do I need installed before starting?
+    answer: >-
+      Nothing.
+  - question: Which principles does the course cover?
+    answer: >-
+      Weighing a tradeoff against the goal it serves. Making a hard constraint irrelevant
+      instead of fighting it. Keeping the smallest amount of logic in the position of highest
+      trust. Reasoning like an adversary before you build.
+  - question: Why learn a principle instead of a rule I can look up?
+    answer: >-
+      A rule tells you what to do in one situation. A principle is the reason under many
+      rules, so it decides the cases no rule anticipated.
 ---
 
 This is a course about the decisions underneath good engineering. It teaches the design principles that decide whether a system stays simple or turns tangled, whether it resists an attacker or breaks, whether other people can build on it or have to fight it. Every principle is taught with plain examples you already understand, from software, databases, networks, operating systems, and everyday physical systems. Nothing to install, and no blockchain background needed.

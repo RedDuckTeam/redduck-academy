@@ -4,39 +4,30 @@ title: Functions
 type: lecture
 order: 8
 faq:
-  - question: What is the difference between a public and an external function in
-      Solidity?
-    answer: "Both can be called from outside the contract, but an external function
-      cannot be called by the contract's own code directly (only via
-      this.functionName(), which costs extra). The key difference is gas:
-      external functions read their arguments straight from calldata, while
-      public functions may copy arguments into memory in case an internal caller
-      uses them, which is more expensive for large inputs. Use external when a
-      function is only meant to be called from the outside."
-  - question: Why can I call a view function for free but a normal function costs gas?
-    answer: A function marked view or pure does not change anything on chain, so any
-      node can compute its answer locally in memory using the eth_call RPC
-      method, with no transaction, no block, and no gas. A function that
-      modifies state must go through a real transaction that is mined into a
-      block and re-run by every full node, which is where the gas cost comes
-      from. So reading state from a frontend is free and instant, while writing
-      state costs gas and takes seconds.
-  - question: Why can't my frontend read the value returned by a function that
-      changes state?
-    answer: This is a property of how Ethereum transactions work rather than a Solidity
-      limitation. When a state-changing transaction is mined, the network only
-      records whether it succeeded or reverted, so off-chain
-      code never sees the return value. To send results back to a frontend, the
-      contract emits an event, which is written to the transaction receipt where
-      wallets and indexers can read it.
-  - question: What is the difference between receive and fallback in a Solidity contract?
-    answer: receive() runs when ETH is sent to the contract with no data attached,
-      like a plain wallet transfer, and it must be external payable. fallback()
-      runs when a call targets a function the contract does not define, or when
-      ETH arrives with data that matches no function. If a contract has neither,
-      plain ETH transfers and calls to unknown functions both revert, which is
-      why contracts that accept deposits usually define at least an empty
-      receive().
+  - question: What is the difference between a public and an external function?
+    answer: >-
+      Both are callable from outside. An external function reads its arguments straight from
+      calldata, while a public one may copy them into memory for internal callers, costing
+      hundreds of gas on a large array. The contract's own code reaches an external function
+      only through this.functionName().
+  - question: Why can I call a view function for free?
+    answer: >-
+      It changes nothing, so any node runs it locally through eth_call. No transaction, no
+      block, no gas. Writing state needs a transaction that every full node re-executes, and
+      that is what gas pays for.
+  - question: Why can't my frontend read the value a state-changing function returned?
+    answer: >-
+      The network records only whether the transaction succeeded or reverted. Emit an event
+      instead, which lands in the transaction receipt where wallets and indexers read it.
+  - question: What is the difference between receive and fallback?
+    answer: >-
+      receive() runs when ETH arrives with no calldata and must be external payable.
+      fallback() runs when a call names no function the contract defines, or when ETH
+      arrives with data. With neither, both revert. The two were split apart in Solidity
+      0.6.0.
+  - question: Can a payable function also be view?
+    answer: >-
+      No. Accepting ETH is itself a state change.
 ---
 
 A Solidity function signature is dense. Every keyword in it, from visibility to mutability to data location, decides who can call the function, whether it can touch state, and what it costs to run. Once you can read those keywords, you can predict any function's behavior from its declaration alone.

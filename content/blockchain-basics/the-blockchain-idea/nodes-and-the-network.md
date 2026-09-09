@@ -4,36 +4,29 @@ title: Nodes and the network
 type: lecture
 order: 4
 faq:
-  - question: What actually is a 'node' in a blockchain network?
-    answer: "A node is a program running the blockchain's protocol on some computer,
-      connected to other copies of the same program elsewhere. It does four
-      things all the time: holds a copy of the chain, listens for new blocks and
-      transactions, validates them against the protocol rules, and forwards the
-      valid ones to its peers. The network is just the set of all these nodes
-      talking to each other."
-  - question: What's the difference between a full node, a light node, and a miner
-      or validator?
-    answer: Full nodes download and independently verify every block and store the
-      entire history, trusting no one. Block producers (called miners or
-      validators depending on the chain) are full nodes that additionally
-      propose new blocks and earn the chain's rewards. Light nodes store only
-      small block headers and verify a specific transaction by asking a full
-      node for a Merkle proof, so they can run on a low-resource device like a
-      phone.
-  - question: How does a brand-new node find peers if there's no central directory?
-    answer: The node's software ships with a small built-in list of well-known
-      bootstrap nodes run by the project's community. On first startup it
-      connects to one and asks 'who else is on the network?', gets back a list
-      of peers, connects to some of them, and asks them the same thing. Within
-      seconds it has discovered many peers and no longer needs the bootstrap at
-      all.
-  - question: Why would anyone spend money running a node if they don't have to?
-    answer: Three motivations cover most operators. Block producers run nodes
-      because the chain pays them block rewards. Service operators such as
-      wallets, block explorers, and app infrastructure run nodes to sell access
-      to the data. And trust-minimising users run their own node so they don't
-      have to trust anyone else's interpretation of the rules, which is what
-      keeps the network honest over time.
+  - question: What does a node do?
+    answer: >-
+      Four things, constantly. It holds a copy of the chain, listens for new blocks and
+      transactions, validates them against the protocol rules, and forwards the valid ones.
+  - question: What is the difference between a full node, a light node, and a validator?
+    answer: >-
+      A full node downloads and verifies every block and stores the whole history. A block
+      producer, called a miner or a validator depending on the chain, does all that and also
+      proposes new blocks for the rewards. A light node keeps only block headers and checks a
+      single transaction with a Merkle proof from a full node, so it runs on a phone.
+  - question: How does a brand-new node find peers when there is no directory?
+    answer: >-
+      Its software ships with a short list of bootstrap nodes run by the project's community.
+      It connects to one, asks who else is out there, and asks the peers it gets back the same
+      question. Seconds later it has plenty of peers and no longer needs the bootstrap.
+  - question: I sent my transaction to one node. How does the rest of the network hear about it?
+    answer: >-
+      Gossip. Each node passes anything new to its peers, and a few hops reach everyone. Nodes
+      announce a hash first and send the full data only when asked.
+  - question: Do I need to run my own node?
+    answer: >-
+      No. Wallets, block explorers, and app infrastructure sell access to theirs. People run
+      their own to avoid trusting anyone else's reading of the rules.
 ---
 
 > Every lesson so far has referenced "nodes" doing things. Nodes hold copies of the chain. Nodes agree or disagree. Nodes vote in consensus. The word has appeared constantly without ever being defined. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like one sentence opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running anything at all.

@@ -4,30 +4,27 @@ title: Associated Token Accounts (ATAs)
 type: lecture
 order: 4
 faq:
-  - question: How do I find someone's token account address so I can send them a token?
-    answer: "You don't have to ask them or look it up anywhere: the Associated Token
-      Account (ATA) address is a deterministic function of the recipient's
-      wallet and the token's mint. Anyone can compute it offline, even before
-      the account exists, so given Bob's wallet and the USDC mint you get
-      exactly one canonical address where his USDC lives. The whole ecosystem
-      follows this same convention, so wallets, frontends, and protocols all
-      derive the same address."
-  - question: What seeds are used to derive an Associated Token Account address?
-    answer: "An ATA is a Program Derived Address computed under the Associated Token
-      Program, using three public inputs as seeds in this order: the wallet
-      pubkey, the Token Program's ID, and the mint pubkey. Running
-      find_program_address on those seeds gives the one canonical ATA address
-      for that wallet and mint. There is no per-user registry involved, the
-      address is purely computed from public values."
-  - question: Is init_if_needed safe to use in Anchor?
-    answer: "It's safe specifically for ATAs but risky for your own PDAs. For
-      generic PDAs, init_if_needed opens a reinitialization attack: an attacker
-      can pre-create an account at your predictable address with adversarial
-      data, and your handler will then treat those bytes as valid state. ATAs
-      are immune because the only way to create an account at an ATA address is
-      through the Associated Token Program, which always initializes it
-      correctly. For your own PDAs, prefer plain init and let it fail if the
-      account already exists."
+  - question: How do I find the address of someone's token account?
+    answer: >-
+      Compute it. An Associated Token Account address is derived from the holder's wallet and
+      the mint, so given Bob's wallet and the USDC mint you get the one canonical address
+      where his USDC lives, even before the account exists. You never have to ask the
+      recipient, and there is no registry.
+  - question: What are the seeds of an ATA?
+    answer: >-
+      The wallet pubkey, the Token Program's ID, and the mint pubkey, in that order, run
+      through find_program_address under the Associated Token Program.
+  - question: Is init_if_needed safe?
+    answer: >-
+      For ATAs, yes. The only way to create an account at an ATA address is the Associated
+      Token Program's Create instruction, which always writes a correct TokenAccount, so
+      nobody can pre-create one holding adversarial bytes. Your own PDAs have no such
+      protection. An attacker can occupy the predictable address first, and your handler will
+      read their bytes as valid state. Use plain init there.
+  - question: Who pays when an ATA gets created?
+    answer: >-
+      The payer named in the Create instruction. With init_if_needed that is whoever signs
+      your transaction, and they pay only when the account is missing.
 ---
 
 > A user can have many token accounts. So can a program. The question that hits you the first time you try to send tokens to someone is which token account, exactly, do I send them to? Without a convention, you'd have to ask the recipient for their token account address every time. The Solana ecosystem solved this by standardizing one canonical address per wallet per mint: the Associated Token Account. Given a wallet and a mint, anyone can compute the address. Wallets, frontends, and protocols all use the same derivation. The Associated Token Program is the small piece of infrastructure that creates these accounts and proves they're canonical.

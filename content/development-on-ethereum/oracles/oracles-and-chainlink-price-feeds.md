@@ -4,41 +4,25 @@ title: Oracles and Chainlink Price Feeds
 type: lecture
 order: 1
 faq:
-  - question: Why can't a smart contract just call an API to get a stock or crypto price?
-    answer: "The Ethereum Virtual Machine is deterministic: every node must run
-      every transaction and reach the exact same result, or the network can't
-      agree on the chain state. Anything that could return different values to
-      different nodes, like HTTP requests, random numbers, or the system clock,
-      is simply not available in Solidity. To get outside data on chain, someone
-      off-chain has to send a transaction that writes it into a contract's
-      storage, and that someone is called an oracle."
-  - question: Why is it dangerous to run a price oracle from a single data source?
-    answer: A one-operator, one-source oracle has three fatal failure modes. The
-      source can be briefly wrong, for example an exchange glitching or thin
-      volume producing an off-market last trade. The operator can be malicious
-      or have its keys compromised and push a fake price, which has drained
-      protocols of tens of millions in single transactions. And the operator can
-      go offline, leaving your contract acting on an increasingly stale price.
-      Any one of these can lose an entire treasury, which is why real protocols
-      aggregate many independent sources.
-  - question: Why should I check the updatedAt value from a Chainlink price feed?
-    answer: A Chainlink feed only updates when the price moves past a threshold (for
-      example 0.5% for ETH/USD) or when a maximum time passes (the 'heartbeat',
-      at most one hour for ETH/USD on mainnet). So the on-chain price can
-      legitimately lag reality for up to the heartbeat, and if the reporting
-      infrastructure stalls it can be even older. Reading updatedAt and
-      requiring block.timestamp minus updatedAt to be under your threshold lets
-      you reject stale data before acting on it. Set the threshold a little
-      above the heartbeat so a slightly late but healthy update is not wrongly
-      rejected.
-  - question: Why does a Chainlink ETH/USD feed return a huge number like 350000000000?
-    answer: Feeds return prices as integers with the decimal point implied, because
-      Solidity has no native decimals. ETH/USD uses 8 decimals, so 350000000000
-      means 3500.00000000 USD. Each feed exposes a decimals() function telling
-      you how many digits are fractional. To combine an 8-decimal price with an
-      18-decimal token amount, a common approach is to multiply the price by
-      10^10 to bring it to 18-decimal precision, and to require the answer is
-      positive before converting it to an unsigned integer.
+  - question: Why does the ETH/USD feed return 350000000000?
+    answer: >-
+      Eight implied decimals. That is 3,500.00000000 USD.
+  - question: How do I use an 8-decimal price with an 18-decimal token amount?
+    answer: >-
+      Multiply the price by 1e10, and require it is positive before casting to uint256.
+  - question: How stale can a Chainlink price legitimately be?
+    answer: >-
+      Up to the heartbeat, an hour for ETH/USD on mainnet, which also publishes on a 0.5% move.
+      Quieter feeds run 24 hours or longer. Compare block.timestamp against updatedAt.
+  - question: Why can't my contract fetch a price from an API itself?
+    answer: >-
+      Every node runs every transaction and has to reach the same result, and an HTTP call
+      would answer differently on each one.
+  - question: Why not run my own oracle from one exchange?
+    answer: >-
+      Three ways it breaks. The exchange glitches. The keys are compromised and push a fake
+      price, which has drained protocols of tens of millions in one transaction. Or the
+      operator goes offline.
 ---
 
 > Smart contracts are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. This lecture covers what oracles actually are, why they matter for any serious DeFi protocol, how Chainlink's price feed architecture solves the trust problem, and how to consume a feed safely.

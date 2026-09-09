@@ -4,31 +4,31 @@ title: Where Solana came from
 type: lecture
 order: 3
 faq:
-  - question: What is Proof of History and why did Solana invent it?
-    answer: "Proof of History is a verifiable cryptographic clock: a hash function
-      applied to its own output over and over, producing a chain where each
-      output can only exist after the previous one. Because anyone can verify
-      the ordering without validators polling each other, transactions can
-      reference positions in this chain and inherit a strict order
-      automatically. Solana's founder saw that the slow part of a blockchain was
-      validators arguing about the order of events, and this clock removed that
-      back-and-forth so the network could push throughput up by orders of
-      magnitude."
-  - question: Why did Solana have so many network outages in its early years?
-    answer: The early outages came mostly from the network being overwhelmed by
-      bursts of traffic it could not prioritize. For example, in September 2021
-      bots flooded a token launch with over three hundred thousand transactions
-      per second, validators ran out of memory, and the chain stopped producing
-      blocks for seventeen hours. At the time Solana had no priority fees and no
-      way to tell important traffic from spam, and fixing that led directly to
-      the fee market and compute budget system used today.
-  - question: Who created Solana and what was their background?
-    answer: Solana was started by Anatoly Yakovenko, an engineer who had spent about
-      twelve years at Qualcomm building high-performance distributed and
-      real-time systems. He published the whitepaper introducing Proof of
-      History in November 2017 and recruited former Qualcomm colleagues,
-      including Greg Fitzgerald, who built the first prototype, and Stephen
-      Akridge, with Raj Gokal handling the business side.
+  - question: Why did Anatoly Yakovenko invent Proof of History?
+    answer: >-
+      The bottleneck he saw was validators arguing about the order of events. A hash chain
+      anyone can verify settles that order without voting, freeing bandwidth for real work.
+      The whitepaper describing it came out in November 2017.
+  - question: Why did Solana have so many outages in its early years?
+    answer: >-
+      On 14 September 2021 bots chasing a token launch on Raydium pushed over three hundred
+      thousand transactions per second at the network, validators ran out of memory, and
+      block production stopped for seventeen hours. Solana had no priority fees then and no
+      way to tell urgent traffic from spam. The fee market and the compute budget system
+      came directly out of that failure.
+  - question: Who created Solana?
+    answer: >-
+      Anatoly Yakovenko, after about twelve years at Qualcomm building high-performance
+      distributed and real-time systems. He published the Proof of History whitepaper in
+      November 2017, then recruited former Qualcomm colleagues. Greg Fitzgerald built the
+      first prototype, Stephen Akridge brought throughput work, and Raj Gokal took the
+      business side.
+  - question: When did Solana mainnet launch?
+    answer: >-
+      March 16, 2020, as Mainnet Beta. The beta label stayed for years afterwards.
+  - question: Where does the name Solana come from?
+    answer: >-
+      A beach near San Diego where Yakovenko surfed during his Qualcomm years.
 ---
 
 > Solana exists because someone looked at the blockchains of 2017 and decided the bottleneck was time itself. Other chains spent their throughput on validators talking to each other about when transactions happened. If you could prove the order of events cryptographically, without a vote, you could free up that bandwidth for actual work. He was a thirty-six-year-old engineer named Anatoly Yakovenko, who had spent twelve years at Qualcomm building high-performance distributed systems and had been developing this idea for several months before publishing the whitepaper. The whitepaper came out in November 2017 and introduced Proof of History as the answer.

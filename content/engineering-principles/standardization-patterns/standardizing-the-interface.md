@@ -4,23 +4,25 @@ title: Standardizing the interface
 type: lecture
 order: 1
 faq:
-  - question: If a standard removes flexibility, why adopt one?
-    answer: Because the flexibility you give up is usually smaller than the coordination
-      you delete. Without a shared standard, the number of pairwise integrations grows
-      with the square of the number of participants. A standard replaces that with one
-      implementation each, and it pays off whenever compatibility across the group
-      matters more than any single participant's freedom to design its own interface.
-  - question: Why does a standard become more valuable as more people adopt it?
-    answer: Its value is the compatibility it grants, and that grows with the number of
-      participants who share it. Each new adopter can immediately work with everyone who
-      already implemented the standard, at the cost of one implementation. That same
-      newcomer in a world without the standard would need a separate integration against
-      every existing participant.
-  - question: What is the downside of a widely adopted standard?
-    answer: It is slow and expensive to change. Because many participants depend on the
-      exact same interface, altering it means all of them have to move together. A
-      standard also fixes design choices that some participants would have made
-      differently, so the compatibility comes at the cost of local control.
+  - question: What does a shipping container standardize?
+    answer: >-
+      Its dimensions and its corner fittings. Nothing about the contents.
+  - question: How much does a shared standard save?
+    answer: >-
+      With ten participants and no standard, each pair agrees its own interface, roughly a
+      hundred private arrangements, and each new member adds ten more. With a standard it is
+      ten implementations and a new member costs one.
+  - question: Why did Unicode replace per-pair converters?
+    answer: >-
+      Every character in every writing system gets one number. Implement it once and you
+      exchange text correctly with every other system that did the same. Before Unicode, a
+      document moving between two regions arrived unreadable unless a converter existed for
+      that exact pair.
+  - question: What does adopting a standard cost me?
+    answer: >-
+      Local control and speed of change. A standard fixes decisions some participants would
+      have made differently, and once many depend on it, changing it means all of them move
+      at once.
 ---
 
 > A fragmented ecosystem is expensive in one specific way. Every pair of participants has to agree on how to work together, and the total cost grows with the number of pairs. Standardizing a single shared interface removes those private agreements. Each participant matches the standard once and becomes compatible with everyone else who did the same.

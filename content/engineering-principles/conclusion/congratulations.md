@@ -4,15 +4,15 @@ title: Congratulations
 type: lecture
 order: 1
 faq:
-  - question: I finished the course. How do I actually use these principles?
-    answer: Pick the one or two that most changed how you see a design and apply them
-      deliberately on your next task, naming the parent goal and checking the design
-      against an adversary. The principles stick through use on real problems rather
-      than through re-reading. Over time the questions become automatic.
-  - question: Do these principles apply outside blockchain and outside my current job?
-    answer: Yes. Every one is domain-neutral by design, drawn from databases, networks,
-      operating systems, and everyday systems. The same reasoning shapes any system you
-      build, which is why the blockchain sections were optional throughout.
+  - question: Which principles does this course teach?
+    answer: >-
+      Tradeoffs weighed against a parent goal, constraint bypass, the Irrelevance Principle,
+      Core and Periphery, the singleton, atomicity, standardization, stateless design, the
+      goal hierarchy, and the rational adversary.
+  - question: Do I need blockchain knowledge to use any of this?
+    answer: >-
+      No. Every principle is domain-neutral, drawn from databases, networks, and operating
+      systems. The blockchain sections are marked optional throughout.
 ---
 
 You reached the end. This course taught something that outlasts any language or framework: the reasoning that decides whether a design holds up. That kind of understanding is slow to build, and it improves everything you make rather than one narrow skill.

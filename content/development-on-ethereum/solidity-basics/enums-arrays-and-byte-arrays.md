@@ -4,34 +4,28 @@ title: Enums, arrays, and byte arrays
 type: lecture
 order: 5
 faq:
-  - question: What is the default value of an enum in Solidity?
-    answer: An enum variable always defaults to its first declared value, because
-      enums are stored internally as small integers starting at 0 and every
-      unset value in Solidity reads as zero. So for enum Status { Pending, Paid,
-      Shipped }, a fresh Status variable equals Status.Pending. Order your enum
-      members so the natural starting state comes first. Accidentally putting a
-      finished state first means every new item starts in that finished state.
-  - question: What is the difference between a fixed-size and a dynamic array in
-      Solidity?
-    answer: A fixed-size array like uint256[10] has its length set at declaration
-      and can never grow or shrink, so push and pop are compile errors on it. A
-      dynamic array like uint256[] has no fixed size and supports push to
-      append, pop to remove the last element, and length to count entries. Both
-      use zero-based indexing and revert if you access an index out of bounds.
-  - question: Why does bytes(myString).length not return the number of characters?
-    answer: Casting a string to bytes and reading .length gives the number of UTF-8
-      bytes rather than the number of visible characters. A Latin letter is one byte,
-      but a Cyrillic letter takes two and an emoji can take four, so the
-      six-letter word 'привіт' reports a length of 12. If you truly need
-      character counts on international text, do that work off chain.
+  - question: What does a freshly declared enum variable equal?
+    answer: >-
+      Its first declared value. Enums are stored as integers starting at 0, so for enum
+      Status { Pending, Paid, Shipped } a fresh Status is Status.Pending. Order the members
+      so the natural starting state comes first.
+  - question: How many values can a Solidity enum hold?
+    answer: >-
+      256. The value is stored in a uint8, and casting an out-of-range integer such as
+      Status(7) on a four-member enum reverts at runtime.
+  - question: Why is push a compile error on my array?
+    answer: >-
+      push and pop exist only on dynamic storage arrays. A fixed-size uint256[10] fixes its
+      length at declaration, and a memory array fixes it at allocation with new uint256[](n).
+  - question: Why does bytes(myString).length not match the character count?
+    answer: >-
+      It counts UTF-8 bytes. A Latin letter is one byte, a Cyrillic letter two, an emoji up
+      to four. The six-letter word привіт reports a length of 12.
   - question: How do I read a nested array type like uint256[3][2]?
-    answer: "Read the type from right to left: uint256[3][2] means an array of
-      length 2 whose elements are each a uint256[3], so the outer length is 2
-      and the inner length is 3. Confusingly, the access expression reads the
-      opposite way, left to right, so grid[outer][inner] uses the outer index
-      first. Real bugs have reached production because someone declared [5][10] expecting 5
-      rows of 10 and actually got 10 rows of 5, so double-check every nested
-      declaration."
+    answer: >-
+      Right to left. uint256[3][2] is an array of length 2 whose elements are each a
+      uint256[3]. The access expression reads the other way, so grid[outer][inner] takes the
+      outer index first. Declaring uint256[5][10] gives you 10 rows of 5.
 ---
 
 > Three composite types that handle discrete states, indexed sequences, and raw byte data. You'll touch all three in nearly every non-trivial contract. They share a single unifying idea: all three are positional. Enums map names to integer indices. Arrays are accessed by integer index. Byte arrays are sequences of bytes accessed by index. That positional nature is what makes them feel related, and it's why their operations all look similar.

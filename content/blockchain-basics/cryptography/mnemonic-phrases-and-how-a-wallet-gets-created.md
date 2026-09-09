@@ -5,31 +5,30 @@ type: lecture
 order: 5
 faq:
   - question: Can I lose my crypto if I lose my seed phrase?
-    answer: Yes. The mnemonic, or seed phrase, is the wallet, and there is no
-      recovery if it is gone. The wallet software does not keep a copy, the
-      vendor does not have one, and the chain does not know who you are. Restore
-      the same words on a new device and every key and address comes back, but
-      without them the funds are unreachable.
-  - question: What is a seed phrase and why is it a list of ordinary words?
-    answer: A seed phrase is a 12- or 24-word backup defined by a standard called
-      BIP 39. It encodes the same random bytes as your private key, but words
-      are far easier for a human to write down and read back correctly than 64
-      hex characters. Every compliant wallet uses the same fixed list of 2048
-      carefully chosen words, so a phrase written on paper backs up the whole
-      wallet.
+    answer: >-
+      Yes, and there is no recovery. The wallet software keeps no copy, the vendor keeps no
+      copy, and the chain does not know who you are.
+  - question: Why is a seed phrase made of ordinary words instead of a hex string?
+    answer: >-
+      Words are far easier to write down and read back than 64 hex characters. A BIP 39 phrase
+      of 12 or 24 words encodes the same random bits, drawn from a fixed list of 2048 words
+      that every compliant wallet shares.
   - question: Is it safe to type my seed phrase into a website or a support form?
-    answer: No. Anyone who sees your 12 or 24 words can rebuild every private key
-      and address in your wallet on any device, so sharing the phrase means
-      sharing everything. There is no read-only version of a seed phrase, and
-      any site or message asking for it is a phishing attempt trying to steal
-      the entire wallet rather than just a login.
-  - question: What is the optional passphrase, sometimes called the 25th word?
-    answer: It is an extra secret you can add on top of your mnemonic. The same
-      words with no passphrase open one wallet, and with your secret passphrase
-      they open a completely different, hidden one, which gives you plausible
-      deniability if someone forces you to reveal your phrase. The limitation is that you
-      must back up the passphrase separately, because losing it makes the hidden
-      funds unreachable even though the mnemonic is intact.
+    answer: >-
+      No. Anyone who sees those 12 or 24 words can rebuild every key and address in your wallet
+      on any device. A seed phrase has no read-only form, and anything asking for one is
+      phishing for the whole wallet.
+  - question: What is the 25th word?
+    answer: >-
+      An optional passphrase mixed into the seed. The same words with no passphrase open one
+      wallet, and with your passphrase a completely different hidden one, which gives you
+      plausible deniability if someone forces you to hand over the phrase. Back it up
+      separately, because losing it puts the hidden funds out of reach while the mnemonic
+      still works.
+  - question: How do the words become a private key?
+    answer: >-
+      PBKDF2-HMAC-SHA512 runs the mnemonic through 2,048 iterations into a 64-byte seed. That
+      seed derives a master key and every child key and address below it.
 ---
 
 > The previous lesson ended on a sentence that should bother you: "the private key, and only the private key, is your identity." If the private key is 32 random bytes, how is a human supposed to back that up safely? You can't memorise hex, you'll mis-type it, you'll lose the paper. The answer is one of the most elegant standards in cryptography, and it's the same standard used by almost every wallet you'll ever touch.

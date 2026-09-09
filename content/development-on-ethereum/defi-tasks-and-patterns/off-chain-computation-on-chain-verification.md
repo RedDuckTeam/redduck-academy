@@ -4,36 +4,20 @@ title: Off-chain computation, on-chain verification
 type: lecture
 order: 3
 faq:
-  - question: How can an airdrop let thousands of people claim without storing every
-      address on chain?
-    answer: It stores only a single 32-byte value called a Merkle root instead of
-      the full list. All eligible addresses are combined off chain into a Merkle
-      tree, and just the tree's root hash goes into the contract. To claim, a
-      user submits their data plus a short 'proof' of sibling hashes, and the
-      contract recombines them to recompute the root and checks it matches the
-      stored one. Storing the full list of 10,000 addresses could cost around
-      6.6 ETH in gas, while the root fits in one storage slot and each claim
-      only does about 14 hashes of verification.
-  - question: If the user computes the answer off chain, what stops them from lying
-      to the contract?
-    answer: Nothing stops them from lying, but lying does not help them, because the
-      contract's own verification code decides whether to accept the result. A
-      user can submit any value, but if it does not pass the on-chain check (a
-      Merkle proof, a multiplication, a signature recovery) the transaction
-      simply reverts and no state changes. The only cost of a failed lie is the
-      gas the liar wasted. The one real requirement is that the verification
-      itself must be correct. A buggy verifier that accepts bad inputs is a
-      serious vulnerability, which is why battle-tested libraries like
-      OpenZeppelin's MerkleProof and ECDSA are preferred.
-  - question: When does the off-chain-compute, on-chain-verify pattern not work?
-    answer: It only pays off when checking the answer is much cheaper than computing
-      it, so it fails in a few cases. If verification costs as much as the
-      computation, like confirming an array is sorted still takes a full pass,
-      there is no saving. If the users cannot reasonably produce the work
-      themselves, the burden shifts to the wallet or dApp frontend. And if the
-      answer changes faster than the chain can verify it, such as a live market
-      price, it will already be stale by the time verification runs, which is
-      really the oracle problem.
+  - question: How does an airdrop for 10,000 addresses fit in one storage slot?
+    answer: >-
+      It stores a Merkle root, 32 bytes. Writing all 10,000 addresses would cost about 220
+      million gas, near 6.6 ETH at 30 gwei. A claim carries the address, the amount and about
+      14 sibling hashes.
+  - question: If the user runs the computation off-chain, what stops them lying?
+    answer: >-
+      Nothing, and it gains them nothing. A claim that fails the on-chain check reverts. The
+      real risk is a wrong verifier, so reach for OpenZeppelin's MerkleProof and ECDSA.
+  - question: Is it worth verifying a sorted array this way?
+    answer: >-
+      No. Confirming order still takes a full pass, so checking costs what computing costs.
+      Compare a square root, where two multiplications replace 20 to 30 Newton iterations,
+      about 50 gas against a few thousand.
 ---
 
 > Every contract you've written so far does its own work. The contract receives a call, computes a result inside the EVM, and stores or returns the answer. That works as long as the work is cheap. The moment the work gets expensive, or scales with attacker-controlled inputs, or requires iteration over data of unknown size, the naive approach breaks. Gas costs become prohibitive. Loops become denial-of-service vectors. Operations that are routine off the chain become impossible on it. This lesson teaches you the most important pattern for working around this limit. You'll see it in airdrops, in gasless transactions, in proofs of identity, in rollups, in oracles, and in dozens of places you haven't met yet. Once you internalize it, problems that looked impossible become straightforward.

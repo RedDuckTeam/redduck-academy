@@ -4,35 +4,24 @@ title: Randomness on chain
 type: lecture
 order: 3
 faq:
-  - question: Why can't I use block.timestamp or the block hash to pick a random
-      lottery winner?
-    answer: A blockchain is deterministic, so a contract can only read values that
-      every node already agrees on, like the timestamp, block hash, or
-      prevrandao. All of those are chosen or seen by the validator proposing the
-      block. That validator can simulate your lottery locally and, if it doesn't
-      win, simply drop the block or reshuffle transactions and try again.
-      Whenever the payout is larger than the block reward the validator gives
-      up, this attack is profitable, and no combination of on-chain inputs can
-      fix it.
-  - question: How does Chainlink VRF stop the oracle from cheating on the random number?
-    answer: "A Verifiable Random Function produces two things at once: a random
-      output and a cryptographic proof that the output was generated from a
-      specific seed using the oracle's private key. Because the seed is
-      committed inside the proof, the oracle can't secretly try many seeds and
-      publish only the result it likes, and it can't reuse an old favorable
-      output. Anyone holding the public key can verify the proof, and if it
-      doesn't verify the chain rejects the response, so the oracle can only
-      return the one correct value."
-  - question: Why can't I use a VRF random number in the same transaction that
-      requests it?
-    answer: VRF is asynchronous by design. The proof has to be generated off-chain
-      by the service holding the private key, so your contract sends a request
-      in one transaction and receives the number in a second transaction several
-      blocks later through a callback called fulfillRandomWords. When you make
-      the request the number does not exist yet, so anything that uses it, like
-      picking a winner or revealing an NFT, must happen inside the callback
-      rather than the original user transaction. This async shape is the biggest
-      constraint when building with VRF.
+  - question: Why isn't block.timestamp or prevrandao good enough randomness for a lottery?
+    answer: >-
+      The proposer sees or chooses every one of them before publishing. They can simulate the
+      draw and drop the block when it does not win, at the cost of one block reward.
+  - question: How does VRF stop the oracle picking an output it likes?
+    answer: >-
+      The proof binds the output to one seed and one private key, so any other seed produces a
+      proof that fails.
+  - question: Can I use the random number in the transaction that requests it?
+    answer: >-
+      No. It does not exist yet. requestRandomWords hands back a request ID, and the value
+      arrives blocks later through the fulfillRandomWords callback. Confirmations come first, a
+      minimum of 3 on Sepolia.
+  - question: My callback ran out of gas and the number never arrived. What now?
+    answer: >-
+      The subscription was charged anyway. Keep fulfillRandomWords small and do the heavy work
+      in a later transaction. Record which request IDs are fulfilled too, since a reorg can
+      deliver the same response twice.
 ---
 
 > Smart contracts can't generate random numbers on their own. The reasons are structural and cannot be solved by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.

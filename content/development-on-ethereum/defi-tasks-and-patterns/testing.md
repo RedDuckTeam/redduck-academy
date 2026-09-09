@@ -4,42 +4,20 @@ title: Testing
 type: lecture
 order: 1
 faq:
-  - question: How do I test that a Solidity function reverts when it is supposed to?
-    answer: You assert on the failure instead of the success. With Hardhat and viem,
-      `viem.assertions.revertWith(promise, "message")` checks that the call both
-      rejects and reverts with the exact reason string you expect, and the test
-      fails if it does not revert or reverts with a different message. For
-      custom errors, use `revertWithCustomError`, passing the contract whose ABI
-      defines the error and the error name. These checks are important because
-      without them, accidentally deleting a require statement would still pass
-      every other test.
-  - question: How can I test time-locked contract behavior without actually waiting?
-    answer: "You move the simulated blockchain's clock forward. Hardhat's
-      `networkHelpers.time` module lets you jump ahead:
-      `time.increaseTo(timestamp)` mines a block at a specific future time and
-      `time.increase(seconds)` advances by an interval. This lets you test both
-      sides of a deadline, for example confirming a locked function reverts
-      before the unlock time and succeeds after, in a fast unit test instead of
-      real wall-clock time. The equivalent in Foundry is `vm.warp`."
-  - question: What should I actually test in my smart contract, and what is a waste
-      of effort?
-    answer: "Focus on your own contract's logic: every branch, every revert
-      condition, every state change, access-control guards, edge cases like zero
-      and maximum values, and both sides of any time-dependent behavior. Do not
-      waste tests on things already proven elsewhere, such as basic arithmetic,
-      the compiler rejecting negative uints, or OpenZeppelin's ERC-20 doing
-      standard transfers correctly. A good target is that every line is reached
-      by at least one test and every conditional branch is covered for both
-      outcomes."
-  - question: What are fixtures and why should I use them in contract tests?
-    answer: A fixture is a setup function that puts the chain into a known state,
-      such as deploying contracts and funding accounts. The first time it runs
-      it executes normally. After that, the test framework snapshot-restores the
-      chain to that state instead of re-running the setup, which is faster and
-      guaranteed identical. In Hardhat you load one with
-      `networkHelpers.loadFixture(deployFn)`. This avoids slow repeated setup
-      and prevents the subtle bug where copy-pasted setup code drifts apart
-      between tests and causes false passes or failures.
+  - question: How do I assert that a function reverts?
+    answer: >-
+      Assert on the failure. `viem.assertions.revertWith` takes the promise and the exact
+      reason string. Custom errors use `revertWithCustomError`, passing the contract whose ABI
+      defines the error and the error name. Foundry's equivalent is `vm.expectRevert`.
+  - question: How do I test a lock that opens in a week?
+    answer: >-
+      Move the simulated clock with `networkHelpers.time.increaseTo`. Foundry calls it
+      `vm.warp`.
+  - question: What is worth testing in a contract?
+    answer: >-
+      Your own logic. Every branch, every revert, every state change, access-control guards,
+      zero and maximum values, and both sides of any deadline. Skip what is proven elsewhere,
+      such as arithmetic or OpenZeppelin's ERC-20 transferring correctly.
 ---
 
 > Once a contract is on chain, you can't patch it. The bug that gets through to production is the bug that costs real money. Testing is how working engineers catch bugs before that happens. This lesson teaches you how to write tests for Solidity contracts and, more importantly, how to think about what to test. The voting task that comes next requires you to do this for real.

@@ -4,26 +4,23 @@ title: Merkle trees
 type: lecture
 order: 7
 faq:
-  - question: How can you prove one item is in a large list without sending the
-      whole list?
-    answer: You use a Merkle proof. The list is hashed into a tree whose single top
-      value, the Merkle root, depends on every item. To prove one item belongs,
-      the prover sends only the handful of sibling hashes along that item's
-      path, and the verifier combines them with the item to recompute the root.
-      If the result matches the trusted root, the item really is in the set.
-  - question: What is a Merkle root and what does it commit to?
-    answer: A Merkle root is a single 32-byte value at the top of a Merkle tree that
-      depends on every leaf underneath it. Change one bit of any item and that
-      change ripples up and alters the root, so two parties can confirm they
-      hold the exact same set of items just by comparing roots. It is a compact,
-      tamper-evident summary of a large collection.
+  - question: How do I prove one item is in a huge list without sending the list?
+    answer: >-
+      A Merkle proof. The list is hashed into a tree whose top value, the Merkle root, depends
+      on every item. To prove one item belongs, send only the sibling hashes along its path.
+      The verifier recomputes the root from the item and those siblings and compares. Forging
+      a path means finding a hash collision.
+  - question: How big is a Merkle proof?
+    answer: >-
+      The depth of the tree. Ten hashes for a thousand leaves, 30 for a billion.
+  - question: What does a Merkle root commit to?
+    answer: >-
+      Every leaf underneath it, in 32 bytes. Change one bit of any item and the root changes,
+      so two parties comparing roots know immediately whether they hold the identical set.
   - question: Why do blockchains use Merkle trees?
-    answer: Blockchains need to commit to large amounts of data, often thousands of
-      items, using one short value, because not every participant can afford to
-      download everything. A Merkle tree lets the chain summarise a big
-      collection with a single root hash and then prove that one specific item
-      belongs with a tiny proof. The proof grows only with the depth of the
-      tree, so even a billion items need only about 30 hashes.
+    answer: >-
+      Not every participant can afford to download everything. One root hash commits to
+      thousands of items, and a tiny proof answers whether a specific item is in there.
 ---
 
 > You have a list of one thousand things. Someone asks you "is this specific thing on your list?" You want to prove the answer is yes without sending them the whole list. You also want them to be unable to forge a "yes" for anything not actually on it. The data structure that solves this, in the cleverest possible way, is the Merkle tree. It's a structural primitive at the heart of every blockchain in existence, and once you see how it's built, you'll never need to memorise it again.

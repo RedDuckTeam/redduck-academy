@@ -4,21 +4,29 @@ title: Atomicity as a security primitive
 type: lecture
 order: 1
 faq:
-  - question: Does atomicity mean the operation is fast or instant?
-    answer: No. It means the operation either finishes completely or leaves no trace,
-      however long it takes. Speed is a separate property. A slow operation can still
-      be all-or-nothing, and that all-or-nothing behavior is what removes the risk of
-      a half-finished state.
-  - question: If both parties still have to trust the platform, has trust really been removed?
-    answer: It has been moved to a single, inspectable place. Instead of trusting a
-      stranger whose behavior you cannot check, you rely on an execution guarantee you
-      can test and reason about, and it is the same for every trade. That is a much
-      smaller thing to trust than a counterparty's goodwill.
-  - question: Why do escrow agents and deposits still exist if atomicity solves this?
-    answer: Because most real exchanges cannot be made into a single all-or-nothing
-      step. When one side's action happens on a system the other side does not
-      control, there is no shared unit to wrap both actions in, so the risk of partial
-      completion returns and something has to cover it.
+  - question: Does atomicity mean the operation is fast?
+    answer: >-
+      No. All or nothing, however long it takes. Atomicity is the A in ACID.
+  - question: What happens to the money if the machine dies between the two writes?
+    answer: >-
+      Account A has lost its 100 dollars and account B has not gained them, so the records are
+      short by 100 with nobody having stolen anything. A database transaction makes that state
+      impossible, rolling back to exactly where the system stood before it began.
+  - question: What does an all-or-nothing guarantee have to do with security?
+    answer: >-
+      It removes the exposed moment in a trade. One party normally has to move first and carry
+      the risk, which is the whole reason escrow agents exist. Inside one atomic unit, nobody
+      moves first.
+  - question: How can a flash loan lend a large sum with no collateral?
+    answer: >-
+      The loan and its repayment sit inside the same transaction. If the funds are not back by
+      the end of it, the whole transaction reverts and the loan never happened. Aave made this
+      a general-purpose primitive in 2020, and Uniswap v2 shipped the equivalent as flash
+      swaps.
+  - question: Why do escrow agents and deposits still exist?
+    answer: >-
+      Most exchanges cannot be made into a single all-or-nothing step. When one side acts on a
+      system the other side does not control, there is no shared unit to wrap both actions in.
 ---
 
 > Move money between two accounts and you do it in two steps: subtract from one, add to the other. If the system dies in the gap between them, the money has left one account and reached nowhere. Databases fixed this with a guarantee that the two steps form one unit, completing fully or leaving no trace. That same guarantee can replace trust between strangers.

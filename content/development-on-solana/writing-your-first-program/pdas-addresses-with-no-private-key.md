@@ -4,34 +4,33 @@ title: "PDAs: addresses with no private key"
 type: lecture
 order: 40
 faq:
-  - question: Why can't a Solana program just hold a keypair to control its own accounts?
-    answer: "A program is open-source bytecode running on every validator at once,
-      so any private key it tried to hold would be visible to everyone, which
-      makes it effectively public and no longer a secret key. Program-Derived
-      Addresses (PDAs) solve this: they are addresses derived from the program
-      ID and some seeds, with no private key existing anywhere, and the runtime
-      lets the program authorize actions for them by re-submitting the seeds."
-  - question: What is the bump in a PDA and why does it exist?
-    answer: A PDA must land at a point off the elliptic curve so that no matching
-      private key can exist. To force that, the derivation appends an extra byte
-      called the bump, starting at 255 and counting down, and retries until the
-      resulting address falls off the curve. The first off-curve result is the
-      canonical PDA, and the byte that produced it is the canonical bump. The
-      function find_program_address runs this search.
-  - question: How do I compute a PDA address in my TypeScript client?
-    answer: Use PublicKey.findProgramAddressSync from @solana/web3.js, passing the
-      same seeds and program ID your on-chain program uses. It returns a tuple
-      of the PDA and the canonical bump. The seed bytes must match exactly, so a
-      wrong order or calling .toString() instead of .toBuffer() on a pubkey
-      produces a different address and fails with a "seeds constraint violated"
-      error.
-  - question: Should I store a PDA's bump on the account or recompute it each time?
-    answer: "Store it. Running find_program_address to rediscover the bump can cost
-      anywhere from 1,500 to 12,000 compute units because it searches through
-      candidate bumps. Saving the canonical bump as a field like pub bump: u8
-      lets later instructions read it in one fetch and pass it via bump =
-      state.bump on the seeds constraint, which is essentially free. This is the
-      standard idiom worth using from your first program."
+  - question: Why can't a program just hold a keypair for its own accounts?
+    answer: >-
+      The bytecode runs on every validator and anyone can read it, so a private key inside a
+      program is a private key everyone has.
+  - question: Why does a PDA derivation need a bump byte?
+    answer: >-
+      To push the result off the Ed25519 curve, where no matching private key can exist. The
+      derivation hashes the seeds, the bump, the program ID and a tag string, starting at 255
+      and counting down. The first off-curve result is the canonical PDA, and that byte is the
+      canonical bump.
+  - question: Should I call find_program_address inside my program?
+    answer: >-
+      Avoid it. The search costs 1,500 to 12,000 compute units. create_program_address takes a
+      bump you already know and checks it directly, so store the canonical bump as pub bump: u8
+      at init and pass bump = state.bump afterwards.
+  - question: How do I compute a PDA address in TypeScript?
+    answer: >-
+      PublicKey.findProgramAddressSync from @solana/web3.js, given the same seeds and program ID
+      the program uses. It returns the PDA and the canonical bump.
+  - question: My transaction fails with "seeds constraint violated". What did I get wrong?
+    answer: >-
+      Your client's seed bytes do not match what the program derives from, so the two computed
+      different addresses. Check the order of the seeds, and check that a pubkey seed went
+      through .toBuffer() and not .toString().
+  - question: How many seeds can a PDA have?
+    answer: >-
+      Up to 16, each at most 32 bytes.
 ---
 
 > A normal Solana account is controlled by whoever holds its private key. That works fine for wallets, where a person is in charge. It does not work for programs. Programs can't hold keys, can't sign with them, can't be trusted to keep one secret from anyone watching the chain. The fix is a different kind of address: one derived from a program ID and some seeds, with no private key in existence anywhere. The program signs for that address using the seeds themselves. These are called Program-Derived Addresses, or PDAs, and they're how every nontrivial Solana program manages its own state.

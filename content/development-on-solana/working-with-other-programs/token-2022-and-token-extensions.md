@@ -4,38 +4,33 @@ title: Token-2022 and token extensions
 type: lecture
 order: 5
 faq:
-  - question: Can I add transfer fees or other extensions to an existing SPL token?
-    answer: "No. Extensions only exist on Token-2022, which is a separate program
-      from classic SPL Token, and there's no upgrade path that adds them to an
-      existing classic mint. You have to create the mint under Token-2022 from
-      the start, and the program choice is permanent. The good news is the base
-      model is unchanged: Mint and TokenAccount shapes, the four core
-      instructions, and the three authorities all work the same in both."
-  - question: Why did fewer tokens arrive than I sent with a Token-2022 token?
-    answer: 'The mint probably uses the transfer fee extension, which takes a
-      percentage cut (specified in basis points, where one basis point is 0.01%)
-      on every transfer and withholds it on the destination account. It applies
-      to every transfer regardless of which app initiated it, like an on-chain
-      sales tax. This is a common integration bug: code that assumes "send 100,
-      receive 100" breaks, so with Token-2022 you must account for the fee.'
-  - question: Should I use classic SPL Token or Token-2022 for my mint?
-    answer: If you need a specific extension, such as transfer fees, a transfer
-      hook, interest-bearing balances, default-frozen accounts, or on-mint
-      metadata, Token-2022 is the only option. If you don't, classic SPL Token
-      remains the safer default because every wallet, DEX, indexer, and
-      dashboard assumes it. Extensions are where ecosystem support gets uneven,
-      so before shipping a Token-2022 mint, test that the wallets, DEXes, and
-      indexers you target handle it correctly.
-  - question: How do I write one Anchor program that works with both classic SPL and
-      Token-2022 mints?
-    answer: Use Anchor's anchor_spl::token_interface module instead of
-      anchor_spl::token. Swap Account<'info, TokenAccount> for
-      InterfaceAccount<'info, TokenAccount> and use Interface<'info,
-      TokenInterface> for the program, which accepts either token program and
-      routes the CPI automatically so your handler doesn't branch. Note that
-      token_interface exposes transfer_checked (which also takes the mint and
-      expected decimals) rather than plain transfer, and it's the recommended
-      pattern for any new program that might meet a Token-2022 mint.
+  - question: Can I add a transfer fee to a token I already minted?
+    answer: >-
+      No. Extensions live only on Token-2022, and a mint's token program is fixed at creation.
+  - question: I sent 100 tokens and only 98 arrived. Where did the rest go?
+    answer: >-
+      The mint carries the transfer fee extension. It takes a cut of every transfer, set in
+      basis points where one basis point is 0.01%, and withholds it on the destination account
+      for the withdraw-withheld authority to collect later. It applies to every transfer,
+      whatever app started it.
+  - question: Classic SPL Token or Token-2022?
+    answer: >-
+      Classic SPL unless you need an extension. Transfer fees, transfer hooks,
+      interest-bearing balances, default-frozen accounts and on-mint metadata exist only on
+      Token-2022. Everything else in the ecosystem assumes classic SPL, and extension support
+      in wallets, DEXes and indexers is uneven, so test against every system your token will
+      touch.
+  - question: How do I write one program that accepts both token programs?
+    answer: >-
+      Use anchor_spl::token_interface. InterfaceAccount replaces Account, and Interface<'info,
+      TokenInterface> accepts either program and routes the CPI, so your handler never
+      branches. The transfer call there is transfer_checked, which also takes the mint and the
+      expected decimals.
+  - question: Does Token-2022 change how a plain transfer works?
+    answer: >-
+      No. Mint and TokenAccount keep the same fields, the four core instructions behave the
+      same, and the three authorities mean the same thing. Extension data is appended in a
+      type-length-value tail, so several extensions can sit on one account.
 ---
 
 > The classic SPL Token Program covers about ninety-five percent of what most projects need. The remaining five percent led to a second token program, deployed alongside the original, that supports the same conceptual model with optional behaviors layered on top. Token-2022 lets a mint opt into features like transfer fees, transfer hooks, frozen-by-default accounts, interest-bearing balances, and on-mint metadata. The base model is unchanged. The new capabilities sit in a tagged area on each mint and each token account, activated only when the mint creator chooses them. The real work is knowing which extensions exist, when to reach for them, and what they cost in ecosystem compatibility.

@@ -4,36 +4,37 @@ title: Blocks and mining
 type: lecture
 order: 3
 faq:
-  - question: What is the Bitcoin mining puzzle actually solving?
-    answer: "Miners repeatedly change a number in the block header called the nonce
-      and hash the header with double SHA-256, searching for a result below the
-      difficulty target, which in practice means a hash that starts with many
-      leading zeros. There is no shortcut, so they just try trillions of nonces
-      until one wins. The puzzle is hard to solve but trivial to check: anyone
-      can hash the winning header once and instantly confirm it qualifies."
-  - question: How do miners get paid, and where does brand-new Bitcoin come from?
-    answer: The miner who builds a valid block collects the block reward, which is
-      all the transaction fees plus a freshly created block subsidy (currently
-      3.125 BTC). That new BTC is minted in a special first transaction of the
-      block called the coinbase, which uniquely has no inputs and creates value
-      from nothing. This coinbase is the only mechanism that ever creates new
-      bitcoin.
-  - question: Why do miners join mining pools instead of mining on their own?
-    answer: Because a small solo miner could wait decades between blocks even though
-      the reward is the same as anyone's, which is no way to run a business. In
-      a pool, every miner hashes the operator's block template and submits
-      easier partial solutions called shares as proof they are working. When the
-      pool finds a real winning block, it splits the reward in proportion to the
-      shares each miner contributed. Income turns from a rare jackpot into a
-      small steady payout.
-  - question: Why does a Bitcoin block still take about ten minutes even as more
-      miners join?
-    answer: "Every 2,016 blocks (roughly two weeks) every node recomputes the
-      difficulty target: if the last batch was mined faster than two weeks the
-      target tightens, and if slower it loosens. This keeps the average time
-      near ten minutes no matter how much hashing power is added or removed.
-      Difficulty has risen by roughly a factor of 100 trillion since 2009, yet
-      the block time has stayed at ten minutes."
+  - question: What are Bitcoin miners searching for?
+    answer: >-
+      A four-byte nonce that makes the block header hash small enough. They change the
+      nonce, hash the header twice with SHA-256, and check whether the result sits below the
+      difficulty target, which today means roughly 20 leading zero hex digits. Nothing but
+      trying trillions of nonces gets you there. Checking a winner takes one hash.
+  - question: How big is a Bitcoin block header?
+    answer: >-
+      Exactly 80 bytes, whatever the block holds. Version, prev_block_hash, merkle_root,
+      timestamp, bits, and nonce, and only the nonce is the miner's to choose.
+  - question: Where does brand-new bitcoin come from?
+    answer: >-
+      The coinbase transaction, the first transaction in every block. It has no inputs and
+      creates value from nothing. No other mechanism ever mints a bitcoin.
+  - question: What is the block subsidy now, and when does it halve again?
+    answer: >-
+      3.125 BTC since the April 2024 halving, paid to the winning miner along with every fee
+      in the block. It started at 50 BTC in 2009 and halves every 210,000 blocks, roughly
+      four years, through 25, 12.5 and 6.25. Next is 1.5625 BTC around April 2028. Near 2140
+      it reaches zero and only fees are left, and the 21 million cap is the sum of that
+      curve.
+  - question: Why do miners join pools instead of mining alone?
+    answer: >-
+      A small miner can wait decades between blocks. In a pool everyone hashes the
+      operator's block template and submits easier partial solutions called shares, and the
+      reward is split by share count when one hash clears the real network target.
+  - question: Why does a block still take about ten minutes as more miners join?
+    answer: >-
+      Every 2,016 blocks, roughly two weeks, every node recomputes the difficulty target
+      from how long the last batch took. Difficulty has risen by about a factor of 100
+      trillion since 2009 and the block time has not moved.
 ---
 
 A transaction sitting in a wallet is just a string of bytes. A transaction sitting in the Bitcoin network's mempool is just a string of bytes that many nodes happen to know about. Neither of those is settlement. The transaction is settled when it lands in a block, that block lands in the chain, and enough additional blocks are added on top of it that reversing the transaction would cost more than anyone would rationally spend. This lesson is about how that landing happens. Who builds the block. What's inside it. What the proof-of-work puzzle actually is. Why solving the puzzle is hard and checking the solution is trivial. And how new bitcoin gets minted into existence at the same moment each block is built.

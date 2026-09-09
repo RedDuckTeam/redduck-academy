@@ -4,29 +4,34 @@ title: What Bitcoin gave up and what it gained
 type: lecture
 order: 7
 faq:
-  - question: Why can't you build a lending market or exchange directly on Bitcoin?
-    answer: Bitcoin's scripting language, Script, is intentionally limited with no
-      loops, no recursion, no persistent state, and no general computation. You
-      can write conditions for spending coins, but not the kind of programs most
-      developers think of, so lending markets, automated exchanges, and complex
-      multi-party agreements cannot be built on Bitcoin's base layer. Those
-      applications live on smart-contract chains with a different state model.
-  - question: If Bitcoin gave up so much, what did it actually gain in return?
-    answer: It gained the deepest security record of any blockchain, having run
-      since 2009 without a successful attack on its consensus layer, plus a
-      credibly neutral and fixed monetary policy that no one can vote to
-      inflate. It also gained operational simplicity, since a full node runs on
-      consumer hardware, and permissionless participation, meaning anyone can
-      run a node, mine, or transact without asking permission. Its slow,
-      conservative upgrade process is the source of that predictability.
-  - question: How can I quickly compare any new blockchain against Bitcoin?
-    answer: "Read the chain as a set of explicit choices along a few axes:
-      throughput versus decentralization, expressiveness versus validation
-      simplicity, feature velocity versus predictability, its issuance schedule,
-      and its consensus mechanism. Bitcoin sits at one specific point, favoring
-      security and decentralization at the cost of throughput and
-      expressiveness. For any new chain, ask where it lands on each axis, what
-      it gained by choosing that way, and what it accepted losing."
+  - question: How many transactions per second does Bitcoin handle?
+    answer: >-
+      Roughly seven on the base layer, capped by the ten-minute block time and a
+      conservative block size. Lightning and other Layer 2 systems carry more volume and
+      settle back to Bitcoin periodically.
+  - question: Why can't you build a lending market or an exchange on Bitcoin?
+    answer: >-
+      Script has no loops, no recursion, no persistent state, and no general computation. It
+      expresses conditions for spending a coin and nothing more. There is no contract that
+      holds its own balance and code, so those applications live on chains with a different
+      state model.
+  - question: Is Bitcoin private?
+    answer: >-
+      No. Every transaction is permanently public. CoinJoin, Lightning, and fresh addresses
+      help, but the base layer hides nothing.
+  - question: What did Bitcoin get in return for all those limits?
+    answer: >-
+      Continuous operation since January 2009 with no successful attack on its consensus
+      layer. A supply schedule of 50 BTC halving every 210,000 blocks toward a 21 million
+      cap, enforced by every node and beyond anyone's vote. A full node small enough for
+      consumer hardware. And participation open to anyone, with no allowlist and no identity
+      check at the protocol level.
+  - question: What should I compare when a new chain claims to beat Bitcoin?
+    answer: >-
+      Five axes. Throughput against decentralisation, expressiveness against validation
+      simplicity, feature velocity against predictability, the issuance schedule, and the
+      consensus mechanism. Bitcoin sits at one specific point on each. For any other chain,
+      ask where it lands and what it accepted losing to get there.
 ---
 
 Every design choice is a trade. Bitcoin made specific choices about what to optimise for, and those choices closed certain doors permanently while opening others. To finish the Bitcoin story honestly, we need to name both halves of the trade. What did Bitcoin sacrifice to become what it is? What did it get in return? And what does the rest of the blockchain world look like when you sit at a different point in the same design space? This lesson is the synthesis. By the end you'll have a working framework for thinking about any chain you meet later in the course, including the ones that chose almost the opposite of what Bitcoin chose.

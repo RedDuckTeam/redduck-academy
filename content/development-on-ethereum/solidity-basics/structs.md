@@ -5,35 +5,26 @@ type: lecture
 order: 6
 faq:
   - question: Why didn't my change to a struct get saved?
-    answer: This is the most common struct bug. Writing Struct memory p =
-      myMapping[key] makes a full copy of the data in memory, so any field you
-      change on p is discarded when the function ends and the stored value never
-      updates. To modify the real state you must use Struct storage p =
-      myMapping[key], which is a reference straight into storage, so writes
-      through it persist. When unsure, read the state back in a test and confirm
-      it actually changed.
-  - question: Does the order of fields in a Solidity struct affect gas cost?
-    answer: Yes. Solidity packs consecutive struct fields into 32-byte storage slots
-      whenever they fit together, and a slot write is one of the most expensive
-      operations. Placing a 20-byte address next to a 1-byte bool lets them
-      share one slot, whereas separating them with a full 32-byte field forces
-      an extra slot and thousands of extra gas per instance. A good rule is to
-      group small fields together so they pack.
+    answer: >-
+      You bound it with memory. Profile memory p = profiles[user] copies every field, and
+      the copy is discarded when the function returns. Profile storage p = profiles[user] is
+      a pointer into storage, so writes through it are SSTOREs against real state.
+  - question: Does the order of fields in a struct change gas cost?
+    answer: >-
+      Yes. A 20-byte address declared next to a 1-byte bool shares one 32-byte slot. Move a
+      uint256 between them and the same struct costs three slots instead of two.
+  - question: Why won't the compiler let me make my struct public?
+    answer: >-
+      A public state variable generates a getter that returns the whole value, and a struct
+      holding a mapping cannot be returned. It has no memory form either, so it lives only
+      in storage. Mark the variable internal and write your own view function.
   - question: Can a struct contain a field of its own type?
-    answer: "No, a directly recursive struct is a compile error, because Solidity
-      computes a struct's storage size by summing its fields, and a
-      self-containing type would have infinite size. The workaround is
-      indirection: hold an array or a mapping of the type instead of the type
-      itself, for example TreeNode[] children. The array is just a length plus a
-      pointer to a separate storage region, so the struct itself stays finite."
-  - question: Why won't the compiler let me make my struct public when it contains a
-      mapping?
-    answer: A public state variable auto-generates a getter that returns the value,
-      but a mapping has no enumerable contents that can be copied out, so the
-      compiler refuses to return a struct that contains one. Such a struct also
-      can only ever live in storage, since there is no memory version of a
-      mapping. The standard fix is to mark the variable internal and expose a
-      custom view function that returns just the data you need.
+    answer: >-
+      No, that is a compile error. A struct's size is the sum of its field sizes, and a
+      self-containing type would be infinite. Hold TreeNode[] children instead.
+  - question: Can I use a struct as a mapping key?
+    answer: >-
+      No. Keys have to be hashable value types.
 ---
 
 If you've used Go, Rust, TypeScript, or C, the basic model is the same. Two things make Solidity structs distinctive. First, they have rules about what can go inside them, including no recursion and no storage qualifiers on fields. Second, they interact with storage and memory in ways that affect both correctness and gas cost. The reference-vs-copy distinction in particular is the single most common source of bugs for developers new to the language.

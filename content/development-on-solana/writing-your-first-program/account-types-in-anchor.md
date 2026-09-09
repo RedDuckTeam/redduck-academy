@@ -4,27 +4,30 @@ title: Account types in Anchor
 type: lecture
 order: 3
 faq:
-  - question: What is the difference between Signer, Account, and SystemAccount in
-      Anchor?
-    answer: Signer<'info> only checks that the account signed the transaction, so
-      use it for the wallet calling your instruction. Account<'info, T> checks
-      the account is owned by your program and its data deserializes into your T
-      struct, so use it for state your program owns. SystemAccount<'info> checks
-      the account is a plain wallet owned by the System Program, useful for
-      something like a SOL recipient that does not sign.
-  - question: When should I use UncheckedAccount in Anchor?
-    answer: "Only as a last resort when none of the other types fit, because Anchor
-      runs zero checks on it and hands you a raw account you must validate
-      yourself. You have to add a /// CHECK: comment explaining why it is safe,
-      or the program will not compile. Most Solana security bugs trace back to
-      reaching for UncheckedAccount and then forgetting the manual validation."
-  - question: How do I decide which Anchor account type to use for a field?
-    answer: "Ask the questions in order: does it need to sign the transaction? Use
-      Signer. Is it a program you call into? Use Program<T>. Does it hold state
-      owned by your program? Use Account<T>. Is it a plain wallet that does not
-      sign? Use SystemAccount. Only if none fit do you fall back to
-      UncheckedAccount, and you should always pick the most specific type that
-      matches."
+  - question: Why won't my program compile when I use UncheckedAccount?
+    answer: >-
+      Anchor requires a /// CHECK: doc comment above the field, saying why the account is safe
+      and what validates it. No comment, no build.
+  - question: Do I have to check an account's owner myself?
+    answer: >-
+      Not if the type says it. Account<'info, T> verifies your program owns the account, that
+      its first 8 bytes are the T discriminator, and that the rest deserializes into T. Signer
+      checks only for a signature. UncheckedAccount checks nothing, so there the owner check is
+      yours.
+  - question: Which type do I use for a wallet that receives SOL but never signs?
+    answer: >-
+      SystemAccount<'info>. It confirms the slot holds a plain wallet owned by the System
+      Program.
+  - question: How do I pick the type for a new field?
+    answer: >-
+      Stop at the first yes. Does it sign? Signer. Is it a program you call into? Program<'info,
+      T>. Does it hold your program's state? Account<'info, T>. A plain wallet that does not
+      sign? SystemAccount. Nothing fits? UncheckedAccount, justified in the CHECK comment.
+  - question: What is AccountInfo, and should I still use it?
+    answer: >-
+      The raw type the runtime hands a program, carrying the pubkey, owner, lamports, data and
+      flags. UncheckedAccount wraps it and adds the compile-time CHECK requirement. Same data
+      underneath, so prefer UncheckedAccount.
 ---
 
 > Every field in an Accounts struct has a type, and the type is doing real work. It tells Anchor what kind of account this slot expects, what checks to run before your handler executes, and what your handler can do with the field once it gets there. There are five types you'll use day to day. Each one is a different contract about what the account is and what's already been verified by the time your code sees it. The first thing to learn is when to use each one.

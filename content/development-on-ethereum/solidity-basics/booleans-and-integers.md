@@ -5,33 +5,27 @@ type: lecture
 order: 1
 faq:
   - question: Why does 1 / 2 give 0 in Solidity instead of 0.5?
-    answer: Solidity has no floating-point numbers for production use, so integer
-      division truncates toward zero and simply discards anything after the
-      decimal point. That means 1 / 2 is 0 and 10 / 3 is 3, which quietly breaks
-      fee and percentage calculations for beginners. The standard fix is to
-      scale your numerator up by a factor such as 1e18 before dividing, then
-      scale the result back down when you need a human-readable number.
-  - question: What happens when a number overflows in Solidity?
-    answer: Since Solidity 0.8.0, arithmetic that would overflow or underflow
-      reverts the transaction by default instead of silently wrapping around.
-      The transaction is rolled back as if it never happened, any ETH sent is
-      returned, and the contract state is unchanged, though the sender still
-      pays gas for the failed attempt. Older Solidity wrapped silently, which
-      caused real exploits, which is why checking became the default.
+    answer: >-
+      Integer division truncates toward zero. Solidity has no floating-point type, so 10 / 3
+      is 3. Scale by 1e18 before dividing, then scale back where a human reads the number.
+  - question: What happens when a uint8 goes past 255?
+    answer: >-
+      Since Solidity 0.8.0 the transaction reverts. State is unchanged, any ETH sent is
+      returned, and the sender still pays gas. Before 0.8.0 it wrapped silently to 0, which
+      the 2018 BatchOverflow exploits used to create token balances out of nothing.
   - question: Should I use uint8 instead of uint256 to save gas?
-    answer: Usually no. The EVM operates on 256-bit words, so a standalone uint8
-      costs the same to store as a uint256 and can even cost slightly more gas
-      because it has to be masked. Smaller integer types only pay off when
-      several of them are declared together and the compiler can pack them into
-      a single 32-byte storage slot. For loop counters and ordinary values, just
-      use uint256.
-  - question: Do I need to initialize variables in Solidity, or can they be null?
-    answer: "There is no null or undefined in Solidity: every variable has a
-      definite value the moment it is declared. An unassigned uint reads as 0, a
-      bool as false, an address as the zero address, and a string as empty. This
-      comes from how chain storage works, where every unwritten 32-byte slot
-      reads as zeros, which the type system interprets as that type's zero
-      value."
+    answer: >-
+      Usually no. The EVM operates on 256-bit words, so a standalone uint8 costs the same to
+      store as a uint256 and a little more gas to mask. Packing pays off only when several
+      small fields are declared consecutively and share one 32-byte slot.
+  - question: What does an unassigned bool read as?
+    answer: >-
+      false. Booleans have no null state in Solidity, and every unwritten 32-byte storage slot
+      reads as zeros, so an untouched uint256 reads 0 for the same reason.
+  - question: How much gas does an unchecked block save?
+    answer: >-
+      Around 30 to 40 gas per arithmetic operation. The bar for using it is being able to
+      write down in one sentence why the bound it bypasses cannot be exceeded.
 ---
 
 > Solidity's value types are the simple types that hold their data inline, and booleans and integers are where every contract begins. The surprise for newcomers is that Solidity integers are fixed-size rather than the arbitrary-precision numbers Python or JavaScript give you, which means arithmetic can overflow or silently truncate. Get the file structure and these types right, and everything else in the type system builds on them.

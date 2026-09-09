@@ -4,35 +4,29 @@ title: The Bitcoin design philosophy
 type: lecture
 order: 1
 faq:
-  - question: What problem was Bitcoin originally created to solve?
-    answer: "Bitcoin set out to let any two people anywhere exchange digital value
-      directly, without needing permission from a bank or any third party, in a
-      system that runs itself. The hard part that had blocked every earlier
-      attempt was the double-spend problem: stopping someone from spending the
-      same digital coin twice in two places when there is no central server
-      keeping the books. Bitcoin's contribution was a workable answer to that."
-  - question: Why are Bitcoin blocks about ten minutes apart instead of instant?
-    answer: The ten-minute gap is a deliberate safety margin rather than a speed limit. It
-      gives each new block enough time to spread to most of the network before
-      the next one is produced, so miners are all building on the same latest
-      block. Faster block times would cause more accidental forks and more
-      wasted work, so the slowness is intentional.
+  - question: What is the double-spend problem?
+    answer: >-
+      Spending the same digital coin twice in two places when no central server keeps the
+      books.
+  - question: Who wrote the Bitcoin whitepaper?
+    answer: >-
+      Someone using the name Satoshi Nakamoto. The paper, "Bitcoin: A Peer-to-Peer
+      Electronic Cash System", was posted to a cryptography mailing list in late 2008. Who
+      that was is still unknown.
+  - question: Why does Bitcoin make miners burn electricity instead of voting?
+    answer: >-
+      Anyone can create a million fake identities for free. Proof of work prices each vote
+      in electricity, so a million fake identities pay a million bills.
+  - question: Why are Bitcoin blocks ten minutes apart instead of instant?
+    answer: >-
+      Ten minutes gives each new block time to reach most of the network before the next one
+      is produced, so miners are all building on the same latest block. Faster blocks would
+      mean more accidental forks and more wasted work. The gap is a safety margin.
   - question: Why is Bitcoin's supply capped at 21 million coins?
-    answer: The cap is a deliberate economic choice baked into the protocol, meant
-      to make Bitcoin a credible store of value in a world where other
-      currencies can be inflated by whoever issues them. Block rewards halve
-      roughly every four years, so the rate of new coins slows over time and
-      eventually stops, and no central party can change that rule. Whether the
-      choice was wise is debated, but it is intentional and enforced by the
-      code.
-  - question: Why is Bitcoin so slow and hard to change compared to newer blockchains?
-    answer: Those limits are the cost of trustlessness rather than accidents. Every node
-      must validate every transaction and only so many fit in a block, which
-      makes Bitcoin slow and expensive at scale. Its deliberately limited
-      scripting also can't run complex applications. And because no central
-      party can update the rules, changes need broad agreement from node
-      operators, who stay conservative to avoid breaking the very trustlessness
-      the system exists for.
+    answer: >-
+      An economic choice written into the protocol, meant to produce money nobody can
+      inflate. Block rewards halve every 210,000 blocks, about every four years, so new
+      issuance slows and eventually stops. No central party can change the rule.
 ---
 
 > Bitcoin is the first chain you'll meet in detail, and the one every later chain measures itself against, because it came first and proved the model worked. To understand any later chain, you start by understanding what Bitcoin chose and why. The design choices look strange in isolation. Ten-minute blocks. A scripting language that can't loop. A money supply hardcoded to stop at twenty-one million. None of these are arbitrary. Each one falls out of a tight chain of reasoning that starts with a single question and ends with a working system. This lesson walks that reasoning end to end.

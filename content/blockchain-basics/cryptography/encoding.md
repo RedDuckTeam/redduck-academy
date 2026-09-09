@@ -5,26 +5,23 @@ type: lecture
 order: 2
 faq:
   - question: Is encoding the same as encryption?
-    answer: No, they are completely different despite the similar names. Encryption
-      scrambles data with a key so only someone with that key can read it, while
-      encoding just translates data into a different representation so it can
-      travel safely through systems that restrict which characters they accept.
-      Encoding has no key, so anyone can reverse it, which means encoding
-      something never keeps it secret.
-  - question: Why can't a raw hash or raw bytes just be printed as text?
-    answer: Raw bytes contain invisible control characters, characters that break
-      URL parsing, and characters that some email systems treat as line endings
-      or render differently across operating systems. Pasting such a string
-      somewhere and getting it back unchanged is impossible to guarantee, so we
-      encode the bytes into a safe character set first, accepting that the
-      result gets a bit longer.
+    answer: >-
+      No. Encoding has no key, so anyone can reverse it and nothing stays secret.
+  - question: Why is a hash shown as hex instead of the raw bytes?
+    answer: >-
+      Raw bytes contain invisible control characters, characters that break URL parsing, and
+      characters some email systems treat as line endings. Hex uses only 0-9 and a-f, so the
+      string survives being pasted and mailed unchanged.
   - question: What's the difference between hex, Base58, and Base64?
-    answer: All three represent the same underlying bytes using different alphabets.
-      Hex uses 0-9 and a-f, so two characters equal one byte and the output is
-      exactly twice the length. Base58 drops look-alike characters like 0, O, I,
-      and l so humans can copy it by hand without mistakes, and Base64 uses 64
-      symbols including + and / to stay compact, which is common for
-      machine-to-machine data like email attachments.
+    answer: >-
+      Same bytes, different alphabets. Hex uses 0-9 and a-f, two characters per byte, so the
+      output is exactly twice the byte count. Base58 drops 0, O, I, and l so a person copying
+      by hand cannot misread them. Base64 uses 64 symbols including + and /, with = for
+      padding.
+  - question: Why do Bitcoin and Ethereum addresses look so different?
+    answer: >-
+      Mostly the encoding. Bitcoin addresses are written in Base58, Ethereum addresses in hex
+      with a 0x prefix. Both wrap the same kind of fixed-size byte sequence.
 ---
 
 ## Encoding is not encryption

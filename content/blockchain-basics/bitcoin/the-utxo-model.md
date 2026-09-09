@@ -4,36 +4,30 @@ title: The UTXO model
 type: lecture
 order: 2
 faq:
+  - question: What is a UTXO?
+    answer: >-
+      An unspent transaction output. One coin created by an earlier transaction, with its own
+      value and owner, waiting to be used as the input of a later one.
   - question: Where is my Bitcoin balance actually stored?
-    answer: Nowhere as a single number. Bitcoin does not keep a table of users and
-      balances. Instead it tracks individual coins called unspent transaction
-      outputs (UTXOs), each with a specific value and owner. Your balance is a
-      derived amount you get by adding up every unspent coin that currently
-      belongs to you. The chain doesn't even know your total, only which coins
-      exist and their conditions.
-  - question: Why does a Bitcoin transaction send money back to myself as 'change'?
-    answer: Because you can't split a coin. A transaction destroys whole input coins
-      and creates new output coins, and the outputs must add up to the inputs
-      minus a fee. So if you hold a 1.0 BTC coin and want to pay 0.3 BTC, the
-      transaction destroys the 1.0 coin and creates a 0.3 coin for the recipient
-      plus a change coin of nearly 0.7 back to you, exactly like getting change
-      from a ten-dollar bill.
-  - question: How is the miner's fee set in a Bitcoin transaction if there's no fee
-      field?
-    answer: "The fee is not a separate field. It is simply the difference between
-      the total value of the inputs and the total value of the outputs, and it
-      goes to whoever includes the transaction in a block. This trips up people
-      writing transaction code: if you forget to leave a gap between inputs and
-      outputs, the transaction is either rejected or accidentally pays an
-      enormous fee to the miner."
-  - question: Why does Bitcoin track individual coins instead of simple account balances?
-    answer: Because it makes validation cheap and independent, which matters when
-      every node must verify everything with no operator. To check a transaction
-      a node only confirms the input coins are unspent, the signatures are
-      valid, and outputs don't exceed inputs, with no global balance table to
-      scan. As a bonus this allows parallel validation, gives better privacy
-      since there's no single per-user identifier, and makes each coin's full
-      history easy to trace.
+    answer: >-
+      Nowhere as a single number. Bitcoin tracks individual unspent coins, and your balance
+      is the sum of the ones you can spend.
+  - question: What is a satoshi?
+    answer: >-
+      One hundred-millionth of a bitcoin. Output values are stored as whole satoshis.
+  - question: Why does my wallet send part of a payment back to me?
+    answer: >-
+      You cannot split a coin. Paying 0.3 BTC out of a 1.0 BTC coin destroys the 1.0 coin
+      and creates 0.3 for the recipient plus a change coin of nearly 0.7 for you.
+  - question: How does the miner get paid if there is no fee field?
+    answer: >-
+      Inputs minus outputs. The gap goes to whoever includes the transaction in a block.
+  - question: Why does Bitcoin use the UTXO model instead of account balances?
+    answer: >-
+      Validation stays local. A node checks that the input coins are still unspent, that
+      each unlocking script satisfies the coin's locking script, and that the outputs do not
+      exceed the inputs. No balance table to scan, no ordering problem, and transactions
+      touching different coins can be validated in parallel.
 ---
 
 > There is one model of money so common in software that it is easy to mistake it for the only one. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how a bank account looks to its user, and how PayPal and every other traditional payment system look to theirs. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by the next. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.

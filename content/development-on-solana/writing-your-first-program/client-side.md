@@ -4,33 +4,32 @@ title: Client side
 type: lecture
 order: 35
 faq:
-  - question: Which library should I use to call an Anchor program from TypeScript?
-    answer: Use @coral-xyz/anchor, the Anchor client SDK. It reads your program's
-      IDL and gives you typed methods, so you write
-      program.methods.deposit(amount).accounts({...}).rpc() instead of
-      assembling raw instructions by hand. It sits on top of @solana/web3.js,
-      which provides the lower-level primitives like Connection, Keypair, and
+  - question: Which package do I use to call an Anchor program from TypeScript?
+    answer: >-
+      @coral-xyz/anchor. It reads the IDL and gives you
+      program.methods.deposit(amount).accounts({...}).rpc() instead of hand-assembled
+      instructions. It sits on @solana/web3.js, which still supplies Connection, Keypair and
       Transaction.
-  - question: In a Solana frontend, where does the user's private key live when signing?
-    answer: It stays inside the user's browser wallet extension, such as Phantom,
-      Backpack, or Solflare. Your app hands the transaction to the wallet
-      adapter, the wallet shows an approve-or-reject popup, signs with the key,
-      and returns only the signed transaction. Your code never sees or stores
-      the private key, so it cannot leak what it does not have. In scripts and
-      backends, by contrast, you load a Keypair yourself.
-  - question: How do I build and send a Solana transaction with @solana/web3.js?
-    answer: Create a Connection to an RPC node, then build a Transaction by adding
-      one or more instructions (for example SystemProgram.transfer to move SOL).
-      Finally call sendAndConfirmTransaction with the connection, the
-      transaction, and an array of signer keypairs. That single convenience
-      function signs, sends, and waits for confirmation.
-  - question: Why is on-chain account data a raw Buffer when I read it, and how do I
-      decode it?
-    answer: "connection.getAccountInfo returns the account's data as a raw Buffer of
-      bytes, because plain web3.js does not know the program's layout. To read
-      named fields, use the Anchor client, which uses the IDL to decode:
-      program.account.counter.fetch(counterPda) returns a typed struct so you
-      can read something like counter.value directly."
+  - question: Why is the account data I read back a Buffer of raw bytes?
+    answer: >-
+      connection.getAccountInfo hands back the bytes and nothing more, because web3.js has no
+      idea what layout the program uses. Read it through the Anchor client instead, where
+      program.account.counter.fetch(counterPda) decodes with the IDL and gives you
+      counter.value as a number.
+  - question: How do I send a transaction from a script?
+    answer: >-
+      Build a Transaction, add instructions to it such as SystemProgram.transfer, then call
+      sendAndConfirmTransaction with the connection, the transaction and an array of signers.
+      That one call signs, sends and waits for confirmation.
+  - question: Does my frontend ever hold the user's private key?
+    answer: >-
+      Never. The key stays inside the browser wallet, Phantom, Backpack or Solflare. You hand
+      the transaction to the wallet adapter, the wallet shows an approve or reject popup, and it
+      comes back signed.
+  - question: What does the second argument to new Connection mean?
+    answer: >-
+      The commitment level. confirmed is the normal choice for a read that has to reflect a
+      landed transaction. finalized is stricter and slower.
 ---
 
 > Writing the program is half the work. The other half is the code that talks to it: building transactions, sending them to the network, fetching account data, and connecting users' wallets. That client code is TypeScript, where the most mature libraries and the most production code live. A small set of libraries covers all of it, a client transaction always takes the same shape, and the same building blocks appear in every Solana frontend.

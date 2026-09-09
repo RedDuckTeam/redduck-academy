@@ -4,21 +4,29 @@ title: Account-generic design
 type: lecture
 order: 2
 faq:
-  - question: How do I tell whether a system is account-generic or account-specific?
-    answer: Ask what it keeps for each user between one call and the next. If the answer
-      is nothing, and the results are still correct, it is account-generic. If it must
-      remember a balance, a history, or a claim that survives across calls, it is
-      account-specific.
+  - question: What does an account-generic system store for each user?
+    answer: >-
+      Nothing. Everything it needs arrives with the request, and nothing about the caller
+      survives it.
   - question: Is account-generic always the better choice?
-    answer: No. It is better only when the purpose does not require remembering users.
-      A bank ledger is account-specific because tracking each customer's balance over
-      time is the whole point of it. The right question is whether the job needs
-      per-user memory, and when it does, an account-specific design is the correct one.
-  - question: How is account-generic design related to stateless design?
-    answer: Stateless design is the general idea of keeping nothing between one request
-      and the next. Account-generic design is that same idea aimed at user identity,
-      dropping the per-user record in particular. A system can be account-generic while
-      still holding other kinds of shared state.
+    answer: >-
+      No. A bank ledger is account-specific because tracking each customer's balance over
+      years is the point of it. The only thing that decides is whether the job requires
+      remembering users.
+  - question: What does dropping per-user state protect against?
+    answer: >-
+      The attacks that work by corrupting the stored mapping. Inflating a balance. Slipping
+      past a check by pointing it at another user's record. A currency conversion service
+      holds no per-user state to begin with, so that whole class of attack has nothing to aim
+      at.
+  - question: Do I have to register before calling one?
+    answer: >-
+      No. There is no account to create and no setup, so a new caller gets a correct answer
+      on the first request.
+  - question: How is this different from stateless design?
+    answer: >-
+      Stateless keeps nothing at all between calls. Account-generic drops the per-user record
+      in particular.
 ---
 
 > Apply the Irrelevance Principle to one property, the identity of the user, and a whole class of systems falls out. A system that does not care who is asking has no reason to remember anyone. Systems built this way, called account-generic, turn out to be both safer and easier to build on than systems that keep a record of every user. The one question worth asking is whether the job even requires remembering users at all.

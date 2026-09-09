@@ -4,37 +4,29 @@ title: CLMM
 type: lecture
 order: 30
 faq:
-  - question: Why does most of my money in a normal AMM pool earn no fees?
-    answer: A standard constant-product pool spreads your deposit across every
-      possible price from zero to infinity, but trades only happen near the
-      current price. So most of your capital is reserved for prices that will
-      never trade and sits idle, often leaving less than 5 percent of a SOL/USDC
-      deposit actually active. A concentrated liquidity market maker (CLMM)
-      fixes this by letting you place all your capital in a chosen price range.
-  - question: Why did a CLMM pool only take one of my two tokens when I added liquidity?
-    answer: In a CLMM, the token mix you must deposit is forced by where your chosen
-      range sits relative to the current price. If your whole range is above the
-      current price, the pool will only ever sell one token as price rises
-      through it, so you deposit only that token. If the range is entirely
-      below, you deposit only the other. You supply both tokens only when your
-      range straddles the current price.
-  - question: Can I place a limit order on a CLMM like Raydium's?
-    answer: Yes, using a range order, which is a CLMM position exploiting the
-      single-sided deposit rule. To sell at a target, you open a tight range
-      just above the current price and deposit only the asset you are selling.
-      If price passes through the range your tokens are swapped out and the
-      position ends holding the other token at roughly your target. Unlike a
-      true limit order it fills at an average across the range and earns fees
-      while filling, so there is a little slippage.
-  - question: Why are CLMM positions NFTs instead of the fungible LP tokens a normal
-      AMM gives you?
-    answer: In a standard pool every LP holds the same kind of claim, so a fungible
-      LP token works. In a CLMM, two providers can pick completely different
-      price ranges and therefore have completely different exposures, so there
-      is no single interchangeable share to tokenize. Each position is instead a
-      non-fungible token recording the pool, its range, its liquidity, and its
-      accrued fees, and it can be transferred or used as collateral like any
-      NFT.
+  - question: Why does most of my money in a standard pool earn no fees?
+    answer: >-
+      It sits at prices that will never trade. A constant-product pool spreads your deposit from
+      zero to infinity, and in a SOL/USDC pool under 5 percent of it is typically active.
+  - question: Why did the pool take only one of my two tokens?
+    answer: >-
+      The range decides the mix. Above the current price the pool only ever sells SOL, so you
+      deposit SOL. Below it the pool only ever spends USDC, so you deposit USDC. You need both
+      only when the range straddles the current price.
+  - question: Can I place a limit order on a CLMM?
+    answer: >-
+      Yes, with a range order. Deposit only the asset you are selling into a tight range just
+      above the current price. If price passes through, the position ends up holding the other
+      token near your target, plus the fees it earned while filling.
+  - question: Why can't I set my range to exactly $217.23?
+    answer: >-
+      Ranges land on ticks, one basis point apart, each one 1.0001 raised to the tick number.
+      The fee tier fixes the spacing, 1 at 0.01 percent, 10 at 0.05, 60 at 0.25, 200 at 1
+      percent, and both endpoints must be multiples of it.
+  - question: Why is my CLMM position an NFT?
+    answer: >-
+      Two ranges are not interchangeable, so there is no fungible share to mint. The position
+      NFT records the pool, the tick bounds, the liquidity and the fees owed.
 ---
 
 > Raydium's original AMM is an elegant first design: deposit two tokens in equal value, the pool prices swaps via `x * y = k`, you earn fees proportional to your share. The problem the Concentrated Liquidity Market Maker (CLMM) set out to solve is that the standard AMM wastes most of the capital LPs deposit. Concentrated liquidity is the fix. LPs concentrate their capital in a chosen price range, Raydium represents that range with ticks, and a position set below the current price needs only one token instead of two. The model is not obvious at first, but it explains how concentrated liquidity positions work in every major modern DEX.

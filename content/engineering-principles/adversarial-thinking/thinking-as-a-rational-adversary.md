@@ -4,21 +4,25 @@ title: Thinking as a rational adversary
 type: lecture
 order: 1
 faq:
-  - question: Why assume the user is an adversary when most users are honest?
-    answer: A system only has to be exploitable by one informed, self-interested caller
-      to be exploited, and the honest majority will never reveal the flaw. Designing
-      for the rational adversary protects the honest users too, because the same
-      change that stops the attacker keeps the operation behaving for everyone.
-  - question: What does eliminating the condition mean over just patching?
-    answer: A patch guards a dangerous condition, like checking a client-supplied price
-      against the real one. Eliminating the condition removes the dangerous input
-      entirely, like never accepting a price from the client at all. A guard can be
-      bypassed or forgotten, while a condition that no longer exists cannot be attacked.
-  - question: When should I run an adversarial review?
-    answer: While you design each operation, before it is built. Ask what an informed,
-      self-interested caller could do with the operation, and if the best move takes
-      value from someone else, change the design while it is still one decision rather
-      than a deployed system to patch.
+  - question: My checkout sends the price in the request and every test passes. What is wrong?
+    answer: >-
+      The caller controls the request. A rational adversary edits the price field before it
+      leaves the browser and buys a thousand-dollar item for one cent. Normal tests pass
+      because normal clients send back the price that was displayed.
+  - question: Should I validate the submitted price or remove it from the request?
+    answer: >-
+      Remove it. A guard can be bypassed or forgotten. When the server looks the price up from
+      the product the customer chose, no client-supplied price is left to attack.
+  - question: Most of my users are honest. Why design for an attacker?
+    answer: >-
+      One self-interested caller is enough, and the honest majority never reveals the flaw.
+  - question: My image URLs are built from a numeric id. Is that a problem?
+    answer: >-
+      A caller can change the number and read images belonging to other people. Either check
+      ownership on every fetch, or design so the caller never names the object directly.
+  - question: When do I run an adversarial review?
+    answer: >-
+      While you design each operation, before it is built.
 ---
 
 > Assume that at least one person using your system is calm, fully informed, and looking for a way to take value they are not owed. Design as though they are already there. Every operation you expose is something they can call, and the question that decides whether the system is safe is what they can do with it. Ask that question while you design, and a whole class of attack never gets built.

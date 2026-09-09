@@ -4,41 +4,36 @@ title: ERC-4626 tokenized vaults
 type: lecture
 order: 2
 faq:
-  - question: What is an ERC-4626 vault and why was it standardized?
-    answer: An ERC-4626 vault is a contract where you deposit an ERC-20 token (the
-      'asset') and receive a second ERC-20 token (a 'share') that represents
-      your claim on the pool. Before this standard, every yield protocol
-      invented its own deposit and withdraw functions, so wallets needed a
-      separate integration for each one. The standard fixes the function names,
-      signatures, and behavior so any tool that understands ERC-4626 can talk to
-      any compliant vault. It does not dictate what the vault does internally,
-      only the deposit-and-withdraw interface.
-  - question: How does the value of a vault share go up over time?
-    answer: A share's value is the vault's total assets divided by its total number
-      of shares. If the vault holds 1,000 USDC and 100 shares exist, each share
-      is worth 10 USDC. When the vault earns yield and now holds 1,100 USDC with
-      the same 100 shares, each share is worth 11 USDC. Your share count stays
-      the same but each share redeems for more of the underlying asset, which is
-      the same pattern used by Uniswap V2 liquidity-provider tokens.
-  - question: What is the ERC-4626 inflation attack and how does it cheat the first
-      depositor?
-    answer: When a vault is nearly empty, an attacker deposits a tiny amount (say 1
-      wei for 1 share), then sends a large amount of tokens directly to the
-      vault with a plain transfer, which raises the value of that single share
-      without minting new shares. The next honest depositor's share calculation
-      then rounds down to zero shares, so their deposit is absorbed by the vault
-      with no claim, and the attacker redeems their one share to walk away with
-      the victim's funds. Variants of this hit real protocols including early
-      Aave V2 markets and Hundred Finance.
-  - question: How do virtual shares protect an ERC-4626 vault from being drained?
-    answer: Virtual shares (also called a decimals offset) make the vault pretend it
-      always holds a baseline amount of shares and assets that nobody owns,
-      which shifts the conversion math so a small direct transfer can no longer
-      inflate the share price to the point where new deposits round to zero.
-      OpenZeppelin's reference implementation defaults this offset to 0 but
-      recommends raising it (6 is common) for any vault holding real value. A
-      simpler alternative is for the deployer to make a meaningful first deposit
-      and burn those shares, which also blocks the attack.
+  - question: What does ERC-4626 standardize?
+    answer: >-
+      The deposit-and-withdraw interface. A vault takes one ERC-20 asset and issues an ERC-20
+      share against it, with fixed function names, signatures, and behavior, so any tool that
+      knows the standard can talk to any compliant vault.
+  - question: If the vault earns yield, do I get more shares?
+    answer: >-
+      No. Your share count stays flat and each share redeems for more. 1,000 USDC against 100
+      shares makes a share worth 10 USDC. At 1,100 USDC it is worth 11.
+  - question: When do I call deposit and when do I call mint?
+    answer: >-
+      deposit takes an amount of assets and gives you whatever shares it buys. mint takes a
+      share count and pulls whatever assets it costs. withdraw and redeem mirror the pair on
+      the way out. Same result either way.
+  - question: What is the ERC-4626 inflation attack?
+    answer: >-
+      The attacker deposits 1 wei into an empty vault for 1 share, then sends 10,000 USDC
+      straight to the vault address with a plain transfer, raising totalAssets without minting
+      shares. The next depositor's 5,000 USDC comes to 0.4999 shares, Solidity rounds it to
+      zero, and they hold no claim. The attacker redeems one share for all 15,001 USDC.
+  - question: Has the inflation attack happened for real?
+    answer: >-
+      Yes. Variants have hit early Aave V2 markets and Hundred Finance.
+  - question: How do virtual shares stop the ERC-4626 inflation attack?
+    answer: >-
+      The vault pretends to hold shares and assets nobody owns. The conversion adds a virtual
+      1 to totalAssets and 10^offset to totalSupply, so a small direct transfer can no longer
+      inflate the price enough to round a new deposit to zero. OpenZeppelin defaults that
+      offset to 0, which does not stop the attack on its own. Raise it to 6 for a vault
+      holding value.
 ---
 
 ## Why standardize vaults

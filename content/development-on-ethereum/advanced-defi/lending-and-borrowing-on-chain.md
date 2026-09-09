@@ -4,37 +4,27 @@ title: Lending and borrowing on-chain
 type: lecture
 order: 5
 faq:
-  - question: Can my collateral get liquidated if the price of the asset I deposited
-      drops?
-    answer: Yes. Each position has a health factor, calculated as collateral value
-      times a liquidation threshold, divided by the debt. When that number falls
-      below 1, the position becomes liquidatable and anyone can repay part of
-      your debt in exchange for some of your collateral at a discount. A falling
-      collateral price lowers your health factor, so a large enough drop can
-      push you into liquidation.
-  - question: Why does the interest rate go up so much when a lending pool is almost
-      fully borrowed?
-    answer: "The rate is tied to utilization, the fraction of the pool that is
-      currently borrowed. Most protocols use a kink model: the rate rises gently
-      up to a kink point (often 80% utilization), then climbs steeply toward
-      100% or higher as the pool empties out. The steep part is deliberate, it
-      pushes borrowers to repay and rewards new suppliers, so the pool keeps
-      enough liquidity for people to withdraw."
+  - question: My health factor says 1.02. How close to liquidation am I?
+    answer: >-
+      Close. Health is collateral value times the liquidation threshold over debt, so a 2% fall
+      takes you under 1. Below 1, anyone can repay part of your debt and take collateral at a
+      5% to 10% discount.
+  - question: How much of my position can a single liquidation close?
+    answer: >-
+      Half. The close factor caps a single liquidation at 50% of the debt.
+  - question: Why did the borrow rate jump from 4% to 90% overnight?
+    answer: >-
+      Utilization crossed the kink. Rates climb gently to the kink point, usually 80%
+      utilization and around 4%, then steeply toward 100% or more as the last liquidity leaves.
+      The steep part pushes borrowers to repay.
   - question: What is the difference between LTV and the liquidation threshold?
-    answer: The Loan-to-Value ratio (LTV) caps how much you can borrow when you open
-      a position, for example 80% of your collateral's value. The liquidation
-      threshold is a slightly higher number (say 85%) that decides when you
-      actually get liquidated. The gap between them is a safety buffer, so a
-      borrower who takes the maximum loan is not liquidated the instant the
-      price twitches.
-  - question: Why do lending protocols use Chainlink instead of reading a token's
-      price from a DEX?
-    answer: A single decentralized-exchange pool's spot price can be pushed up or
-      down within one transaction using a large swap or a flash loan. If a
-      lending protocol trusted that price, an attacker could fake collateral
-      values and drain the pool. Chainlink aggregates many off-chain price
-      sources and only updates after the price moves past a threshold, which
-      makes this single-transaction manipulation infeasible.
+    answer: >-
+      LTV caps what you can borrow when you open the position, say 80% of collateral value. The
+      liquidation threshold, say 85%, decides when you get liquidated. The gap is the buffer.
+  - question: I supplied to a lending pool. Where does my interest show up?
+    answer: >-
+      In the receipt token. An aToken or cToken's conversion rate to the underlying rises as
+      borrowers pay, less a reserve factor of 10% to 25%.
 ---
 
 > A lending protocol lets users supply an ERC-20 token to a shared pool to earn yield, and lets others borrow from the same pool by posting collateral worth more than they borrow. The core shape has been stable since Compound v1 in 2018, a pool per asset, interest set by utilization, collateral priced by oracle, liquidations triggered when a position's collateral falls below a safety threshold. This lecture walks through each part of the system, how the parts connect, and where the design assumptions break.

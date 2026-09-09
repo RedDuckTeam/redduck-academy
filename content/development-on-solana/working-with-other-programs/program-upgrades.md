@@ -4,34 +4,28 @@ title: Program upgrades
 type: lecture
 order: 20
 faq:
-  - question: Can the developer of a Solana program change its code after I start
-      using it?
-    answer: Yes. On Solana a program is just an account holding executable bytecode,
-      and whoever holds its upgrade authority can replace that bytecode with a
-      new version. The program's address never changes, so you keep calling the
-      same one, but the next time you do you run the updated code. This means
-      using a program is really trusting whoever controls that upgrade
-      authority.
-  - question: Does upgrading a Solana program erase user balances or stored data?
-    answer: No. User data lives in separate accounts, outside the program's
-      bytecode, so replacing the code leaves all of that state untouched. There
-      is no migration and no need to move to a new address. The only requirement
-      is that the new code stays compatible with the existing account layouts,
-      which is why most upgrades add new instructions rather than change
-      existing data structures.
-  - question: What does it mean when a program's upgrade authority is set to None?
-    answer: It means the program is permanently frozen and its code can never be
-      changed by anyone again. This is irreversible, so some teams do it on
-      purpose as a promise that the rules will not change. Most production
-      protocols instead keep the authority on a team multisig or hand it to
-      governance so they can still release bug fixes.
-  - question: How can I check that a Solana program's on-chain code matches its
-      published source?
-    answer: Look for a verifiable build. If a project publishes its source on
-      GitHub, anyone can recompile it and compare the result to the bytecode
-      running on chain, and tools automate this check. Block explorers show a
-      tag indicating whether a program has a verified build, so you can confirm
-      the code you are reading is the code actually running.
+  - question: Can the team change a program's code after I start using it?
+    answer: >-
+      Yes, if it still has an upgrade authority. A program is an account holding executable
+      bytecode, and whoever holds that authority can replace it. The address never changes, so
+      you keep calling the same program and get new code.
+  - question: Does an upgrade wipe user balances?
+    answer: >-
+      No. State lives in separate accounts and replacing the bytecode leaves it untouched. The
+      new code does have to match the existing account layouts, which is why most upgrades add
+      instructions instead of changing structs.
+  - question: What does an upgrade authority of None mean?
+    answer: >-
+      The code is frozen forever, and the setting cannot be undone.
+  - question: Who normally holds the upgrade authority?
+    answer: >-
+      A team multisig, or a governance program if upgrades should be voted on by holders.
+      Teams that set it to None instead are promising the rules will never change, and most
+      production protocols would rather keep the option to ship a bug fix.
+  - question: How do I check that on-chain code matches the published source?
+    answer: >-
+      Look for a verifiable build. Anyone can recompile the published source and compare it to
+      the bytecode on chain, and explorers tag the programs that match.
 ---
 
 > On Solana, a program isn't a special kind of thing. It's just an account, like any other, with a flag that says "this account holds executable code." That fact has a useful consequence: you can replace the code without disturbing anything else. A program upgrade is exactly that replacement. Only the holder of the upgrade authority can perform it, and that authority is what everyone using the program ultimately trusts.

@@ -4,29 +4,24 @@ title: Why Solana was built differently
 type: lecture
 order: 1
 faq:
-  - question: Why do Solana programs not have their own storage like Ethereum smart
-      contracts do?
-    answer: "Solana programs are stateless: a program is pure code, and any data it
-      uses lives in separate accounts that are passed to it on every call. This
-      falls out of the parallel-execution design, because keeping code and data
-      separate lets the runtime schedule work across threads without programs
-      hiding state the scheduler cannot see. A program only ever knows about the
-      state the current transaction handed it."
-  - question: Why does every Solana transaction have to list the accounts it will
-      touch in advance?
-    answer: To run transactions in parallel safely, the runtime has to know before
-      execution which state each one will read and write, so it can put
-      non-conflicting transactions on different threads without race conditions.
-      There is no way to discover this by running the transaction, so the client
-      that builds it must supply a correct list, marking each account as
-      read-only or writable, before it is even submitted.
-  - question: What stops another program from modifying my account's data on Solana?
-    answer: Every account is owned by exactly one program, and only that owner
-      program is allowed to write to the account's data. The runtime enforces
-      this before any code runs, so an attacker's program cannot change a token
-      balance it does not own. Reads are open to anyone, but writes always go
-      through the owner program, and that is the core of Solana's security
-      model.
+  - question: Where does a Solana program keep its state?
+    answer: >-
+      In separate accounts, passed in on every call. The program itself is pure code with no
+      storage of its own.
+  - question: Why does a transaction have to list the accounts it will touch in advance?
+    answer: >-
+      The runtime has to know before execution which state each transaction reads and
+      writes, so it can put non-conflicting ones on different threads. Running the
+      transaction to find out would defeat the point. The client supplies the list, marking
+      each account read-only or writable, before submitting it.
+  - question: Can another program write to my account?
+    answer: >-
+      No. Only the owner program can, and the runtime blocks everyone else before any code
+      runs. Reads stay open to anyone.
+  - question: How does a client know which accounts a program needs?
+    answer: >-
+      The program author documents the access pattern or ships an IDL, a machine-readable
+      Interface Definition Language file describing what each instruction expects.
 ---
 
 > Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model. Where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one follows directly from the parallel-execution goal at the top.

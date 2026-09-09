@@ -4,40 +4,33 @@ title: The leader schedule and block production
 type: lecture
 order: 3
 faq:
-  - question: How does Solana decide which validator produces the next block?
-    answer: The entire leader schedule for an epoch (about 2 days, or 432,000 slots)
-      is computed in advance by a deterministic algorithm that uses the previous
-      epoch's on-chain stake distribution plus a hash used as a random seed.
-      Validators are assigned slot windows in proportion to their stake, so a
-      validator holding 5% of the stake gets roughly 5% of the windows, and one
-      with no stake gets none. Because it is deterministic, every node derives
-      the same schedule independently, and you can already look up who will lead
-      any slot for the next two days.
-  - question: Why does one Solana validator get four slots in a row?
-    answer: "The schedule hands each leader a window of 4 consecutive slots (about
-      1.6 seconds) instead of one slot at a time. This lets a leader build on
-      their own previous block without waiting for other validators' votes to
-      arrive, and it spreads out the startup cost of routing transactions to a
-      fresh leader. The downside is censorship risk: a malicious leader has 1.6
-      guaranteed seconds to drop a specific transaction, though Gulf Stream
-      sending it to several upcoming leaders at once softens that in practice."
-  - question: What happens to my transaction if a Solana slot gets skipped?
-    answer: "A slot is skipped when its leader fails to produce a block, whether
-      from being offline, slow hardware, congestion, or buggy software, and the
-      schedule does not shift to make up for it: the next validator's window
-      still starts on time. Your transaction simply stays pending, and the next
-      leader may or may not include it. Wallets and SDKs normally handle this by
-      retrying the submission with a fresh blockhash until it lands or the
-      blockhash expires."
-  - question: Why does paying a higher priority fee help my Solana transaction land?
-    answer: The leader chooses which transactions to include and in what order, and
-      the standard validator client ranks them by priority fee per compute unit,
-      so a higher bid gets included earlier. You are effectively paying whoever
-      is leading when your transaction arrives to prioritize it. Because
-      leadership changes every four slots, the going rate can shift second to
-      second depending on who is leading. Bidding too low risks being skipped
-      for higher bids, while bidding far above the going rate just leaves money
-      on the table.
+  - question: How is the next block producer chosen?
+    answer: >-
+      By a schedule computed in advance for a whole epoch, 432,000 slots or about 2 days. A
+      deterministic algorithm takes the previous epoch's stake distribution plus a hash as its
+      seed and hands out slot windows in proportion to stake. Every node derives it
+      independently, so you can look up any slot's leader two days ahead.
+  - question: Why does one validator get four slots in a row?
+    answer: >-
+      A leader window is 4 consecutive slots, about 1.6 seconds. The leader builds on their
+      own previous block without waiting for other validators' votes, and the startup cost of
+      routing transactions to a fresh leader is paid once per window. The trade is censorship
+      reach, since a leader has 1.6 guaranteed seconds to drop a transaction.
+  - question: What happens to my transaction when a slot is skipped?
+    answer: >-
+      It stays pending. A skipped slot produces no block and the schedule does not shift, so
+      the next validator's window starts on time. Wallets and SDKs retry with a fresh
+      blockhash until the transaction lands or the blockhash expires.
+  - question: Why does a higher priority fee help my transaction land?
+    answer: >-
+      The leader picks what goes in the block, and the standard validator client ranks
+      transactions by priority fee per compute unit. Since leadership changes every four
+      slots, the going rate moves second to second.
+  - question: What does a leader earn?
+    answer: >-
+      The 5,000-lamport base fee per signature, half burned and half kept, plus priority fees,
+      plus MEV tips if they run MEV-aware software, plus a small inflation-scaled block
+      reward.
 ---
 
 > The previous lecture said "the leader schedule is public and known in advance." That schedule is stake-weighted, assigns each leader four consecutive slots, and is fixed two days ahead. It determines which validator can include your transaction in any given slot, which in turn shapes priority fees, transaction routing, and the entire MEV landscape on Solana. Those three properties, the stake-weighting, the four-slot window, and the two-day lead time, are what the network actually runs on, and each one has a concrete reason behind it.

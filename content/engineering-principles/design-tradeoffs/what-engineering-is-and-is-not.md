@@ -4,24 +4,26 @@ title: What engineering is and is not
 type: lecture
 order: 1
 faq:
-  - question: Isn't one data format simply better than the other?
-    answer: No format is better in the abstract. JSON is text a person can read
-      directly, which suits a public API where outside developers need to debug
-      quickly. Protocol Buffers is a compact binary format, which suits internal
-      services exchanging billions of messages where size and speed dominate. The
-      right choice follows from the goal the system is there to serve.
+  - question: Which is better, JSON or Protocol Buffers?
+    answer: >-
+      Neither. The two make opposite tradeoffs, so the answer depends on what the system is
+      for. JSON is text a person can read directly, which fits a public API where outside
+      developers must debug fast. Protocol
+      Buffers is compact binary, which fits internal services exchanging billions of messages
+      a day. Google built it for that second case.
   - question: What is a parent goal?
-    answer: A parent goal is the larger thing a smaller design choice is meant to
-      serve. A choice that looks wrong on its own often makes sense once you know
-      the goal above it, and the same choice can be right under one parent goal and
-      wrong under another. Naming the parent goal is what makes a tradeoff
-      decidable.
-  - question: Why is optimizing a child goal sometimes a mistake?
-    answer: A child goal is only worth improving while it still serves the parent
-      goal above it. Making messages smaller is a real gain, but forcing a binary
-      format onto a small public API saves bytes nobody notices while making every
-      outside developer's work harder. Improving the child goal at the cost of the
-      parent goal it serves improves nothing.
+    answer: >-
+      The larger thing a smaller design choice is meant to serve.
+  - question: Protocol Buffers produces smaller messages. Why isn't that enough to decide?
+    answer: >-
+      Smaller messages are a child goal. Put the binary format into a small public API and it
+      saves bytes nobody notices while every outside developer needs extra tooling to read a
+      response they used to read directly.
+  - question: How do I choose between a faster program and a clearer one?
+    answer: >-
+      By what the program is for. Code that prices trades a million times a second lives on
+      speed. Code that runs once a night over payroll lives on a person being able to follow
+      every step and spot a mistake.
 ---
 
 > Two programs solve the same problem. One runs faster. The other is easier to read and check for mistakes. Which one is better? The question has no answer until you know what the program is for. Engineering is the reasoned choice among options like these, and the word "better" always points back to a goal you have to name first.

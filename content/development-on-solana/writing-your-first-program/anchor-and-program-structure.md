@@ -5,26 +5,24 @@ type: lecture
 order: 1
 faq:
   - question: Why use Anchor instead of writing a Solana program from scratch?
-    answer: A raw Solana program is a single function that reads raw bytes,
-      validates a list of accounts by hand, and writes bytes back out, so the
-      real logic gets buried under mechanical plumbing where any mistake becomes
-      a security bug. Anchor is a Rust framework whose macros generate that
-      boilerplate for you, correct by construction, so you write typed handlers
-      and declared account schemas instead. It plays a role similar to Express
-      or FastAPI for web servers.
-  - question: What are the three pieces of every Anchor program?
-    answer: "First, declare_id!, which hard-codes the program's on-chain address
-      into its binary. Second, the #[program] module, which holds one public
-      handler function per instruction, each returning Result<()>. Third, one
-      #[derive(Accounts)] struct per instruction that lists the accounts the
-      handler needs and what each one must be."
-  - question: How does an Anchor handler get access to the right accounts?
-    answer: The Context<T> parameter links a handler to its Accounts struct. Before
-      the handler runs, Anchor walks the struct, pulls each account out of the
-      transaction in order, validates it against the declared type and
-      constraints, and builds a ctx.accounts object with typed fields. The
-      Accounts struct is like the function signature (what the instruction
-      needs) and the handler is the body (what it does).
+    answer: >-
+      Almost everything in a raw program is plumbing, and a mistake in plumbing is a security
+      bug. Anchor's macros generate that plumbing at compile time.
+  - question: What goes in every Anchor program?
+    answer: >-
+      Three pieces, all in lib.rs. declare_id! writes the program's Base58 address into the
+      binary, and the runtime checks it against the address you deploy to. The #[program] module
+      holds one public handler per instruction, each returning Result<()>. Then one
+      #[derive(Accounts)] struct per handler, listing the accounts that instruction touches.
+  - question: How does my handler get typed accounts instead of a raw account array?
+    answer: >-
+      The Context<T> parameter. Anchor walks the struct it names before the handler runs, pulls
+      each account out of the transaction in order, validates it, and fills ctx.accounts with
+      typed fields.
+  - question: Which Anchor version does this course target?
+    answer: >-
+      0.30 or later. Earlier versions used different idioms around account types and the init
+      constraint, so older tutorials often need adjustment.
 ---
 
 > A Solana program written from scratch is a single function that reads raw bytes, decides what to do with them, validates a list of accounts by hand, and writes raw bytes back out. Anchor is the framework most teams use to skip the boilerplate and write Solana programs the way you'd write a normal Rust API: typed handler functions, declared account schemas, generated error types. The macros in the middle do the conversion between what you wrote and what the runtime needs. Once the shape of a typical Anchor program is in your head, most of the rest of the course is filling in the details.

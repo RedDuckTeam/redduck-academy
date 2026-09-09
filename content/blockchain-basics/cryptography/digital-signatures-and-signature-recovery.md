@@ -5,32 +5,27 @@ type: lecture
 order: 6
 faq:
   - question: How does a blockchain know a transaction really came from me?
-    answer: "You send the transaction together with a digital signature made using
-      your private key. Any node can check that signature against your public
-      key: if it is valid for that exact transaction, the network accepts it as
-      coming from whoever holds the matching private key. No password or
-      username is involved at all."
+    answer: >-
+      You send a digital signature with the transaction. Any node checks it against your
+      public key, and a signature valid for that exact transaction counts as authorisation.
+      ECDSA on the secp256k1 curve does most of this work, and newer chains use Ed25519.
   - question: Can someone reuse my signature on a different transaction?
-    answer: No. A signature is tied to the exact message it was made for, so
-      changing even one bit of the transaction makes the same signature fail
-      verification. This means old signatures cannot be replayed on other
-      transactions, and a transaction cannot be tampered with without
-      invalidating its signature.
+    answer: >-
+      No. A signature binds to the exact message. Change one bit of the transaction and
+      verification fails.
   - question: Why don't blockchain transactions include the sender's public key?
-    answer: "ECDSA has a feature called public-key recovery: given just the message
-      and the signature, the network can compute the public key that signed it,
-      helped by a small recovery-id byte inside the signature. So instead of
-      every transaction carrying a public key, the network derives the signer
-      from the signature itself and hashes it into the sender address. On many
-      chains this is exposed to smart contracts as ecrecover."
-  - question: Why is reusing a nonce when signing dangerous?
-    answer: ECDSA uses a random value called a nonce inside each signature, and each
-      signature needs a fresh one. If you accidentally sign two different
-      messages with the same nonce, an attacker who sees both signatures can
-      mathematically recover your private key, and this has drained real
-      wallets. A standard called RFC 6979 fixes it by deriving the nonce
-      deterministically from the key and message, which is why modern wallets no
-      longer rely on the device's random number generator here.
+    answer: >-
+      ECDSA can recover it. Given the message, the signature, and a small recovery-id byte
+      inside it, the network computes the public key that signed and hashes it into the sender
+      address. Many chains expose this to smart contracts as ecrecover.
+  - question: What happens if a wallet signs two messages with the same nonce?
+    answer: >-
+      An attacker who sees both signatures can compute the private key. This has drained real
+      wallets. RFC 6979 derives the nonce from the private key and the message instead of
+      device randomness.
+  - question: How big is a signature?
+    answer: >-
+      64 bytes, or 65 when it carries the recovery id byte.
 ---
 
 > A blockchain transaction travels across an open network with no return address, no email header, no session cookie. Yet every node receiving it has to decide: did this transaction come from someone authorised to spend these funds? The mechanism that answers that question, billions of times per day across every public chain, is the topic of this lesson. It's also the operational pay-off for everything you've learned so far about key pairs.

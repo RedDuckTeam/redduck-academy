@@ -4,35 +4,28 @@ title: Why we need consensus
 type: lecture
 order: 3
 faq:
-  - question: Why can't a blockchain just let nodes vote on the next block?
-    answer: On an open network anyone can join, and one party can cheaply spin up
-      thousands of fake identities to become the majority of voters. Creating
-      fake identities to manipulate a vote is called a Sybil attack, and it
-      makes plain voting meaningless. That is why real consensus ties voting
-      power to a cost that fake identities can't dodge.
-  - question: What is a Sybil attack and why does it break naive consensus?
-    answer: A Sybil attack is creating unlimited fake identities to manipulate a
-      decision. Because anyone can join a public blockchain, one attacker could
-      appear as thousands of separate voters and outvote everyone honest.
-      Blockchains defend against it by making each vote require spending
-      something real, like electricity or locked-up money, so faking many
-      identities becomes too expensive to be worth it.
-  - question: How do strangers who don't trust each other end up agreeing on one
-      shared history?
-    answer: They use a consensus mechanism that makes participation cost something
-      real, so buying enough influence to attack the network costs more than the
-      attack could earn. Proof of work ties each vote to wasted computation and
-      its energy bill. Proof of stake ties it to currency you lock up and lose
-      if you cheat. Once voting is expensive, honest agreement can hold
-      indefinitely with no operator and no trusted referee.
+  - question: Why can't the network just vote on the next block?
+    answer: >-
+      Anyone can join, so one party can rent cloud machines and appear as thousands of voters.
+      Counting identities means nothing when identities are free.
+  - question: What is a Sybil attack?
+    answer: >-
+      Creating unlimited fake identities to control a vote.
+  - question: How do strangers who trust nobody agree on one history?
+    answer: >-
+      Voting has to cost something real, so attacking costs more than it could earn. Proof of
+      work ties the cost to electricity. Proof of stake ties it to currency you lock up and
+      lose if you cheat.
   - question: What is the Byzantine Generals problem?
-    answer: It's a 1982 thought experiment where several generals surrounding a city
-      must all agree to either attack or retreat. Any split outcome is a
-      disaster. They can only send messengers, and some generals are traitors
-      who lie to make the plan fail. The generals stand in for network nodes,
-      the traitors for malicious participants, and the core difficulty is that
-      honest participants can't tell who is lying, because a traitor can send
-      different messages to different people.
+    answer: >-
+      A 1982 thought experiment. Generals around a city must all attack or all retreat, and
+      any split ruins them. They have only messengers, and traitors among them send different
+      messages to different generals, so no honest general can tell who is lying. The generals
+      are nodes.
+  - question: Had anyone solved consensus before Bitcoin?
+    answer: >-
+      Not at internet scale. Bitcoin's 2008 design was the first to hold consensus among
+      anonymous strangers with no prior trust.
 ---
 
 > The previous lesson made a strong claim. A blockchain has no operator. Nobody runs it. Yet it somehow holds a consistent record across thousands of independent machines, all of whom can write to it. Forget the cryptography for a moment and just focus on the question. How is that possible at all? The mechanism that makes it possible is called consensus, and it is the single most subtle problem in distributed systems. This lesson explains why the problem is hard, why the obvious solutions don't work, and what the actual answer looks like at the level of "how it works" rather than "which exact algorithm."

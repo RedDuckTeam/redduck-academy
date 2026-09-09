@@ -4,46 +4,34 @@ title: Outages, lessons, and resilience
 type: lecture
 order: 5
 faq:
-  - question: Has Solana ever gone offline, and why?
-    answer: "Yes, several times, though the network has always recovered. Early
-      outages came from transaction floods: bots spamming nearly free
-      transactions during a September 2021 token sale halted the network for
-      about 17 hours, and repeated 2022 NFT-mint stampedes degraded it for
-      minutes to hours. The root cause was that the network originally treated
-      every transaction as roughly equal and had no way to tell an important
-      transaction from one of a million spammed copies. Fixes included moving
-      submission from UDP to QUIC, adding stake-weighted quality of service, and
-      making priority fees a mainstream default so spamming at scale costs real
-      money."
-  - question: What is Firedancer and why does Solana need a second validator client?
-    answer: In February 2023 a single bug in the one validator client every Solana
-      node ran caused validators to disagree on the chain and halted the network
-      for roughly 19 hours. It was a network-wide failure because there was no
-      alternative implementation to process the bad block differently.
-      Firedancer is an independent validator client written from scratch in C by
-      Jump Crypto, created to give Solana the kind of client diversity Ethereum
-      already had with clients like Geth and Lighthouse. Its rollout, including
-      a hybrid called Frankendancer, means a bug in one client no longer has to
-      take down the whole network.
-  - question: Why did my Solana transaction fail in early 2024 even though I paid a
-      priority fee?
-    answer: "During the early-2024 memecoin surge the network kept running but
-      transaction failure rates spiked into the double digits, and priority fees
-      were not respected end to end. Each pipeline component was individually
-      correct, but together they misbehaved: high-fee transactions were
-      sometimes dropped in favor of unrelated ones, and leaders' schedulers did
-      not always order by priority. A multi-month effort rewrote the Agave
-      scheduler, revised forwarding logic, and extended the priority-fee API, so
-      by late 2024 paying more reliably meant getting included."
-  - question: Do Solana's outages mean the network is fundamentally broken?
-    answer: Not according to the pattern the outages reveal. Each one stressed an
-      assumption that held in a clean test environment but broke under
-      adversarial real-world load, and each was followed by a targeted fix.
-      Often the protocol design itself was sound and the gap was in the single
-      implementation rather than the design. Every long-lived chain, including
-      Bitcoin and Ethereum, has been through the same build-test-break-fix
-      cycle, and Solana's steady cadence of fixes has made the network
-      structurally more resilient over time.
+  - question: Has Solana ever gone down?
+    answer: >-
+      Yes, several times, though it has always come back. Bots chasing a September 2021 token
+      sale pushed roughly 400,000 transactions per second at the network and halted it for
+      about 17 hours. NFT mint stampedes degraded it repeatedly through 2022, and a validator
+      bug halted it again in February 2023.
+  - question: What stopped the transaction floods?
+    answer: >-
+      QUIC replaced raw UDP for submission, stake-weighted quality of service ranked
+      forwarding by stake, and priority fees became the default, so spamming at scale now
+      costs real money.
+  - question: Why does Solana need a second validator client?
+    answer: >-
+      In February 2023 one bug in the single client every node ran made validators disagree
+      about the chain and halted the network for roughly 19 hours. With no second
+      implementation, that bug was everyone's bug. Firedancer, written from scratch in C by
+      Jump Crypto, is the answer, and its rollout includes a hybrid called Frankendancer.
+  - question: Why did my transaction fail in early 2024 even with a priority fee?
+    answer: >-
+      During the early-2024 memecoin surge the network kept running, but failure rates climbed
+      into double digits. Each part of the pipeline was correct alone and wrong together,
+      dropping high-fee transactions in favor of unrelated ones. Rewriting the Agave
+      scheduler, revising forwarding and extending the priority-fee API fixed it by late 2024.
+  - question: Do the outages mean the network is broken?
+    answer: >-
+      Each one stressed an assumption that held in testing and broke under real adversarial
+      load, and each was followed by a targeted fix. The protocol design was usually sound and
+      the gap sat in the single implementation running it.
 ---
 
 > Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that affected real money, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. Four notable outages make that pattern clear. Treat this as a debugging-the-network exercise. Afterward, you'll look at your own programs differently.

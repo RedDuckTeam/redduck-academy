@@ -4,23 +4,24 @@ title: What is web3
 type: lecture
 order: 1
 faq:
-  - question: What is the real difference between web2 and web3?
-    answer: "In web2 you can read and write, but the platform owns everything you
-      do: your posts, your followers, and your identity all live in a company's
-      database that it can change, sell, or shut down. Web3 adds ownership at
-      the protocol level, so assets you hold in your wallet cannot be quietly
-      taken away by any platform sitting between you and the network."
-  - question: If I hold a digital asset in web3, can a company or government take it
-      away?
-    answer: Not the way a web2 platform can. Because ownership is recorded in the
-      protocol rather than on a company's server, no platform can demonetise
-      your account or change the rules to seize what is in your wallet. As long
-      as the chain exists, only someone with your keys can move the asset.
-  - question: Do I need to know how to code before I start learning web3?
-    answer: No. Understanding what web3 is and how it differs from earlier versions
-      of the web needs no programming, and the basics track assumes no prior
-      coding experience. Writing and submitting real code comes later in the
-      course.
+  - question: What is the difference between web2 and web3?
+    answer: >-
+      Ownership. Web2 gives you read and write while the platform keeps what you make, your
+      posts, your followers, your identity, in a database it can change, sell, or shut down.
+      Web3 records ownership in the protocol.
+  - question: Can a company or a government take an asset out of my wallet?
+    answer: >-
+      Not the way a platform can close your account. Ownership sits in the protocol, so only
+      someone holding your keys can move the asset.
+  - question: Is web3 used for anything at scale yet?
+    answer: >-
+      More than $300 billion of stablecoin value moves through wallets, settling trillions of
+      dollars of transfers a year. Around $100 billion sits in decentralised finance
+      protocols. Tens of millions of wallet addresses transact every month, and developer
+      numbers have grown for ten years, through every price crash.
+  - question: Do I need to know how to code to start with web3?
+    answer: >-
+      No. The basics track assumes none. Code comes later in the course.
 ---
 
 > Let's take a look at the three eras of the internet. 

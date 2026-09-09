@@ -5,29 +5,28 @@ type: lecture
 order: 1
 faq:
   - question: Do I need to be a Rust expert to write Solana programs?
-    answer: No. You need to be able to read Rust and write within the patterns
-      Anchor sets up, without mastering the whole language. You can skip advanced
-      topics like async runtimes, smart pointers, and unsafe Rust. The
-      essentials are the basic syntax, the borrow checker, and the Anchor macros
-      built on top of them.
+    answer: >-
+      No. Read Rust, write inside the patterns Anchor sets up, and skip async runtimes,
+      smart pointers and unsafe Rust. The basic syntax, the borrow checker and the Anchor
+      macros built on both are what you need.
   - question: What does the ? operator do in Rust and Anchor code?
-    answer: It is shorthand for handling a Result. If the expression before it
-      succeeded, ? unwraps the value and continues. If it failed, ? returns
-      early from the function with that error. So token::transfer(cpi_ctx,
-      amount)? means "do the transfer, but bail out of this handler if it
-      fails." Every ? is one possible early-exit point.
+    answer: >-
+      It handles a Result in one character. On success it unwraps the value and continues.
+      On failure it returns early with that error. Writing token::transfer(cpi_ctx, amount)?
+      means do the transfer and bail out of the handler if it fails.
   - question: What do Option and Result mean in Rust?
-    answer: Both are enums, meaning a value that is one of several shapes. Option<T>
-      represents "maybe a value of type T" and is either Some(value) or None.
-      Result<T, E> represents "either a success T or an error E" and is either
-      Ok(value) or Err(error). Anchor instruction handlers return Result<()>,
-      where () is an empty success value.
+    answer: >-
+      Both are enums. Option<T> is either Some(value) or None. Result<T, E> is either
+      Ok(value) or Err(error). Anchor instruction handlers return Result<()>.
   - question: Why do some Rust variables use let mut and others just let?
-    answer: Variables in Rust are immutable by default, so a plain let binding
-      cannot be reassigned. Adding mut, as in let mut total, makes it
-      reassignable, which is why you see it constantly in handler bodies that
-      update state. There is also const for fixed compile-time values, which
-      requires a type annotation.
+    answer: >-
+      Bindings are immutable by default, so a plain let cannot be reassigned. Adding mut
+      makes it reassignable. There is a third form, const, for fixed compile-time values,
+      and it needs a type annotation.
+  - question: What does Ok(()) at the end of a handler mean?
+    answer: >-
+      Success, returning nothing. Anchor handlers return Result<()>, where () is the empty
+      value.
 ---
 
 > Anchor programs are written in Rust. You don't need to be a Rust expert to write Solana programs, but you do need to be able to read Rust. The syntax you'll meet is a small, fixed set: variables, types, structs, enums, functions, traits, the question-mark operator, pattern matching, and module imports. Learn to read those and almost every Anchor program becomes readable.

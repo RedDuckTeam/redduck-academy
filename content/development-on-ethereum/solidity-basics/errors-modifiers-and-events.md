@@ -4,37 +4,28 @@ title: Errors, modifiers, and events
 type: lecture
 order: 9
 faq:
-  - question: What actually happens to my state changes when a transaction reverts?
-    answer: A revert stops the function immediately, rolls back every state change
-      made during the call, and returns an error to the caller. Storage writes
-      are undone, events emitted before the revert are dropped from the log as
-      if they never happened, and any ETH forwarded to nested calls is returned.
-      If it was the top-level transaction, the user still pays gas for the work
-      done up to the revert, but nothing on chain is left changed.
-  - question: Should I use require with a string message or a custom error in Solidity?
-    answer: For production code, custom errors are preferred. A string revert reason
-      costs roughly 50 gas of bytecode plus encoding, while a custom error is
-      identified by just a 4-byte selector and is much cheaper. Custom errors
-      can also carry typed data, such as the exact amount a user was short, and
-      tooling like block explorers decodes them automatically. String messages
-      in require are fine for small contracts, tests, and prototypes.
-  - question: How do I reuse the same 'only the owner can call this' check across
-      many functions?
-    answer: Use a modifier, which is a named, reusable block of code that wraps a
-      function. You write the check once, for example require(msg.sender ==
-      owner, "not owner"), with a special `_;` placeholder marking where the
-      function body gets inserted at compile time, then apply the modifier's
-      name to any function. If the rule ever changes, you edit the modifier once
-      and every function carrying it updates automatically.
-  - question: If a function returns nothing, how does my frontend know a deposit
-      happened?
-    answer: The contract emits an event, which is a structured record appended to
-      the transaction's logs when the function runs. Once the transaction is
-      mined, any frontend or indexer that knows the contract address and event
-      signature can find and decode it, so the app updates its UI when a
-      matching event arrives. Up to three of an event's fields can be marked
-      indexed, which lets off-chain tools efficiently filter for events matching
-      a specific address or value.
+  - question: What happens to my state changes when a transaction reverts?
+    answer: >-
+      All of them are undone. Storage writes roll back, events emitted before the revert are
+      dropped from the log, and ETH forwarded to nested calls returns up the call stack. The
+      caller still pays gas for the work done up to that point.
+  - question: require with a string message, or a custom error?
+    answer: >-
+      Custom errors for production. A string reason costs roughly 50 gas of bytecode plus
+      encoding on every revert. A custom error is a 4-byte selector from keccak256 of
+      errorName(types), around 4 gas to encode, and it can carry typed data such as the
+      amount a caller was short. They arrived in 0.8.4, and require accepts one since
+      0.8.27.
+  - question: How do I apply the same owner check to ten functions?
+    answer: >-
+      Write a modifier. The check goes in its body, and _; marks where the function body is
+      inserted at compile time.
+  - question: Why can only three event parameters be indexed?
+    answer: >-
+      A log entry holds four topics and topic 0 is the keccak256 hash of the event
+      signature, which leaves three. An indexed value type stores the value itself. An
+      indexed string or bytes stores a keccak256 hash, so the original cannot be recovered
+      from the topic.
 ---
 
 > Three mechanisms that together control what a contract permits and what the outside world observes. A revert is how a contract says "no" to a call. State rolls back, the caller sees an error, and any ETH sent is returned. A modifier is how you reuse the same "no" conditions across many functions without duplicating the check. An event is how a successful call publishes what happened to off-chain observers, since state-mutating functions can't return values to wallets and frontends directly. The three handle the lifecycle of every interesting transaction. Should this call happen? What conditions does it need to satisfy? How do we tell the world it did?

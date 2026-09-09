@@ -4,24 +4,18 @@ title: Where blockchain fits in web3
 type: lecture
 order: 2
 faq:
-  - question: What is the bottom layer that everything in web3 depends on?
-    answer: The blockchain itself. It is a shared record of state, copied across
-      thousands of computers that all agree on it and that no single company
-      runs. Wallets, smart contracts, exchanges, NFTs, and every other web3
-      application sit on top of this trust layer, and without it the rest of the
-      stack collapses.
-  - question: What does a blockchain give you that a normal web2 service can't?
-    answer: Four things at once. Permanent ownership that no single party can
-      revoke, programmable money that moves in seconds and is controlled by code
-      anyone can read, no deplatforming because there is no central operator
-      deciding who may participate, and global reach where anyone with an
-      internet connection gets the same product on day one.
-  - question: What is a smart contract in plain terms?
-    answer: A smart contract is a small program that the blockchain runs and whose
-      behaviour every node in the network agrees on. Applications like
-      decentralised exchanges, NFT marketplaces, and lending protocols are just
-      collections of these contracts, combined with wallets that hold the
-      cryptographic keys letting you act on the chain.
+  - question: Which layer does everything else in web3 depend on?
+    answer: >-
+      The blockchain, the trust layer. Wallets and smart contracts sit on it, applications on
+      those, and users on top.
+  - question: What is a smart contract?
+    answer: >-
+      A small program the blockchain runs, and every node agrees on what it does.
+  - question: What can a blockchain do that a normal web service cannot?
+    answer: >-
+      Four things at once. Ownership no single party can revoke. Money that moves in seconds
+      under code anyone can read. No operator who can deplatform you. And global reach on day
+      one, with no country-by-country rollout.
 ---
 
 The last lesson described web3 as the version of the internet where users actually own things. This one zooms in on the part that makes that possible. There's a stack, and at the very bottom of it sits one piece of infrastructure that everything else depends on. Wallets sit on top of it. Smart contracts sit on top of it. NFTs, decentralised exchanges, lending protocols, governance systems, on-chain games, decentralised social networks, every single one of them sits on top of it. Pull that piece out and the rest of the stack collapses. That piece is the blockchain.

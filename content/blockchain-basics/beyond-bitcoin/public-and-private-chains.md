@@ -5,30 +5,26 @@ type: lecture
 order: 1
 faq:
   - question: What is the real difference between a public and a private blockchain?
-    answer: "A public blockchain lets anyone participate without permission: you can
-      download the node software, validate blocks, and submit transactions with
-      no operator able to ban you. A private blockchain restricts all of that to
-      whoever the operator approves, whether a company, government, or
-      consortium. Almost everything that makes blockchains interesting comes
-      from being public. Private chains are essentially shared databases with
-      cryptographic auditing, run by a small group that already trusts each
-      other."
+    answer: >-
+      Permission. On a public chain anyone can run a node, validate, and submit transactions,
+      and no operator can ban them. A private chain hands all three decisions to an operator,
+      which makes it closer to a shared database with cryptographic auditing.
+  - question: Which private chain platforms will I meet in enterprise work?
+    answer: >-
+      Hyperledger Fabric and R3 Corda. Fabric is a modular permissioned framework from IBM,
+      now hosted by the Linux Foundation, with a separate ordering service that decides
+      transaction order. Corda targets financial institutions and shares each transaction only
+      with the parties involved and their regulators.
   - question: What is the difference between a coin chain and a smart-contract chain?
-    answer: "A coin chain, like Bitcoin, is designed only to track money: its
-      protocol cares about preventing double-spends, enforcing supply, and
-      verifying signatures, and nothing else. A smart-contract chain, like
-      Ethereum or Solana, can also run programs that read shared state, do
-      computation, conditionally move money, and write new state back. That is
-      why smart-contract chains can host lending markets, exchanges, and games,
-      while coin chains are limited to payment systems."
+    answer: >-
+      What a transaction is allowed to do. Bitcoin, a coin chain, only moves value, so its
+      rules cover double-spends, supply, and signatures. Ethereum and Solana also run programs
+      that read shared state, compute, and write new state back.
   - question: What exactly is a smart contract?
-    answer: A smart contract is a program that lives at its own address on the
-      chain, has its own storage, and can hold funds. Anyone can call it by
-      sending a transaction that points at its address, and when called it runs
-      the code its creator deployed and updates its own state. The chain
-      enforces the contract's rules exactly as written, and nobody can override
-      that. Tokens, NFTs, decentralized exchanges, and lending markets are all
-      smart contracts.
+    answer: >-
+      A program with its own address on the chain, its own storage, and the ability to hold
+      funds. Tokens, NFTs, decentralized exchanges, and lending markets are all smart
+      contracts.
 ---
 
 > Bitcoin is one specific blockchain. There are many others. They differ in dozens of ways, but two questions capture the differences that matter most and let you place any chain you meet. First: who is allowed to run a node, validate transactions, and submit data to the chain? Second: what is the chain designed to do? This lesson walks through those two questions and where the major chains land on each.

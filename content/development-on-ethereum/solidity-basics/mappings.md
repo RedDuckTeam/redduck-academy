@@ -4,35 +4,29 @@ title: Mappings
 type: lecture
 order: 4
 faq:
-  - question: Why can't I loop over the keys of a Solidity mapping?
-    answer: The EVM does not keep any list of which storage slots a contract has
-      used, and a mapping computes each key's slot by hashing the key, so there
-      is simply no key set to iterate over. That is also why a mapping has no
-      length and cannot be returned from a function. If you need to enumerate
-      entries, you maintain your own parallel array of keys and push each new
-      key onto it the first time you see it.
-  - question: What happens when I read a mapping key that was never set?
-    answer: "Reading an unset key never throws an error. It returns the zero value
-      of the value type, which is 0 for a uint, false for a bool, the zero
-      address for an address, and the empty string for a string. Because writing
-      zero looks identical to never writing at all, you cannot tell a
-      deliberately stored zero apart from an untouched key. This is a real bug
-      source: a user who spent their whole balance looks the same as someone who
-      never interacted."
-  - question: How do I check whether a key actually exists in a mapping?
-    answer: A mapping has no built-in existence check, because reading a missing key
-      just returns zero. The standard pattern is to keep a separate
-      mapping(...=>bool) flag that you set to true whenever a key is first
-      written. Then if the value is zero and the flag is false the key was never
-      set, and if the value is zero but the flag is true it was deliberately set
-      to zero.
-  - question: Is the data in a public mapping actually private from other users?
-    answer: No. Marking a mapping public generates a getter function that lets
-      anyone query any key, and even marking it private only removes that
-      convenience getter. On a public chain, all storage is readable by anyone
-      who knows how the slot is derived, so no on-chain mapping data is ever
-      truly secret. Use private only to hide the getter rather than to protect
-      confidential information.
+  - question: Why can't I loop over a mapping's keys?
+    answer: >-
+      There is no key set to iterate. A mapping computes each key's slot by hashing the key,
+      and the EVM keeps no record of which slots a contract touched. Keep your own array of
+      keys if you need to enumerate them.
+  - question: What does reading an unset key return?
+    answer: >-
+      The zero value of the value type. 0 for a uint, false for a bool, the zero address for
+      an address. A deliberately stored zero and an untouched key are indistinguishable.
+  - question: How do I tell an unset key from one deliberately set to zero?
+    answer: >-
+      There is no built-in check. Keep a second mapping to bool and set it true the first
+      time a key is written. Zero with the flag false means never set. Zero with the flag
+      true means a deliberate zero.
+  - question: Which storage slot does balances[addr] live in?
+    answer: >-
+      keccak256(addr, p), where p is the mapping's position in the contract's storage
+      layout. Nested mappings hash recursively, so outer[k1][k2] sits at
+      keccak256(k2, keccak256(k1, p)).
+  - question: Can anyone read a private mapping?
+    answer: >-
+      Yes. private only hides the auto-generated getter, and all contract storage is
+      publicly readable.
 ---
 
 > A key-value store, by design constrained. Solidity's mappings look like dictionaries from other languages until you try to do anything with them. No length, no iteration, no equality, storage-only. These limitations aren't arbitrary. They follow directly from how the EVM stores data, and once you see the storage model the design choices become inevitable.
