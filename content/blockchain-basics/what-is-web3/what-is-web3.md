@@ -6,25 +6,21 @@ order: 1
 faq:
   - question: What is the difference between web2 and web3?
     answer: >-
-      Ownership. Web2 gives you read and write while the platform keeps what you make, your
-      posts, your followers, your identity, in a database it can change, sell, or shut down.
-      Web3 records ownership in the protocol.
+      Data Ownership. Both Web2 and Web3 give you read and write functionality, but Web2 keeps the custody over your content, while Web3 allows you to preserve self-custody over it.
   - question: Can a company or a government take an asset out of my wallet?
     answer: >-
-      Not the way a platform can close your account. Ownership sits in the protocol, so only
-      someone holding your keys can move the asset.
-  - question: Is web3 used for anything at scale yet?
+      Only the party that has access to your keys can move anything out of the wallet. If you were forced into sharing the keys, then it's possible even for Web3.
+  - question: Is Web3 used for anything at scale yet?
     answer: >-
-      More than $300 billion of stablecoin value moves through wallets, settling trillions of
+      More than $300 billion of value moves through wallets in fiat-pegged coins named stablecoins, settling trillions of
       dollars of transfers a year. Around $100 billion sits in decentralised finance
-      protocols. Tens of millions of wallet addresses transact every month, and developer
-      numbers have grown for ten years, through every price crash.
+      protocols that allow you to take loans and earn interest on your holdings. Tens of millions of wallet addresses transact every month. That can definitely be considered "at scale".
   - question: Do I need to know how to code to start with web3?
     answer: >-
-      No. The basics track assumes none. Code comes later in the course.
+      Not for the non-technical knowledge. The "blockchain basics course" assumes no technical knowledge, but the following courses are aimed strictly at developers with pre-requisite knowledge.
 ---
 
-> Let's take a look at the three eras of the internet. 
+Let's take a look at the three eras of the internet. 
 
 ## Web1: the read-only internet
 
@@ -62,6 +58,6 @@ The infrastructure works. Real people use it for real things. The reason most de
 
 ## What's in this course
 
-This course covers what blockchains and Web3 actually are, how the cryptographic primitives work, Bitcoin basics and smart-contract development courses for Ethereum and Solana. It focuses on ideas that apply to all blockchains rather than one specific chain, as well as the top-tier engineering mindset underneath them. What you learn here will hold up regardless of which chain you specialise in afterwards.
+This course covers what blockchains and Web3 actually are, how the cryptographic primitives work, and Bitcoin basics. Other than that, there are also smart-contract development courses available for Ethereum and Solana. There is also an engineering course, which focuses on ideas that apply to all blockchains and software engineering rather than one specific chain and one language. What you learn here will hold up regardless of which chain you specialise in afterwards.
 
 The next lesson introduces web3 as a layered ecosystem and zooms in on where blockchains specifically sit within it. Everything you've ever seen described as web3, from wallets to DeFi to NFTs to decentralised social networks, sits on top of blockchain infrastructure. The lesson after that, and the rest of the course, is about what that infrastructure actually is.
