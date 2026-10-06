@@ -3,7 +3,7 @@ import { BaseTooltip } from '@/components/ui/base-tooltip'
 
 export const IN_PROGRESS_LABEL = 'More lessons coming'
 
-const IN_PROGRESS_EXPLANATION = 'Your certificate will be available once the course is finished.'
+const IN_PROGRESS_EXPLANATION = "You'll be able to earn a certificate once we've finished writing this course."
 
 const darkIcon = (
   <span
