@@ -101,6 +101,7 @@ Every file starts with a YAML frontmatter block between `---` fences.
 | `title` | ✅ | |
 | `order` | ✅ | Number. Position among courses. |
 | `isHidden` | optional | `true` hides it; omit otherwise. |
+| `inProgress` | optional | `true` while the course is still being written: it stays listed and readable, but no certificate can be claimed and the site shows a badge in place of the claim button. Remove it when the last lesson lands. |
 
 **`_module.md`** — no body.
 

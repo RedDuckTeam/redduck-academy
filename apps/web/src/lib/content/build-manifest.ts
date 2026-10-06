@@ -44,6 +44,7 @@ export interface ManifestCourse {
   updatedAt: string
   createdAt: string
   prerequisiteCourse: { id: number; slug: string; title: string } | null
+  inProgress: boolean
   modules: ManifestModule[]
 }
 
@@ -177,6 +178,7 @@ export async function buildContentTree(contentDir: string): Promise<ManifestCour
       updatedAt: courseMeta.mtime,
       createdAt: courseMeta.mtime,
       prerequisiteCourse: null,
+      inProgress: courseMeta.data.inProgress === true,
       modules,
       ...(typeof courseMeta.data.order === 'number' ? { order: courseMeta.data.order } : {}),
     } as ManifestCourse & { order?: number })

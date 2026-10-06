@@ -200,7 +200,7 @@ async function main() {
   await client.connect();
 
   const q = (sql) => client.query(sql).then((r) => r.rows);
-  const courses = await q(`select id, title, slug, "order", is_hidden, description from ${SCHEMA}.courses order by "order", id`);
+  const courses = await q(`select id, title, slug, "order", is_hidden, in_progress, description from ${SCHEMA}.courses order by "order", id`);
   const modules = await q(`select id, title, slug, "order", is_hidden, course_id from ${SCHEMA}.modules order by "order", id`);
   const lessons = await q(`select id, title, slug, "order", type, is_hidden, module_id, content from ${SCHEMA}.lessons order by "order", id`);
   const faqRows = await q(`select _parent_id, _order, question, answer from ${SCHEMA}.lessons_faq order by _parent_id, _order`);
@@ -265,7 +265,13 @@ async function main() {
   for (const c of courses) {
     const cDir = join(OUT, c.slug);
     if (!TESTS_ONLY) {
-      const cFm = frontmatter({ id: c.id, title: c.title, order: Number(c.order), isHidden: c.is_hidden || undefined });
+      const cFm = frontmatter({
+        id: c.id,
+        title: c.title,
+        order: Number(c.order),
+        isHidden: c.is_hidden || undefined,
+        inProgress: c.in_progress || undefined,
+      });
       await writeFileAt(join(cDir, '_course.md'), cFm + (c.description ? `\n${c.description.trim()}\n` : ''));
       nc++;
     }
