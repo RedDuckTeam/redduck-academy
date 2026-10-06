@@ -2,7 +2,7 @@
      Regenerated from the lesson .md files by scripts/generate-course-index.mjs,
      which runs on the content pre-commit hook and is verified in CI. -->
 
-# Solana PRO
+# Solana PRO _(in progress)_
 
 The architecture patterns behind the top protocols on Solana, inferred from the code of the TOP-50 projects. 
 

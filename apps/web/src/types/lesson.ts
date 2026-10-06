@@ -42,6 +42,7 @@ export interface Course {
   createdAt: string
   modules: Module[]
   prerequisiteCourse?: CoursePrerequisite | null
+  inProgress?: boolean | null
 }
 
 export type UserSettings = ContractsUserSettings

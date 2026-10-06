@@ -5,10 +5,11 @@
 //   npx tsx scripts/sync-content-db.ts --assign-ids   # write ids into files only, no DB
 //
 // Design:
-//   • INSERT + isHidden. Never deletes a row, and the only column it updates on an existing row
-//     is `isHidden` — visibility carries no user data, so a file can hide/reveal a course, module,
-//     or lesson. A removed file must never drop a DB row that may hold user progress, and edits to
-//     prose live in the files.
+//   • INSERT + flags. Never deletes a row. The only columns it updates on an existing row are
+//     `isHidden` (course, module, lesson) and `inProgress` (course only) — neither carries user
+//     data, so a file can freely hide/reveal a row or mark a course's content unfinished. A removed
+//     file must never drop a DB row that may hold user progress, and edits to prose live in the
+//     files.
 //   • Idempotent. "New" means an id present in the files but not yet in the DB, so it is
 //     safe to re-run: a second run inserts nothing.
 //   • File ids are the source of truth. They live in the reserved [1e9, 2e9) band,
@@ -48,7 +49,7 @@ const BAND_MIN = 1_000_000_000
 const BAND_MAX = 2_000_000_000
 
 type Meta = Record<string, unknown>
-interface CourseRow { id: number; slug: string; title: string; description: string; order: number; isHidden: boolean }
+interface CourseRow { id: number; slug: string; title: string; description: string; order: number; isHidden: boolean; inProgress: boolean }
 interface ModuleRow { id: number; slug: string; title: string; courseId: number; order: number; isHidden: boolean }
 interface LessonRow { id: number; slug: string; title: string; moduleId: number; order: number; type: string; isHidden: boolean }
 interface WriteBack { abs: string; id: number }
@@ -136,6 +137,7 @@ async function readContent() {
       description: cm.body.trim(),
       order: Number(cm.data.order ?? 0),
       isHidden: cm.data.isHidden === true,
+      inProgress: cm.data.inProgress === true,
     })
 
     for (const moduleDir of await subdirs(courseDir)) {
@@ -227,14 +229,14 @@ async function main() {
 
   try {
     const [haveCourses, haveModules, haveLessons] = await Promise.all([
-      db.select({ id: courses.id, isHidden: courses.isHidden }).from(courses),
+      db.select({ id: courses.id, isHidden: courses.isHidden, inProgress: courses.inProgress }).from(courses),
       db.select({ id: modules.id, isHidden: modules.isHidden }).from(modules),
       db.select({ id: lessons.id, isHidden: lessons.isHidden }).from(lessons),
     ])
-    const courseHidden = new Map(haveCourses.map((r) => [r.id, r.isHidden ?? false]))
+    const courseFlags = new Map(haveCourses.map((r) => [r.id, { isHidden: r.isHidden ?? false, inProgress: r.inProgress ?? false }]))
     const moduleHidden = new Map(haveModules.map((r) => [r.id, r.isHidden ?? false]))
     const lessonHidden = new Map(haveLessons.map((r) => [r.id, r.isHidden ?? false]))
-    const courseIds = new Set(courseHidden.keys())
+    const courseIds = new Set(courseFlags.keys())
     const moduleIds = new Set(moduleHidden.keys())
     const lessonIds = new Set(lessonHidden.keys())
 
@@ -242,10 +244,13 @@ async function main() {
     const newModules = ms.filter((m) => !moduleIds.has(m.id))
     const newLessons = ls.filter((l) => !lessonIds.has(l.id))
 
-    // Existing rows whose `isHidden` changed in the files — the one field this sync updates.
-    const hideCourses = cs.filter((c) => courseIds.has(c.id) && courseHidden.get(c.id) !== c.isHidden)
-    const hideModules = ms.filter((m) => moduleIds.has(m.id) && moduleHidden.get(m.id) !== m.isHidden)
-    const hideLessons = ls.filter((l) => lessonIds.has(l.id) && lessonHidden.get(l.id) !== l.isHidden)
+    // Existing rows whose file-authored flags changed — the only fields this sync updates.
+    const flagCourses = cs.filter((c) => {
+      const have = courseFlags.get(c.id)
+      return have !== undefined && (have.isHidden !== c.isHidden || have.inProgress !== c.inProgress)
+    })
+    const flagModules = ms.filter((m) => moduleIds.has(m.id) && moduleHidden.get(m.id) !== m.isHidden)
+    const flagLessons = ls.filter((l) => lessonIds.has(l.id) && lessonHidden.get(l.id) !== l.isHidden)
 
     // Referential + rule checks before touching the DB.
     const refErrors: string[] = []
@@ -260,8 +265,8 @@ async function main() {
     if (refErrors.length) fail('Cannot insert new rows:', refErrors)
 
     const insertTotal = newCourses.length + newModules.length + newLessons.length
-    const hideTotal = hideCourses.length + hideModules.length + hideLessons.length
-    if (insertTotal === 0 && hideTotal === 0) {
+    const flagTotal = flagCourses.length + flagModules.length + flagLessons.length
+    if (insertTotal === 0 && flagTotal === 0) {
       console.log('✓ Database is in sync with the content files — nothing to insert or update.')
       return
     }
@@ -272,11 +277,11 @@ async function main() {
       for (const m of newModules) console.log(`  module  ${m.id}  ${m.slug}  (course ${m.courseId})`)
       for (const l of newLessons) console.log(`  lesson  ${l.id}  ${l.slug}  (module ${l.moduleId})`)
     }
-    if (hideTotal) {
-      console.log(`${DRY_RUN ? '[dry run] would set' : 'Setting'} isHidden on ${hideTotal} existing row(s):`)
-      for (const c of hideCourses) console.log(`  course  ${c.id}  ${c.slug}  → isHidden=${c.isHidden}`)
-      for (const m of hideModules) console.log(`  module  ${m.id}  ${m.slug}  → isHidden=${m.isHidden}`)
-      for (const l of hideLessons) console.log(`  lesson  ${l.id}  ${l.slug}  → isHidden=${l.isHidden}`)
+    if (flagTotal) {
+      console.log(`${DRY_RUN ? '[dry run] would update' : 'Updating'} flags on ${flagTotal} existing row(s):`)
+      for (const c of flagCourses) console.log(`  course  ${c.id}  ${c.slug}  → isHidden=${c.isHidden} inProgress=${c.inProgress}`)
+      for (const m of flagModules) console.log(`  module  ${m.id}  ${m.slug}  → isHidden=${m.isHidden}`)
+      for (const l of flagLessons) console.log(`  lesson  ${l.id}  ${l.slug}  → isHidden=${l.isHidden}`)
     }
 
     if (DRY_RUN) {
@@ -287,7 +292,15 @@ async function main() {
     await db.transaction(async (tx) => {
       if (newCourses.length)
         await tx.insert(courses).values(
-          newCourses.map((c) => ({ id: c.id, title: c.title, slug: c.slug, description: c.description || null, order: c.order, isHidden: c.isHidden })),
+          newCourses.map((c) => ({
+            id: c.id,
+            title: c.title,
+            slug: c.slug,
+            description: c.description || null,
+            order: c.order,
+            isHidden: c.isHidden,
+            inProgress: c.inProgress,
+          })),
         )
       if (newModules.length)
         await tx.insert(modules).values(
@@ -297,12 +310,12 @@ async function main() {
         await tx.insert(lessons).values(
           newLessons.map((l) => ({ id: l.id, title: l.title, slug: l.slug, module: l.moduleId, order: l.order, type: l.type as 'lecture' | 'test', isHidden: l.isHidden })),
         )
-      for (const c of hideCourses) await tx.update(courses).set({ isHidden: c.isHidden }).where(eq(courses.id, c.id))
-      for (const m of hideModules) await tx.update(modules).set({ isHidden: m.isHidden }).where(eq(modules.id, m.id))
-      for (const l of hideLessons) await tx.update(lessons).set({ isHidden: l.isHidden }).where(eq(lessons.id, l.id))
+      for (const c of flagCourses) await tx.update(courses).set({ isHidden: c.isHidden, inProgress: c.inProgress }).where(eq(courses.id, c.id))
+      for (const m of flagModules) await tx.update(modules).set({ isHidden: m.isHidden }).where(eq(modules.id, m.id))
+      for (const l of flagLessons) await tx.update(lessons).set({ isHidden: l.isHidden }).where(eq(lessons.id, l.id))
     })
 
-    const done = [insertTotal ? `inserted ${insertTotal} row(s)` : '', hideTotal ? `set isHidden on ${hideTotal} row(s)` : ''].filter(Boolean)
+    const done = [insertTotal ? `inserted ${insertTotal} row(s)` : '', flagTotal ? `updated flags on ${flagTotal} row(s)` : ''].filter(Boolean)
     console.log(`\n✓ ${done.join(', ')}.`)
   } finally {
     await sql.end({ timeout: 5 })
