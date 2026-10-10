@@ -1,5 +1,5 @@
 ---
-id: 76
+id: 76 
 title: Merkle trees
 type: lecture
 order: 7
