@@ -1,6 +1,6 @@
 ---
 id: 81
-title: Transaction flow
+title: Transaction flow 
 type: lecture
 order: 5
 faq:
