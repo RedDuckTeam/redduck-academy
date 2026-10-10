@@ -3,7 +3,7 @@ id: 92
 title: Public and private chains
 type: lecture
 order: 1
-faq:
+faq: 
   - question: What is the real difference between a public and a private blockchain?
     answer: >-
       Permission. On a public chain anyone can run a node, validate, and submit transactions,
