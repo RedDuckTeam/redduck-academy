@@ -1,6 +1,6 @@
 ---
 id: 73
-title: Public-key cryptography
+title: Public-key cryptography 
 type: lecture
 order: 4
 faq:
