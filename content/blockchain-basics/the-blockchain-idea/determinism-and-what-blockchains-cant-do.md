@@ -7,7 +7,7 @@ faq:
   - question: What does determinism mean for a blockchain?
     answer: >-
       Same code, same inputs, same output on every node, every time.
-  - question: Why can't a smart contract call an external API?
+  - question: Why can't a smart contract call an external API? 
     answer: >-
       Every node has to compute the same result from the same input. An API can answer one
       node differently from another, and the chain would fork. Contract languages have no HTTP
