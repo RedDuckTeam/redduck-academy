@@ -1,6 +1,6 @@
 ---
 id: 88
-title: The economics of proof of work
+title: The economics of proof of work 
 type: lecture
 order: 4
 faq:
