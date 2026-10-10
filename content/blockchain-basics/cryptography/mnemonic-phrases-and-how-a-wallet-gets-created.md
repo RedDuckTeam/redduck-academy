@@ -1,6 +1,6 @@
 ---
 id: 74
-title: Mnemonic phrases and how a wallet gets created
+title: Mnemonic phrases and how a wallet gets created 
 type: lecture
 order: 5
 faq:
