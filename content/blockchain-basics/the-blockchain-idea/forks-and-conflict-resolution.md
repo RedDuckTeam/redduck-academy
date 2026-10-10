@@ -1,7 +1,7 @@
 ---
 id: 82
 title: Forks and conflict resolution
-type: lecture
+type: lecture 
 order: 6
 faq:
   - question: Why do two valid blocks sometimes appear at the same time?
