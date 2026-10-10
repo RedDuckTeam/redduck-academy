@@ -1,6 +1,6 @@
 ---
 id: 97
-title: What you know now
+title: What you know now 
 type: lecture
 order: 5
 faq:
