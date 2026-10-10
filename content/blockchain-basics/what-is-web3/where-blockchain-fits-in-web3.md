@@ -1,6 +1,6 @@
 ---
 id: 69
-title: Where blockchain fits in web3
+title: Where blockchain fits in web3 
 type: lecture
 order: 2
 faq:
