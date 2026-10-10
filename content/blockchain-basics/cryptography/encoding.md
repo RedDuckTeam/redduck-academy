@@ -1,4 +1,4 @@
----
+--- 
 id: 71
 title: Encoding
 type: lecture
