@@ -1,4 +1,4 @@
----
+--- 
 id: 72
 title: Symmetric and asymmetric encryption
 type: lecture
