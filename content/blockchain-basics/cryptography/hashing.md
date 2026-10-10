@@ -3,7 +3,7 @@ id: 70
 title: Hashing
 type: lecture
 order: 1
-faq:
+faq: 
   - question: What is a hash function?
     answer: >-
       Any input of any size in, a fixed-size output out. SHA-256 always returns 256 bits,
