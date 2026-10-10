@@ -3,7 +3,7 @@ id: 85
 title: The Bitcoin design philosophy
 type: lecture
 order: 1
-faq:
+faq: 
   - question: What is the double-spend problem?
     answer: >-
       Spending the same digital coin twice in two places when no central server keeps the
