@@ -1,6 +1,6 @@
 ---
 id: 80
-title: Nodes and the network
+title: Nodes and the network 
 type: lecture
 order: 4
 faq:
