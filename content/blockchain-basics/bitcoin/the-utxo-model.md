@@ -15,7 +15,7 @@ faq:
   - question: What is a satoshi?
     answer: >-
       One hundred-millionth of a bitcoin. Output values are stored as whole satoshis.
-  - question: Why does my wallet send part of a payment back to me?
+  - question: Why does my wallet send part of a payment back to me? 
     answer: >-
       You cannot split a coin. Paying 0.3 BTC out of a 1.0 BTC coin destroys the 1.0 coin
       and creates 0.3 for the recipient plus a change coin of nearly 0.7 for you.
