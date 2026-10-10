@@ -3,7 +3,7 @@ id: 89
 title: Bitcoin-specific forks
 type: lecture
 order: 5
-faq:
+faq: 
   - question: What is the difference between a soft fork and a hard fork?
     answer: >-
       A soft fork only tightens the rules, so old nodes keep accepting new blocks and the
