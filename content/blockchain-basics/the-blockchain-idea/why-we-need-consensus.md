@@ -1,7 +1,7 @@
 ---
 id: 79
 title: Why we need consensus
-type: lecture
+type: lecture 
 order: 3
 faq:
   - question: Why can't the network just vote on the next block?
