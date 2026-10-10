@@ -1,5 +1,5 @@
 ---
-id: 78
+id: 78 
 title: Blockchain vs database
 type: lecture
 order: 2
