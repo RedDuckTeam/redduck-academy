@@ -1,6 +1,6 @@
 ---
 id: 91
-title: What Bitcoin gave up and what it gained
+title: What Bitcoin gave up and what it gained 
 type: lecture
 order: 7
 faq:
