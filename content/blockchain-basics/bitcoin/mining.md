@@ -1,7 +1,7 @@
 ---
 id: 87
 title: Blocks and mining
-type: lecture
+type: lecture 
 order: 3
 faq:
   - question: What are Bitcoin miners searching for?
