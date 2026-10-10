@@ -1,6 +1,6 @@
 ---
 id: 93
-title: The blockchain trilemma
+title: The blockchain trilemma 
 type: lecture
 order: 2
 faq:
