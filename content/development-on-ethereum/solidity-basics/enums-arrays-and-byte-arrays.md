@@ -2,7 +2,7 @@
 id: 35
 title: Enums, arrays, and byte arrays
 type: lecture
-order: 5
+order: 5 
 faq:
   - question: What does a freshly declared enum variable equal?
     answer: >-
