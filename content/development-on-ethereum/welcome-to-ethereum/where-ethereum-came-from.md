@@ -1,5 +1,5 @@
 ---
-id: 100
+id: 100 
 title: Where Ethereum came from
 type: lecture
 order: 3
