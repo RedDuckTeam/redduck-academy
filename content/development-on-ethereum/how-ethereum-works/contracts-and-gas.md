@@ -3,7 +3,7 @@ id: 102
 title: Contracts and gas
 type: lecture
 order: 2
-faq:
+faq: 
   - question: Why do I pay gas for a transaction that failed?
     answer: >-
       Every node already did the work. The validator keeps the priority fee, the base fee is
