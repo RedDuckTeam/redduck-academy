@@ -2,7 +2,7 @@
 id: 36
 title: Structs
 type: lecture
-order: 6
+order: 6 
 faq:
   - question: Why didn't my change to a struct get saved?
     answer: >-
