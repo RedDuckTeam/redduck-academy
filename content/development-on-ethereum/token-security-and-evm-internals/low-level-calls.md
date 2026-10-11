@@ -7,7 +7,7 @@ faq:
   - question: Why is a low-level call preferred over transfer for sending ETH?
     answer: >-
       `transfer` and `send` forward only 2300 gas, a limit meant to block reentrancy. The 2019
-      Istanbul hard fork raised the cost of some storage operations, and contracts doing
+      Istanbul hard fork raised the cost of some storage operations, and contracts doing 
       ordinary bookkeeping in `receive` stopped fitting inside it. Use
       `recipient.call{value: amount}("")` and handle reentrancy with checks-effects-interactions
       and a guard.
