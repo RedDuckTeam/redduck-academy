@@ -4,7 +4,7 @@ title: What Ethereum is
 type: lecture
 order: 2
 faq:
-  - question: What is gas on Ethereum and why do I pay it?
+  - question: What is gas on Ethereum and why do I pay it? 
     answer: >-
       The unit of cost for running an operation. Adding numbers is cheap, writing storage is
       expensive. Your fee is gas used times gas price, paid in ETH. Gas pays every node for
