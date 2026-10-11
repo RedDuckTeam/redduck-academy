@@ -1,6 +1,6 @@
 ---
 id: 137
-title: Academy token
+title: Academy token 
 type: review_task
 order: 13
 ---
