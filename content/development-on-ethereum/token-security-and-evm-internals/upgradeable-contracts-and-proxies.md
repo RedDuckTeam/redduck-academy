@@ -2,7 +2,7 @@
 id: 150
 title: Upgradeable contracts and proxies
 type: lecture
-order: 9
+order: 9 
 faq:
   - question: How do projects upgrade code that is supposed to be immutable?
     answer: >-
