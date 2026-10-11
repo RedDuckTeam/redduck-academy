@@ -1,6 +1,6 @@
 ---
 id: 104
-title: Consensus on Ethereum
+title: Consensus on Ethereum 
 type: lecture
 order: 4
 faq:
