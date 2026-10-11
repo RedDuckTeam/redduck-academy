@@ -4,7 +4,7 @@ title: What Ethereum course is about
 type: lecture
 order: 1
 faq:
-  - question: What does the Ethereum track cover?
+  - question: What does the Ethereum track cover? 
     answer: >-
       Solidity first, from syntax and types through functions, errors, events, modifiers, and
       inheritance. Then the patterns production contracts are built from: tokens, access
