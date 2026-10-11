@@ -4,7 +4,7 @@ title: Errors, modifiers, and events
 type: lecture
 order: 9
 faq:
-  - question: What happens to my state changes when a transaction reverts?
+  - question: What happens to my state changes when a transaction reverts? 
     answer: >-
       All of them are undone. Storage writes roll back, events emitted before the revert are
       dropped from the log, and ETH forwarded to nested calls returns up the call stack. The
