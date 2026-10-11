@@ -1,6 +1,6 @@
 ---
 id: 139
-title: Loops and hashing
+title: Loops and hashing 
 type: lecture
 order: 12
 faq:
