@@ -1,6 +1,6 @@
 ---
 id: 34
-title: Mappings
+title: Mappings 
 type: lecture
 order: 4
 faq:
