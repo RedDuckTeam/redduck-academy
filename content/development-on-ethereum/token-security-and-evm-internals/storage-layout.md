@@ -4,7 +4,7 @@ title: Storage layout
 type: lecture
 order: 8
 faq:
-  - question: Is a private variable in Solidity secret?
+  - question: Is a private variable in Solidity secret? 
     answer: >-
       No. `private` only stops other Solidity code from referencing the variable by name.
       Every node stores every slot, and anyone can read one with `eth_getStorageAt` or
