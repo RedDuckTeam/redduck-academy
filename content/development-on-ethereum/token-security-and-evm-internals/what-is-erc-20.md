@@ -3,7 +3,7 @@ id: 138
 title: What is ERC-20
 type: lecture
 order: 1
-faq:
+faq: 
   - question: My wallet shows 1000 tokens but totalSupply returns a huge number. Why?
     answer: >-
       Balances are stored as integers, and the ERC-20 `decimals` value says where the display
