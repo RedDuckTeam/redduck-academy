@@ -6,7 +6,7 @@ order: 3
 faq:
   - question: How does an attacker withdraw more than they deposited?
     answer: >-
-      Reentrancy. If `withdraw` sends ETH before zeroing the caller's recorded balance, and the
+      Reentrancy. If `withdraw` sends ETH before zeroing the caller's recorded balance, and the 
       caller is a contract, the transfer triggers its `receive()`, which calls `withdraw` again
       while the balance still reads the full amount. The loop repeats until the contract is
       empty. This drained about $60M from The DAO in June 2016.
