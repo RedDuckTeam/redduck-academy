@@ -5,7 +5,7 @@ type: lecture
 order: 3
 faq:
   - question: Why can't a contract call an API or generate a random number?
-    answer: >-
+    answer: >- 
       The EVM has to be deterministic. Same input, same result on every node, or the network
       splits into incompatible chains. So no HTTP requests, no system clock, no true
       randomness, no file reads. A contract sees the transaction input, its own storage, the
