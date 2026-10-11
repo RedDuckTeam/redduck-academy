@@ -4,7 +4,7 @@ title: Front-running and MEV
 type: lecture
 order: 6
 faq:
-  - question: How does a bot profit from my swap before it runs?
+  - question: How does a bot profit from my swap before it runs? 
     answer: >-
       Your transaction sits in the public mempool first, where anyone can read it. A sandwich
       bot computes how the swap will move the price, buys just before you, lets you trade at
