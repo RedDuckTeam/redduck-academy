@@ -3,7 +3,7 @@ id: 134
 title: Functions
 type: lecture
 order: 8
-faq:
+faq: 
   - question: What is the difference between a public and an external function?
     answer: >-
       Both are callable from outside. An external function reads its arguments straight from
