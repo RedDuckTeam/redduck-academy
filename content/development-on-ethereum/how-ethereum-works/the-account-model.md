@@ -3,7 +3,7 @@ id: 101
 title: The account model
 type: lecture
 order: 1
-faq:
+faq: 
   - question: What does an Ethereum account store?
     answer: >-
       Four fields. A balance in wei, where one ETH is 10^18 wei. A nonce that counts the
