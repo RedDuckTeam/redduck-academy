@@ -1,7 +1,7 @@
 ---
 id: 133
 title: Booleans and integers
-type: lecture
+type: lecture 
 order: 1
 faq:
   - question: Why does 1 / 2 give 0 in Solidity instead of 0.5?
