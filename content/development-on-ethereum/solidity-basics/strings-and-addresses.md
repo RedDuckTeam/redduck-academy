@@ -4,7 +4,7 @@ title: Strings and addresses
 type: lecture
 order: 3
 faq:
-  - question: Why can't I compare two strings with == in Solidity?
+  - question: Why can't I compare two strings with == in Solidity? 
     answer: >-
       Solidity defines no == for strings. Hash the bytes, keccak256(bytes(a)) ==
       keccak256(bytes(b)). A string is a sequence of UTF-8 bytes, so .length, indexing and +
