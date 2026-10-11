@@ -3,7 +3,7 @@ id: 136
 title: Inheritance
 type: lecture
 order: 11
-faq:
+faq: 
   - question: Do I have to deploy the parent contract separately?
     answer: >-
       No. One contract goes on chain, holding both. The parent's constructor runs first at
