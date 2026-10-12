@@ -4,7 +4,7 @@ title: AMM
 type: lecture
 order: 5
 faq:
-  - question: Why did my large swap get a worse rate than a small one?
+  - question: Why did my large swap get a worse rate than a small one? 
     answer: >-
       Price impact. A V2 AMM pool holds x * y = k, so each token you take out makes the next
       one dearer, and a big trade travels the whole curve in one move.
