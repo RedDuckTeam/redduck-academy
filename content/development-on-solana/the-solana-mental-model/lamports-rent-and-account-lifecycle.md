@@ -1,6 +1,6 @@
 ---
 id: 184
-title: Lamports, rent, and account lifecycle
+title: Lamports, rent, and account lifecycle 
 type: lecture
 order: 4
 faq:
