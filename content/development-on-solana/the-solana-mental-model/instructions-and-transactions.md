@@ -1,7 +1,7 @@
 ---
 id: 183
 title: Instructions and transactions
-type: lecture
+type: lecture 
 order: 3
 faq:
   - question: What is the difference between an instruction and a transaction?
