@@ -4,7 +4,7 @@ title: Rust for reading Anchor programs
 type: lecture
 order: 1
 faq:
-  - question: Do I need to be a Rust expert to write Solana programs?
+  - question: Do I need to be a Rust expert to write Solana programs? 
     answer: >-
       No. Read Rust, write inside the patterns Anchor sets up, and skip async runtimes,
       smart pointers and unsafe Rust. The basic syntax, the borrow checker and the Anchor
