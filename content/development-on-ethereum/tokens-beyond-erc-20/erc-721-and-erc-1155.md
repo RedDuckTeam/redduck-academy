@@ -5,7 +5,7 @@ type: lecture
 order: 1
 faq:
   - question: Should I use ERC-721 or ERC-1155?
-    answer: >-
+    answer: >- 
       ERC-721 for one collection of distinct items, one owner per token ID, with per-token
       metadata from tokenURI. ERC-1155 for several token types in one contract or when you
       need batch transfers, since it stores a balance per ID and holder.
