@@ -6,7 +6,7 @@ order: 4
 faq:
   - question: How do I find the address of someone's token account?
     answer: >-
-      Compute it. An Associated Token Account address is derived from the holder's wallet and
+      Compute it. An Associated Token Account address is derived from the holder's wallet and 
       the mint, so given Bob's wallet and the USDC mint you get the one canonical address
       where his USDC lives, even before the account exists. You never have to ask the
       recipient, and there is no registry.
