@@ -5,7 +5,7 @@ type: lecture
 order: 1
 faq:
   - question: Where does a Solana program keep its state?
-    answer: >-
+    answer: >- 
       In separate accounts, passed in on every call. The program itself is pure code with no
       storage of its own.
   - question: Why does a transaction have to list the accounts it will touch in advance?
