@@ -5,7 +5,7 @@ type: lecture
 order: 40
 faq:
   - question: Why can't a program just hold a keypair for its own accounts?
-    answer: >-
+    answer: >- 
       The bytecode runs on every validator and anyone can read it, so a private key inside a
       program is a private key everyone has.
   - question: Why does a PDA derivation need a bump byte?
