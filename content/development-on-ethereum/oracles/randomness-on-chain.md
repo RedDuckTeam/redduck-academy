@@ -1,6 +1,6 @@
 ---
 id: 166
-title: Randomness on chain
+title: Randomness on chain 
 type: lecture
 order: 3
 faq:
