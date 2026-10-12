@@ -7,7 +7,7 @@ faq:
   - question: Why does performUpkeep have to re-check what checkUpkeep already confirmed?
     answer: >-
       It is two or three blocks stale by the time a keeper node lands the transaction. Re-read
-      the data and revert if the condition has cleared.
+      the data and revert if the condition has cleared. 
   - question: How do I stop anyone from calling performUpkeep?
     answer: >-
       Lock it to the forwarder. Registration produces a unique forwarder address, the only
