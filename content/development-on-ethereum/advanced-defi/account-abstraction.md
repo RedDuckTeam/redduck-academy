@@ -7,7 +7,7 @@ faq:
   - question: What is the difference between ERC-4337 and EIP-7702?
     answer: >-
       Two routes to account abstraction. ERC-4337 sits on top of the protocol, live since March
-      2023. You sign a UserOperation, a bundler batches it into a real transaction, and a
+      2023. You sign a UserOperation, a bundler batches it into a real transaction, and a 
       singleton EntryPoint enforces validation and payment. EIP-7702 came with Pectra in May
       2025, a type 0x04 transaction carrying an authorization signed by your own key that
       points your existing EOA at a smart-wallet contract.
