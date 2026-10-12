@@ -1,6 +1,6 @@
 ---
 id: 148
-title: Off-chain computation, on-chain verification
+title: Off-chain computation, on-chain verification 
 type: lecture
 order: 3
 faq:
