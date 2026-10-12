@@ -4,7 +4,7 @@ title: Where Solana came from
 type: lecture
 order: 3
 faq:
-  - question: Why did Anatoly Yakovenko invent Proof of History?
+  - question: Why did Anatoly Yakovenko invent Proof of History? 
     answer: >-
       The bottleneck he saw was validators arguing about the order of events. A hash chain
       anyone can verify settles that order without voting, freeing bandwidth for real work.
