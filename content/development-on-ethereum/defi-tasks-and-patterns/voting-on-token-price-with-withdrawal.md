@@ -1,6 +1,6 @@
 ---
 id: 149
-title: Voting on token price, with withdrawal
+title: Voting on token price, with withdrawal 
 type: review_task
 order: 4
 ---
