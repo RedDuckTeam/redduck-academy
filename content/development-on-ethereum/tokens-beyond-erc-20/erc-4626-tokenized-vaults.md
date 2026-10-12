@@ -4,7 +4,7 @@ title: ERC-4626 tokenized vaults
 type: lecture
 order: 2
 faq:
-  - question: What does ERC-4626 standardize?
+  - question: What does ERC-4626 standardize? 
     answer: >-
       The deposit-and-withdraw interface. A vault takes one ERC-20 asset and issues an ERC-20
       share against it, with fixed function names, signatures, and behavior, so any tool that
