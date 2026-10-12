@@ -5,7 +5,7 @@ type: lecture
 order: 6
 faq:
   - question: Why does a swap transaction carry so many accounts?
-    answer: >-
+    answer: >- 
       Every account any layer of the call will touch has to be named in the outer transaction,
       because inner programs never request accounts at runtime. An aggregator calling a swap
       that calls the Token Program therefore lists the pool state, the pool authority PDA,
