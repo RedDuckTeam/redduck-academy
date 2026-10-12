@@ -6,7 +6,7 @@ order: 1
 faq:
   - question: I hold USDC but no ETH. Can I still approve a spender?
     answer: >-
-      Yes, with a gasless approval. Sign an ERC-2612 permit off chain and let someone else pay
+      Yes, with a gasless approval. Sign an ERC-2612 permit off chain and let someone else pay 
       the gas.
   - question: What does EIP-712 add over signing a plain hash?
     answer: >-
