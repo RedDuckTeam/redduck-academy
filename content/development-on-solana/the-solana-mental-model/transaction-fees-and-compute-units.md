@@ -3,7 +3,7 @@ id: 185
 title: Transaction fees and compute units
 type: lecture
 order: 5
-faq:
+faq: 
   - question: What is the difference between the base fee and the priority fee?
     answer: >-
       The base fee is fixed at 5,000 lamports per signature and always charged, half burned
