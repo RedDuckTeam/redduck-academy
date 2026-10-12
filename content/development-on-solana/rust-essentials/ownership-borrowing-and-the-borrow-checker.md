@@ -7,7 +7,7 @@ faq:
   - question: What is the Rust borrow checker actually doing?
     answer: >-
       Tracking ownership of each piece of memory at compile time and enforcing a small set of
-      rules about how that memory is shared. No garbage collector, no runtime cost. The
+      rules about how that memory is shared. No garbage collector, no runtime cost. The 
       price is that you sometimes restructure code so the compiler can prove it is safe.
   - question: What are the two borrowing rules in Rust?
     answer: >-
