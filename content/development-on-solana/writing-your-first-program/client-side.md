@@ -4,7 +4,7 @@ title: Client side
 type: lecture
 order: 35
 faq:
-  - question: Which package do I use to call an Anchor program from TypeScript?
+  - question: Which package do I use to call an Anchor program from TypeScript? 
     answer: >-
       @coral-xyz/anchor. It reads the IDL and gives you
       program.methods.deposit(amount).accounts({...}).rpc() instead of hand-assembled
