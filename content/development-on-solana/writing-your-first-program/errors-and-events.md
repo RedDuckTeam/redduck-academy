@@ -8,7 +8,7 @@ faq:
     answer: >-
       Define a Rust enum tagged with #[error_code], each variant carrying the #[msg("...")] line
       clients display. Guard the handler with require!(amount > 0, MyError::ZeroAmount). A false
-      condition aborts the transaction, so run every check before you touch state.
+      condition aborts the transaction, so run every check before you touch state. 
   - question: Why is my custom error code 6000 instead of 0?
     answer: >-
       Anchor reserves 0 through 5999 for its own errors, so your first variant is 6000. Codes
