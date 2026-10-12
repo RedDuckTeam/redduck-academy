@@ -7,7 +7,7 @@ faq:
   - question: How can anyone borrow millions with no collateral?
     answer: >-
       The transaction is atomic. The lender sends the funds, lets your contract do what it
-      wants, and checks the balance came back with the fee. If not, everything reverts. Aave
+      wants, and checks the balance came back with the fee. If not, everything reverts. Aave 
       charges 0.05%, Balancer's core flash loans are free, and the ceiling is the lender's pool
       depth.
   - question: What do people use flash loans for besides attacks?
