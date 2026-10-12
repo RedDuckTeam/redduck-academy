@@ -10,7 +10,7 @@ faq:
       write. The runtime runs groups whose account sets do not overlap on separate threads.
   - question: What do I pay for when I send a Solana transaction?
     answer: >-
-      A base fee of 5,000 lamports per signature, half burned and half paid to the validator
+      A base fee of 5,000 lamports per signature, half burned and half paid to the validator 
       that produced the block. Computation is metered separately in compute units, with a
       limit each transaction cannot exceed. The priority fee on top is optional, priced in
       micro-lamports per compute unit.
