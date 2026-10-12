@@ -1,7 +1,7 @@
 ---
 id: 178
 title: What the Solana course is about
-type: lecture
+type: lecture 
 order: 1
 faq:
   - question: What will I build in the Solana course?
