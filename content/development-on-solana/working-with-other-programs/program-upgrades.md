@@ -3,7 +3,7 @@ id: 233
 title: Program upgrades
 type: lecture
 order: 20
-faq:
+faq: 
   - question: Can the team change a program's code after I start using it?
     answer: >-
       Yes, if it still has an upgrade authority. A program is an account holding executable
