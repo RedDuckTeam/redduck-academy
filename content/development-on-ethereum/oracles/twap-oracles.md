@@ -6,7 +6,7 @@ order: 6
 faq:
   - question: Why doesn't a flash loan move a TWAP?
     answer: >-
-      A one-block spike is only about 0.7% of a 30-minute window, roughly 150 blocks.
+      A one-block spike is only about 0.7% of a 30-minute window, roughly 150 blocks. 
   - question: How does a pool average prices without storing them?
     answer: >-
       It keeps one running total. Every swap, mint or burn adds the last price times the
