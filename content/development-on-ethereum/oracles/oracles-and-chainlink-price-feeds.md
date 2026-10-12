@@ -1,7 +1,7 @@
 ---
 id: 167
 title: Oracles and Chainlink Price Feeds
-type: lecture
+type: lecture 
 order: 1
 faq:
   - question: Why does the ETH/USD feed return 350000000000?
