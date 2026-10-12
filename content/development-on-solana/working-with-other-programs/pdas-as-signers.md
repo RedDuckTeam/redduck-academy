@@ -4,7 +4,7 @@ title: PDAs as signers
 type: lecture
 order: 2
 faq:
-  - question: How can a program sign for an address that has no private key?
+  - question: How can a program sign for an address that has no private key? 
     answer: >-
       It passes the PDA's seeds to invoke_signed. The runtime appends the calling program's
       ID, re-derives the address, and marks the matching account as a signer. The seeds are
