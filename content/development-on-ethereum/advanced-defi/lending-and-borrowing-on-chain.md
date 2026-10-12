@@ -4,7 +4,7 @@ title: Lending and borrowing on-chain
 type: lecture
 order: 5
 faq:
-  - question: My health factor says 1.02. How close to liquidation am I?
+  - question: My health factor says 1.02. How close to liquidation am I? 
     answer: >-
       Close. Health is collateral value times the liquidation threshold over debt, so a 2% fall
       takes you under 1. Below 1, anyone can repay part of your debt and take collateral at a
