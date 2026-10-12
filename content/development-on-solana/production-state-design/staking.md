@@ -3,7 +3,7 @@ id: 204
 title: Staking
 type: review_task
 order: 3
----
+--- 
 
 Time for your second Solana program. The RDDK Staking task is small in shape: four instructions, three account types, a three-day lock. If you understand stake → wait → claim → burn, you understand the flow. The logic is straightforward.
 
