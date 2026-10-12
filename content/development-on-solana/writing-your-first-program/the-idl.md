@@ -7,7 +7,7 @@ faq:
   - question: Do I write the IDL by hand?
     answer: >-
       No. anchor build regenerates it into target/idl/ from your Rust source, which is the
-      source of truth.
+      source of truth. 
   - question: Why does a Solana program need an IDL at all?
     answer: >-
       Deployed bytecode carries no manifest. The IDL is the JSON listing the instructions, the
