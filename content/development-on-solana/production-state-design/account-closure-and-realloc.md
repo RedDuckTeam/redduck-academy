@@ -3,7 +3,7 @@ id: 203
 title: Account closure and realloc
 type: lecture
 order: 2
-faq:
+faq: 
   - question: How do I get back the SOL locked in an account I no longer need?
     answer: >-
       Close it. Solana reclaims nothing on its own, so that SOL sits locked until you do.
