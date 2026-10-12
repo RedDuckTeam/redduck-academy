@@ -4,7 +4,7 @@ title: The SPL Token program in practice
 type: lecture
 order: 3
 faq:
-  - question: What's the difference between a mint and a token account?
+  - question: What's the difference between a mint and a token account? 
     answer: >-
       The mint is the currency. It stores the total supply, the decimal precision, and the
       authorities that can mint or freeze. A token account is one holder's balance of that
