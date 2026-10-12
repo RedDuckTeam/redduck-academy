@@ -4,7 +4,7 @@ title: Zero-copy accounts
 type: lecture
 order: 1
 faq:
-  - question: Why does my program stack-overflow when an account gets big?
+  - question: Why does my program stack-overflow when an account gets big? 
     answer: >-
       Account<T> copies the whole account onto the stack on every call, and a handler gets about
       4 KB of stack. Box<Account<T>> moves it to the heap.
