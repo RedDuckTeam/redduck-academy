@@ -9,7 +9,7 @@ faq:
       Every account has exactly one owner program, and only that owner may change its data.
       SPL token balances live in accounts the Token Program owns, so your program asks it to
       move them through a Cross-Program Invocation.
-  - question: Can a program I call escalate privileges on the accounts I pass it?
+  - question: Can a program I call escalate privileges on the accounts I pass it? 
     answer: >-
       No. A read-only account stays read-only in the called program, and a non-signer never
       becomes a signer. The runtime checks. You can go the other way and pass a writable
