@@ -6,7 +6,7 @@ order: 80
 faq:
   - question: How do I test a 24-hour lockup without waiting a day?
     answer: >-
-      context.warpToSlot jumps the chain's slot counter forward, and the Clock sysvar your
+      context.warpToSlot jumps the chain's slot counter forward, and the Clock sysvar your 
       program reads jumps with it. Slots run about 400ms, so a day is roughly 216,000 slots. The
       test still finishes in milliseconds.
   - question: Why is solana-bankrun so much faster than solana-test-validator?
