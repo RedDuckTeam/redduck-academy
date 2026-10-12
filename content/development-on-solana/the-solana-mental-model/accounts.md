@@ -3,7 +3,7 @@ id: 182
 title: Accounts
 type: lecture
 order: 2
-faq:
+faq: 
   - question: What fields does a Solana account have?
     answer: >-
       Five. An address, which is a public key. A lamports balance. A data field of raw bytes
