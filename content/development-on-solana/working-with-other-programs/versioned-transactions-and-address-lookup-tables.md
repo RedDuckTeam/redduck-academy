@@ -1,6 +1,6 @@
 ---
 id: 207
-title: Versioned transactions and address lookup tables
+title: Versioned transactions and address lookup tables 
 type: lecture
 order: 7
 faq:
