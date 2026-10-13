@@ -2,7 +2,7 @@
 id: 268
 title: Apply core and periphery
 type: review_task
-order: 3
+order: 3 
 ---
 
 The core and periphery pattern keeps the smallest possible amount of logic in the position of highest trust. A minimal core holds the valuable state and enforces the rules that guard it. Everything convenient lives in a replaceable periphery that reaches the core only through a narrow interface, with no special powers inside it.
