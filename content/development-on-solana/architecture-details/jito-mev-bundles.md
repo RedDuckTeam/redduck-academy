@@ -3,7 +3,7 @@ id: 232
 title: Jito, MEV, Bundles
 type: lecture
 order: 47
-faq:
+faq: 
   - question: What is MEV if there is no public mempool to watch?
     answer: >-
       MEV is maximum extractable value, the profit from controlling the order of transactions
