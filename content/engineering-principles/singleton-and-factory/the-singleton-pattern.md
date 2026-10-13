@@ -4,7 +4,7 @@ title: The singleton pattern
 type: lecture
 order: 1
 faq:
-  - question: What does one shared login service save?
+  - question: What does one shared login service save? 
     answer: >-
       Fifty password stores become one. A verification flaw is fixed once instead of applied
       fifty times, with no team left to miss it. And a new application joins by pointing at
