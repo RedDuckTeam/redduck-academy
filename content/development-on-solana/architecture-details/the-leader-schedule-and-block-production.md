@@ -2,7 +2,7 @@
 id: 219
 title: The leader schedule and block production
 type: lecture
-order: 3
+order: 3 
 faq:
   - question: How is the next block producer chosen?
     answer: >-
