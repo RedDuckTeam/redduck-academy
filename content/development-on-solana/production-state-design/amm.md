@@ -1,4 +1,4 @@
----
+--- 
 id: 211
 title: AMM
 type: lecture
