@@ -32,7 +32,7 @@ A wallet or a proxy contract often has to hand control to some external applicat
 
 ## Declare the outcome, let the chain enforce it
 
-ERC8009 removes the prediction. The caller declares the outcome it requires: after this call, address X holds at least Y of token Z. The EVM is the enforcer. When the call finishes, the real state is checked against that declaration, and if the outcome is not there, the whole transaction reverts as though it never happened.
+ERC-8009 removes the prediction. The caller declares the outcome it requires: after this call, address X holds at least Y of token Z. The EVM is the enforcer. When the call finishes, the real state is checked against that declaration, and if the outcome is not there, the whole transaction reverts as though it never happened.
 
 The proxy at the center of this design, BalanceProxy, does not trust the application it called, the user who initiated the call, or any off-chain simulation. It trusts the state that actually exists once the call has run. The same declared amounts drive a plain balance-diff display, so a person approving the action sees the exact change it will make to their holdings before they sign. BalanceProxy lives at one deterministic address on each chain, so every caller checks outcomes against the same known contract.
 
