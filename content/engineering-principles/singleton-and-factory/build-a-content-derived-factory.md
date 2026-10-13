@@ -2,7 +2,7 @@
 id: 269
 title: Build a content-derived factory
 type: review_task
-order: 6
+order: 6 
 ---
 
 A content-derived identifier is computed from an object's own content, so anyone holding the content can recompute the identifier and check it. There is no registry to query and no authority to trust. The same content always produces the same identifier, and any change to the content changes it.
