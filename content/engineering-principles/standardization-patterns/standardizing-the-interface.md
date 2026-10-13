@@ -1,6 +1,6 @@
 ---
 id: 1323756557
-title: Standardizing the interface
+title: Standardizing the interface 
 type: lecture
 order: 1
 faq:
