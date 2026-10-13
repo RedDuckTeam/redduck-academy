@@ -3,7 +3,7 @@ id: 1441863887
 title: Signed authorization and the permit pattern
 type: lecture
 order: 2
-faq:
+faq: 
   - question: How can someone act for me when I am not online?
     answer: >-
       You sign the authorization in advance with your private key, offline and at no cost.
