@@ -3,7 +3,7 @@ id: 1595960325
 title: The core and periphery pattern
 type: lecture
 order: 1
-faq:
+faq: 
   - question: Where do I draw the line between Core and Periphery?
     answer: >-
       Around the smallest piece of code that must touch the valuable state or enforce a rule
