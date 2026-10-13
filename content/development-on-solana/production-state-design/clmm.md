@@ -2,7 +2,7 @@
 id: 214
 title: CLMM
 type: lecture
-order: 30
+order: 30 
 faq:
   - question: Why does most of my money in a standard pool earn no fees?
     answer: >-
