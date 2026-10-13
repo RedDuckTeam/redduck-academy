@@ -3,7 +3,7 @@ id: 213
 title: Randomness on chain
 type: lecture
 order: 39
-faq:
+faq: 
   - question: Can a Solana program generate a random number on chain?
     answer: >-
       No. Every validator runs the transaction and must reach the same answer. A real random
