@@ -1,6 +1,6 @@
 ---
 id: 1064107034
-title: Why these principles matter
+title: Why these principles matter 
 type: lecture
 order: 2
 faq:
