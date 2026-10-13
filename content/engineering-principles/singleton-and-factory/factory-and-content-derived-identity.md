@@ -1,6 +1,6 @@
 ---
 id: 1441543678
-title: The factory pattern and content-derived identity
+title: The factory pattern and content-derived identity 
 type: lecture
 order: 2
 faq:
