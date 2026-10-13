@@ -6,7 +6,7 @@ order: 8
 faq:
   - question: What hardware does a validator need?
     answer: >-
-      A 12-core CPU and 256GB of RAM as a floor, several NVMe SSDs in RAID, and a 1 Gbps
+      A 12-core CPU and 256GB of RAM as a floor, several NVMe SSDs in RAID, and a 1 Gbps 
       symmetric connection, which runs to four figures a month. Fewer people can afford that,
       which is real centralization pressure. The bet is that hardware keeps getting cheaper.
   - question: Why is walking a linked list awkward in a Solana program?
