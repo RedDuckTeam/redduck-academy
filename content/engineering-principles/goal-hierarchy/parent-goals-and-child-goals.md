@@ -4,7 +4,7 @@ title: Parent goals and child goals
 type: lecture
 order: 1
 faq:
-  - question: How do I tell a parent goal from a child goal?
+  - question: How do I tell a parent goal from a child goal? 
     answer: >-
       Ask what each goal is for. A goal worth pursuing on its own sits near the parent. A goal
       worth pursuing only because it serves a bigger one is a child. In chess, winning is the
