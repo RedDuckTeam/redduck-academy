@@ -1,7 +1,7 @@
 ---
 id: 1079493066
 title: Bypassing a constraint instead of fighting it
-type: lecture
+type: lecture 
 order: 1
 faq:
   - question: What question finds the bypass?
