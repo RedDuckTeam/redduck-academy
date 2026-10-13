@@ -2,7 +2,7 @@
 id: 223
 title: Raffle
 type: review_task
-order: 40
+order: 40 
 ---
 
 The Raffle is a deceptively small program: deposit tokens to enter, more tokens means better odds, after the deadline a winner gets the whole pot. The interesting part is making "better odds proportional to deposit" actually true on chain, in a way that's verifiable, fair, and doesn't require the program to loop over thousands of entries to figure out who won.
