@@ -3,7 +3,7 @@ id: 270
 title: Break the system as an adversary
 type: review_task
 order: 2
----
+--- 
 
 Adversarial thinking means reasoning from the point of view of someone who wants to take value they are not owed, and doing it as a normal step in design rather than a separate audit. Assume one caller is rational, fully informed, and looking for a way through, and ask what they can do with each operation you expose.
 
