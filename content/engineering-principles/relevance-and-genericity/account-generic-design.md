@@ -3,7 +3,7 @@ id: 1498926163
 title: Account-generic design
 type: lecture
 order: 2
-faq:
+faq: 
   - question: What does an account-generic system store for each user?
     answer: >-
       Nothing. Everything it needs arrives with the request, and nothing about the caller
