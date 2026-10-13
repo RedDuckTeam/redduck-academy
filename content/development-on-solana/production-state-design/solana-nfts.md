@@ -2,7 +2,7 @@
 id: 225
 title: Solana NFTs
 type: lecture
-order: 29
+order: 29 
 faq:
   - question: What makes an SPL Token an NFT?
     answer: >-
