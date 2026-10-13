@@ -1,6 +1,6 @@
 ---
 id: 1078617174
-title: Thinking as a rational adversary
+title: Thinking as a rational adversary 
 type: lecture
 order: 1
 faq:
