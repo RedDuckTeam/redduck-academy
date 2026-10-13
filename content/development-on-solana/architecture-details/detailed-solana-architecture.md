@@ -2,7 +2,7 @@
 id: 218
 title: Detailed Solana architecture
 type: lecture
-order: 1
+order: 1 
 faq:
   - question: What are the main parts of Solana's architecture?
     answer: >-
