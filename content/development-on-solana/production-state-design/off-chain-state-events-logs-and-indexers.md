@@ -1,6 +1,6 @@
 ---
 id: 227
-title: "Off-chain state: events, logs, and indexers"
+title: "Off-chain state: events, logs, and indexers" 
 type: lecture
 order: 45
 faq:
