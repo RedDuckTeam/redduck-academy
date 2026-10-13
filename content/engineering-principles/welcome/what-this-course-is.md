@@ -3,7 +3,7 @@ id: 1543488442
 title: What this course is
 type: lecture
 order: 1
-faq:
+faq: 
   - question: Do I need to know blockchain to take this course?
     answer: >-
       No. Every principle is taught with examples from software, databases, networks,
