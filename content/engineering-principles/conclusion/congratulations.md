@@ -1,7 +1,7 @@
 ---
 id: 1175492070
 title: Congratulations
-type: lecture
+type: lecture 
 order: 1
 faq:
   - question: Which principles does this course teach?
