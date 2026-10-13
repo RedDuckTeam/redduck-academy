@@ -2,7 +2,7 @@
 id: 212
 title: Pyth price feeds
 type: lecture
-order: 7
+order: 7 
 faq:
   - question: Why can't my program just call a price API?
     answer: >-
