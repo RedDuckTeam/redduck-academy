@@ -23,7 +23,7 @@ faq:
       thousands of items, and a tiny proof answers whether a specific item is in there.
 ---
 
-> You have a list of one thousand things. Someone asks you "is this specific thing on your list?" You want to prove the answer is yes without sending them the whole list. You also want them to be unable to forge a "yes" for anything not actually on it. The data structure that solves this, in the cleverest possible way, is the Merkle tree. It's a structural primitive at the heart of every blockchain in existence, and once you see how it's built, you'll never need to memorise it again.
+> You have a list of one thousand things. Someone asks you "is this specific thing on your list?" You want to prove the answer is yes without sending them the whole list. You also want it to be impossible to forge a "yes" for anything not actually on it. The data structure that solves this is the Merkle tree. It's a structural primitive at the heart of most blockchains, and once you see how it's built, you'll never need to memorise it again.
 
 ## Deriving the structure
 
@@ -32,7 +32,7 @@ Start with the problem. You have eight items, A to H. You want a single short va
 1. **Tamper-evident.** Change any one of the eight items, and the summary changes. No way to swap items secretly.
 2. **Cheap to check a single item.** A verifier shouldn't have to download all eight to confirm `D` is in the set.
 
-A naive first attempt: hash the whole list. `summary = hash(A || B || C || D || E || F || G || H)`. This solves property 1: change anything, the hash changes. But it fails property 2. To verify that `D` is in the set, the verifier has to compute the hash of the entire concatenation, which means they need all eight items in the first place. We've saved nothing.
+A naive first attempt: hash the whole list. `summary = hash(A || B || C || D || E || F || G || H)`. This solves property 1: change anything and the hash changes. But it fails property 2. To verify that `D` is in the set, the verifier has to compute the hash of the entire concatenation, which means they need all eight items in the first place. We've saved nothing.
 
 Better idea: hash each item individually first, then hash the results in pairs, then hash those pair-hashes in pairs, and keep going until you're down to one value. That's a tree.
 
@@ -144,13 +144,13 @@ Better idea: hash each item individually first, then hash the results in pairs, 
 
 That's a Merkle tree. The bottom row is the original data. The level above is the hash of each item. The level above that is the hash of each adjacent pair. Keep going: each parent is the hash of the concatenation of its two children. The single value at the top is the **Merkle root**, and it's only 32 bytes regardless of how many items you started with.
 
-For 8 leaves the tree has 4 levels and a total of 15 hashes. For 1,000 leaves it would have 10 levels and about 2,000 hashes. The depth grows logarithmically with the number of leaves, which is the property that makes the whole structure efficient.
+For 8 leaves the tree has 4 levels and a total of 15 hashes. For 1,000 leaves it would have 11 levels and about 2,000 hashes. The depth grows logarithmically with the number of leaves, which is the property that makes the whole structure efficient.
 
 ## What the root commits to
 
 The root is a single short value that depends on *every* leaf in the tree. If you change one bit of `D`, then `h(D)` changes, then `h(CD)` changes, then `h(AB,CD)` changes, then the root changes. This is the avalanche effect from the hashing lesson: change one bit and the resulting hash looks completely different, and here that change propagates all the way up to the root. The root is a compact, tamper-evident commitment to the entire set of leaves.
 
-Two parties can confirm they have the same set of items by exchanging just the root. If their roots match, every byte of every leaf is identical. If the roots differ by even one bit, something somewhere on the tree differs. They don't have to compare the leaves directly. The 32 bytes of the root are doing all the work.
+Two parties can confirm they have the same set of items by exchanging just the root. If their roots match, every byte of every leaf is identical. If the roots differ by even one bit, something somewhere in the tree differs. They don't have to compare the leaves directly. The 32 bytes of the root are doing all the work.
 
 This is already useful on its own. Beyond the storage and bandwidth it saves, the real point is the structural property: one short hash commits to a large set. That is the foundation the next section builds on.
 
@@ -160,7 +160,7 @@ Now the operation that makes Merkle trees famous.
 
 Suppose you're the verifier. You know only the Merkle root. Someone else, the prover, has the whole tree and wants to convince you that item `D` is one of the leaves. How few hashes do they need to send you, and how can you check?
 
-The answer is they send you a single sequence of hashes called a **Merkle proof**. For `D` in our 8-leaf tree, the proof is exactly three hashes: `h(C)`, `h(AB)`, and `h(EF,GH)`.
+The answer is that they send you a single sequence of hashes called a **Merkle proof**. For `D` in our 8-leaf tree, the proof is exactly three hashes: `h(C)`, `h(AB)`, and `h(EF,GH)`.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Merkle proof path for leaf D in an 8-leaf Merkle tree</title><desc>Eight leaves A to H are hashed and paired upward through h(AB), h(CD), h(EF), h(GH) and further pairs until they reach the Merkle root. The highlighted path shows that proving D only needs h(C), h(AB), and h(EF,GH) combined with D's own hash chain up to the root.</desc>
   <!-- Leaves -->
@@ -274,16 +274,16 @@ The verification:
 3. They concatenate `h(C)` from the proof with their own `h(D)` and hash the result, producing `h(CD)`.
 4. They concatenate `h(AB)` from the proof with `h(CD)` and hash again, producing `h(AB,CD)`.
 5. They concatenate `h(AB,CD)` with `h(EF,GH)` from the proof and hash one more time, producing a value.
-6. If that final value equals the root they already trusted, `D` is in the set. If it doesn't, `D` is not in the set (or the proof is forged).
+6. If that final value equals the root they already trusted, `D` is in the set. If it doesn't, the proof fails: either `D` is not in the set, or the proof is wrong.
 
-Three hashes travel from the prover. The verifier does four hash operations: one to turn `D` into `h(D)`, then three more to combine up the path to the root. The other five leaves and their hashes never appear. For a tree with 1,000 leaves, the proof would be 10 hashes. For a tree with one billion leaves, the proof would still only be 30 hashes. That logarithmic scaling is the entire trick.
+Three hashes travel from the prover. The verifier does four hash operations: one to turn `D` into `h(D)`, then three more to combine up the path to the root. The other seven leaves never appear, and neither do most of their hashes. For a tree with 1,000 leaves, the proof would be 10 hashes. For a tree with one billion leaves, the proof would still only be 30 hashes. That logarithmic scaling is the entire trick.
 
-The verifier doesn't need to trust the prover. The hash function is doing the trust work: if the prover sends a wrong sibling hash, the final computed value won't match the root, and the proof fails. If the prover lies about which item they're proving (claims `D` was in the set when it wasn't), they can't construct a sequence of hashes that mathematically rolls up to the trusted root without breaking the hash function itself. This is the hash function's collision resistance: because finding two different inputs that produce the same hash is computationally infeasible, the prover cannot forge a path that leads to the real root.
+The verifier doesn't need to trust the prover. The hash function is doing the trust work: if the prover sends a wrong sibling hash, the final computed value won't match the root, and the proof fails. If the prover lies about an item being in the set (claims `D` was in the set when it wasn't), they can't construct a sequence of hashes that mathematically rolls up to the trusted root without breaking the hash function itself. This is the hash function's collision resistance: because finding two different inputs that produce the same hash is computationally infeasible, the prover cannot forge a path that leads to the real root.
 
 ## Why this matters for blockchains
 
-A blockchain is going to need a way to commit to large amounts of data, often thousands of items at a time, using a single short value. The reason is bandwidth and storage: not every participant in the network can afford to download everything. They need a way to ask "is my piece in there?" and get a cheap, verifiable yes-or-no answer.
+A blockchain is going to need a way to commit to large amounts of data, often thousands of items at a time, using a single short value. The reason is bandwidth and storage: not every participant in the network can afford to download everything. They need a way to ask "is my piece in there?" and get a cheap, verifiable answer.
 
 The Merkle tree is exactly the structure that solves this. The chain summarises a large collection of data with a single root hash. Anyone who has that root can later be convinced that one specific item belongs to that collection, with a tiny proof that scales with the depth of the tree rather than the size of the collection. However large the collection grows, the proof barely grows with it.
 
-You don't need to memorise where exactly this shows up yet. The lessons on Bitcoin will show you the first one: a single 32-byte value sitting inside every block that summarises every transaction inside it. From there, the same primitive turns up in cross-chain communication, in scaling protocols, in lightweight wallet designs, and in many other places the rest of the course will visit. The pattern to recognise: wherever a system needs to commit to a large set with a small hash and prove individual membership efficiently, there's a Merkle tree underneath.
+You don't need to memorise where exactly this shows up yet. The lessons on Bitcoin will show you the first example: a single 32-byte value sitting inside every block that summarises every transaction in it. From there, the same primitive turns up in cross-chain communication, in scaling protocols, in lightweight wallet designs, and in many other places the rest of the course will visit. The pattern to recognise: wherever a system needs to commit to a large set with a small hash and prove individual membership efficiently, there's usually a Merkle tree underneath.
