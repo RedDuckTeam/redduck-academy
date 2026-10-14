@@ -266,6 +266,35 @@ describe('svg attribute sanitization', () => {
     expect(renderSvg(attrs)?.getAttribute('style')).toBeNull()
   })
 
+  it('keeps dashed and capped strokes, which the corpus uses in 61 lessons', () => {
+    const line = render(
+      <MarkdownContent
+        source={
+          '<svg role="img" viewBox="0 0 10 10"><line x1="0" y1="0" x2="5" y2="5" ' +
+          'stroke-dasharray="6 4" stroke-dashoffset="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        }
+      />,
+    ).container.querySelector('line')
+    expect(line?.getAttribute('stroke-dasharray')).toBe('6 4')
+    expect(line?.getAttribute('stroke-dashoffset')).toBe('2')
+    expect(line?.getAttribute('stroke-linecap')).toBe('round')
+    expect(line?.getAttribute('stroke-linejoin')).toBe('round')
+  })
+
+  it('keeps marker-end pointing at its marker after ids are prefixed', () => {
+    const { container } = render(
+      <MarkdownContent
+        source={
+          '<svg role="img" viewBox="0 0 10 10"><defs><marker id="arr"><path d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>' +
+          '<line x1="0" y1="0" x2="5" y2="5" marker-end="url(#arr)"/></svg>'
+        }
+      />,
+    )
+    const id = container.querySelector('marker')?.id
+    expect(id).toMatch(/^user-content-/)
+    expect(container.querySelector('line')?.getAttribute('marker-end')).toBe(`url(#${id})`)
+  })
+
   // The compiled stylesheet ships .fixed/.inset-0/.z-50, so a class list rebuilds the same overlay.
   it('drops class, which no lesson uses', () => {
     expect(renderSvg('class="fixed inset-0 z-50"')?.getAttribute('class')).toBeNull()

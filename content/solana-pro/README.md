@@ -20,3 +20,13 @@ The course is written to the point. You won't read through formal, padded langua
 
 1. [What this course is](welcome/what-this-course-is.md)
 2. [Constraints behind patterns](welcome/constraints-behind-patterns.md)
+
+### 2. Permissionless execution
+
+1. [Untrusted executor](permissionless-execution/untrusted-executor.md)
+2. [Role inversion](permissionless-execution/role-inversion.md)
+
+### 3. State partitioning
+
+1. [Divide and conquer](state-partitioning/divide-and-conquer.md)
+2. [Complexity asymmetry](state-partitioning/complexity-asymmetry.md)
