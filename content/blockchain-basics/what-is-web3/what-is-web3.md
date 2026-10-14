@@ -20,44 +20,52 @@ faq:
       Not for the non-technical knowledge. The "blockchain basics course" assumes no technical knowledge, but the following courses are aimed strictly at developers with pre-requisite knowledge.
 ---
 
-Let's take a look at the three eras of the internet. 
+Let's look at the three eras of the Internet.
 
-## Web1: the read-only internet
+## Web1: the read-only Internet
 
-The first web was a static document library. You opened a page, you read what someone else had published. Maybe you posted on a forum. But mostly you consumed content by reading it. The infrastructure was relatively decentralized: anyone could run a server, anyone could publish, and no single company sat between you and the content. But the experience of the era was limited. You couldn't talk back, you couldn't collaborate, you couldn't build, you mostly just clicked links.
+The first web was a static document library. You'd open a page and read what someone else had published; maybe post on a forum too, but most of the time, you were consuming content, not creating it.
 
-This was the internet from roughly 1991 to about 2004. By the end of it, most people who used the internet read more than they wrote, because writing was hard: you needed your own server, your own software, your own audience. Almost nobody had all three.
+The infrastructure was relatively decentralized: anyone could run a server and publish an article, with no company standing between you and the content. But the experience itself was limited: you couldn't respond, collaborate, or build something with someone else. It was mostly clicking from link to link.
 
-## Web2: the read-write internet
+This was the Internet from roughly 1991 to 2004. By the end of that period, most people read far more than they wrote, because writing required its own server, its own software, its own audience. Almost nobody had all three.
 
-Then the platforms arrived. Facebook in 2004, YouTube in 2005, Twitter in 2006, Instagram in 2010. Suddenly anyone could publish without owning infrastructure. You wrote a post, the platform hosted it. You uploaded a video, the platform stored it and served it to the other users.
+## Web2: the read-write Internet
 
-This was a genuine revolution. The number of people publishing on the internet went from millions to billions within a decade. The cost of reaching an audience dropped to near zero, as you just needed to sign-up somewhere to post. A whole new type of jobs came into existence, because suddenly there was an audience large enough to support it.
+New platforms arrived: Facebook (2004), YouTube (2005), Twitter (2006), Instagram (2010). Anyone could publish without owning the infrastructure: people wrote posts and the platforms hosted them; people uploaded videos and the platforms stored and served them.
+
+This was a true revolution. The number of people publishing content went from millions to billions within a decade. The cost of reaching an audience dropped to near zero: all they had to do was sign up. New types of jobs emerged, built entirely on the attention of a large enough audience.
 
 But there was a price to it, and over time, it became impossible to ignore.
 
-Every post you wrote lived on a server owned by another company. It also tracked every single of your actions. Every minute of attention was sold to an advertiser. The platforms could change the rules at any time, demonetise your account, suspend you, ban you, lose your data or sell to someone else. Your followers were not your followers, but rather followers that the company allowed you to have on your account. Your identity was just a row in someone else's database, and you only got to keep it as long as the database operator allowed.
+The hosting platforms owned servers, which meant they had access to everything creators did. Every minute of attention was sold to an advertiser. The platforms could change the rules at any time: demonetise an account, suspend it, ban it, lose or sell data to someone else.
 
-For most users, that was fine. The cost was invisible, and the convenience was enormous. But for some categories of activity, especially anything involving money or freedom of speech, this trade-off was painful. By 2010s, a generation of developers was asking a question:
+A creator's followers were never really theirs; they were followers the platform allowed them to have. Their identity was just a row in a database, kept only as long as the database's operator allowed it.
 
-- What if the internet had a way for users to actually own things again, preserving the experience?
+For most users, that was fine. The cost was invisible, and the convenience was enormous. But for some categories of activity, especially anything involving money or freedom of speech, this trade-off was painful. By the 2010s, a generation of developers was asking one question:
 
-## Web3: the read-write-own internet
+- What if the Internet had a way for users to actually own things again, without losing the experience?
 
-Web3 is the answer. The single most important difference from web2 is that **ownership lives in the protocol rather than the platform**. Protocol here means 'set of rules' that everyone has to follow. When you hold a digital asset in your wallet, no platform sitting between you and the rest of the network can quietly take it away, like in Web2. Instead, this digital asset follows the rules that the entire network has set and hence it cannot be taken away. When you connect your wallet to a new application, you bring your identity and your history with you, the same way you bring your laptop from one office to another. When you publish, you publish to a network controlled in a decentralized and fair way, rather than to a single server hosted by a single company.
+## Web3: the read-write-own Internet
 
-This is not a thought experiment. The infrastructure has been live for a while now and the numbers are concrete:
+Web3 is the answer. The single most important difference from web2 is that **ownership lives in the protocol, not the platform**. Protocol here means a 'set of rules' that everyone has to follow.
 
-- More than **$300 billion** in stablecoin value, regularly moving through wallets and settling trillions of dollars of transfers each year.
-- Around **$100 billion** locked into decentralised financial protocols, providing lending, trading, and yield without any bank or broker involved.
+When you hold a digital asset in your wallet, no platform between you and the network can quietly take it away, as it can in Web2. The asset follows the rules the entire network has agreed on, and no change of rules can take it from you.
+
+When you connect your wallet to a new application, you bring your identity and your history with you, the same way you'd bring your own laptop from one office to another. When you publish, you publish to a network run in a decentralized, rule-based way, not to a single server hosted by a single company.
+
+This is not a thought experiment. The infrastructure has been live for years, and the numbers are concrete:
+
+- More than **$300 billion** in stablecoin value, regularly moving through wallets and settling trillions of dollars in transfers each year.
+- Around **$100 billion** locked into decentralised financial protocols: lending, trading, and generating yield, with no bank or broker involved.
 - Tens of millions of active wallet addresses transacting every month.
-- Developer activity in web3 has grown steadily for ten years, even through bear markets, long stretches of falling prices, when the price headlines suggested otherwise. The people building have not gone away.
-- Major companies, including ones you've heard of in every consumer category, are integrating with this infrastructure for payments, identity, and asset transfer.
+- Developer activity has grown steadily for a decade, even through bear markets (long stretches of falling prices) when the price headlines suggested otherwise. The people building never left.
+- Major companies, including ones you'd recognize from everyday consumer life, are integrating with infrastructure for payments, identity, and asset transfer.
 
-The infrastructure works. Real people use it for real things. The reason most developers haven't released anything on it yet is mostly that the tooling, the languages, and the mental models are different enough from web2 that getting started takes some work and mindset shift. This is what this academy is for.
+The infrastructure works. Real people use it for real things. Most developers just haven't built on it yet, mostly because the tooling, the languages, and the mental models are different enough from web2 that getting started takes real effort and a shift in mindset. That's what this academy is here for.
 
 ## What's in this course
 
-This course covers what blockchains and Web3 actually are, how the cryptographic primitives work, and Bitcoin basics. Other than that, there are also smart-contract development courses available for Ethereum and Solana. There is also an engineering course, which focuses on ideas that apply to all blockchains and software engineering rather than one specific chain and one language. What you learn here will hold up regardless of which chain you specialise in afterwards.
+This course covers what blockchains and Web3 actually are, Bitcoin basics, and how the cryptographic primitives work. Smart-contract development courses are also available, for Ethereum and Solana. And there's an engineering course focused on ideas that apply to all blockchains and software engineering, not just one chain and one language. What you learn here will hold up regardless of which chain you specialise in afterward.
 
-The next lesson introduces web3 as a layered ecosystem and zooms in on where blockchains specifically sit within it. Everything you've ever seen described as web3, from wallets to DeFi to NFTs to decentralised social networks, sits on top of blockchain infrastructure. The lesson after that, and the rest of the course, is about what that infrastructure actually is.
+The next lesson introduces Web3 as a layered ecosystem and zooms in on where blockchains specifically sit within it. Everything you've ever seen described as web3 (wallets, DeFi, NFTs, decentralised social networks) sits on top of blockchain infrastructure. The lesson after that, and the rest of the course, is about what that infrastructure actually is.
