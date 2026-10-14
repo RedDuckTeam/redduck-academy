@@ -30,7 +30,7 @@ faq:
       touching different coins can be validated in parallel.
 ---
 
-> There is one model of money so common in software that it is easy to mistake it for the only one. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how a bank account looks to its user, and how PayPal and every other traditional payment system look to theirs. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by the next. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.
+> There is one model of money so common in software that it is easy to mistake it for the only one. A balance is a number stored somewhere. You read the number to find out how much someone has. You change the number to move value around. The number lives in a database row, a struct field, an account object. This is how a bank account looks to its user, and how PayPal and every other traditional payment system look to theirs. It is also not how Bitcoin works. Bitcoin doesn't store balances. Bitcoin stores coins. Discrete, individual coins, each with a value and an owner, each created by one transaction and destroyed by a later one. Your balance is not a number that exists anywhere. It is a sum you compute by adding up the coins that happen to be yours. This lesson is about why Bitcoin makes that choice and what it buys.
 
 ## Two ways to track money
 
@@ -40,7 +40,7 @@ The first way is the **account model**, and it's the one almost every traditiona
 
 The second way is the **UTXO model**, and it's the one Bitcoin uses. The system doesn't keep a table of users and balances. It keeps a set of coins. Each coin has a specific value and a specific owner. To send money, you don't update any balances. You destroy some of your coins and create new ones for the recipient. To check a balance, you scan for every coin still belonging to you and add them up.
 
-UTXO stands for **Unspent Transaction Output**. Every coin in Bitcoin started life as the output of some past transaction and has not yet been spent by being used as the input of a later one. The set of every UTXO across the chain is what Bitcoin nodes actually track. There is no balance ledger. There is only the UTXO set.
+UTXO stands for **Unspent Transaction Output**. Every coin in Bitcoin started life as the output of some past transaction. A UTXO is a coin that has not yet been spent by being used as the input of a later one. The set of every UTXO across the chain is what Bitcoin nodes actually track. There is no balance ledger. There is only the UTXO set.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Account balance table compared to Bitcoin's UTXO set of coins</title><desc>On the left, the account model is a table of balances: Alice has 2.5 BTC, Bob has 0.8 BTC, Carol has 1.2 BTC; paying means updating two rows, and reading a balance means looking up a row. On the right, the UTXO model is a set of coins, such as a 1.0 BTC coin owned by Alice or a 0.3 BTC coin owned by Bob; paying means destroying some coins and creating new ones, and reading a balance means summing your coins.</desc>
   <!-- Account model column -->
@@ -98,7 +98,7 @@ UTXO stands for **Unspent Transaction Output**. Every coin in Bitcoin started li
   <text x="540" y="312" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">to read balance: sum your coins</text>
 </svg>
 
-In the account model, "Alice has 2.5 BTC" is a fact stored in one place. In the UTXO model, Alice has 2.5 BTC because she happens to hold two unspent coins worth 1.0 and 1.5. Her balance is a derived quantity that the system computes by summing her coins. The chain doesn't know who Alice is or what her total is. It just knows about those two specific coins.
+In the account model, "Alice has 2.5 BTC" is a fact stored in one place. In the UTXO model, Alice has 2.5 BTC because she happens to hold two unspent coins worth 1.0 and 1.5. Her balance is a derived quantity that her wallet computes by summing her coins. The chain doesn't know who Alice is or what her total is. It just knows about those two specific coins.
 
 ## How a payment actually works
 
@@ -148,7 +148,7 @@ Her transaction takes her 1.0 BTC coin as the input. That coin is destroyed in t
   <line x1="440" y1="160" x2="520" y2="170" stroke="#565653" stroke-width="2" marker-end="url(#arr42)"/>
 </svg>
 
-That second output, the one going back to Alice, is called a **change output**. It exists for exactly the same reason change exists in cash. If you owe someone three dollars and you only have a ten in your wallet, you don't tear the ten in pieces. You hand over the ten and the other party hands you back seven. UTXOs are the same. You don't split a coin. You hand the whole coin to the transaction and the transaction hands you a new, smaller coin in return.
+That second output, the one going back to Alice, is called a **change output**. It exists for exactly the same reason change exists in cash. If you owe someone three dollars and you only have a ten in your wallet, you don't tear the ten into pieces. You hand over the ten and the other party hands you back seven. UTXOs are the same. You don't split a coin. You hand the whole coin to the transaction and the transaction hands you a new, smaller coin in return.
 
 After this transaction settles, Alice no longer has her 1.0 BTC coin. That coin is destroyed forever. In its place she has a fresh 0.699 BTC coin she didn't have a moment ago, and Bob has a fresh 0.3 BTC coin he didn't have either. The chain's UTXO set has changed: one coin removed, two coins added.
 
@@ -158,11 +158,11 @@ The previous section was the conceptual picture. The structural picture is one l
 
 A transaction is a small record with three significant parts: a list of inputs, a list of outputs, and some housekeeping fields like a version number and an optional time lock.
 
-Each **input** has two essential pieces. The first is a pointer back to the specific UTXO being spent. That pointer is the **txid** of the past transaction that created the coin, plus an index into that transaction's output list (called **vout** for "output index"). Together those two values uniquely identify a coin anywhere in the chain's history. The second piece is the data that satisfies the coin's lock, called the **unlocking script** or **scriptSig**, typically a signature and the public key that the signature was produced from.
+Each **input** has two essential pieces. The first is a pointer back to the specific UTXO being spent. That pointer is the **txid** (the transaction ID, a hash that identifies the transaction) of the past transaction that created the coin, plus an index into that transaction's output list (called **vout** for "output index"). Together those two values uniquely identify a coin anywhere in the chain's history. The second piece is the data that satisfies the coin's lock, called the **unlocking script** or **scriptSig**, typically a signature and the public key the signature can be verified against.
 
 Each **output** has two essential pieces. The first is the value of the new coin, stored as an integer in **satoshis** (the smallest unit of Bitcoin, one hundred-millionth of one BTC). The second is the **locking script** or **scriptPubKey**, a small program defining the condition the future spender will have to satisfy. The typical condition is "prove ownership of the private key corresponding to this address."
 
-The "small program" framing is worth pausing on. Each locking condition is written in a stack-based language called **Bitcoin Script**, deliberately limited so that every node can run it cheaply and deterministically. No loops. No external data. No shared state. The language only exists to answer one question per transaction: is this spend allowed, yes or no? The most common locking pattern, used in almost every routine payment, is called **Pay-to-Public-Key-Hash**. It locks the coin to a specific public key hash, and the spender unlocks it by providing a signature plus their public key. Other patterns exist, but the shape is always the same: the output sets a condition, the input satisfies it. Bitcoin's intentional choice to keep this language small is one of its defining design decisions, and we'll come back to it when we look at the trade-offs later.
+The "small program" framing is worth pausing on. Each locking condition is written in a stack-based language called **Bitcoin Script**, deliberately limited so that every node can run it cheaply and deterministically. No loops. No external data. No shared state. The language only exists to answer one question per input: is this spend allowed, yes or no? The classic locking pattern, long used for routine payments, is called **Pay-to-Public-Key-Hash**. It locks the coin to a specific public key hash, and the spender unlocks it by providing a signature plus their public key. Other patterns exist, but the shape is always the same: the output sets a condition, the input satisfies it. Bitcoin's intentional choice to keep this language small is one of its defining design decisions, and we'll come back to it when we look at the trade-offs later.
 
 <svg role="img" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction input referencing output 1 of an earlier transaction</title><desc>An earlier transaction has three outputs, and output 1 sends 1.0 BTC to Alice. Alice's new transaction has input 0, which points back to that output using prev_txid and prev_vout, and unlocks it with an unlocking script containing a signature and public key.</desc>
   <defs>
@@ -202,7 +202,7 @@ The "small program" framing is worth pausing on. Each locking condition is writt
 
 This pointer-based structure is why the chain is best thought of as a directed graph rather than a list of balances. Every coin in existence traces back through a chain of references all the way to a mining reward, and every transaction is a node in that graph that consumes some incoming edges and produces some outgoing ones.
 
-One detail worth flagging: the fee paid to the miner is not its own field in the transaction. It's computed implicitly as the difference between the total input value and the total output value. If a transaction has 1.0 BTC of inputs and 0.999 BTC of outputs, the 0.001 BTC difference goes to whoever includes the transaction in a block. This is one place where developers writing transaction-construction code go wrong: forget to leave a fee, and your transaction either gets rejected or pays an enormous one to the miner.
+One detail worth flagging: the fee paid to the miner is not its own field in the transaction. It's computed implicitly as the difference between the total input value and the total output value. If a transaction has 1.0 BTC of inputs and 0.999 BTC of outputs, the 0.001 BTC difference goes to whoever includes the transaction in a block. This is one place where developers writing transaction-construction code go wrong. Forget to leave a fee, and your transaction gets rejected. Forget the change output, and the whole difference goes to the miner as an enormous fee.
 
 ## Why this is not as strange as it looks
 
@@ -210,15 +210,15 @@ If you're meeting the UTXO model for the first time, your reaction is probably "
 
 The answer goes back to the Bitcoin design philosophy lesson. Bitcoin is designed for a network where there's no operator, every node has to validate every transaction independently, and the validation has to be cheap and deterministic. UTXOs are a way of structuring state that makes that validation easy.
 
-To validate a UTXO transaction, a node has to check three things. The inputs exist as unspent outputs in the current UTXO set. The signature on each input is valid against the coin's owner condition. The output values add up to no more than the input values. Three local checks. Each one is independent of everything else happening on the chain. There's no global table to consult, no balance to scan, no race condition to worry about. Just three lookups and some arithmetic.
+To validate a UTXO transaction, a node has to check three things. The inputs exist as unspent outputs in the current UTXO set. The signature on each input is valid against the coin's locking condition. The output values add up to no more than the input values. Three local checks. Each one is independent of everything else happening on the chain. There's no global table to consult, no balance to scan, no race condition to worry about. Just three lookups and some arithmetic.
 
-The same validation in an account model has to look up balances, possibly across many accounts, and worry about ordering: if Alice tries to spend her balance in two different transactions at almost the same time, the system has to decide which one wins. The UTXO model can't have that problem because the coins themselves are the unit of state, and each coin can only be spent once.
+The same validation in an account model has to look up balances, possibly across many accounts, and worry about ordering: if Alice tries to spend her balance in two different transactions at almost the same time, the system has to decide which one wins. The UTXO model handles this more simply, because the coins themselves are the unit of state, and each coin can only be spent once.
 
 This local-validation property pays off in three more ways.
 
 **Parallelism.** Two transactions that touch different UTXOs are independent. The network can validate them in parallel without coordination. An account-model transaction touching Alice's balance and another transaction also touching Alice's balance cannot be processed in parallel without locking.
 
-**Privacy.** Each coin has its own owner condition. The chain doesn't have a permanent identifier for a user. Alice can have a hundred different addresses, each holding different coins, and there's no on-chain record that they're all hers. In an account model, every transaction Alice makes is tied to the same account identifier, so her whole history is linked together. The UTXO model has no such per-user identifier, so it never forces that link.
+**Privacy.** Each coin has its own locking condition. The chain doesn't have a permanent identifier for a user. Alice can have a hundred different addresses, each holding different coins, and there's no on-chain record that they're all hers. In an account model, every transaction Alice makes is tied to the same account identifier, so her whole history is linked together. The UTXO model has no such per-user identifier, so it never forces that link.
 
 **Audit clarity.** Every coin's history can be traced exactly. This specific coin was created by this transaction, which was funded by these earlier coins, which were created by these even earlier transactions, all the way back to a mining reward. The provenance is built into the data structure rather than bolted on as an audit log.
 
