@@ -29,11 +29,11 @@ faq:
       issuance slows and eventually stops. No central party can change the rule.
 ---
 
-> Bitcoin is the first chain you'll meet in detail, and the one every later chain measures itself against, because it came first and proved the model worked. To understand any later chain, you start by understanding what Bitcoin chose and why. The design choices look strange in isolation. Ten-minute blocks. A scripting language that can't loop. A money supply hardcoded to stop at twenty-one million. None of these are arbitrary. Each one falls out of a tight chain of reasoning that starts with a single question and ends with a working system. This lesson walks that reasoning end to end.
+> Bitcoin is the first chain you'll meet in detail, and the one every later chain measures itself against, because it came first and proved the model worked. To understand any later chain, you start by understanding what Bitcoin chose and why. The design choices look strange in isolation. Ten-minute blocks. A scripting language that can't loop. A money supply hardcoded to stop at twenty-one million. None of these are arbitrary. Each one falls out of a tight chain of reasoning that starts with a single question and ends with a working system. This lesson walks through that reasoning end to end.
 
 ## The question
 
-In late 2008, an unsigned paper appeared on a cryptography mailing list, proposing a system that almost everyone with the relevant background would have said was impossible the month before. The author used the pseudonym Satoshi Nakamoto, and the paper was titled ["Bitcoin: A Peer-to-Peer Electronic Cash System."](https://bitcoin.org/bitcoin.pdf)
+In late 2008, a paper by an unknown author appeared on a cryptography mailing list, proposing a system that almost everyone with the relevant background would have said was impossible the month before. The author used the pseudonym Satoshi Nakamoto, and the paper was titled ["Bitcoin: A Peer-to-Peer Electronic Cash System."](https://bitcoin.org/bitcoin.pdf)
 
 The title contains the whole question. Each word matters.
 
@@ -47,29 +47,29 @@ Bitcoin's contribution was an answer to this question that nobody had thought of
 
 ## The constraints that fell out
 
-Once you commit to "no central operator," a whole cascade of constraints follows. There's one meta-constraint that motivates all the others: the system has to survive adversarial conditions. With no operator to ban attackers, the system has to keep running while bad actors try to break it from the inside. Liars, cheaters, attackers with millions of dollars to spend on breaking it: all welcome to participate, because there's no gatekeeper to keep them out. Every design choice that follows is made under the assumption that an unknown fraction of participants are hostile.
+Once you commit to "no central operator," a whole cascade of constraints follows. There's one meta-constraint that motivates all the others: the system has to survive adversarial conditions. With no operator to ban attackers, the system has to keep running while bad actors try to break it from the inside. Liars, cheaters, attackers with millions of dollars to spend on breaking it: all free to participate, because there's no gatekeeper to keep them out. Every design choice that follows is made under the assumption that an unknown fraction of participants are hostile.
 
-That meta-constraint produces five operational ones.
+That meta-constraint produces five more specific ones.
 
 **Sybil resistance without identity.** In any open system, the obvious attack is to create a million fake participants and outvote the honest ones. If the system uses identity to prevent this, it needs a way to identify people, which requires a central authority. So the system can't use identity. It needs some other way to make participation costly enough that creating a million fake participants is not economically feasible.
 
 **Public verifiability.** Without a trusted operator to vouch for transactions, every participant has to be able to verify every transaction themselves. This means the rules must be simple enough to compute, the data must be available to everyone, and the verification must produce the same answer on every honest node. No "trust me, I'm the bank."
 
-**Convergence despite network delay.** Information traveling across the internet doesn't arrive everywhere at the same instant. Two participants on opposite sides of the world might see different events first. The system has to handle this gracefully, with all honest participants eventually agreeing on the same history, despite never having a synchronized clock or instant global broadcast.
+**Convergence despite network delay.** Information travelling across the internet doesn't arrive everywhere at the same instant. Two participants on opposite sides of the world might see different events first. The system has to handle this gracefully, with all honest participants eventually agreeing on the same history, despite never having a synchronised clock or instant global broadcast.
 
 **Censorship resistance.** If any single party can prevent a transaction from being processed, that party is effectively the operator. The system has to be structured so that no single point of failure can stop anyone from transacting.
 
 **Permanence.** A transaction that settled yesterday has to be just as settled tomorrow. There's no operator to "reverse" it. If the system can selectively forget or rewrite history, the entire trustless guarantee evaporates.
 
-Each of these constraints kills a category of possible designs. A system with a membership list violates Sybil resistance without identity. A system with encrypted state violates public verifiability. A system that relies on a global synchronous clock violates convergence under delay. A system where a gatekeeper can drop transactions violates censorship resistance. A system with mutable history violates permanence. All of these are out.
+Each of these constraints kills a category of possible designs. A system with a membership list violates Sybil resistance without identity. A system with encrypted state violates public verifiability. A system that relies on a global synchronous clock violates convergence despite network delay. A system where a gatekeeper can drop transactions violates censorship resistance. A system with mutable history violates permanence. All of these are out.
 
 What's left, after killing every design that fails any constraint, is a very narrow space. Bitcoin's specific shape is what fits inside it.
 
 ## The choices that fell out
 
-Now the constraints are the input and Bitcoin's design is the output. Each major choice in Bitcoin's design is a direct response to a specific constraint.
+Now the constraints are the input and Bitcoin's design is the output. Most major choices in Bitcoin's design are a direct response to a specific constraint.
 
-<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin's five constraints mapped to their design choices</title><desc>A table lists five constraints on trustless peer-to-peer cash next to the Bitcoin design choice that answers each one, with arrows connecting each pair. Permanence leads to an append-only hash-linked log, Sybil resistance without identity leads to proof of work, public verifiability leads to simple deterministic validation, convergence under network delay leads to slow block times, and censorship resistance leads to an open permissionless network.</desc>
+<svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin's five constraints mapped to their design choices</title><desc>A table lists five constraints on trustless peer-to-peer cash next to the Bitcoin design choice that answers each one, with arrows connecting each pair. Permanence leads to an append-only hash-linked log, Sybil resistance without identity leads to proof of work, public verifiability leads to simple deterministic validation, convergence despite network delay leads to slow block times, and censorship resistance leads to an open permissionless network.</desc>
   <defs>
     <marker id="arr41" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
@@ -120,7 +120,7 @@ Now the constraints are the input and Bitcoin's design is the output. Each major
 
 <!-- Row 4 -->
   <rect x="40" y="310" width="280" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="180" y="330" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">Convergence under network delay</text>
+  <text x="180" y="330" text-anchor="middle" font-size="12" fill="#000000" font-weight="bold">Convergence despite network delay</text>
   <text x="180" y="348" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">no synchronized global clock</text>
 
 <line x1="320" y1="335" x2="400" y2="335" stroke="#565653" stroke-width="2" marker-end="url(#arr41)"/>
@@ -147,13 +147,13 @@ Now the constraints are the input and Bitcoin's design is the output. Each major
 
 **Sybil resistance comes from proof of work.** The right to add to the ledger is sold to whoever can demonstrate the most computational work. Computation costs electricity. Electricity costs the same regardless of how many identities you control. A million fake participants pay a million times the bill. This is the answer to Sybil resistance without identity, and it's specifically a hardware-and-energy answer to a problem that previous designs tried to solve with cryptography alone.
 
-**Validation is deterministic and simple.** Every transaction can be checked by running a small piece of code against the chain's state. The code is intentionally not Turing-complete. There are no loops. There is no recursion. There is no external state. This is the answer to public verifiability: every node, anywhere, running honest software, reaches the same answer on the same input.
+**Validation is deterministic and simple.** Every transaction can be checked by running a small piece of code, written in Bitcoin's scripting language (called Script), against the chain's state. The code is intentionally not Turing-complete. There are no loops. There is no recursion. There is no external state. This is the answer to public verifiability: every node, anywhere, running honest software, reaches the same answer on the same input.
 
-**Block times are slow on purpose.** Ten minutes between blocks is not a performance choice. It's a margin of safety for the network. A new block has to propagate to most of the planet before the next one is produced, so that everyone is building on the same most recent block, the tip of the chain. Faster block times mean more chain forks and more wasted work. This is the answer to convergence under delay.
+**Block times are slow on purpose.** Ten minutes between blocks is not a performance choice. It's a margin of safety for the network. A new block has to propagate to most of the planet before the next one is produced, so that everyone is building on the same most recent block, the tip of the chain. Faster block times mean more chain forks and more wasted work. This is the answer to convergence despite network delay.
 
-**The money supply is capped.** Twenty-one million bitcoins, ever. Block rewards halve every 210,000 blocks, which is about every four years, so the rate of new issuance slows over time and eventually stops. This is not a technical constraint of the underlying machinery. It's a deliberate economic choice, intended to make Bitcoin a credible store of value in a world where every other currency can be inflated by whoever issues it. Whether that choice was right is a debate for another time. That the choice is deliberate, and built into the protocol so that no one can change it, is what matters here.
+**The money supply is capped.** Twenty-one million bitcoins, ever. Block rewards halve every 210,000 blocks, which is about every four years, so the rate of new issuance slows over time and eventually stops. This is not a technical constraint of the underlying machinery. It's a deliberate economic choice, intended to make Bitcoin a credible store of value in a world where every other currency can be inflated by whoever issues it. Whether that choice was right is a debate for another time. That the choice is deliberate, and built into the protocol so that no single party can change it, is what matters here.
 
-**The system changes slowly.** No central party can update the rules. Any change has to be accepted by the people who run nodes. They have strong reasons to be conservative. The system is intentionally hard to upgrade, and developers have a strong deference to backwards compatibility because anything else risks breaking the trustlessness that's the whole point.
+**The system changes slowly.** No central party can update the rules. Any change has to be accepted by the people who run nodes. They have strong reasons to be conservative. The system is intentionally hard to upgrade, and developers put a high priority on backwards compatibility because anything else risks breaking the trustlessness that's the whole point.
 
 Every later lesson is going to keep coming back to this list. Why does Bitcoin use a model where coins are tracked individually rather than as account balances? Survival under adversarial conditions and public verifiability. Why is Script intentionally limited? Public verifiability and validation simplicity. Why is the block reward halving? Permanence of the monetary policy. Once you have the constraints in your head, the answers stop being arbitrary.
 
@@ -161,6 +161,6 @@ Every later lesson is going to keep coming back to this list. Why does Bitcoin u
 
 The design has costs. They're worth naming up front because the lessons that follow will not pretend they don't exist.
 
-Bitcoin is slow. Settlement takes minutes for a payment and hours for high-value transactions. Bitcoin is expensive at scale, because every node has to validate every transaction and there's a hard limit on how many can fit in a block. Bitcoin is inflexible. The intentional restrictions on Script mean it can't be used to build the complex applications that later chains support. Bitcoin is conservative. Changes that other chains release in months take Bitcoin years, sometimes decades.
+Bitcoin is slow. Settlement takes minutes for a payment and hours for high-value transactions. Bitcoin is expensive at scale, because every node has to validate every transaction and there's a hard limit on how many can fit in a block. Bitcoin is inflexible. The intentional restrictions on Script mean it can't be used to build the complex applications that later chains support. Bitcoin is conservative. Changes that other chains release in months take Bitcoin years, sometimes more than a decade.
 
 These are not bugs. They are the cost of the trustlessness the whole system is built around. Other chains made different trades, and the rest of this course visits some of them. From here, the question is how the specific Bitcoin design works, top to bottom.
