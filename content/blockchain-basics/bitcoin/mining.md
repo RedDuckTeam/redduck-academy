@@ -43,9 +43,9 @@ A transaction sitting in a wallet is just a string of bytes. A transaction sitti
 
 A block is a batch of transactions, plus a small header that gives the batch an identity and connects it to the previous block in the chain. Anyone running mining software is competing to be the one who builds the next block. The competition is the proof-of-work puzzle, and only the winner gets to add to the chain.
 
-The winner gets two things in return for their work. First, all of the transaction fees from the transactions they bundled into the block. Second, a fresh amount of newly-created BTC, called the **block subsidy**, which is currently 3.125 BTC and halves every four years on a fixed schedule. Together these two things are called the **block reward**, and they're the only reason mining happens at all. Without the reward, there would be no incentive to spend electricity on hashing.
+The winner gets two things in return for their work. First, all of the transaction fees from the transactions they bundled into the block. Second, a fresh amount of newly created BTC, called the **block subsidy**, which is currently 3.125 BTC and halves roughly every four years on a fixed schedule. Together these two things are called the **block reward**, and they're the only reason mining happens at all. Without the reward, there would be no incentive to spend electricity on hashing.
 
-The pattern of one new block roughly every ten minutes is a deliberate choice introduced in an earlier lesson. Slow block times leave room for new blocks to reach most of the network before the next one is produced, which keeps the network converging on the same chain. Faster blocks would mean more accidental forks. Ten minutes is conservative on purpose.
+The pattern of one new block roughly every ten minutes is a deliberate choice explained in an earlier lesson. Slow block times leave room for new blocks to reach most of the network before the next one is produced, which keeps the network converging on the same chain. Faster blocks would mean more accidental forks. Ten minutes is conservative on purpose.
 
 ## What's inside a block
 
@@ -127,7 +127,7 @@ Each block header packs six fields into exactly 80 bytes.
 
 Take a closer look at three of these because they carry most of the meaning.
 
-**The prev_block_hash** is the hash of the previous block's header. This is what makes the chain a chain: every block points backwards to one specific predecessor by hash. Change anything in any past block, even one bit of one transaction, and the Merkle root in that block's header changes, which changes that block's hash, which means every block built on top of it has the wrong prev_block_hash and the entire later chain is invalidated. This is the structural source of permanence.
+**The prev_block_hash** is the hash of the previous block's header. This is what makes the chain a chain: every block points backwards to one specific predecessor by hash. Change anything in any past block, even one bit of one transaction, and the Merkle root in that block's header changes, which changes that block's hash, which means the next block's prev_block_hash no longer matches and the entire later chain is invalidated. This is the structural source of permanence.
 
 **The merkle_root** is a single 32-byte commitment to every transaction in this block. It's computed by building a Merkle tree over the transaction list and taking the root. This is why the header doesn't need to grow with the block: no matter how many thousands of transactions are in the block, the commitment to all of them fits in 32 bytes. A light client can ask for a Merkle proof that a specific transaction is in this block, and verify the proof against the merkle_root in the header, without ever downloading the rest of the block.
 
@@ -141,7 +141,7 @@ Now the puzzle itself. Bitcoin's proof-of-work puzzle has a clean statement.
 
 That's it. That's the whole puzzle.
 
-The "treated as a number" framing matters. A SHA-256 hash is 32 bytes, which is 64 hex digits when written out. Treating that hex string as a single very large number, the puzzle is just to make that number small. And the easiest way to make a number small in hex notation is to have it start with zeros. A hash like `8a4f2e9c...` is huge. A hash like `0000abc...` is much smaller. A hash like `00000000000000abc...` is tiny.
+The "treated as a number" framing matters. A SHA-256 hash is 32 bytes, which is 64 hex digits when written out. If you treat that hex string as a single very large number, the puzzle is just to make that number small. And the easiest way to make a number small in hex notation is to have it start with zeros. A hash like `8a4f2e9c...` is huge. A hash like `0000abc...` is much smaller. A hash like `00000000000000abc...` is tiny.
 
 So in practice, what miners are looking for is a hash that starts with a specific number of leading zero digits. Today, the target requires roughly 20 leading zero hex digits at the front of the hash before it qualifies. A miner who gets 18 leading zeros has missed and has to try a different nonce. A miner who gets 20 or more has found a winning block.
 
@@ -215,17 +215,19 @@ Three properties of the puzzle make the whole system work.
 
 **The puzzle is verifiable instantly.** Once a miner publishes a winning nonce, any node can hash the header once, compare to the target, and confirm in microseconds. Hard to solve, trivial to check. This asymmetry is what lets the network agree quickly on which miner won.
 
-**The puzzle is tied to a specific block.** The hash inputs include the prev_block_hash and the merkle_root, so a winning nonce for one block doesn't transfer to any other block. The proof of work is bound to this exact block on this exact chain. Reorganising a winning nonce into a different chain is impossible.
+**The puzzle is tied to a specific block.** The hash inputs include the prev_block_hash and the merkle_root, so a winning nonce for one block doesn't transfer to any other block. The proof of work is bound to this exact block on this exact chain. Reusing a winning nonce on a different chain is impossible.
 
 ## Mining pools
 
-The puzzle's difficulty has an important consequence. A miner with a small share of global hashpower finds blocks rarely. With the network running at roughly 10²¹ hashes per second, an individual miner running modest hardware at a few terahashes per second would, on average, wait decades between finding a block. The reward when one finally lands is the same 3.125 BTC plus fees as anyone else's, but waiting decades for any income is not how a business runs. The standard response is **mining pools**. A pool operator builds a candidate block template and hands the header out to each connected miner along with the network's difficulty target. Each miner hashes nonces against that template exactly as they would solo. When a miner finds a hash that's below a much easier **share target**, easier than the real network target by some configurable factor, it submits that share to the operator as evidence of work done. The pool counts shares from everyone, and when one of the submitted hashes happens to also be below the real network target, the pool publishes the block and splits the reward in proportion to how many shares each miner contributed during the round. The participating miner's income changes from "3.125 BTC every several decades" to "a small payout every day," and practically every commercial miner today operates this way.
+The puzzle's difficulty has an important consequence. A miner with a small share of global hashpower finds blocks rarely. With the network running at roughly 10²¹ hashes per second, an individual miner running modest hardware at a few terahashes per second would, on average, wait thousands of years between finding a block. The reward when one finally lands is the same 3.125 BTC plus fees as anyone else's, but waiting that long for any income is not how a business runs.
 
-The cost is a centralization concern. A handful of large pools together control most of Bitcoin's hashpower at any given time. The pool operator is the one who decides which transactions go into the block template, so the operator effectively controls block contents on behalf of all the miners pointed at them. The underlying miners can switch pools if an operator misbehaves, and switching is fast with no lock-in, but the day-to-day power to censor or include transactions sits with a small number of pool operators rather than with the thousands of individual miners. This is one of the most-discussed structural tensions in Bitcoin and there's no clean fix to it.
+The standard response is **mining pools**. A pool operator builds a candidate block template and hands the header out to each connected miner along with the network's difficulty target. Each miner hashes nonces against that template exactly as they would solo. When a miner finds a hash that's below a much easier **share target** (easier than the real network target by some configurable factor), it submits that share to the operator as evidence of work done. The pool counts shares from everyone, and when one of the submitted hashes happens to also be below the real network target, the pool publishes the block and splits the reward in proportion to how many shares each miner contributed during the round. The participating miner's income changes from "3.125 BTC once in thousands of years" to "a small payout every day," and practically every commercial miner today operates this way.
+
+The cost is a centralisation concern. A handful of large pools together control most of Bitcoin's hashpower at any given time. The pool operator is the one who decides which transactions go into the block template, so the operator effectively controls block contents on behalf of all the miners pointed at them. The underlying miners can switch pools if an operator misbehaves, and switching is fast with no lock-in, but the day-to-day power to censor or include transactions sits with a small number of pool operators rather than with the thousands of individual miners. This is one of the most-discussed structural tensions in Bitcoin and there's no clean fix to it.
 
 ## The coinbase transaction and the supply schedule
 
-Every block has a special first transaction called the **coinbase transaction**. Unlike every other transaction in Bitcoin, the coinbase has no inputs from any prior UTXO. It creates value from nothing. The miner sets the value of its single output to whatever the protocol's current block subsidy is, plus the total fees from every other transaction in the block, and sends that to an address the miner controls.
+Every block has a special first transaction called the **coinbase transaction**. Unlike every other transaction in Bitcoin, the coinbase has no inputs from any prior UTXO. It creates value from nothing. The miner sets the value of its output to whatever the protocol's current block subsidy is, plus the total fees from every other transaction in the block, and sends that to an address the miner controls.
 
 This is the only mechanism that ever creates new BTC. Every bitcoin in circulation was originally minted as the output of some coinbase transaction by some miner at some point in the past.
 
@@ -278,16 +280,16 @@ The block subsidy starts at 50 BTC and halves every 210,000 blocks, which is rou
   <text x="360" y="305" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Asymptotically approaches zero around year 2140. Total supply caps at 21 million.</text>
 </svg>
 
-This schedule is enforced by the protocol. There's no governance body that can change it. A miner who tries to publish a block with an oversize coinbase output will have that block rejected by every honest node on the network. The constraint is structural.
+This schedule is enforced by the protocol. There's no governance body that can change it. A miner who tries to publish a block with an oversized coinbase output will have that block rejected by every honest node on the network. The constraint is structural.
 
-Around the year 2140 the subsidy will drop to zero, and miners will be compensated only by transaction fees. The 21-million-coin cap follows from this halving schedule: each halving issues half as much as the previous, so the total approaches 21 million but never exceeds it. The cap isn't a separate rule. It's a consequence of the curve.
+Around the year 2140 the subsidy will drop to zero, and miners will be compensated only by transaction fees. The 21-million-coin cap follows from this halving schedule: each period between halvings issues half as much as the previous one, so the total approaches 21 million but never exceeds it. The cap isn't a separate rule. It's a consequence of the curve.
 
 ## Difficulty adjustment
 
 One last mechanism keeps the system stable: the difficulty adjustment.
 
-The proof-of-work target is what determines how hard it is to find a winning nonce. If global hashing power doubles overnight, and the target stays the same, blocks start coming faster than ten minutes apart. If global hashing power crashes, blocks come slower.
+The proof-of-work target is what determines how hard it is to find a winning nonce. If global hashing power doubles overnight and the target stays the same, blocks start coming faster than ten minutes apart. If global hashing power crashes, blocks come slower.
 
 Either situation is bad for the network. So every 2,016 blocks (about every two weeks), every node recomputes the target. The recomputation is simple: if the last 2,016 blocks took longer than two weeks to produce, the target is loosened. If they took less, the target is tightened.
 
-The effect is that long-run block times stay close to ten minutes regardless of how much hashing power is pointed at the network. The difficulty has risen by roughly a factor of 100 trillion since Bitcoin launched in 2009. The block time has stayed at ten minutes the whole way.
+The effect is that long-run block times stay close to ten minutes regardless of how much hashing power is pointed at the network. The difficulty has risen by roughly a factor of 100 trillion since Bitcoin launched in 2009. The block time has stayed around ten minutes the whole way.
