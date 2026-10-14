@@ -5,20 +5,20 @@ type: test
 order: 8
 ---
 
-## Before you start:
+## Before you start
 
-This test checks whether you actually understand the cryptography building blocks (hashes, encoding, encryption, key pairs) or just remember the words. Several questions deliberately offer plausible-sounding wrong answers, the kind a reader who skimmed the lessons would pick. Read each option carefully before answering.
+This test checks whether you actually understand the cryptography building blocks (hashes, encryption, key pairs, signatures, seed phrases, Merkle trees) or just remember the words. Several questions deliberately offer plausible-sounding wrong answers, the kind a reader who skimmed the lessons would pick. Read each option carefully before answering.
 
 <!-- q:6a0b8a94f4c0093cef270ff6 -->
 Which of the following are real cryptographic properties of hash functions like SHA-256? (Select all that apply.)
 
-- [x] Hashes are easy to verify  <!-- a:6a0b8ab6f4c0093cef270ff7 -->
+- [x] Hashes are easy to verify.  <!-- a:6a0b8ab6f4c0093cef270ff7 -->
 - [x] The same input always produces the same output.  <!-- a:6a0b8acbf4c0093cef270ff8 -->
 - [ ] Hashing hides the original data, which is what makes it secure for sensitive information.  <!-- a:6a0b8ad1f4c0093cef270ff9 -->
 - [ ] Different inputs always produce different outputs.  <!-- a:6a0b8ec8f4c0093cef27100b -->
 
 <!-- q:6a0b8addf4c0093cef270ffb -->
-A blockchain block contains 10,000 transactions, summarized into a single Merkle root. Someone gives you one transaction and a Merkle proof that it belongs in the block. How many hashes does that proof contain?
+A blockchain block contains 10,000 transactions, summarised into a single Merkle root. Someone gives you one transaction and a Merkle proof that it belongs in the block. How many hashes does that proof contain?
 
 - [ ] 1 hash  <!-- a:6a0b8af5f4c0093cef270ffc -->
 - [ ] 13 hashes  <!-- a:6a0b8b0cf4c0093cef270ffd -->
@@ -55,7 +55,7 @@ Alice signed a message with her private key last week. Today she sends you the s
 <!-- q:6a0b9dcbf4c0093cef271014 -->
 Ten of the twelve words in your seed phrase leak. Is that wallet still safe?
 
-- [ ] Yes. Guessing the two missing words means trying 2048 x 2048 combinations, which is too many to brute-force.  <!-- a:6a0b9f8af4c0093cef271015 -->
-- [x] Only if you protected it with a BIP39 passphrase, a separate secret that is not one of the twelve words. That passphrase is what the attacker still lacks.  <!-- a:6a0b9fa0f4c0093cef271016 -->
+- [ ] Yes. Guessing the two missing words means trying 2048 × 2048 combinations, which is too many to brute-force.  <!-- a:6a0b9f8af4c0093cef271015 -->
+- [x] Only if you protected it with a BIP 39 passphrase, a separate secret that is not one of the twelve words. That passphrase is what the attacker still lacks.  <!-- a:6a0b9fa0f4c0093cef271016 -->
 - [ ] Yes, because only the words leaked and your actual private key was never exposed.  <!-- a:6a0b9fa5f4c0093cef271017 -->
 - [ ] Yes, as long as you move your funds to a fresh wallet once you notice.  <!-- a:6a0b9ff5f4c0093cef271018 -->
