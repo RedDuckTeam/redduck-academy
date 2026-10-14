@@ -5,20 +5,20 @@ type: test
 order: 8
 ---
 
-This test checks whether you can reason about how a blockchain actually behaves, rather than just describe what it is. Each question puts you in a specific situation where the right answer requires applying what you learned. Some options sound right but don't survive a careful read.
+This test checks whether you can reason about how a blockchain actually behaves, rather than just describe what it is. Several questions put you in a specific situation where the right answer requires applying what you learned. Some options sound right but don't survive a careful read.
 
 <!-- q:6a0c536b2558efa5eb348bc8 -->
 How can you get a random number on the blockchain?
 
-- [ ] Using a native node function to get a random number  <!-- a:6a0c53972558efa5eb348bc9 -->
+- [ ] Using a native node function to get a random number.  <!-- a:6a0c53972558efa5eb348bc9 -->
 - [ ] By hashing the newest block's content to get a value no one can predict.  <!-- a:6a0c55862558efa5eb348bca -->
 - [x] Every node must compute the same value, so you can't.  <!-- a:6a0c55b12558efa5eb348bcb -->
-- [ ] You can't. Generating a random number is too computationally heavy an operation  <!-- a:6a0c56162558efa5eb348bcc -->
+- [ ] You can't. Generating a random number is too computationally heavy an operation.  <!-- a:6a0c56162558efa5eb348bcc -->
 
 <!-- q:6a0c57402558efa5eb348bcd -->
 At a given moment, how many competing versions of the chain can exist before the network settles on one?
 
-- [ ] Exactly one. The fork-choice rule stops a second branch from ever forming.  <!-- a:6a0c58dd2558efa5eb348bce -->
+- [ ] Exactly one. The fork choice rule stops a second branch from ever forming.  <!-- a:6a0c58dd2558efa5eb348bce -->
 - [ ] At most two, which is why a split is called a fork.  <!-- a:6a0c58e32558efa5eb348bcf -->
 - [ ] A fixed maximum set by the protocol's configuration.  <!-- a:6a0c590e2558efa5eb348bd0 -->
 - [x] Any number. The protocol sets no limit.  <!-- a:6a0c59152558efa5eb348bd1 -->
@@ -53,4 +53,4 @@ Three full nodes running the same client validate the same transaction. Could th
 - [ ] Yes, if they have different software versions  <!-- a:6a0cbc27cec8eb3285202f61 -->
 - [ ] Yes, if they receive the transaction at slightly different times  <!-- a:6a0cbc32cec8eb3285202f62 -->
 - [x] No, validation of the same transaction produces the same result  <!-- a:6a0cbc61cec8eb3285202f63 -->
-- [ ] Yes, if they're located in different timezones  <!-- a:6a0cbc87cec8eb3285202f64 -->
+- [ ] Yes, if they're located in different time zones  <!-- a:6a0cbc87cec8eb3285202f64 -->
