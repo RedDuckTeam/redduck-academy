@@ -30,29 +30,29 @@ faq:
       encrypts the session.
 ---
 
-> A common assumption is that the blockchain "encrypts" your data. It doesn't. Almost nothing on a public chain is encrypted at the protocol level, and understanding why that's true is the difference between a working mental model and a confused one. This lesson starts with what encryption actually is, then explains where it lives in your stack and where it doesn't.
+> A common assumption is that the blockchain "encrypts" your data. It doesn't. Almost nothing on a public chain is encrypted at the protocol level, and understanding why is the difference between a working mental model and a confused one. This lesson starts with what encryption actually is, then explains where it lives in your stack, and where it doesn't.
 
 ## The misconception
 
-It is natural to assume the thing protecting your data on a blockchain is "encryption." It sounds right. The space is full of cryptographic jargon, transactions are signed, addresses look like meaningless-looking strings, the chain is described as "secure," so encryption must be doing the work somewhere.
+It's natural to assume the thing protecting your data on a blockchain is "encryption." It sounds right: the space is full of cryptographic jargon, transactions are signed, addresses look like meaningless strings, the chain is described as "secure," so encryption must be doing the work somewhere.
 
-It isn't. Public blockchains do not encrypt transactions, balances, contract storage, or anything else at the protocol level. Every byte of state on a public chain is readable by anyone with a node. Your balance, every transaction you've ever sent, every piece of data you've stored on-chain: all public, all permanently visible.
+It isn't. Public blockchains don't encrypt transactions, balances, contract storage, or anything else at the protocol level. Every byte of state on a public chain is readable by anyone running a node. Your balance, every transaction you've ever sent, every piece of data you've stored on-chain: all public, all permanently visible.
 
-What protects you on a blockchain is **authentication** (proving you authorized an action) and **integrity** (proving data wasn't tampered with). These properties come from hashing and from digital signatures, a cryptographic primitive covered in a later lesson. They don't come from encryption.
+What actually protects you on a blockchain is **authentication** (proving you authorized an action) and **integrity** (proving the data wasn't tampered with). These properties come from hashing and from digital signatures, a cryptographic primitive covered in a later lesson, not from encryption.
 
-That said, encryption is real infrastructure on the internet, and it does show up around the edges of blockchain systems at specific places. Knowing where is the goal of this lesson.
+That said, encryption is real infrastructure on the internet, and it does show up around the edges of blockchain systems, in specific places. Knowing where is the goal of this lesson.
 
 ## What encryption actually is
 
-Encryption transforms data using a **key** so that only someone with the right key can transform it back. The transformed data is called **ciphertext** and looks like random noise. The original data is **plaintext**. Without the key, ciphertext is meant to be useless, with the key, it returns to the exact original byte for byte. The strength of an encryption scheme is the gap between those two outcomes: how expensive it is to recover the plaintext without the key.
+Encryption transforms data using a **key**, so that only someone with the right key can transform it back. The transformed data is called **ciphertext** and looks like random noise; the original data is **plaintext**. Without the key, ciphertext is meant to be useless; with the key, it returns to the exact original, byte for byte. The strength of an encryption scheme is the gap between those two outcomes: how expensive it is to recover the plaintext without the key.
 
-The encoding lesson already drew this line: encoding has no key, so anyone can reverse it. The key is exactly what encryption adds, and without it the ciphertext cannot be reversed in any practical amount of time.
+The encoding lesson already drew this line: encoding has no key, so anyone can reverse it. The key is exactly what encryption adds; without it, the ciphertext can't be reversed in any practical amount of time.
 
-There are two families of encryption schemes that differ in how the key works.
+There are two families of encryption schemes, and they differ in how the key works.
 
 ## Symmetric encryption
 
-The simplest model. There is one key. Whoever has the key can encrypt new data and decrypt existing data. Both directions use the same key.
+The simplest model: there's one key. Whoever has it can encrypt new data and decrypt existing data; both directions use the same key.
 
 <svg role="img" viewBox="0 0 790 220" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice to Bob symmetric encryption using one shared key</title><desc>Alice's plaintext is encrypted with a shared key into ciphertext, then sent to Bob who decrypts it with the same key back into plaintext. The same key works on both ends, so whoever holds it can encrypt and decrypt the data.</desc>
   <rect x="30" y="80" width="120" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -88,15 +88,15 @@ The simplest model. There is one key. Whoever has the key can encrypt new data a
 
 The standard algorithm here is **AES** (Advanced Encryption Standard), specifically AES-256, which uses a 256-bit key. AES-256 is what your operating system uses to encrypt your disk, what password managers use to encrypt their vaults, and what almost every "encrypted at rest" system relies on internally.
 
-Symmetric encryption is **fast**. AES-256 can encrypt gigabytes per second on modern hardware. It's the right tool for bulk data.
+Symmetric encryption is **fast**: AES-256 can encrypt gigabytes per second on modern hardware. It's the right tool for bulk data.
 
-The limitation is **key distribution**. Symmetric encryption only works if both ends already share the key. If Alice and Bob want to communicate securely and they've never met, how does Alice send Bob the key without an attacker intercepting it? You can't encrypt the key with symmetric encryption because they don't have a shared key yet. This is the central problem of secure communication: to share the key safely you would already need a secure channel, which is the very thing you are trying to create. It's exactly the problem the other family of encryption was invented to solve.
+The limitation is **key distribution**. Symmetric encryption only works if both sides already share the key. If Alice and Bob want to communicate securely and they've never met, how does Alice send Bob the key without an attacker intercepting it along the way? She can't encrypt the key with symmetric encryption, because they don't have a shared key yet. This is the central problem of secure communication: to share a key safely, you'd already need a secure channel, which is the very thing you're trying to create. It's exactly the problem the other family of encryption was invented to solve.
 
 ## Asymmetric encryption
 
-Also called **public-key encryption**. Each participant has a **key pair**: two mathematically linked keys that work in opposite directions. One key encrypts, the other decrypts. The two keys are different.
+Also called **public-key encryption**. Each participant has a **key pair**: two mathematically linked keys that work in opposite directions. One key encrypts, the other decrypts; the two are different.
 
-The participant keeps one key secret (the **private key**) and publishes the other (the **public key**) freely. Anyone in the world can take your public key and use it to encrypt a message that only your private key can decrypt. The public key cannot be used to decrypt, only to encrypt.
+Each participant keeps one key secret (the **private key**) and publishes the other (the **public key**) freely. Anyone in the world can take your public key and use it to encrypt a message that only your private key can decrypt. The public key can only encrypt; it can't be used to decrypt anything.
 
 <svg role="img" viewBox="0 0 870 240" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Alice encrypts plaintext with Bob's public key to send ciphertext, Bob decrypts with his private key</title><desc>Alice's plaintext is encrypted into ciphertext using Bob's public key, then sent to Bob. Bob decrypts the ciphertext back into plaintext using his private key, which only he holds.</desc>
   <rect x="30" y="90" width="120" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -126,29 +126,29 @@ The participant keeps one key secret (the **private key**) and publishes the oth
 <text x="800" y="115" font-size="13" fill="#000000" font-weight="bold">Bob</text>
   <text x="800" y="135" font-family="monospace" font-size="11" fill="#565653">plaintext</text>
 
-<text x="420" y="200" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Encrypt with the recipient's public key. Only their private key can decrypt.</text>
+<text x="420" y="200" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Encrypt with the recipient's public key. Only their private key can decrypt it.</text>
 </svg>
 
-The asymmetry solves the key-distribution problem. Bob publishes his public key on his website. Anyone can encrypt a message to him without ever meeting him. Only Bob, holding the private key, can decrypt.
+This asymmetry solves the key-distribution problem. Bob publishes his public key on his website. Anyone can encrypt a message to him without ever meeting him. Only Bob, holding the private key, can decrypt it.
 
-The price is **speed**. Asymmetric encryption is dramatically slower than symmetric, typically 100 to 1000 times slower depending on the algorithm and the data size. You wouldn't use it to encrypt a large file. The standard algorithms here are **RSA** (older, key sizes 2048 to 4096 bits), and elliptic curve schemes like **ECDH** (newer, smaller keys with equivalent security).
+The price is **speed**. Asymmetric encryption is dramatically slower than symmetric: typically 100 to 1000 times slower, depending on the algorithm and data size. You wouldn't use it to encrypt a large file directly. The standard algorithms here are **RSA** (older, with key sizes from 2048 to 4096 bits) and elliptic-curve schemes like **ECDH** (newer, smaller keys with equivalent security).
 
 ## How they actually get used together
 
-In practice, almost every "encrypted" connection on the modern internet uses both schemes together in a pattern called **hybrid encryption**.
+In practice, almost every "encrypted" connection on the modern internet uses both schemes together, in a pattern called **hybrid encryption**.
 
-Asymmetric encryption is used briefly at the start to exchange a fresh symmetric key. Then the symmetric key encrypts everything else.
+Asymmetric encryption is used briefly, at the start, to exchange a fresh symmetric key. Then that symmetric key encrypts everything else.
 
-This is how TLS works (the protocol behind HTTPS). When your browser connects to a website, it uses the site's public key from its certificate to negotiate a short-lived symmetric key, then encrypts the rest of the session symmetrically. The asymmetric work happens once per session, the symmetric work handles the bulk traffic. Best of both: no pre-shared secret needed, and fast enough for real volume.
+This is how TLS works (the protocol behind HTTPS). When your browser connects to a website, it uses the site's public key, from its certificate, to negotiate a short-lived symmetric key, then encrypts the rest of the session symmetrically. The asymmetric work happens once per session; the symmetric work handles the bulk traffic. Best of both worlds: no pre-shared secret needed, and fast enough for real volume.
 
 ## Where encryption shows up in blockchain systems
 
-Back to the opening misconception. Encryption is critical infrastructure for the internet but plays a small and specific role in public blockchains. Three places it shows up in practice:
+Back to the opening misconception. Encryption is critical infrastructure for the internet, but it plays a small, specific role in public blockchains. Three places it shows up in practice:
 
-**At rest, in your wallet file.** When you install a wallet, the application encrypts your private key on disk using a password you choose. That encryption is symmetric (AES under the hood, with the password run through a key-derivation function first). This is why "remember your password" matters. If you forget it, the wallet file is encrypted and unreadable. The blockchain itself doesn't know or care about this, it's a local security measure done by the wallet software.
+**At rest, in your wallet file.** When you install a wallet, the application encrypts your private key on disk using a password you choose. That encryption is symmetric: AES under the hood, with the password run through a key-derivation function first. This is why "remember your password" matters: if you forget it, the wallet file stays encrypted and unreadable. The blockchain itself doesn't know or care about this; it's a local security measure handled entirely by the wallet software.
 
-**In transit, when you talk to a node.** When your wallet sends commands to a remote node over the internet, the connection is usually wrapped in TLS, which uses the hybrid encryption you just saw. Again, this is standard internet infrastructure, the blockchain protocol doesn't specify it.
+**In transit, when you talk to a node.** When your wallet sends commands to a remote node over the internet, the connection is usually wrapped in TLS, using the same hybrid encryption you just saw. Again, this is standard internet infrastructure. The blockchain protocol itself doesn't specify it.
 
-**In specialised chains that opt into it.** A few chains are designed around encrypted transactions where the amounts and recipients are hidden from public view. These are the exception rather than the rule, and they involve genuine cryptographic engineering beyond what plain AES or RSA provide.
+**In specialized chains that opt into it.** A few chains are built around encrypted transactions, where amounts and recipients are hidden from public view. These are the exception rather than the rule, and they involve genuine cryptographic engineering beyond what plain AES or RSA provide.
 
-If you've been told "everything on the blockchain is encrypted," the more accurate phrasing is "everything on the blockchain is authenticated and tamper-evident." Those are different security properties, and conflating them is the misconception that opened this lesson.
+If you've been told "everything on the blockchain is encrypted," the more accurate phrasing is "everything on the blockchain is authenticated and tamper-evident." Those are two different security properties, and conflating them is exactly the misconception this lesson opened with.
