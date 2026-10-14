@@ -28,11 +28,11 @@ faq:
       chain does a few to a few thousand, at cents to dollars a write.
 ---
 
-> The previous lesson built up a blockchain from scratch. A reasonable reaction at this point is "interesting, but isn't that just a database?" The answer is yes, structurally. But the differences are exactly what makes a blockchain useful for the small set of things it's actually good at.
+> The previous lesson built up a blockchain from scratch. A reasonable reaction at this point is "interesting, but isn't that just a database?" The answer is yes, in a loose sense. But the differences are exactly what makes a blockchain useful for the small set of things it's actually good at.
 
 ## A blockchain is a ledger
 
-Databases and ledgers are two different tools, and both are old. A database is a general store of records you can add to, change, and erase. A ledger is an append-only record of events, the format banks and accountants have kept for centuries, where entries are only ever added and the earlier history stays intact. Append-only is part of what defines a ledger, the way the category has always worked, so in a blockchain it is a starting assumption built into the design. A blockchain sits in this second category. That is what makes the database comparison worth doing, because most developers reach for a database by habit, and also what limits that comparison, because a blockchain is a ledger first, built to run without a trusted keeper.
+Databases and ledgers are two different tools, and both are old. A database is a general store of records you can add to, change, and erase. A ledger is an append-only record of events, the kind of record banks and accountants have kept for centuries, where entries are only ever added and the earlier history stays intact. Append-only is part of what defines a ledger; that is how the category has always worked. A blockchain sits in this second category, so append-only is a starting assumption built into its design. This is what makes the database comparison worth doing, since most developers reach for a database by habit. It's also what limits the comparison, because a blockchain is a ledger first, built to run without a trusted keeper.
 
 ## They are both databases, in the loose sense
 
@@ -136,31 +136,31 @@ Walk down the rows. Almost every cell on the database side describes flexibility
 
 ## Append-only is a hard rule
 
-In a normal database, the four basic operations are create, read, update, and delete. The update and delete are the dangerous ones, because they let you change or erase the past. They're also indispensable. You change a row when a user updates their profile. You delete a row when a user closes their account. The database doesn't keep an audit trail of every prior version unless you build one yourself.
+In a normal database, the four basic operations are create, read, update, and delete. Update and delete are the dangerous ones, because they let you change or erase the past. They're also indispensable. You change a row when a user updates their profile. You delete a row when a user closes their account. The database doesn't keep an audit trail of every prior version unless you build one yourself.
 
 A blockchain has only two of those four operations. You can write new entries. You can read any entry, current or historical. You cannot update an entry. You cannot delete one. The full history is part of the system by design rather than a feature you opt into.
 
-This sounds limiting, and in most use cases it is. For the small set of use cases where the ability to prove "this happened, exactly this way, and has not been changed since" is more valuable than the ability to keep things tidy, append-only is the entire point. Once a record is in a block deep enough in the chain, no party in the system can convincingly claim it isn't.
+This sounds limiting, and in most use cases it is. For the small set of use cases where the ability to prove "this happened, exactly this way, and has not been changed since" is more valuable than the ability to keep things tidy, append-only is the entire point. Once a record is in a block deep enough in the chain, no party in the system can convincingly claim it never happened.
 
-## Atomicity carries over, almost everything else doesn't
+## Atomicity carries over; almost everything else doesn't
 
-Traditional databases have a property called atomicity. A transaction in database terms is a bundle of changes that either all happen or all don't happen. You can't end up with a partial update where money got debited from one account but never credited to another. This is one of the four properties usually grouped under ACID, and it's the only one of the four that translates cleanly to the blockchain world.
+Traditional databases have a property called atomicity. A transaction in database terms is a bundle of changes that either all happen or none of them do. You can't end up with a partial update where money got debited from one account but never credited to another. This is one of the four properties usually grouped under ACID, and it's the only one of the four that translates cleanly to the blockchain world.
 
-Blockchain transactions are atomic in exactly the same sense. When a block is added to the chain, every transaction in that block either applies completely or doesn't apply at all. Half-applied transactions don't exist. If a blockchain call would do five things and the fifth one fails, the first four are unwound and the whole call has no effect on the chain's state.
+Blockchain transactions are atomic in exactly the same sense. When a block is added to the chain, every transaction in that block either applies completely or doesn't apply at all. Half-applied transactions don't exist. If a transaction would do five things and the fifth one fails, the first four are unwound and the whole transaction has no effect on the chain's state.
 
-The other three letters of ACID (consistency, isolation, durability) all have analogues in blockchain systems, but the analogues are subtle enough to deserve their own treatment. The point for this lesson is just that atomicity is the one operational property a database developer can carry over without modification.
+The other three letters of ACID (consistency, isolation, durability) all have analogues in blockchain systems, but the analogues are subtle enough to deserve their own treatment. The point for this lesson is just that atomicity is the one property a database developer can carry over without modification.
 
 ## Transparency is the default
 
 Every record in a public blockchain is readable by every node, and through the nodes by every user, and ultimately by anyone in the world who wants to look. Open any block explorer (a website that displays the contents of a chain in human-readable form) and you can see every transaction that has ever happened, every balance of every account, every smart-contract call, every event.
 
-There is no "private mode," no "this row is only visible to its owner," no permission system the database operator can use to hide some rows from some users. The chain stores everything in plain view, and the only thing that protects a user's identity is the fact that an address on the chain is a meaningless-looking string of characters rather than a name.
+There is no "private mode," no "this row is only visible to its owner," no permission system an operator can use to hide some rows from some users. The chain stores everything in plain view, and the only thing that protects a user's identity is the fact that an address on the chain is a meaningless-looking string of characters rather than a name.
 
 This is a feature for some use cases and a non-starter for others. A public blockchain is the worst possible place to store medical records, internal company data, or anything subject to data-protection regulations. It's an excellent place to store the public history of how a financial protocol has worked over the last decade, because anyone in the world can verify the claims of the protocol's operators by reading the chain directly.
 
 ## Replication is built in
 
-A traditional database lives on one server or one cluster of servers, run by one party. Replication exists, but it's an optimisation that you opt into and configure yourself, with replicas that ultimately trust a primary.
+A traditional database lives on one server or one cluster of servers, run by one party. Replication exists, but it's an optimization that you opt into and configure yourself, with replicas that ultimately trust a primary.
 
 A blockchain has replication built into the structure. Every full node holds the entire history. There is no primary. There is no opt-in. If half the nodes in the network went offline tomorrow, the other half would continue running the chain and nothing would be lost. The data is durable because it exists in thousands of places at once, rather than because someone is paying for a backup tape.
 
