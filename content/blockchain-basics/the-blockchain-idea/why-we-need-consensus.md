@@ -28,7 +28,7 @@ faq:
       anonymous strangers with no prior trust.
 ---
 
-> The previous lesson made a strong claim. A blockchain has no operator. Nobody runs it. Yet it somehow holds a consistent record across thousands of independent machines, all of whom can write to it. Forget the cryptography for a moment and just focus on the question. How is that possible at all? The mechanism that makes it possible is called consensus, and it is the single most subtle problem in distributed systems. This lesson explains why the problem is hard, why the obvious solutions don't work, and what the actual answer looks like at the level of "how it works" rather than "which exact algorithm."
+> The previous lesson made a strong claim. A blockchain has no operator. Nobody runs it, yet it somehow holds a consistent record across thousands of independent machines, all of which can write to it. Forget the cryptography for a moment and just focus on the question. How is that possible at all? The mechanism that makes it possible is called consensus, and reaching it is one of the most subtle problems in distributed systems. This lesson explains why the problem is hard, why the obvious solutions don't work, and what the actual answer looks like at the level of "how it works" rather than "which exact algorithm."
 
 ## The problem, stated plainly
 
@@ -38,7 +38,7 @@ Worse, some of those computers will lie. They'll propose blocks that don't follo
 
 The system has to produce one agreed-upon record anyway. Not most of the time. All of the time, forever, as long as the network exists. With strangers, in public, with hostile actors actively trying to break it.
 
-This is the consensus problem, and for most of the history of computer science, it was considered either impossible or only solvable inside small, trusted groups. Bitcoin's design in 2008 was the first time anyone showed it could be solved at internet scale, with anonymous participants, without any pre-existing trust between them.
+This is the consensus problem, and for most of the history of computer science, it was considered either impossible or only solvable inside small groups of known participants. Bitcoin's design in 2008 was the first time anyone showed it could be solved at internet scale, with anonymous participants, without any pre-existing trust between them.
 
 ## The Byzantine Generals framing
 
@@ -84,9 +84,9 @@ The classic way to describe this problem comes from a 1982 thought experiment ab
 <text x="360" y="320" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">All generals exchange messages. Some are honest, some lie. They still have to agree on one plan.</text>
 </svg>
 
-The generals are stand-ins for nodes on a network. The messengers are network connections. The traitors are malicious or buggy participants. The "agree on attack or retreat" is "agree on which block comes next." Replace the army metaphor with database servers and you have the actual problem facing every blockchain on day one.
+The generals are stand-ins for nodes on a network. The messengers are network connections. The traitors are malicious or buggy participants. Agreeing on "attack or retreat" is agreeing on which block comes next. Replace the army metaphor with database servers and you have the actual problem facing every blockchain on day one.
 
-The hard part is not "tell honest from dishonest." The hard part is that the honest participants can't tell either, because they only see the messages they receive, and a clever traitor can send different messages to different recipients. Two honest generals can both be confident they've reached the right answer and still end up with opposite plans.
+The hard part isn't only telling honest from dishonest. It's that the honest participants can't reliably tell, because they only see the messages they receive, and a clever traitor can send different messages to different recipients. Two honest generals can both be confident they've reached the right answer and still end up with opposite plans.
 
 Any system that wants to make decisions without a trusted referee has to solve some version of this problem.
 
@@ -94,7 +94,7 @@ Any system that wants to make decisions without a trusted referee has to solve s
 
 The first thing most developers reach for is **voting**. Each participant proposes their version of the next block. Everyone votes. Majority wins.
 
-This breaks immediately on an open network, for one reason. There is no way to count "participants" when anyone can create a thousand fake identities for the price of cloud rental. A vote becomes meaningless the moment one party can show up as 51% of the voters by themselves. Creating unlimited fake identities to manipulate a vote is called a **Sybil attack**, and it's the reason every naive consensus scheme fails the moment it touches the open internet.
+This breaks immediately on an open network, for one reason: there is no way to count "participants" when anyone can create a thousand fake identities for the price of cloud rental. A vote becomes meaningless the moment one party can show up as 51% of the voters by themselves. Creating unlimited fake identities to manipulate a vote is called a **Sybil attack**, and it's the reason every naive consensus scheme fails the moment it touches the open internet.
 
 The second instinct is **first writer wins**. Whoever submits a block first gets to write it. Done.
 
@@ -114,7 +114,7 @@ Now think about what that does. An attacker can still create a thousand fake vot
 
 What counts as "something real"? Two main answers have shown up in the past two decades. Both use the same general logic.
 
-**Computation.** Each "vote" requires the voter to demonstrate they did a large amount of useless arithmetic. The arithmetic itself is wasted, but the energy bill is real, and energy costs the same regardless of who's paying. An attacker with a thousand fake identities has to pay a thousand times the electricity. This is the family of mechanisms called **proof of work**.
+**Computation.** Each "vote" requires the voter to demonstrate they did a large amount of useless arithmetic. The arithmetic itself is wasted, but the energy bill is real, and energy costs money no matter who's paying. An attacker with a thousand fake identities has to pay a thousand times the electricity. This is the family of mechanisms called **proof of work**.
 
 **Stake.** Each "vote" requires the voter to lock up an amount of the network's own currency, with the rule that if they vote dishonestly they lose it. An attacker with a thousand fake identities has to lock up a thousand times the stake, and any visible misbehaviour costs them all of it. This is the family of mechanisms called **proof of stake**.
 
@@ -126,7 +126,7 @@ A consensus mechanism with a real participation cost gives the network three pro
 
 **One canonical history, agreed by all.** Two honest nodes will converge on the same view of the chain over time, even though they started with no shared trust and exchange only messages.
 
-**Resistance to majority attackers.** The network stays safe as long as attacking it costs more than the attacker could profit from the attack.
+**Resistance to majority attacks.** The network stays safe as long as attacking it costs more than the attacker could profit from the attack.
 
 **Permissionless participation.** Anyone with the resources to pay the cost can participate. Nobody is keeping a list of who is allowed to vote. The cost itself is the gate.
 
@@ -134,4 +134,4 @@ Those three properties, together, are what a blockchain is actually selling. Cry
 
 ## The agreement mechanism you now understand
 
-You now have the agreement mechanism that keeps a blockchain running: a way for mutually untrusted strangers to converge on one shared history by making dishonest participation cost more than it can earn. That is the piece that lets the tamper-evident structure from cryptography operate with no operator and no trusted referee.
+You now have the agreement mechanism that keeps a blockchain running: a way for strangers who don't trust each other to converge on one shared history by making dishonest participation cost more than it can earn. That is the piece that lets the tamper-evident structure from cryptography operate with no operator and no trusted referee.
