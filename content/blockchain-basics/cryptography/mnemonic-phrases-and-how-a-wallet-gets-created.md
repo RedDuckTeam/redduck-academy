@@ -31,7 +31,7 @@ faq:
       seed derives a master key and every child key and address below it.
 ---
 
-> The previous lesson ended on a sentence that should bother you: "the private key, and only the private key, is your identity." If the private key is 32 random bytes, how is a human supposed to back that up safely? You can't memorise hex, you'll mis-type it, you'll lose the paper. The answer is one of the most elegant standards in cryptography, and it's the same standard used by almost every wallet you'll ever touch.
+> The previous lesson ended on a sentence that should bother you: "the private key, and only the private key, is your identity." If the private key is 32 random bytes, how is a human supposed to back that up safely? You can't memorise hex, you'll mistype it, you'll lose the paper. The answer is one of the most elegant standards in cryptography, and it's the same standard used by almost every wallet you'll ever touch.
 
 ## The problem with 32 random bytes
 
@@ -46,17 +46,17 @@ A private key looks like this:
 Now imagine you have to write that on a piece of paper, store it somewhere safe, and read it back correctly five years from now. You will:
 
 - Mis-write one character and never notice
-- Confuse `0` and `O`, or `1` and `l` (hex itself uses only 0-9 and a-f, so it has no O or l, but copying it by hand still invites exactly this kind of visual mix-up)
+- Confuse similar-looking characters when copying by hand (hex uses only 0-9 and a-f, so there's no O or l to mix up, but pairs like b and 6 can still look alike on paper)
 - Lose the paper to a flood, a fire, or just plain misplacement
-- Find it ten years later and not remember which wallet it belonged to
+- Find it years later and not remember which wallet it belonged to
 
-This is a real problem. Early cryptocurrency users lost meaningful amounts of money to exactly this failure mode. So in 2013, a standard was proposed that turned the same 32 bytes of randomness into something humans could actually back up: a short sequence of ordinary English words.
+This is a real problem. Early cryptocurrency users lost meaningful amounts of money to exactly this failure mode. So in 2013, a standard was proposed that turned 16 to 32 bytes of randomness into something humans could actually back up: a short sequence of ordinary English words, called a mnemonic (or seed phrase).
 
 That standard is **BIP 39**.
 
 ## The full pipeline
 
-Here's the end-to-end process that runs when you click "create a new wallet" in any modern wallet application.
+Here's the end-to-end process that runs when you click "create a new wallet" in most modern wallet applications.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Wallet creation pipeline: entropy, mnemonic, seed, then master and child keys</title><desc>Four boxes stacked top to bottom and joined by arrows. Entropy becomes a mnemonic phrase, the mnemonic becomes a seed through PBKDF2-HMAC-SHA512, and the seed derives a master key plus a whole tree of child keys and addresses.</desc>
   <rect x="40" y="20" width="640" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
@@ -85,13 +85,13 @@ Here's the end-to-end process that runs when you click "create a new wallet" in 
   <text x="360" y="335" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">a whole tree of key pairs, derived deterministically from the seed</text>
 </svg>
 
-Four stages, each with a specific job. Each stage is deterministic: same input always produces the same output. This is why a mnemonic written on paper is a complete backup of every key and every address the wallet has ever generated, even ones it hasn't shown you yet.
+Four stages, each with a specific job. Every stage after the first is deterministic: the same input always produces the same output. This is why a mnemonic written on paper is a complete backup of every key and every address the wallet can ever generate, even ones it hasn't shown you yet.
 
 ## Stage 1: Entropy
 
-The wallet asks the operating system for high-quality random bytes. 128 bits for a 12-word mnemonic, 256 bits for a 24-word one. The bytes come from the OS entropy pool, the same pool that secures TLS connections and SSH sessions on the same machine. A wallet that uses anything weaker is a broken wallet.
+The wallet asks the operating system for high-quality random bytes. 128 bits for a 12-word mnemonic, 256 bits for a 24-word one. The bytes come from the OS entropy pool, the same pool that secures TLS connections and SSH sessions on that machine. A wallet that uses anything weaker is a broken wallet.
 
-This step is short to describe and disastrous to get wrong. Past wallet failures with weak randomness have produced predictable private keys that attackers have systematically drained. The math of the rest of the pipeline only protects you if this first step is genuinely unpredictable.
+This step is short to describe and disastrous to get wrong. Past wallet failures with weak randomness have produced predictable private keys, which attackers used to systematically drain wallets. The math of the rest of the pipeline only protects you if this first step is genuinely unpredictable.
 
 ## Stage 2: Mnemonic generation
 
@@ -109,15 +109,15 @@ These are the first 12 words of the wordlist, used here simply as an illustratio
 army van defense carry jealous true garbage claim echo media make crunch
 ```
 
-The [wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt) is the same for every wallet. It contains no two words sharing a four-letter prefix, no plurals of other entries, no words easily confused with each other. This is why "rabb" is enough to uniquely identify "rabbit" when typing into a recovery field, why no wallet ever shows you the word "horsex" instead of "horse," and why entering the wrong word almost always triggers an "invalid mnemonic" error from the checksum.
+The [wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt) is the same for every wallet. It contains no two words sharing a four-letter prefix, no plurals of other entries, no words easily confused with each other. This is why "rabb" is enough to uniquely identify "rabbit" when typing into a recovery field, and why no wallet ever shows you the word "horses" instead of "horse." Entering the wrong word also almost always triggers an "invalid mnemonic" error, thanks to the checksum.
 
 A 24-word mnemonic runs the same algorithm with more starting randomness. That is the only difference.
 
-Because that mapping is reversible, the words are the entropy itself in readable form, so restoring a wallet by re-entering them reproduces the exact same bits, and there is no separate stored key that a password would open.
+The mapping from bits to words is reversible. The words are the entropy itself in readable form, so re-entering them to restore a wallet reproduces the exact same bits. There is no separate stored key that a password would open.
 
 ## Stage 3: Mnemonic to seed
 
-The mnemonic itself is not the cryptographic input to anything. The seed is. To convert one to the other, the wallet runs:
+The mnemonic itself is not used to derive keys directly. The seed is. To convert one to the other, the wallet runs:
 
 ```typescript
 seed = PBKDF2-HMAC-SHA512(
@@ -128,31 +128,31 @@ seed = PBKDF2-HMAC-SHA512(
 )
 ```
 
-PBKDF2 is a key-stretching function: it takes an input and repeatedly hashes it to produce an output, intentionally slowly. The 2,048 iterations are a deliberate cost that adds milliseconds for a legitimate user but multiplies the work required for an attacker brute-forcing weak mnemonics.
+PBKDF2 is a key-stretching function: it takes an input and repeatedly hashes it to produce an output, intentionally slowly. The 2048 iterations are a deliberate cost that adds milliseconds for a legitimate user but multiplies the work required for an attacker brute-forcing weak mnemonics.
 
-The optional **passphrase** is the part most users don't know exists. If you supply one, any string at all, no length limit, the resulting seed is completely different from the seed you'd get with the same mnemonic and no passphrase. This is sometimes called the "25th word" because it acts like an extra hidden word on top of the visible 12 or 24.
+The optional **passphrase** is the part most users don't know exists. If you supply one (any string at all, with no length limit), the resulting seed is completely different from the seed you'd get with the same mnemonic and no passphrase. This is sometimes called the "25th word" because it acts like an extra hidden word on top of the visible 12 or 24.
 
-Imagine someone forces you to hand over your mnemonic, at a border crossing, or under threat. If the mnemonic opens one obvious wallet, they drain it and believe they got everything. A passphrase prevents this. The same mnemonic with an empty passphrase opens an obvious wallet. With your secret passphrase it opens a completely different, hidden one. An attacker who has the mnemonic can drain the visible wallet but cannot reach the hidden one without also knowing the passphrase, and has no way to know the hidden wallet exists at all. This property is called plausible deniability.
+Imagine someone forces you to hand over your mnemonic at a border crossing or under threat. If the mnemonic opens only one wallet, they drain it and get everything. A passphrase prevents this. The same mnemonic with an empty passphrase opens a visible wallet. With your secret passphrase it opens a completely different, hidden one. An attacker who has the mnemonic can drain the visible wallet but cannot reach the hidden one without also knowing the passphrase, and has no way to know the hidden wallet exists at all. This property is called plausible deniability.
 
 The output of this stage is always 64 bytes regardless of mnemonic length. That 64-byte seed is what the rest of the system actually uses.
 
 ## Stage 4: Seed to master key, and everything below
 
-The 64-byte seed feeds into a tree-derivation algorithm that produces a **master key** and then any number of child keys below it. From the master key you can derive child keys, from each child key you can derive grandchildren, and so on, infinitely many key pairs from one seed.
+The 64-byte seed feeds into a tree-derivation algorithm that produces a **master key** and then any number of child keys below it. From the master key you can derive child keys, from each child key you can derive grandchildren, and so on: a practically unlimited number of key pairs from one seed.
 
 The mechanics of that tree are detailed enough to deserve a treatment of their own, and we'll come back to them in context when they actually matter. For now, the important property is this: **the entire tree is deterministic.** Same seed, same tree. Same mnemonic, same seed, same tree.
 
-This is why a 12-word mnemonic is a complete wallet backup. Restore it on a new device, the wallet runs the same pipeline, and every key and every address shows up in the same order with the same values. Nothing else needs to be saved.
+This is why a 12-word mnemonic is a complete wallet backup. When you restore it on a new device, the wallet runs the same pipeline, and every key and every address shows up in the same order with the same values. Nothing else needs to be saved, unless you also use a passphrase.
 
 ## Three rules for handling a seed phrase
 
 Three takeaways that should shape how you think about wallets from here on.
 
-**The mnemonic is the wallet.** Lose it and there is no recovery. The wallet software does not have a copy. The wallet vendor does not have a copy. The chain does not know who you are, only that you control a key derived from it.
+**The mnemonic is the wallet.** Lose it and there is no recovery. The wallet software does not have a copy. The wallet vendor does not have a copy. The chain does not know who you are, only that you control a key.
 
-**Share the mnemonic and you've shared everything.** Anyone who sees your 12 or 24 words can reconstruct every private key derived from it on any device. There is no "read-only" version of a mnemonic. Phishing attacks that ask for your seed phrase are stealing the entire wallet rather than a session token.
+**Share the mnemonic and you've shared everything.** Anyone who sees your 12 or 24 words can reconstruct every private key derived from them on any device. There is no "read-only" version of a mnemonic. Phishing attacks that ask for your seed phrase are stealing the entire wallet rather than a session token.
 
-**The mnemonic plus a passphrase is two different wallets.** If you use a passphrase, you must back up both the mnemonic and the passphrase, and you must back them up separately. Lose the passphrase and the funds in the hidden wallet are unreachable even though the mnemonic is intact.
+**The mnemonic with and without a passphrase are two different wallets.** If you use a passphrase, you must back up both the mnemonic and the passphrase, and you must back them up separately. Lose the passphrase and the funds in the hidden wallet are unreachable even though the mnemonic is intact.
 
 The playground below has a mnemonic-generator node. It produces a fresh mnemonic. **Use only the test mnemonics it generates. Never paste a real wallet's mnemonic into any web tool, including this one.**
 
@@ -160,4 +160,4 @@ The playground below has a mnemonic-generator node. It produces a fresh mnemonic
 
 ## Why twelve words reproduce everything
 
-You now have the full flow from "random bits" to "a usable wallet." Every stage is deterministic, so re-entering the same twelve or twenty-four words reproduces the exact same seed, the same master key, and the same tree of addresses. That determinism is what lets a short phrase stand in for an entire wallet.
+You now have the full flow from "random bits" to "a usable wallet." Every stage after the first is deterministic, so re-entering the same 12 or 24 words reproduces the exact same seed, the same master key, and the same tree of addresses. That determinism is what lets a short phrase stand in for an entire wallet.
