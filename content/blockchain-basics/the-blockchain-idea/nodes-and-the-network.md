@@ -29,7 +29,7 @@ faq:
       their own to avoid trusting anyone else's reading of the rules.
 ---
 
-> Every lesson so far has referenced "nodes" doing things. Nodes hold copies of the chain. Nodes agree or disagree. Nodes vote in consensus. The word has appeared constantly without ever being defined. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like one sentence opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running anything at all.
+> Every lesson so far has referenced "nodes" doing things. Nodes hold copies of the chain. Nodes agree or disagree. Nodes vote in consensus. The word has appeared constantly without a proper definition. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like a one-sentence answer opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running a node at all.
 
 ## What a node is
 
@@ -112,13 +112,13 @@ Not every node does the same amount of work. Most blockchains distinguish at lea
   <text x="630" y="250" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000">no</text>
 </svg>
 
-**Full nodes** do the most work and provide the most independence. They download every block, verify every transaction inside it, and keep the entire history on disk. A full node trusts nobody. Whatever it accepts as valid, it accepted because it ran the rules itself. Anyone who wants the strongest possible guarantee that the chain they're seeing is correct runs a full node.
+**Full nodes** do all the verification work themselves and provide the most independence. They download every block, verify every transaction inside it, and keep the entire history on disk. A full node trusts nobody. Whatever it accepts as valid, it accepts because it ran the rules itself. Anyone who wants the strongest possible guarantee that the chain they're seeing is correct runs a full node.
 
 **Block producers** are full nodes with an extra role: they also propose new blocks. Depending on which consensus mechanism a chain uses, these are called miners or validators. The distinction is in how they earn the right to propose: by burning computation in the first case, by locking up stake in the second. Either way, the consensus mechanism from the previous lesson picks them through some costly process, they assemble a block, and the rest of the network either accepts or rejects what they propose. Block producers are usually a small fraction of total nodes.
 
 **Light nodes** sit at the opposite end. They store only block headers instead of full blocks. When they need to verify that a specific transaction was included in a specific block, they ask a full node for a Merkle proof and check it locally. The Merkle-tree primitive from earlier in the course is exactly what makes this efficient. A light node running on a phone can verify membership in a chain that holds terabytes of history.
 
-Which role fits you depends on what you want: a light node backs a fast wallet on a low-resource device, and a block producer earns the chain's rewards.
+Which role fits you depends on what you want: a full node gives you independent verification, a light node backs a fast wallet on a low-resource device, and a block producer earns the chain's rewards.
 
 ## How nodes find each other
 
@@ -130,7 +130,7 @@ This is the same pattern peer-to-peer networks have used for decades. The bootst
 
 ## How nodes talk
 
-Once two nodes are connected, they communicate via a **gossip protocol**. The pattern is simple. When a node learns something new, a new transaction, a new block, it tells all the peers it's connected to. Each of those peers, if the information is new to them, tells all *their* peers. Within a few hops, almost every node in the network has heard the news. The cost to any individual node is small, but the total propagation is fast and reaches everyone.
+Once two nodes are connected, they communicate via a **gossip protocol**. The pattern is simple. When a node learns something new (a new transaction or a new block), it tells all the peers it's connected to. Each of those peers, if the information is new to them, tells all *their* peers. Within a few hops, almost every node in the network has heard the news. The cost to any individual node is small, but the total propagation is fast and reaches everyone.
 
 A small refinement matters in practice. Nodes don't blindly send full data to each peer because that would waste bandwidth. Instead, they send a short **announcement** ("I have a new block with this hash, do you want it?"). If the receiving node already has it, it ignores the announcement. If not, it asks for the full content. This two-step pattern keeps the network from drowning in duplicate traffic.
 
@@ -138,16 +138,16 @@ The gossip protocol is why a transaction broadcast to a single node reaches the 
 
 ## Why anyone runs a node
 
-The economic question matters. Running a full node costs real money: bandwidth, electricity, disk space, the maintenance time of a human operator. Why does anyone bother?
+The economic question matters. Running a full node costs real money: bandwidth, electricity, disk space, and the maintenance time of a human operator. Why does anyone bother?
 
 Three reasons cover most operators.
 
 **Block producers** run nodes because the chain pays them to. Whoever produces a valid block earns the block's rewards, which is the primary financial incentive in any blockchain. This is the reason the network has any block producers at all.
 
-**Service operators** run nodes because they sell access to them. Wallet providers, block explorers, indexing services, and the infrastructure layer for most decentralised applications all need nodes to talk to. They run their own, or they pay specialised companies to run them and expose the data via an API.
+**Service operators** run nodes because their products depend on them, or because they sell access to them. Wallet providers, block explorers, indexing services, and the infrastructure layer for most decentralised applications all need nodes to talk to. They run their own, or they pay specialised companies to run them and expose the data via an API.
 
-**Trust-minimising users** run nodes because they want maximum certainty that the chain they're seeing is correct. A user who runs their own full node trusts nobody else's interpretation of the rules. This is a minority of users in absolute numbers, but it's the population that keeps the network honest in steady state. If anyone tried to push a rule change, the trust-minimising operators would notice and refuse to accept it.
+**Trust-minimising users** run nodes because they want maximum certainty that the chain they're seeing is correct. A user who runs their own full node trusts nobody else's interpretation of the rules. This is a minority of users in absolute numbers, but it's the population that keeps the network honest in steady state. If anyone tried to push a rule change they didn't agree to, the trust-minimising operators would notice and refuse to accept it.
 
 ## What you now know about nodes
 
-You now know what a node is, what kinds exist, how they find each other, and how they share information. Together with the cryptographic primitives, the blockchain's structure, and the consensus mechanism from earlier lessons, you now hold every component a blockchain runs on. What was an abstract word, "nodes," is now a concrete population of machines with distinct roles and real reasons to participate.
+You now know what a node is, what kinds exist, how they find each other, and how they share information. Together with the cryptographic primitives, the blockchain's structure, and the consensus mechanism from earlier lessons, you hold every component a blockchain runs on. What was an abstract word, "nodes," is now a concrete population of machines with distinct roles and real reasons to participate.
