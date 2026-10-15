@@ -29,7 +29,7 @@ faq:
       publicly readable.
 ---
 
-> A key-value store, by design constrained. Solidity's mappings look like dictionaries from other languages until you try to do anything with them. No length, no iteration, no equality, storage-only. These limitations aren't arbitrary. They follow directly from how the EVM stores data, and once you see the storage model the design choices become inevitable.
+> A key-value store, constrained by design. Solidity's mappings look like dictionaries from other languages until you try to do anything with them. No length, no iteration, no equality, storage-only. These limitations aren't arbitrary. They follow directly from how the EVM stores data, and once you see the storage model the design choices become inevitable.
 
 ## What you'd expect
 
@@ -43,7 +43,7 @@ balances[someAddress] = 100;
 uint256 b = balances[someAddress];
 ```
 
-And then everything else you'd expect to work doesn't. You can't call `.length`. You can't loop over the keys. You can't return a mapping from a function. You can't even put one in memory. Reading a key that was never written doesn't throw an error, it just gives you zero.
+And then everything else you'd expect to work doesn't. You can't call `.length`. You can't loop over the keys. You can't return a mapping from a function. You can't even put one in memory. Reading a key that was never written doesn't throw an error. It just gives you zero.
 
 To understand mappings, start from why these limitations exist.
 
@@ -104,7 +104,7 @@ contract Storage {
 }
 ```
 
-The slot for `balances[someAddr]` is `keccak256(someAddr, 1)` if `balances` is declared at storage position 1. You don't compute this yourself. The compiler emits the SLOAD and SSTORE opcodes that do it. But knowing how it works explains everything else.
+The slot for `balances[someAddr]` is `keccak256(someAddr, 0)`, since `balances` is declared at storage position 0. You don't compute this yourself. The compiler emits the hashing code and the SLOAD and SSTORE opcodes for you. But knowing how it works explains everything else.
 
 Reading and writing use bracket syntax:
 
@@ -116,9 +116,9 @@ balances[msg.sender] += 50;             // SLOAD + add + SSTORE
 
 Reading a never-written key returns the zero value of the value type. For `uint256`, that's 0. For `bool`, `false`. For `address`, `0x0`. For `string`, the empty string. No revert, no error, just the type's default. The default-value rule that holds for every Solidity variable generalizes here: every key has a definite value at all times, which is zero until you write something else.
 
-**Key type restrictions** are tighter than value type restrictions. Keys must be types the EVM can deterministically hash: integers, addresses, `bool`, fixed-width bytes. Dynamic types like `string` and `bytes` are also legal as keys, and the compiler hashes them by their full byte content. Structs, mappings, arrays, and other compound reference types aren't allowed as keys. They don't have a canonical fixed representation.
+Keys are more restricted than values. Keys must be types the EVM can deterministically hash: integers, addresses, `bool`, fixed-width bytes. Dynamic types like `string` and `bytes` are also legal as keys, and the compiler hashes them by their full byte content. Structs, mappings, arrays, and other compound reference types aren't allowed as keys. They don't have a canonical fixed representation.
 
-**Value types are unrestricted.** Any type works, including nested mappings, dynamic arrays, structs, anything. Nested mappings compose by recursive hashing: the slot for `outer[k1][k2]` is `keccak256(k2, keccak256(k1, p))`. All the way down.
+Values are unrestricted. Any type works, including nested mappings, dynamic arrays, structs, anything. Nested mappings compose by recursive hashing: the slot for `outer[k1][k2]` is `keccak256(k2, keccak256(k1, p))`. All the way down.
 
 ```solidity
 // Token allowance pattern: owner => (spender => amount)
@@ -127,7 +127,7 @@ mapping(address => mapping(address => uint256)) public allowance;
 allowance[msg.sender][spender] = amount;
 ```
 
-**Public mappings auto-generate a getter.** A `public` mapping creates an external function with the same name that takes the key and returns the value. For `mapping(address => uint256) public balances`, the auto-getter is `function balances(address) external view returns (uint256)`. For a nested mapping, the getter takes all the keys in order. The getter has no equivalent of "give me the whole mapping" because that operation doesn't exist.
+Public mappings auto-generate a getter. A `public` mapping creates an external function with the same name that takes the key and returns the value. For `mapping(address => uint256) public balances`, the auto-getter is `function balances(address) external view returns (uint256)`. For a nested mapping, the getter takes all the keys in order. The getter has no equivalent of "give me the whole mapping" because that operation doesn't exist.
 
 ## A canonical contract
 
@@ -147,7 +147,7 @@ contract PaymentLog {
 }
 ```
 
-Three lines of logic. Anyone can call `pay()` with ETH attached. The contract reads that sender's running total from the mapping, adds the incoming amount, writes the new total back. The auto-generated `totalSentBy(addr)` getter lets external callers query any sender's running total.
+Three lines of logic. Anyone can call `pay()` with ETH attached. The contract reads that sender's running total from the mapping, adds the incoming amount, and writes the new total back. The auto-generated `totalSentBy(addr)` getter lets external callers query any sender's running total.
 
 Everything from the previous lesson shows up here. `msg.sender`, typed `address`, is the mapping key. `msg.value`, typed `uint256`, is the value being accumulated. The `payable` keyword admits ETH. The mapping pattern records per-user state without needing to track who has paid before.
 
@@ -194,7 +194,7 @@ For ordered traversal, for example payers from largest to smallest, mappings giv
 
 For "is this key present" checks that need to be fast and frequent, the separate flag mapping has the right semantics but doubles your storage cost. Sometimes the right answer is to use a sentinel value that can't appear naturally in the value type, so absence is detectable from the value alone.
 
-The deeper point is this. Mappings optimize hard for O(1) random access at the cost of every other access pattern. Use them when that tradeoff matches your problem. When it doesn't, an array, a struct, or a more specialized data structure is the right call.
+The deeper point is that mappings optimize hard for O(1) random access at the cost of every other access pattern. Use them when that tradeoff matches your problem. When it doesn't, an array, a struct, or a more specialized data structure is the right call.
 
 ## Things that catch developers
 
@@ -202,10 +202,10 @@ A few patterns to internalize.
 
 **Reading a key returns zero, never an error.** No "key not found" exception, no null. If your logic needs to distinguish "user has zero balance" from "user has never interacted," you need a separate flag or a sentinel value. Building auth checks on `balance > 0` is a real bug class because a legitimate user who just spent everything looks identical to a non-user.
 
-**`delete mapping[key]`**** sets the value back to zero, it doesn't remove the entry.** There is no removal because there was never an entry. If you're maintaining a parallel array for iteration, `delete` doesn't update the array. You have to do that work yourself.
+**`delete mapping[key]`**** sets the value back to zero; it doesn't remove the entry.** There is no removal because there was never an entry. If you're maintaining a parallel array for iteration, `delete` doesn't update the array. You have to do that work yourself.
 
 **Trying to put a mapping in memory or in a struct returned to memory.** Mappings live in storage only. A struct containing a mapping cannot be passed around or returned by value. It can only exist as a storage-located variable, which is a real constraint on how you structure your contracts.
 
-**Forgetting that public mappings expose every key.** The auto-generated getter takes the key as input. There's no privacy in mapping data. If you don't want every value queryable by anyone, mark the mapping `private`. Note that "private" only means the auto-getter is suppressed. The data is still readable directly from storage by anyone who knows the slot derivation, which on a public chain is everyone.
+**Forgetting that public mappings expose every value.** The auto-generated getter takes the key as input. There's no privacy in mapping data. If you don't want every value queryable by anyone, mark the mapping `private`. Note that "private" only means the auto-getter is suppressed. The data is still readable directly from storage by anyone who knows the slot derivation, which on a public chain is everyone.
 
 **Using a mapping for ordered data.** Mappings are unordered by design. If insertion order or rank order matters, you need a different structure. As shown earlier, a parallel array can impose order, but maintaining it becomes expensive.
