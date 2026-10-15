@@ -47,7 +47,7 @@ On Ethereum, the issuer is a smart contract. The contract decides who has how ma
 
 Two casino chips of the same denomination are interchangeable. If you have one and your friend has one, and you swap them, nothing has changed. They have the same purchasing power, the same physical form, the same value. This property is called **fungibility**. Two units of a fungible thing are equivalent.
 
-Now consider rare coins. Most one-euro coins are fungible: each is worth one euro, you swap them, nothing changes. But a rare collector's edition one-euro coin from a limited mint run might be worth fifty euros because of its rarity. The face value is one euro, but the coin itself has an identity that makes it different from other one-euro coins. This is **non-fungible**: each unit has its own identity and can't be substituted for another.
+Now consider rare coins. Most one-euro coins are fungible: each is worth one euro; you swap them and nothing changes. But a rare collector's edition one-euro coin from a limited mint run might be worth fifty euros because of its rarity. The face value is one euro, but the coin itself has an identity that makes it different from other one-euro coins. This is **non-fungible**: each unit has its own identity and can't be substituted for another.
 
 ERC-20 is the standard for **fungible** tokens. Every unit is identical to every other unit. If you hold 100 ACAD tokens, those 100 units are interchangeable with any other 100 units anywhere else. Token #47 and token #48 don't exist as concepts. There are just balances.
 
@@ -90,7 +90,7 @@ Three things about this interface are worth noting.
 
 First, every state-mutating function returns `bool`. The spec inherits this from a time when reverting was less common in Solidity. A modern implementation reverts on failure and returns `true` on success, but the return type stays for backward compatibility.
 
-Second, `transferFrom` exists because contracts can't initiate transactions, only respond to them. If a DEX wants to swap your tokens for ETH, it can't reach into your wallet and take them. Instead, you call `approve` to authorize the DEX, the DEX then calls `transferFrom` during the swap. The two-step process is the only way to let one contract move tokens that belong to another address.
+Second, `transferFrom` exists because contracts can't initiate transactions, only respond to them. If a DEX wants to swap your tokens for ETH, it can't reach into your wallet and take them. Instead, you call `approve` to authorize the DEX, and the DEX then calls `transferFrom` during the swap. The two-step process is the only way to let one contract move tokens that belong to another address.
 
 Third, the `Transfer` event from `address(0)` represents minting. By convention, when a token contract creates new tokens, it emits a transfer from the zero address. Block explorers and indexers use this to display the initial supply distribution. Forget this transfer when minting, and block explorers will show no initial supply at all.
 
@@ -116,7 +116,7 @@ A few things, and they're worth understanding even if you never use OpenZeppelin
 
 **Custom errors with structured data.** Where your contract probably uses `require` strings or simple custom errors, OpenZeppelin's errors carry the values that caused the failure: `ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed)`. A frontend reading the revert data sees exactly how much was short, which makes debugging dramatically easier.
 
-**A unified ****`_update`**** internal function.** OpenZeppelin factors transfer, mint, and burn into a single internal function that handles balance changes, total supply tracking, and event emission. Mint is "transfer from `address(0)`," burn is "transfer to `address(0)`," and regular transfers are both addresses being non-zero. The single helper means there's only one place to audit and only one place to add functionality.
+**A unified ****`_update`**** internal function.** OpenZeppelin factors transfer, mint, and burn into a single internal function that handles balance changes, total supply tracking, and event emission. Mint is "transfer from `address(0)`," burn is "transfer to `address(0)`," and a regular transfer is one where both addresses are non-zero. The single helper means there's only one place to audit and only one place to add functionality.
 
 **Hooks for extension.** Contracts that inherit from OpenZeppelin's `ERC20` can override `_update` to add behavior before or after every balance change: pausing, blacklisting, fee-on-transfer, tax mechanisms. The base contract calls these hooks at well-defined points, and extension contracts plug into those points without rewriting the core logic.
 
@@ -132,7 +132,7 @@ ERC-20 has one well-known design flaw, and it's worth understanding before you d
 
 Suppose Alice has approved Bob to spend 100 ACAD. She changes her mind and wants to reduce his allowance to 50. She calls `approve(bob, 50)`. The transaction enters the mempool.
 
-Before the transaction is mined, Bob sees it pending. He front-runs Alice by calling `transferFrom(alice, bob, 100)` with a higher gas price. His transaction mines first. He receives 100 tokens. Then Alice's `approve(bob, 50)` mines, setting his allowance to 50. He then calls `transferFrom(alice, bob, 50)` and receives 50 more.
+Before the transaction is included in a block, Bob sees it pending. He front-runs Alice by calling `transferFrom(alice, bob, 100)` with a higher priority fee. His transaction is included first. He receives 100 tokens. Then Alice's `approve(bob, 50)` is included, setting his allowance to 50. He then calls `transferFrom(alice, bob, 50)` and receives 50 more.
 
 Bob ended up with 150 tokens when Alice intended to allow only 50 in total.
 
@@ -140,7 +140,7 @@ The flaw is structural. The `approve` function overwrites the allowance, but the
 
 EIP-2612 (`permit`) provides a more elegant solution by replacing approvals with cryptographic signatures. It's a separate standard layered on top of ERC-20 and is its own topic.
 
-For now: be aware that increasing an allowance is safe, decreasing it is not, and any frontend that lets users change allowances should either zero-out first or use `permit` if the token supports it.
+For now: be aware that increasing an allowance is safe, decreasing it is not, and any frontend that lets users change allowances should either zero it out first or use `permit` if the token supports it.
 
 ## Where ERC-20 fits in the wider ecosystem
 
@@ -152,7 +152,7 @@ ERC-20 is the foundation of Ethereum's token economy, but it's not the only stan
 
 **EIP-2612 (****`permit`****)** adds a function to ERC-20 tokens that lets users approve spending via a signed message instead of an on-chain transaction. USDC, DAI, and most modern tokens implement it. Older tokens like WETH do not.
 
-**ERC-4626** is the standard for tokenized vaults. A vault that takes ERC-20 deposits and issues shares as ERC-20 tokens itself, used by DeFi protocols like Aave, Yearn, and Morpho. Built on top of ERC-20 rather than replacing it.
+**ERC-4626** is the standard for tokenized vaults: a vault that takes ERC-20 deposits and issues shares as ERC-20 tokens itself. It's used by DeFi protocols like Aave, Yearn, and Morpho, and is built on top of ERC-20 rather than replacing it.
 
 Each of these is a substantial topic in its own right. The point for now is that ERC-20 is the foundation. Understanding it is the prerequisite for everything else.
 
