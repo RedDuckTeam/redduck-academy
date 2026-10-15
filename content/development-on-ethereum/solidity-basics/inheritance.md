@@ -27,9 +27,9 @@ faq:
       then A, and each ancestor runs once.
 ---
 
-> Solidity contracts can extend other contracts the same way classes extend in object-oriented languages. A child contract gets all the state variables, modifiers, functions, and events declared in its parents. Properly used, inheritance lets you write small, focused contracts that compose into larger ones. Improperly used, it produces multi-level hierarchies that are hard to follow and audit. This lesson covers the mechanics of inheritance, the rules around overriding, and the patterns most often seen in production code.
+> Solidity contracts can extend other contracts the same way classes extend other classes in object-oriented languages. A child contract gets all the state variables, modifiers, functions, and events declared in its parents. Properly used, inheritance lets you write small, focused contracts that compose into larger ones. Improperly used, it produces multi-level hierarchies that are hard to follow and audit. This lesson covers the mechanics of inheritance, the rules around overriding, and the patterns most often seen in production code.
 
-The classic motivation is repetition. A handful of state variables and modifiers appear in nearly every nontrivial contract: an owner address, an `onlyOwner` modifier, a constructor that captures `msg.sender` as the owner, a `withdraw` function that the owner alone can call. Writing these out by hand in every contract is wasteful and error-prone. Extracting them into a base contract and inheriting from it lets you share the implementation across many contracts.
+The classic motivation is repetition. A handful of state variables and modifiers appear in nearly every non-trivial contract: an owner address, an `onlyOwner` modifier, a constructor that captures `msg.sender` as the owner, a `withdraw` function that the owner alone can call. Writing these out by hand in every contract is wasteful and error-prone. Extracting them into a base contract and inheriting from it lets you share the implementation across many contracts.
 
 ## Single inheritance
 
@@ -178,7 +178,7 @@ contract Variant is Ownable {
 
 This becomes important in deep inheritance chains where multiple layers add behavior.
 
-Visibility on an override has to be the same or more permissive than the parent. A `public` function can be overridden as `public`. An `external` function can be overridden as `external` or `public`. You cannot tighten visibility, since callers of the parent's contract expect the function to remain callable from where the parent allowed.
+Visibility on an override has to be the same as or more permissive than the parent's. A `public` function can be overridden as `public`. An `external` function can be overridden as `external` or `public`. You cannot tighten visibility, since callers of the parent's contract expect the function to remain callable from where the parent allowed.
 
 Modifiers can also be virtual and overridden using the same `virtual`/`override` keywords. The same rules apply.
 
@@ -274,11 +274,11 @@ contract D is B, C {
 }
 ```
 
-When `D.f()` runs, `super.f()` calls `C.f()` because `C` comes after `D` in the linearization. `C.f()`'s `super.f()` then calls `B.f()`. `B.f()`'s `super.f()` finally calls `A.f()`. The call chain is `D → C → B → A` rather than the visually-suggested `D → B → A` followed by `D → C → A`. The C3 linearization guarantees each ancestor runs at most once.
+When `D.f()` runs, `super.f()` calls `C.f()` because `C` comes after `D` in the linearization. `C.f()`'s `super.f()` then calls `B.f()`. `B.f()`'s `super.f()` finally calls `A.f()`. The call chain is `D → C → B → A` rather than the visually suggested `D → B → A` followed by `D → C → A`. The C3 linearization guarantees each ancestor runs at most once.
 
 This is the pattern behind composable extensions: each layer adds its behavior, calls `super.f()` to chain to the next, and the linearization ensures all layers run in a well-defined order. OpenZeppelin's ERC-20 and ERC-721 implementations rely on this pattern so each extension module can add behavior to the same function.
 
-If you want the immediate-parent semantics, use the named form. If you want the "next layer in the chain" semantics, use `super`. They're different operations, even though in single-inheritance code they look identical.
+If you want the immediate-parent semantics, use the named form. If you want the "next layer in the chain" semantics, use `super`. They're different operations, even though in single-inheritance code they behave identically.
 
 ## Production patterns
 
@@ -286,4 +286,4 @@ A few patterns to recognize when reading real contracts.
 
 **OpenZeppelin's ****`Ownable`****.** The `Ownable` contract in OpenZeppelin Contracts is the canonical example of the pattern shown at the start of this lesson. Many production contracts inherit from it directly. Newer versions accept the initial owner as a constructor argument, which addresses a real pitfall where the deployer accidentally became the owner of a contract intended for someone else.
 
-**OpenZeppelin's ****`AccessControl`****.** Generalizes `Ownable` to a role-based system. Inherits the same patterns but adds a mapping of role identifiers to address sets.
+**OpenZeppelin's ****`AccessControl`****.** Generalizes `Ownable` to a role-based system. Follows the same patterns but adds a mapping of role identifiers to address sets.
