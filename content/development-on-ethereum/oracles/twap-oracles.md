@@ -19,7 +19,7 @@ faq:
       Five-minute windows have been broken, and 10 minutes to an hour is usual.
 ---
 
-> The previous lecture argued that production protocols use Chainlink because reading prices from a single AMM pool is dangerous. That's true. But Chainlink doesn't have a feed for every asset, and even when it does, sometimes you want an oracle that lives inside your own protocol, on the same chain, with no external dependency. The pattern that makes that workable is the **time-weighted average price**, or TWAP. This lecture covers what a TWAP is, why it's harder to manipulate than spot price, exactly how Uniswap V2's TWAP works, and where it still falls short.
+> The previous lesson argued that production protocols use Chainlink because reading prices from a single AMM pool is dangerous. That's true. But Chainlink doesn't have a feed for every asset, and even when it does, sometimes you want an oracle that lives inside your own protocol, on the same chain, with no external dependency. The pattern that makes that workable is the **time-weighted average price**, or TWAP. This lesson covers what a TWAP is, why it's harder to manipulate than spot price, exactly how Uniswap V2's TWAP works, and where it still falls short.
 
 ## The spot price problem, restated
 
@@ -192,7 +192,7 @@ contract SimpleV2TWAP {
     }
 
     function consult(uint256 amountIn) external view returns (uint256 amountOut) {
-        // price0Average is in UQ112x112 divide by 2^112 to use it as an integer ratio.
+        // price0Average is in UQ112x112; divide by 2^112 to use it as an integer ratio.
         return (uint256(price0Average) * amountIn) >> 112;
     }
 }
