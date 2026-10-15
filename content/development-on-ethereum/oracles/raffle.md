@@ -10,3 +10,9 @@ Combine the two Chainlink primitives from this module into one working contract:
 This is your first task with two oracle services working together, and your first asynchronous on-chain flow. The random number does not exist when the draw is requested. It arrives in a separate callback some blocks later, and only the winner can claim the prize pool after that.
 
 The contract design is largely yours. The spec describes what should happen rather than how to build it.
+
+Starter repository: https://github.com/RedDuckTeam/redduck-academy-solidity-template
+
+## How to submit
+
+Paste a link to your repository.
