@@ -28,13 +28,13 @@ faq:
       Yes. The account validates a WebAuthn signature from your phone's secure enclave.
 ---
 
-> Every Ethereum account today is one of two things: an **EOA** controlled by a private key, or a **contract account** controlled by code. EOAs can initiate transactions but their behavior is fixed by the protocol. Contracts can have any behavior but cannot initiate transactions on their own. **Account abstraction** is the umbrella term for changing this. The goal is to let accounts be controlled by arbitrary code while still being able to send transactions. This lecture covers what AA is, the two production approaches today (ERC-4337 and EIP-7702), and the kinds of features they unlock: passkeys, social recovery, sponsored gas, batched operations, and session keys.
+> Every Ethereum account today is one of two things: an **EOA** controlled by a private key, or a **contract account** controlled by code. EOAs can initiate transactions but their behavior is fixed by the protocol. Contracts can have any behavior but cannot initiate transactions on their own. **Account abstraction** is the umbrella term for changing this. The goal is to let accounts be controlled by arbitrary code while still being able to send transactions. This lesson covers what AA is, the two production approaches today (ERC-4337 and EIP-7702), and the kinds of features they unlock: passkeys, social recovery, sponsored gas, batched operations, and session keys.
 
 ## What's wrong with EOAs
 
 An EOA is an account at an address derived from a public key, controlled by the corresponding private key, with a balance attached to it. The protocol allows exactly one kind of authorization: a transaction signed by the matching private key, using ECDSA on the secp256k1 curve. That's it.
 
-This works but it's restrictive in a long list of ways.
+This works, but it's restrictive in a long list of ways.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EOA vs smart account: what changes when code controls your account</title><desc>Two columns compare an EOA and a smart account across signature scheme, gas payment, key loss, multiple signers, batched operations, and spending limits. The EOA is powerful but rigid and cannot be customized, while the smart account is flexible but can't self-initiate transactions without ERC-4337 or EIP-7702.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -84,9 +84,9 @@ This works but it's restrictive in a long list of ways.
   <text x="525" y="492" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">needs ERC-4337 or EIP-7702</text>
 </svg>
 
-A smart account is a contract that holds your funds and decides for itself what counts as a valid operation. The code can require two signatures from a 2-of-3 multisig. It can accept a passkey signature from your phone instead of an ECDSA signature. It can require a transaction below a daily spending limit to go through automatically while above-limit transactions wait for a second approver. It can rotate keys, recover access via trusted guardians, pay gas in any token. Anything you can express in Solidity.
+A smart account is a contract that holds your funds and decides for itself what counts as a valid operation. The code can require two signatures from a 2-of-3 multisig. It can accept a passkey signature from your phone instead of an ECDSA signature. It can let a transaction below a daily spending limit go through automatically while above-limit transactions wait for a second approver. It can rotate keys, recover access via trusted guardians, pay gas in any token. Anything you can express in Solidity.
 
-The limitation is the one thing in the right-hand column that's missing: a contract cannot initiate a transaction. Only an EOA can. Without something to bridge the two sides, smart accounts are still passive, they wait to be called. Account abstraction is the work of building that bridge.
+The limitation is the one thing in the right-hand column that's missing: a contract cannot initiate a transaction. Only an EOA can. Without something to bridge the two sides, smart accounts are still passive; they wait to be called. Account abstraction is the work of building that bridge.
 
 Two production approaches exist today. **ERC-4337** is an application-layer solution that went live on Ethereum mainnet in March 2023. It works without any consensus change. **EIP-7702** is a protocol-layer change that activated in the Pectra upgrade in May 2025. It's a smaller mechanism that achieves much of what 4337 does with less infrastructure.
 
@@ -193,13 +193,13 @@ The features the AA community has been building toward become real once smart ac
 
 **Both together** is becoming the production pattern for serious smart-wallet projects. Users start with 7702-delegated EOAs for upgrade-in-place. Their delegated implementation supports the 4337 interface, so the same wallet integrates with bundler infrastructure and paymasters for gas sponsorship.
 
-A nice side-effect of 7702: every existing EOA can become a smart account at any time. There's no migration friction. Users who never knew or cared about smart accounts can be upgraded transparently by a wallet provider, with their consent.
+A nice side effect of 7702: every existing EOA can become a smart account at any time. There's no migration friction. Users who never knew or cared about smart accounts can be upgraded transparently by a wallet provider, with their consent.
 
 ## A few things to keep in mind
 
 **The smart-account contract is itself an attack surface.** A bug in the implementation contract is a bug in every account delegated to it. Same for the EntryPoint. Both have been audited heavily but the principle stays: the security of your account depends on the security of the code controlling it.
 
-**Bundler censorship is a real concern.** If only a few bundlers exist and they all refuse to include UserOps from certain users (sanctioned addresses, for example), those users are de-facto blocked from using 4337. The mitigation is many independent bundlers, and the protocol's open structure aims to keep the barrier to entry low.
+**Bundler censorship is a real concern.** If only a few bundlers exist and they all refuse to include UserOps from certain users (sanctioned addresses, for example), those users are de facto blocked from using 4337. The mitigation is many independent bundlers, and the protocol's open structure aims to keep the barrier to entry low.
 
 **EIP-7702 has subtle pitfalls around storage compatibility.** If two different implementation contracts use the same storage slots for different things, switching delegation between them can leave your account's state in a meaningless configuration. The fix is to use stable storage layouts (often via ERC-7201 namespaced storage) so swapping implementations doesn't conflict.
 
