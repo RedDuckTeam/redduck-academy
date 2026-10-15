@@ -141,7 +141,7 @@ A user might want to specify the deposit two different ways: "I have exactly 100
 
 The math is symmetric. `deposit` and `mint` produce the same net result if the inputs correspond to each other. The same is true for `withdraw` and `redeem`. The standard gives you both because different callers find different sides easier to reason about. A frontend showing "deposit $X" calls `deposit`. A portfolio rebalancer that wants a clean number of shares calls `mint`. Same outcome.
 
-The `owner` parameter on `withdraw` and `redeem` exists because someone can let a third party burn their shares on their behalf, the same way ERC-20 `transferFrom` works. The caller needs allowance from the owner first. For self-withdrawals, owner equals msg.sender and the allowance check is skipped.
+The `owner` parameter on `withdraw` and `redeem` exists because someone can let a third party burn their shares on their behalf, the same way ERC-20 `transferFrom` works. The caller needs allowance from the owner first. For self-withdrawals, `owner` equals `msg.sender` and the allowance check is skipped.
 
 ## Preview functions
 
@@ -152,7 +152,7 @@ For every operation the standard provides a matching `preview` function that ret
 - `previewWithdraw(assets)` returns the shares that would be burned
 - `previewRedeem(shares)` returns the assets you would receive
 
-These are pure view functions. Frontends use them to show "you will receive ~X shares" before the user signs the transaction. They also let other contracts integrate without having to duplicate the conversion math.
+These are view functions. Frontends use them to show "you will receive ~X shares" before the user signs the transaction. They also let other contracts integrate without having to duplicate the conversion math.
 
 There are also `maxDeposit`, `maxMint`, `maxWithdraw`, and `maxRedeem` functions that return per-user limits. A vault implementation can use these to enforce caps (no deposits over 1,000 USDC, no withdrawals if paused, and so on). By default they return the maximum representable value, meaning no limit, but vault authors can override.
 
