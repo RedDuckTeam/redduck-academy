@@ -35,7 +35,7 @@ A struct is a named bundle of fields. Two things to internalize before any synta
 
 First, field access is by name rather than by position. This is the main difference from arrays, which use positions, and from mappings, which use keys. When you have a `Payment` struct with an `amount` field, you read it as `payment.amount`. The compiler maps the name to the field's location and reads it for you. You never work with positions directly. Structs are the right choice when the things you're bundling are different in kind rather than in position.
 
-Second, structs are templates that only become values once instantiated. Declaring `struct Payment { ... }` only defines the shape. To actually have a payment, you need to create an instance, either as a state variable, a local variable, or as a value sitting inside a mapping or array. The instance is where the data lives. The struct definition is just the recipe.
+Second, structs are templates that only become values once instantiated. Declaring `struct Payment { ... }` only defines the shape. To actually have a payment, you need to create an instance, as a state variable, a local variable, or a value sitting inside a mapping or array. The instance is where the data lives. The struct definition is just the recipe.
 
 These two ideas explain why some operations don't exist. You can't compare two structs with `==`, because there's no general definition of equality across all field types. You can't have a struct as a mapping key, because keys have to be hashable value types and structs aren't. You can't return a struct that contains a mapping, because the mapping has no enumerable content to copy out.
 
@@ -59,7 +59,7 @@ A few rules.
 
 **Field types can be almost anything.** Primitives, arrays, mappings, other structs. The one restriction is that a struct can't contain a field of its own type directly. More on that below.
 
-**No storage qualifiers inside the definition.** When you have a `string` field inside a struct, you write `string message;`, not `string memory message;`. Storage location is determined by where the struct instance lives rather than by where each field is declared. A struct instance in storage stores its strings in storage. A struct instance in memory stores them in memory. The fields don't get a separate choice.
+**No storage qualifiers inside the definition.** When you have a `string` field inside a struct, you write `string message;`, not `string memory message;`. Data location is determined by where the struct instance lives rather than by where each field is declared. A struct instance in storage stores its strings in storage. A struct instance in memory stores them in memory. The fields don't get a separate choice.
 
 **No recursion.** A struct cannot contain a field of its own type directly. This is a compile error:
 
@@ -102,7 +102,7 @@ struct Good {
 }
 ```
 
-The `Good` version uses one less storage slot per instance, which translates into thousands of gas saved on every fresh write and every cold read. A simple guideline: declare larger fields together, and group smaller fields so they can share a slot. This becomes a real optimization for contracts that create many struct instances, like NFT contracts, vaults, and order books.
+The `Good` version uses one fewer storage slot per instance, which translates into thousands of gas saved on every fresh write and every cold read. A simple guideline: declare larger fields together, and group smaller fields so they can share a slot. This becomes a real optimization for contracts that create many struct instances, like NFT contracts, vaults, and order books.
 
 The full rules of storage layout have more depth than this section covers, but knowing that field order matters is enough to write reasonable structs today.
 
@@ -131,7 +131,7 @@ Order memory o = Order({
 
 You name each field explicitly. Verbose, but safe against reordering and self-documenting. Use this form by default.
 
-In both cases, the storage location keyword is required when declaring a local struct variable. `Order o = Order(...)` does not compile. You must write `Order memory o` or `Order storage o`. The `storage` form is only valid when assigning from an existing storage location, which is covered next.
+In both cases, the data-location keyword is required when declaring a local struct variable. `Order o = Order(...)` does not compile. You must write `Order memory o` or `Order storage o`. The `storage` form is only valid when assigning from an existing storage location, which is covered next.
 
 ## The reference vs copy distinction
 
@@ -194,7 +194,7 @@ The `delete` keyword clears a struct back to all-zero values:
 delete lastOrder;  // every field reset to its type's zero value
 ```
 
-`delete` on a struct works the same way `delete` works on every other type: it sets the memory or storage region to zero. For a struct that contains a mapping, the mapping isn't cleared, since the EVM can't enumerate its keys, but every non-mapping field is reset.
+`delete` on a struct works the same way `delete` works on other types: it sets the memory or storage region to zero. For a struct that contains a mapping, the mapping isn't cleared, since the EVM can't enumerate its keys, but every non-mapping field is reset.
 
 ## Structs in mappings
 
@@ -226,13 +226,13 @@ contract Registry {
 }
 ```
 
-The `register` function builds a fresh `Profile` in memory using the named-args form, then assigns it into the mapping. The assignment copies all fields into storage. The `verify` function takes a storage reference to the existing profile and modifies it in place, which is the only way the change persists.
+The `register` function builds a fresh `Profile` in memory using the named-args form, then assigns it into the mapping. The assignment copies all fields into storage. The `verify` function takes a storage reference to the existing profile and modifies it in place, which is what makes the change persist.
 
 If `verify` had used `Profile memory p = profiles[user]; p.verified = true;`, it would have read a copy, set the copy's `verified` to true, and exited the function with that copy thrown away. The actual stored profile would have remained unverified.
 
 ## Capstone: a payments ledger pattern
 
-The pattern below is the structural template for crowdfunding contracts, donation pools, vesting schedules, voting records, and most other accounting-style contracts. It shows the key idea of using structs as both mapping values and as a way to compose a nested data shape.
+The pattern below is the structural template for crowdfunding contracts, donation pools, vesting schedules, voting records, and most other accounting-style contracts. It shows the key idea of using structs both as mapping values and as a way to compose a nested data shape.
 
 ```solidity
 // SPDX-License-Identifier: MIT
