@@ -22,7 +22,7 @@ This scenario reflects Ethereum before the Dencun upgrade of March 2024. A UUPS 
 - [ ] Nothing. The proxy is independent and continues delegating to the same address. The next call will simply fail and the owner can upgrade to a new implementation.  <!-- a:6a11f4c07cdfe4cdf9b09e4d -->
 
 <!-- q:6a1230b87cdfe4cdf9b09e4e -->
-A team deploys their UUPS proxy in two separate transactions. First, they call the factory to deploy the proxy + implementation. The deployment script then calls `initialize()` on the proxy as a follow-up transaction:
+A team deploys their UUPS proxy in two separate transactions. First, they call the factory to deploy the proxy and implementation. The deployment script then calls `initialize()` on the proxy as a follow-up transaction:
 
 ```typescript
 const proxy = await factory.deployProxy(implementation);
