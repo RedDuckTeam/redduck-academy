@@ -27,7 +27,7 @@ faq:
 
 ## Two ways to track who has what
 
-In the previous module you learned how Bitcoin tracks state with UTXOs: unspent transaction outputs. Every coin in existence is a UTXO sitting in the chain's database, locked to some address by a script. To spend it, you reference it as the input to a new transaction, prove you can satisfy its lock, and create new UTXOs as outputs. The old UTXO is consumed. The new ones are created. The chain's state at any moment is the full set of currently-unspent outputs across all addresses.
+In the previous module you learned how Bitcoin tracks state with UTXOs: unspent transaction outputs. Every coin in existence is a UTXO sitting in the chain's database, locked to some address by a script. To spend it, you reference it as the input to a new transaction, prove you can satisfy its lock, and create new UTXOs as outputs. The old UTXO is consumed. The new ones are created. The chain's state at any moment is the full set of currently unspent outputs across all addresses.
 
 Ethereum uses a different model called the **account model**. Instead of tracking individual coins, the chain tracks accounts. Each account has an address, a balance of ETH, and possibly some additional state. When Alice sends 3 ETH to Bob, the chain subtracts 3 from Alice's balance and adds 3 to Bob's balance. Nothing gets consumed or created. The balances just change.
 
@@ -42,7 +42,9 @@ An account on Ethereum has four fields:
 - A **code hash**, which is empty for regular user accounts and points to the deployed bytecode for contract accounts
 - A **storage root**, which is empty for regular user accounts and points to the contract's storage tree for contract accounts
 
-Two kinds of accounts exist. **Externally owned accounts**, or EOAs, are controlled by a private key. Their code hash and storage root are empty. They behave like a Bitcoin address: you sign transactions with the matching key to spend their balance or trigger something else on the chain. **Contract accounts** are controlled by code. They have a balance like any other account, but they also have code that runs when called and storage that persists between calls. They have no private key. Nobody can directly sign transactions from a contract account. The only way to move a contract's funds or change its state is to call its code from another account, and the code decides what happens.
+Two kinds of accounts exist. **Externally owned accounts**, or EOAs, are controlled by a private key. Their code hash and storage root are empty. They behave like a Bitcoin address: you sign transactions with the matching key to spend their balance or trigger something else on the chain.
+
+**Contract accounts** are controlled by code. They have a balance like any other account, but they also have code that runs when called and storage that persists between calls. They have no private key. Nobody can directly sign transactions from a contract account. The only way to move a contract's funds or change its state is to call its code from another account, and the code decides what happens.
 
 The chain's state at any moment is the combined state of every account that exists. Every EOA and every contract. Their balances, their nonces, and, for contract accounts, their code and their storage. When a block is produced, every full node applies the block's transactions to this state, computes the new state, and rejects the block if its claimed result doesn't match.
 
@@ -125,23 +127,25 @@ In Ethereum, if Alice wants to send 3 ETH to Bob and she has a balance of 10 ETH
 <text x="360" y="450" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Same payment. Completely different state representation.</text>
 </svg>
 
-The Bitcoin transaction is a graph operation: it removes one node from the UTXO set and adds two new ones. The Ethereum transaction is a mutation: it changes two existing entries in the account state table. The Bitcoin version preserves nothing. The inputs and outputs are entirely new objects. The Ethereum version preserves the accounts. Only their balances move.
+The Bitcoin transaction is a graph operation: it removes one entry from the UTXO set and adds two new ones. The Ethereum transaction is a mutation: it changes two existing entries in the account state table. The Bitcoin version preserves nothing. The input is consumed, and the outputs are entirely new objects. The Ethereum version preserves the accounts. Only their balances move.
 
 ## What the account model gives you
 
 Three things follow from this choice that matter for the rest of this course.
 
-**Contracts can have their own state.** A contract account stores key-value pairs that persist across calls. The contract's code reads and writes this storage as transactions come in. This is what makes Ethereum programmable. In the UTXO model, there is nowhere for a program's data to live between transactions. The chain's state is just a set of locked coins. In the account model, the chain's state has structure: each account has its own slice of storage that the protocol tracks. A contract can have a million users with a million different balances stored in it. This is impossible to express cleanly in UTXOs.
+**Contracts can have their own state.** A contract account stores key-value pairs that persist across calls. The contract's code reads and writes this storage as transactions come in. This is what makes Ethereum programmable.
+
+In the UTXO model, there is nowhere for a program's data to live between transactions. The chain's state is just a set of locked coins. In the account model, the chain's state has structure: each account has its own slice of storage that the protocol tracks. A contract can have a million users with a million different balances stored in it. This is impossible to express cleanly in UTXOs.
 
 **State changes are simpler to reason about.** In Bitcoin, "what is Alice's balance" requires scanning the entire UTXO set for outputs locked to her addresses and summing them. In Ethereum, "what is Alice's balance" is one lookup in the state table. This makes contract code dramatically simpler. A token contract just keeps a mapping from address to balance and updates it on every transfer. The protocol doesn't need to know what the contract is doing. The contract manages its own state.
 
-**Parallelism is harder.** Two Bitcoin transactions that touch different UTXOs are independent and can be processed in parallel. Two Ethereum transactions that touch the same account may conflict. The Ethereum protocol processes transactions sequentially within a block to handle this. Most newer chains, including Solana, build elaborate machinery to recover the parallelism Ethereum gave up.
+**Parallelism is harder.** Two Bitcoin transactions that touch different UTXOs are independent and can be processed in parallel. Two Ethereum transactions that touch the same account may conflict. The Ethereum protocol processes transactions sequentially within a block to handle this. Some newer chains, including Solana, build elaborate machinery to recover the parallelism Ethereum gave up.
 
 ## Why nonces exist
 
 There's one more piece of the account that needs explaining.
 
-Recall the **nonce** from the account fields. It starts at zero, and Alice includes her current value in every transaction she signs. The chain only accepts the transaction if the nonce matches what it expects from Alice's account.
+Recall the **nonce** from the account fields. It starts at zero, and Alice includes its current value in every transaction she signs. The chain only accepts the transaction if the nonce matches what it expects from Alice's account.
 
 The nonce exists because the account model has a problem the UTXO model doesn't. In Bitcoin, a transaction is uniquely identified by the UTXOs it consumes. If Alice broadcasts the same transaction twice, the second one fails because the first one already consumed the input. Replay is impossible by construction.
 
@@ -151,6 +155,6 @@ The nonce also enforces ordering. If Alice broadcasts transactions with nonces 5
 
 ## Where the account model shows up in your code
 
-Most of the code you write in this course will assume the account model without naming it. When a token contract does `balances[alice] -= 3` and `balances[bob] += 3`, that's the account model at work, inside a contract. When a transaction reverts halfway through and the chain rolls back the state, that's the account model at work, at the protocol level. When you debug why a transaction "stuck" with the wrong nonce, that's the account model at work, at the wallet level.
+Most of the code you write in this course will assume the account model without naming it. When a token contract does `balances[alice] -= 3` and `balances[bob] += 3`, that's the account model at work, inside a contract. When a transaction reverts halfway through and the chain rolls back the state, that's the account model at work, at the protocol level. When you debug why a transaction got "stuck" with the wrong nonce, that's the account model at work, at the wallet level.
 
 The UTXO model produces a kind of cryptocurrency that's good at being money. The account model produces a kind of cryptocurrency that's good at being a platform for running arbitrary programs. Ethereum picked the second one. Every contract you build sits on top of that choice.
