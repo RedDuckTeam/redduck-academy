@@ -72,9 +72,9 @@ Now the opposite, done correctly. A bank's ledger is account-specific on purpose
 
 ## Why storing no user gives an attacker less to grab
 
-When a system keeps state for each user, that stored state becomes a target. A large share of attacks on account-specific systems come down to corrupting the mapping. Inflating a stored balance. Slipping through a check by pointing it at some other user's record. The state is what gets attacked, because the state is what decides the outcome.
+When a system keeps state for each user, that stored state becomes a target. A large share of attacks on account-specific systems come down to corrupting the mapping: inflating a stored balance, or slipping through a check by pointing it at another user's record.
 
-An account-generic system has none of that. There is no per-user state sitting in storage, so there is no per-user state to tamper with. The whole class of attack that targets the stored mapping has nothing to aim at. You remove the reason the user records exist in the first place. With no records to hold, there is nothing to defend and nothing to corrupt.
+An account-generic system has none of that. There is no per-user state sitting in storage, so there is no per-user state to tamper with. The whole class of attack that targets the stored mapping has nothing to aim at. There is no reason for user records to exist in the first place. With no records to hold, there is nothing to defend and nothing to corrupt.
 
 ## Why any caller can walk up and use it
 
@@ -92,4 +92,4 @@ The design question is never which style is better in the abstract. The only thi
 
 Skip this section if you only want the principle.
 
-Some on-chain proxies are account-generic. Every call carries a complete, self-contained assertion. For example, after this transaction a given address must hold at least a certain amount of a certain token. Nothing is stored between one call and the next. Because the proxy remembers no users and grants no one standing rights, anyone can call it, which is what makes it permissionless. ERC-4626 vaults sit at the other end, and correctly so. A vault has to track each depositor's claim over time, so it is account-specific by necessity, the same way a bank ledger is.
+Some on-chain proxies are account-generic. Every call carries a complete, self-contained assertion. For example: after this transaction, a given address must hold at least a certain amount of a certain token. Nothing is stored between one call and the next. Because the proxy remembers no users and grants no one standing rights, anyone can call it, which is what makes it permissionless. ERC-4626 vaults sit at the other end, and correctly so. A vault has to track each depositor's claim over time, so it is account-specific by necessity, the same way a bank ledger is.
