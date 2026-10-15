@@ -40,7 +40,7 @@ Put both jobs in one codebase with one set of access rights, and every change to
 
 ## Shrink the part that touches the data
 
-The fix is to make the code that touches card data as small as possible and keep everything else away from it. One small component reads and stores card numbers and does nothing else. The checkout pages, the discounts, and the receipts live outside it and never see a card number. They ask that component to do the sensitive work and get back only what they need, a yes or no, a masked number, a token.
+The fix is to make the code that touches card data as small as possible and keep everything else away from it. One small component reads and stores card numbers and does nothing else. The checkout pages, the discounts, and the receipts live outside it and never see a card number. They ask that component to do the sensitive work and get back only what they need: a yes or no, a masked number, or a token.
 
 The card industry's own standard is built on this move. PCI DSS, the security standard for handling payment cards, applies to every system that stores, processes, or transmits cardholder data. Those systems are what an assessment has to cover. Shrinking that set is what the standard calls scope reduction. Pull card handling into one small, isolated component, and only that component falls inside the assessment. The checkout pages and the marketing site sit outside it. A smaller sensitive part means a smaller thing to audit, to secure, and to review line by line.
 
@@ -101,6 +101,8 @@ You will design systems that hold something valuable, a set of keys, a balance, 
 
 ## Blockchain application
 
-Skip this section if you only want the principle. Decentralized finance adopted this split openly. Uniswap v2, an exchange that runs as code on Ethereum, splits into core and periphery contracts. The core contracts are deliberately minimal. They hold the pooled funds and enforce the one trading rule that must never break, the invariant that defines a fair swap. The periphery, mainly a contract called the Router, handles conveniences like routing a trade and checking prices. The Router holds no funds and no special privileges inside the core. It is just a caller, the same role the checkout plays against the card vault.
+Skip this section if you only want the principle.
 
-The ERC8009 standard has the same split, a minimal balance-proxy core and a replaceable Router periphery. There the division was forced by a real vulnerability rather than chosen up front, a story examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).
+Decentralized finance adopted this split openly. Uniswap v2, an exchange that runs as code on Ethereum, splits into core and periphery contracts. The core contracts are deliberately minimal. They hold the pooled funds and enforce the one trading rule that must never break, the invariant that defines a fair swap. The periphery, mainly a contract called the Router, handles conveniences like routing a trade and checking prices. The Router holds no funds and no special privileges inside the core. It is just a caller, the same role the checkout plays against the card vault.
+
+The ERC-8009 standard has the same split, a minimal balance-proxy core and a replaceable Router periphery. There the division was forced by a real vulnerability rather than chosen up front, a story examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).
