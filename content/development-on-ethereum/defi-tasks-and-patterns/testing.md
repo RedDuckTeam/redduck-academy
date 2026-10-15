@@ -24,7 +24,7 @@ faq:
 
 ## The stack we're using and why it doesn't really matter
 
-This lesson uses **Hardhat 3** with the **viem** library and the **Node.js test runner** (`node:test`). That's one specific stack. There are others. Foundry is Solidity-native and very popular in security audits. Hardhat with ethers.js is the older mainstream JavaScript stack. Truffle still appears in legacy projects. New frameworks will keep appearing. If you join a team they'll have picked one and you'll use what they picked.
+This lesson uses **Hardhat 3** with the **viem** library and the **Node.js test runner** (`node:test`). That's one specific stack. There are others. Foundry is Solidity-native and very popular in security audits. Hardhat with ethers.js is the older mainstream JavaScript stack. Truffle still appears in legacy projects. New frameworks will keep appearing. If you join a team, they'll have picked one and you'll use what they picked.
 
 What you should take from this lesson is not "how to use Hardhat 3." It's the mental model of testing smart contracts: how to think about what to test, how to structure tests so they're readable, how to set up state, how to assert outcomes, how to manipulate the test environment. That mental model is identical across every framework. The syntax differs but the moves are the same:
 
@@ -71,6 +71,7 @@ Here's a test that deploys this contract, calls `inc()`, and asserts the counter
 ```typescript
 // test/Counter.ts
 import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { network } from "hardhat";
 
 const { viem, networkHelpers } = await network.connect();
@@ -101,7 +102,7 @@ Inside the test, `viem.deployContract("Counter")` deploys a new instance of the 
 
 `assert.equal(value, 1n)` checks that `value` equals `1n`. The `n` suffix makes it a BigInt, which is how viem represents all uint256 values. Arithmetic that mixes a BigInt and a number throws an error, and a strict comparison between them is never equal (`1n === 1` is false), so always compare BigInt to BigInt.
 
-To use `assert.equal` you need one more import: `import assert from "node:assert/strict"`. The `strict` variant uses strict equality with no type coercion, which is what you want.
+To use `assert.equal` you need the `import assert from "node:assert/strict"` shown above. The `strict` variant uses strict equality with no type coercion, which is what you want.
 
 ## describe and it
 
@@ -123,7 +124,7 @@ describe("Counter", function () {
 
 The test output mirrors this structure as indented headings, which makes failures easier to scan. A good convention: each `it` block tests exactly one behavior. If you find yourself writing "and" in the description like "increments x and emits an event," split it into two tests. Smaller tests fail more informatively.
 
-`describe`/`it` is universal. Foundry uses `setUp()` functions and `test_` prefixed methods in Solidity. Ethers.js with Mocha uses the same `describe`/`it`. Vitest, Jest, Cypress all use it. The structure is portable.
+The `describe`/`it` pattern itself is widely shared: Ethers.js with Mocha uses the same `describe`/`it`, and Vitest, Jest, and Cypress all use it. Foundry takes a different approach, with `setUp()` functions and `test_`-prefixed methods in Solidity rather than this nested structure. The underlying moves still transfer even where the syntax doesn't.
 
 ## Read versus write
 
@@ -233,7 +234,7 @@ const events = await publicClient.getContractEvents({
 });
 ```
 
-This gives you the raw event log objects to inspect however you want. The `fromBlock` filter is important: without it you'll get every Increment event ever emitted by every Counter the test has deployed.
+This gives you the raw event log objects to inspect however you want. The `fromBlock` filter is important: without it you'll get every Increment event this contract has ever emitted, including ones from earlier tests, rather than just the one from this call.
 
 ## Manipulating time
 
@@ -305,7 +306,7 @@ Foundry has `vm.warp(timestamp)` for the same purpose. Ethers.js with `hardhat-n
 
 ## Fixtures
 
-Every test so far starts with `const counter = await viem.deployContract("Counter")`. That's a few seconds of setup time multiplied by every test you write. Across a real test suite this adds up to minutes of waiting. There's also a subtler problem: if the setup logic is repeated in every test, eventually some tests drift and their setups disagree. The wrong setup is a common source of false test failures and false test passes.
+Every test so far starts with `const counter = await viem.deployContract("Counter")`. That setup is repeated by every test you write. Across a real test suite with many contracts and transactions, that repeated setup adds up. There's also a subtler problem: if the setup logic is repeated in every test, eventually some tests drift and their setups disagree. The wrong setup is a common source of false test failures and false test passes.
 
 Fixtures solve both problems. A fixture is a function that sets up the chain to a known state. The first time you call it, it runs. Subsequent calls don't re-run the function. Instead they snapshot-restore the chain to the state after the first run, which is much faster and guaranteed identical.
 
