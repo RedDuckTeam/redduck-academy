@@ -191,7 +191,7 @@ delegatecall:  "Bring their function here, run it on our stuff"
 Imagine you have a friend Bob who's good at shopping.
 
 **Call:**
-You phone Bob and say "go buy me a book." Bob takes some money, goes to the bookstore, buys a book. The book is now Bob's book, sitting in Bob's house. The bookstore knows Bob as the customer. If Bob needs to write down what he bought, he writes in HIS notebook.
+You phone Bob and say "go buy me a book." Bob takes some money, goes to the bookstore, and buys a book. The book is now Bob's book, sitting in Bob's house. The bookstore knows Bob as the customer. If Bob needs to write down what he bought, he writes in HIS notebook.
 
 **Delegatecall:**
 You bring Bob to your house. You say "use your shopping skills, but use my stuff." Bob looks at YOUR shopping list, takes money from YOUR wallet, and writes the new book into YOUR notebook. The book ends up in YOUR library. The phone calls Bob makes appear to come from YOU.
@@ -265,7 +265,7 @@ contract Foo {                Slot 0: a
 }
 ```
 
-The compiler decides which variable goes in which slot based on the ORDER they're declared. The variable's name doesn't matter at the storage level. Slot 0 is just "the first 256 bits of storage."
+The compiler decides which variable goes in which slot based on the ORDER in which they're declared. The variable's name doesn't matter at the storage level. Slot 0 is just "the first 256 bits of storage."
 
 This is fine when a contract uses its own storage. It becomes dangerous when one contract delegatecalls into another, because the two contracts have to agree on what's in each slot.
 
@@ -351,7 +351,7 @@ The vulnerable contract delegatecalls into Helper's `doStuff`. Helper writes `ti
 
 An attacker can pass a `uint256` that, when interpreted as an address, points to their own malicious contract. After one call, Vulnerable's `helper` slot now points to the attacker's contract. The next time anyone calls `doStuff`, it delegatecalls into the attacker's contract instead of the original Helper.
 
-The attacker's contract can have a `doStuff(uint256)` that does whatever it wants in Vulnerable's storage. Including:
+The attacker's contract can have a `doStuff(uint256)` that does whatever it wants in Vulnerable's storage, including:
 
 ```solidity
 function doStuff(uint256) external {
