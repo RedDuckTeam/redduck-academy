@@ -82,7 +82,7 @@ To make this work, the owner has to sign something. A naive approach: sign `kecc
 
 First, **the wallet has no idea what the user is signing.** All it sees is an opaque hash. The display reads "Sign message: 0x9a73f2c8..." and the user has no way to verify what that hash means. Malicious dApps have exploited this by tricking users into signing hashes that secretly authorize transfers to attacker-controlled addresses. The user thinks they're signing a login token. They're actually approving an unlimited token allowance.
 
-Second, **signatures are cross-application by default.** A signature for "approve Bob 100" on the USDC contract on Ethereum mainnet would also be valid on a clone of USDC on Polygon, or on a different token contract with the same logic, or replayed in a different chain entirely. There's nothing in the bare signature that ties it to a specific contract, chain, or even application.
+Second, **signatures are cross-application by default.** A signature for "approve Bob 100" on the USDC contract on Ethereum mainnet would also be valid on a clone of USDC on Polygon, or on a different token contract with the same logic, or replayed on a different chain entirely. There's nothing in the bare signature that ties it to a specific contract, chain, or even application.
 
 [**EIP-712**](https://eips.ethereum.org/EIPS/eip-712) was the standard introduced in 2017 to fix both problems. It defines a way to sign typed structured data so that:
 
@@ -150,7 +150,7 @@ The final digest that gets signed combines both layers. The exact construction:
 digest = keccak256(0x1901 || domainSeparator || messageHash)
 ```
 
-The `0x1901` prefix is a magic byte sequence defined in the standard. It guarantees this digest can't collide with the digest of a regular Ethereum transaction, which uses a different prefix. The signer doesn't have to know any of this, their wallet builds the digest from the typed data and signs it.
+The `0x1901` prefix is a magic byte sequence defined in the standard. It guarantees this digest can't collide with the digest of a regular Ethereum transaction, which uses a different prefix. The signer doesn't have to know any of this; their wallet builds the digest from the typed data and signs it.
 
 ## ERC-2612 specifics
 
@@ -415,13 +415,13 @@ const v = parseInt(signature.slice(130, 132), 16);
 
 Every field in `domain` must match exactly what the contract uses, byte for byte. A wrong name, wrong version, or wrong chain ID will produce a signature that the contract will reject as invalid, with no helpful error message about what went wrong. Mismatches here are a common cause of permit failures, and the contract gives no indication of which field was wrong.
 
-Viem's `signTypedData`, and equivalents in other wallet libraries, takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method. The helper handles the `\x19\x01` prefixing, the canonical JSON encoding, and the domain separator calculation correctly.
+Viem's `signTypedData`, and equivalents in other wallet libraries, takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method. The helper handles the `\x19\x01` prefixing, the canonical typed-data encoding, and the domain separator calculation correctly.
 
 ## Security considerations
 
 **The deadline matters.** Without it, a signature lasts forever. A user who signed a permit a year ago for some forgotten dApp shouldn't suddenly be vulnerable when that dApp resurfaces and submits the old signature. Set deadlines short by default. A swap should give itself 30 minutes, not 30 days.
 
-**Permit signatures can be front-run.** Since the signature is just bytes, anyone who sees it can submit it themselves. They can't change who the allowance goes to but they can submit the permit before the user's intended transaction, which then fails because the nonce has already been consumed. The result: the user's approval went through but their intended follow-up did not. They're now exposed to anyone with that allowance until the spender uses or revokes it. Production code should handle this case, usually by checking if the allowance already matches before submitting permit.
+**Permit signatures can be front-run.** Since the signature is just bytes, anyone who sees it can submit it themselves. They can't change who the allowance goes to but they can submit the permit before the user's intended transaction, which then fails because the nonce has already been consumed. The result: the user's approval went through but their intended follow-up did not. The allowance remains outstanding to that spender until it is used or until the owner revokes it. Production code should handle this case, usually by checking if the allowance already matches before submitting permit.
 
 **The nonce prevents replay within one contract** but does not prevent the same logical permit from being signed twice with different nonces. If a user signs permit-with-nonce-3, the dApp submits it, and the user later signs another permit-with-nonce-4 for the same spender and amount, the second one is also valid. Wallets that batch operations need to track nonces carefully to avoid signing conflicting permits.
 
