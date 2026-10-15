@@ -46,7 +46,7 @@ The first instinct of most developers coming from web2 is to run a bot. Spin up 
 
 The bot is a single point of failure. If your server goes down, your dead-man's switch dies with it. If the hot wallet runs out of ETH for gas, every upkeep stalls. If the machine is compromised, the attacker has a funded key. You have reintroduced exactly the centralized, trusted operator that the contract was supposed to do without. For a protocol that markets itself as decentralized, a critical function gated behind one team's cron job is a contradiction users will eventually notice.
 
-The second instinct is to make the work permissionless and let economics handle it. Anyone can call `liquidate()`, and the caller takes a cut of the seized collateral. This is the pattern the lending lecture covered, and it works beautifully when the task carries a built-in profit. Liquidations get done because liquidators race for the bonus. The same logic drives arbitrage and the closing of expired options.
+The second instinct is to make the work permissionless and let economics handle it. Anyone can call `liquidate()`, and the caller takes a cut of the seized collateral. This is the pattern the lending lesson covered, and it works beautifully when the task carries a built-in profit. Liquidations get done because liquidators race for the bonus. The same logic drives arbitrage and the closing of expired options.
 
 It falls apart for any task that has no natural payout. Nobody will pay gas to call your vault's `harvest()` out of goodwill. Nobody will spend money to advance a vesting schedule that benefits someone else. You can try to bolt on an artificial reward, but now you are paying a bounty on every call and inviting people to game the timing. For unprofitable maintenance work, the incentivized-caller model has no one to incentivize.
 
@@ -71,7 +71,7 @@ interface AutomationCompatibleInterface {
 
 The split between these two functions is the whole idea, and it mirrors the off-chain-decides, on-chain-executes shape you already saw with VRF.
 
-`checkUpkeep` answers one question: is there work to do right now. The Automation nodes call it off-chain, as a simulation, on every block. Because the call never lands in a block, it costs no gas and changes no state. You can read as much as you need inside it. It returns a boolean and an optional `performData` blob that gets handed to the execution step.
+`checkUpkeep` answers one question: is there work to do right now? The Automation nodes call it off-chain, as a simulation, on every block. Because the call never lands in a block, it costs no gas and changes no state. You can read as much as you need inside it. It returns a boolean and an optional `performData` blob that gets handed to the execution step.
 
 `performUpkeep` does the actual work. When `checkUpkeep` returns true, a node packages a real transaction that calls `performUpkeep` on-chain, pays the gas, and the work happens. This is the only part that touches the chain and the only part you pay for.
 
@@ -155,17 +155,17 @@ The split between these two functions is the whole idea, and it mirrors the off-
 
 Automation exposes three ways to fire an upkeep, and picking the right one keeps your contract simple.
 
-Time-based triggers run a function on a fixed schedule given as a cron expression, every hour, every day at midnight, the first of each month. You point the registration at a target function and a schedule, and you write no `checkUpkeep` at all. This is the right tool for vesting releases, periodic rebalances, and anything that runs on the calendar rather than on a condition.
+Time-based triggers run a function on a fixed schedule given as a cron expression: every hour, every day at midnight, the first of each month. You point the registration at a target function and a schedule, and you write no `checkUpkeep` at all. This is the right tool for vesting releases, periodic rebalances, and anything that runs on the calendar rather than on a condition.
 
-Custom-logic triggers use the `checkUpkeep` and `performUpkeep` pair above. The nodes poll your `checkUpkeep` every block, and when it returns true they call `performUpkeep`. This is the tool for condition-based work where you cannot predict the timing in advance, a price crossing a threshold, a quorum being reached, a buffer filling up.
+Custom-logic triggers use the `checkUpkeep` and `performUpkeep` pair above. The nodes poll your `checkUpkeep` every block, and when it returns true they call `performUpkeep`. This is the tool for condition-based work where you cannot predict the timing in advance: a price crossing a threshold, a quorum being reached, a buffer filling up.
 
-Log triggers fire when a specific event log is emitted on-chain. Instead of `checkUpkeep`, you implement `checkLog`, which receives the matching log and decides whether to act. This suits event-driven reactions, responding to a deposit, a governance vote, or a cross-contract signal, without polling state every block.
+Log triggers fire when a specific event log is emitted on-chain. Instead of `checkUpkeep`, you implement `checkLog`, which receives the matching log and decides whether to act. This suits event-driven reactions (responding to a deposit, a governance vote, or a cross-contract signal) without polling state every block.
 
-For most non-scheduled DeFi mechanics, custom logic is the default, so the rest of this lecture stays with it.
+For most non-scheduled DeFi mechanics, custom logic is the default, so the rest of this lesson stays with it.
 
 ## Wiring it up: a stop-loss order
 
-Here is a contract that sells a held asset when its price drops below a floor. It reads a Chainlink price feed, the same `latestRoundData` and staleness check from the oracle lecture, and it uses Automation to fire the sale automatically.
+Here is a contract that sells a held asset when its price drops below a floor. It reads a Chainlink price feed, the same `latestRoundData` and staleness check from the oracle lesson, and it uses Automation to fire the sale automatically.
 
 ```solidity
 // Solidity 0.8.20, Ethereum mainnet
@@ -329,7 +329,7 @@ Do not hardcode the forwarder in the constructor. You do not know its address un
 
 An upkeep is paid in LINK. You register it at the Automation app or programmatically against the registry, deposit a LINK balance, and the network deducts from that balance each time it runs `performUpkeep`, covering the gas plus a premium that pays the node.
 
-When the LINK balance is depleted, the upkeep stops. It does not warn you in the contract, it does not revert, it simply stops being executed, and your liquidations or releases quietly fail to happen. Monitoring the balance and topping it up is operational work you own. Several teams have deployed a contract that worked perfectly in testing and then watched a critical upkeep go silent weeks later because nobody refilled the LINK.
+When the LINK balance is depleted, the upkeep stops. It does not warn you in the contract or revert. It simply stops being executed, and your liquidations or releases quietly fail to happen. Monitoring the balance and topping it up is operational work you own. Several teams have deployed a contract that worked perfectly in testing and then watched a critical upkeep go silent weeks later because nobody refilled the LINK.
 
 The other limit to plan for is gas. Each upkeep has a configured gas limit for `performUpkeep`. If your execution exceeds it, the transaction reverts and the work does not get done. This makes unbounded loops especially dangerous here, because the loop might fit under the limit in a test with three items and blow past it in production with three thousand.
 
