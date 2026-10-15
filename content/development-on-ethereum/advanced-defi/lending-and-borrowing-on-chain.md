@@ -27,7 +27,7 @@ faq:
       borrowers pay, less a reserve factor of 10% to 25%.
 ---
 
-> A lending protocol lets users supply an ERC-20 token to a shared pool to earn yield, and lets others borrow from the same pool by posting collateral worth more than they borrow. The core shape has been stable since Compound v1 in 2018, a pool per asset, interest set by utilization, collateral priced by oracle, liquidations triggered when a position's collateral falls below a safety threshold. This lecture walks through each part of the system, how the parts connect, and where the design assumptions break.
+> A lending protocol lets users supply an ERC-20 token to a shared pool to earn yield, and lets others borrow from the same pool by posting collateral worth more than they borrow. The core shape has been stable since Compound v1 in 2018: a pool per asset, interest set by utilization, collateral priced by oracle, liquidations triggered when a position's collateral falls below a safety threshold. This lesson walks through each part of the system, how the parts connect, and where the design assumptions break.
 
 ## The supply side
 
@@ -39,7 +39,7 @@ A supplier can redeem their receipt tokens for the underlying asset at any time,
 
 ## The borrow side
 
-A borrower deposits collateral, then takes out a loan against it. The collateral is typically a different asset from the loan, for example deposit ETH as collateral and borrow USDC against it. Posting collateral and borrowing happen in the same contract, and the protocol tracks each user's collateral and debt positions in a single account.
+A borrower deposits collateral, then takes out a loan against it. The collateral is typically a different asset from the loan, for example, deposit ETH as collateral and borrow USDC against it. Posting collateral and borrowing happen in the same contract, and the protocol tracks each user's collateral and debt positions in a single account.
 
 The amount that can be borrowed is bounded by the Loan-to-Value ratio, abbreviated LTV. For ETH on Aave, the LTV might be 80%. With 1 ETH deposited as collateral while ETH trades at $3,000, a borrower can take out up to $2,400 worth of USDC.
 
@@ -241,7 +241,7 @@ If the oracle is wrong, the protocol is wrong. Two specific failure modes follow
 
 **Oracle reports a price too low.** Healthy positions are marked as liquidatable. Liquidators rush in and seize collateral from positions that, by true market prices, should never have been liquidated. The borrower loses collateral they should not have lost.
 
-This is the central reason most production lending protocols use Chainlink price feeds rather than reading prices off a single AMM pool. A single AMM pool's spot price can be moved within one transaction by a sufficiently large swap or flash loan. The flash loans lecture covered the attack walkthrough end to end. Chainlink aggregates many off-chain price sources and updates only after the aggregated price moves beyond a threshold, making single-transaction manipulation infeasible.
+This is the central reason most production lending protocols use Chainlink price feeds rather than reading prices off a single AMM pool. A single AMM pool's spot price can be moved within one transaction by a sufficiently large swap or flash loan. The flash loans lesson covered the attack walkthrough end to end. Chainlink aggregates many off-chain price sources and updates only after the aggregated price moves beyond a threshold, making single-transaction manipulation infeasible.
 
 Some protocols use multiple oracles for the same asset and cross-check. If two sources diverge by more than a threshold, the protocol pauses operations on that asset until the divergence resolves. This costs availability but prevents bad debt during oracle outages.
 
