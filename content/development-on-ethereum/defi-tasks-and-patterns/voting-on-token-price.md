@@ -11,4 +11,10 @@ You'll use the ERC-20 token from your previous capstone task. That token represe
 
 Two things make this task more than just an exercise. First, the option space is unbounded. Voters can propose ANY uint256 as a price rather than picking from a fixed list. Second, you'll write the tests yourself. The previous lesson taught you how to test Solidity contracts with Hardhat 3 and viem. This is where you apply that skill to a contract you wrote.
 
-After your contract and tests pass, take 5 minutes to write a short note, either in a markdown file or as comments at the top of your contract, answering: **what would break if voters could withdraw their locked tokens DURING the voting period, before ****`votingEnd`****?  **Be specific about which state variable would go wrong and why. This question sets up the next lesson, which is about solving exactly this problem.
+After your contract and tests pass, take 5 minutes to write a short note, either in a markdown file or as comments at the top of your contract, answering: **what would break if voters could withdraw their locked tokens DURING the voting period, before `votingEnd`? Be specific about which state variable would go wrong and why.** This question sets up the next lesson, which is about solving exactly this problem.
+
+Starter repository: https://github.com/RedDuckTeam/redduck-academy-solidity-template
+
+## How to submit
+
+Paste a link to your repository.
