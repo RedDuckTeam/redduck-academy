@@ -146,11 +146,11 @@ This slippage tolerance is what makes sandwich attacks profitable, as we'll see 
 
 ## Front-running: the basic attack
 
-A front-running attack is the simplest form. The attacker sees a profitable transaction in the mempool and copies it with a higher gas fee, getting their version mined first.
+A front-running attack is the simplest form. The attacker sees a profitable transaction in the mempool and copies it with a higher gas fee, getting their version included first.
 
-Example: a token is about to be listed on a major exchange, news that everyone agrees will push its price up. Alice notices the news early and submits a transaction to buy 10,000 tokens at the current price. Bob's bot sees Alice's transaction in the mempool. Before Alice's transaction is mined, Bob submits the same trade with 50% higher gas fee. Bob's transaction mines first, he buys his tokens at the lower price, then Alice's transaction mines and pushes the price up further. Bob immediately sells, profiting from the price movement Alice was about to cause.
+Example: a token is about to be listed on a major exchange, news that everyone agrees will push its price up. Alice notices the news early and submits a transaction to buy 10,000 tokens at the current price. Bob's bot sees Alice's transaction in the mempool. Before Alice's transaction is included in a block, Bob submits the same trade with a 50% higher gas fee. Bob's transaction is included first, and he buys his tokens at the lower price. Then Alice's transaction is included and pushes the price up further. Bob immediately sells, profiting from the price movement Alice was about to cause.
 
-Alice still gets her tokens, but at a worse price than she would have. The profit Bob made came directly from Alice's loss, even though Bob never touched Alice's wallet.
+Alice still gets her tokens, but at a worse price than she would have otherwise. The profit Bob made came directly from Alice's loss, even though Bob never touched Alice's wallet.
 
 ## Sandwich attacks: front-running plus back-running
 
@@ -263,7 +263,7 @@ function swapExactTokensForTokens(
 
 The user computes their `amountOutMin` off-chain based on the current price plus their tolerance. The contract enforces this floor on chain. A sandwich attacker can still squeeze profit out of the user up to `amountOutMin`, but they can't take any more.
 
-The same idea applies to any function where the user commits to a value that depends on chain state. Lending protocols use `minCollateralFactor`, NFT marketplaces use `maxPrice`, airdrop claims use `expectedAmount`. The pattern is always the same: the user signs off on a worst-acceptable outcome, the contract enforces it.
+The same idea applies to any function where the user commits to a value that depends on chain state. Lending protocols use `minCollateralFactor`, NFT marketplaces use `maxPrice`, airdrop claims use `expectedAmount`. The pattern is always the same: the user signs off on a worst-acceptable outcome, and the contract enforces it.
 
 ## Defense 2: deadline parameters
 
@@ -275,7 +275,7 @@ The defense is to include a `deadline` parameter: a block timestamp past which t
 require(block.timestamp <= deadline, "Transaction expired");
 ```
 
-A user typically sets the deadline to 10-30 minutes in the future when they submit. If the transaction hasn't mined by then, it reverts. The user can submit a new transaction at the current price instead of being executed at a stale one.
+A user typically sets the deadline to 10–30 minutes in the future when they submit. If the transaction hasn't been included in a block by then, it reverts. The user can submit a new transaction at the current price instead of being executed at a stale one.
 
 Deadlines also limit the time window in which a sandwich bot can pursue your transaction. If your deadline is short, the bot has to commit early and may face more competition from other bots.
 
@@ -307,7 +307,7 @@ function revealAndSwap(
 }
 ```
 
-In the commit phase, an attacker watching the mempool sees the commitment but the hash is opaque. They can't tell what trade is about to happen. The `secret` is a random salt that defeats brute-force attacks where an attacker might otherwise precompute hashes for every popular trade size and look for a match.
+In the commit phase, an attacker watching the mempool sees the commitment, but the hash is opaque. They can't tell what trade is about to happen. The `secret` is a random salt that defeats brute-force attacks where an attacker might otherwise precompute hashes for every popular trade size and look for a match.
 
 Phase 1 is genuinely private. Phase 2 is where this pattern has a problem worth understanding.
 
@@ -409,7 +409,7 @@ The most well-known service is **Flashbots Protect**. Users add a custom RPC end
 
 This defense lives at the wallet layer rather than the contract layer. As a contract developer, you can't enforce that your users use private mempools, but you can recommend it and integrate with services that make it easier. Many production DeFi frontends have started defaulting their users to private RPCs.
 
-A bonus to private relays: some of them participate in "MEV-Share" schemes where searchers bid for the right to back-run your transaction profitably. A portion of that bid goes back to you as a rebate. So instead of being a victim of MEV, you can earn a small cut of it.
+A bonus of private relays: some of them participate in "MEV-Share" schemes where searchers bid for the right to back-run your transaction profitably. A portion of that bid goes back to you as a rebate. So instead of being a victim of MEV, you can earn a small cut of it.
 
 ## Why MEV isn't really fixable
 
