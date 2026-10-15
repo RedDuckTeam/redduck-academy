@@ -204,7 +204,7 @@ This is the central feature ERC-1155 added that ERC-721 doesn't have. The standa
   <text x="360" y="392" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">ERC-1155 folds many token movements into a single transaction.</text>
 </svg>
 
-Why this matters. Every Ethereum transaction has a base cost of 21,000 gas, regardless of what it does. On top of that you pay for whatever the transaction's code consumes. If you're transferring three NFTs from Alice to Bob using ERC-721, you pay 21,000 base gas three times, plus the per-transfer execution cost. With ERC-1155's batch transfer, you pay the base cost once.
+Why this matters: every Ethereum transaction has a base cost of 21,000 gas, regardless of what it does. On top of that you pay for whatever the transaction's code consumes. If you're transferring three NFTs from Alice to Bob using ERC-721, you pay 21,000 base gas three times, plus the per-transfer execution cost. With ERC-1155's batch transfer, you pay the base cost once.
 
 The savings scale with batch size. Three transfers saves a meaningful amount. Twenty transfers saves close to half. A hundred transfers saves enough that batched and unbatched are different orders of magnitude. For projects that distribute large numbers of tokens, like game item drops, airdrops to thousands of wallets, or marketplace settlement of dozens of trades, this difference is real money.
 
