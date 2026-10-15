@@ -71,7 +71,7 @@ function build() public pure returns (uint256[] memory) {
 - [ ] Compiles and returns `[1, 2]` (the `push` is silently ignored)  <!-- a:69fba6201a3915235faad010 -->
 
 <!-- q:69fba62a1a3915235faad011 -->
-Two functions read from data structures using a value that was never written:
+This function reads from two data structures at positions that were never written:
 
 ```solidity
 contract A {
@@ -101,6 +101,8 @@ contract Vault {
     }
 }
 ```
+
+What does `deposit` return?
 
 - [ ] 0, because the deposit is only credited after the function returns  <!-- a:69fba6db1a3915235faad017 -->
 - [x] 1 ether, because the deposit is credited before the function body runs  <!-- a:69fba6f31a3915235faad018 -->
@@ -140,7 +142,7 @@ function castFrom(uint8 value) public pure returns (Status) {
 
 What happens when this function is called with `value = 5`?
 
-- [ ] Returns `Status.С` (5 modulo 3 = 2, but indexing wraps around to A)  <!-- a:69fba7971a3915235faad021 -->
+- [ ] Returns `Status.C` (5 modulo 3 = 2, so the value wraps around)  <!-- a:69fba7971a3915235faad021 -->
 - [ ] Returns `Status.C` (out-of-range values are clamped to the highest valid value)  <!-- a:69fba7a61a3915235faad022 -->
 - [x] Reverts the transaction  <!-- a:69fba7ae1a3915235faad023 -->
 - [ ] Returns an undefined value, and behavior depends on the compiler version  <!-- a:69fba7b71a3915235faad024 -->
