@@ -29,7 +29,7 @@ faq:
 
 ## The problem: trading without an order book
 
-Centralized exchanges work with order books. Buyers post bids, sellers post asks, the exchange matches them. On chain, this is hard. Every post and every cancel is a transaction that costs gas. A market maker who wants to update quotes every block goes bankrupt fast.
+Centralized exchanges work with order books. Buyers post bids, sellers post asks, and the exchange matches them. On chain, this is hard. Every post and every cancel is a transaction that costs gas. A market maker who wants to update quotes every block goes bankrupt fast.
 
 Uniswap V2 takes a different approach. Instead of matching orders, it holds a pool of both tokens and uses a formula to set the price. Anyone can swap one token for the other against the pool. Anyone can add tokens to the pool to make it deeper. The price comes out of one piece of math.
 
@@ -41,7 +41,7 @@ A V2 pool is a contract that holds two tokens. We'll call them token A and token
 x * y = k
 ```
 
-`x` is how much of token A the pool holds. `y` is how much of token B the pool holds. `k` is the product, and the pool keeps `k` constant across every swap.
+`x` is how much of token B the pool holds. `y` is how much of token A the pool holds. `k` is the product, and the pool keeps `k` constant across every swap.
 
 Suppose the pool currently holds 100 of token A and 100 of token B. Then `x = 100`, `y = 100`, and `k = 10,000`. After any swap, the product of the two reserves must still equal 10,000. That's all the rule says.
 
@@ -383,7 +383,7 @@ There's no separate fee accounting in the contract. No per-LP fee tracker. No `c
 
 ## Impermanent loss: the cost LPs actually pay
 
-The previous section described the specific risk LPs face: as prices move, the pool rebalances and the LP ends up holding more of whichever token lost value. That risk has a name: impermanent loss. Fees are the reward side, impermanent loss is the cost side, and the LP position only makes sense when you see both together.
+The previous section described the specific risk LPs face: as prices move, the pool rebalances and the LP ends up holding more of whichever token lost value. That risk has a name: impermanent loss. Fees are the reward side; impermanent loss is the cost side. The LP position only makes sense when you see both together.
 
 The mechanism is simple. The constant-product invariant rebalances the pool every time price changes. If ETH appreciates, swappers buy ETH from the pool, so the pool loses ETH and gains USDC. By the time price has doubled, the pool holds less ETH than at entry. An LP who owns a fixed share of the pool holds proportionally less ETH too. They missed part of the ETH appreciation.
 
@@ -425,7 +425,7 @@ Providing liquidity in a constant-product AMM is like selling volatility insuran
 
 **One pair per contract.** A V2 pair is a self-contained contract holding exactly two tokens. The pool for USDC/WETH is a different deployed contract from the pool for DAI/USDC. This isolates risk between markets, simplifies the math (each pool tracks two reserves and one LP supply, nothing else), and lets a separate Factory contract deploy new pairs deterministically as people want new markets.
 
-**Pairs hold ERC-20s only.** A pair contract cannot hold native ETH. Anyone wanting to trade ETH against an ERC-20 must first wrap it into WETH (the ERC-20 wrapper for ETH) and trade the WETH/token pair. This isn't a usability complaint, it's deliberate. By accepting only ERC-20s, the pool has one code path for token movement. Handling both native ETH and ERC-20s would double the surface area of every function and create edge cases.
+**Pairs hold ERC-20s only.** A pair contract cannot hold native ETH. Anyone wanting to trade ETH against an ERC-20 must first wrap it into WETH (the ERC-20 wrapper for ETH) and trade the WETH/token pair. This isn't a usability complaint; it's deliberate. By accepting only ERC-20s, the pool has one code path for token movement. Handling both native ETH and ERC-20s would double the surface area of every function and create edge cases.
 
 ## A subtlety: the minimum liquidity lock
 
@@ -435,6 +435,6 @@ Why is this needed? Without it, an attacker can manipulate the share price for t
 
 Now the next user who tries to deposit normally finds that their proportional share rounds down to zero LP tokens, because each LP token now represents a hugely inflated amount of underlying. They lose their deposit to the attacker, who can then withdraw and walk away with the donation plus the victim's funds.
 
-Burning 1000 wei of LP tokens at the first deposit means there's always a baseline supply that nobody owns and nobody can manipulate around. This caps how much an attacker can inflate the per-share value. It's a small detail, and the naive implementation (just mint `sqrt(x * y)` to the depositor) has this bug. Locking 1000 wei at construction makes the bug go away.
+Burning 1000 wei of LP tokens at the first deposit means there's always a baseline supply that nobody owns and nobody can manipulate around. This caps how much an attacker can inflate the per-share value. It's a small detail, and the naive implementation (just mint `sqrt(x * y)` to the depositor) has this bug. Locking 1000 wei at the first deposit makes the bug go away.
 
 You'll need to think about this when you build your own version.
