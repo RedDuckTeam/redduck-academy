@@ -66,7 +66,7 @@ contract Vault {
 
 `require(condition, "message")` takes a boolean condition and a string. If the condition is true, execution continues. If it's false, the call reverts with the provided message as the error reason.
 
-The string form has a cost. The message has to be stored in the contract's bytecode and emitted as part of the revert data. A 32-byte message adds roughly 50 gas of bytecode to the deployed contract, plus encoding cost on every revert. For frequently-called functions with many require checks, this adds up.
+The string form has a cost. The message has to be stored in the contract's bytecode and emitted as part of the revert data. A 32-byte message adds roughly 50 gas of bytecode to the deployed contract, plus encoding cost on every revert. For frequently called functions with many require checks, this adds up.
 
 ## `revert`: the manual form
 
@@ -134,7 +134,7 @@ Each error declaration looks like a function signature without a body. To trigge
 
 A frontend reading the revert from a failed transaction sees a structured object rather than a raw string. For example, an `InsufficientBalance(1000, 500)` revert tells the frontend exactly how short the user was, which is far more useful than the string `"insufficient balance"`.
 
-`require` was also overloaded to accept a custom error as its second argument starting in 0.8.26 via the via-IR pipeline, with full legacy-pipeline support from 0.8.27:
+Starting in 0.8.26, `require` was also overloaded to accept a custom error as its second argument. In 0.8.26 this worked via the via-IR pipeline, with full legacy-pipeline support from 0.8.27:
 
 ```solidity
 error NotOwner();
@@ -247,7 +247,7 @@ modifier nonReentrant() {
 }
 ```
 
-The guard sets a flag, executes the function, and clears the flag. If the function tries to re-enter through an external call, the second entry hits the `require` and reverts.
+The guard sets a flag, executes the function, and clears the flag. If anything re-enters the function through an external call, the second entry hits the `require` and reverts.
 
 ## Multiple modifiers, and modifier inheritance
 
@@ -289,7 +289,7 @@ contract Bank {
 }
 ```
 
-An `event` declaration looks like a function signature with no body. To fire one, you write `emit EventName(args)`. The event and its arguments get appended to the transaction's log entries. Once the transaction is mined, anyone who knows the contract's address and the event signature can find and decode the log entry.
+An `event` declaration looks like a function signature with no body. To fire one, you write `emit EventName(args)`. The event and its arguments get appended to the transaction's log entries. Once the transaction is included in a block, anyone who knows the contract's address and the event signature can find and decode the log entry.
 
 This is the primary way state-mutating functions report results to off-chain code. A state-mutating function like `deposit()` can't return a value to its caller off-chain, so it emits an event instead. A frontend listens for `Deposited(address,uint256,uint256)` events from the contract and updates its UI when one arrives.
 
@@ -305,7 +305,7 @@ A frontend can ask "give me every `Deposited` event where `from == 0x1234...`" a
 
 The "three indexed fields" limit comes from how Ethereum stores logs. Each log entry has up to four topics. Topic 0 is automatically the keccak256 hash of the event signature, like `keccak256("Deposited(address,uint256,uint256)")`. That leaves three topics free for indexed parameters.
 
-For value types like `address`, `uint256`, and `bytes32`, the topic stores the value directly. For dynamic types like `string` and `bytes`, the topic stores the keccak256 hash of the value. The original value is not recoverable from the topic alone. This means you can filter by exact match on a string but you can't recover the original string from the log unless it's also passed as a non-indexed parameter.
+For value types like `address`, `uint256`, and `bytes32`, the topic stores the value directly. For dynamic types like `string` and `bytes`, the topic stores the keccak256 hash of the value. The original value is not recoverable from the topic alone. This means you can filter by exact match on a string, but you can't recover the original string from the log unless it's also passed as a non-indexed parameter.
 
 The non-indexed parameters of an event get packed into the log's `data` field, which is essentially unstructured bytes. Decoding `data` requires knowing the event ABI.
 
