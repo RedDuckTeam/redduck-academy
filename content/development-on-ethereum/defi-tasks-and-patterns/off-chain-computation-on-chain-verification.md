@@ -44,7 +44,7 @@ The chain, in contrast, has powerful verification primitives. Hashing, signature
 
 This suggests a split: do the hard work off-chain, then submit the result to the chain along with whatever the chain needs to verify the work was done correctly. The contract no longer computes anything expensive. It receives a claim and checks the claim. If the claim is valid, the contract uses the result. If the claim is invalid, the contract reverts.
 
-This is the pattern. The user does work, the contract verifies.
+This is the pattern. The user does the work, and the contract verifies it.
 
 The important property: the contract never trusts the user's claim blindly. The verification step is the security boundary. A user can submit any claim they want, but if it doesn't pass verification, nothing happens. They can lie, but lying only causes their own transaction to revert. They can't corrupt state by lying. The cost of trying and failing is just their gas.
 
@@ -104,7 +104,7 @@ This is the pattern at its purest. The same construction is how every modern air
 
 Some Solidity contracts need to compute square roots. Uniswap V2 uses one when initializing a liquidity pool. AMMs use them for invariant calculations. Bonding curves use them for pricing.
 
-Solidity doesn't have a native square root opcode. Computing `sqrt(n)` requires an iterative algorithm, typically Newton's method or a binary search. A good implementation takes around 20-30 iterations and costs a few thousand gas. Not catastrophic, but not free either.
+Solidity doesn't have a native square root opcode. Computing `sqrt(n)` requires an iterative algorithm, typically Newton's method or a binary search. A good implementation takes around 20–30 iterations and costs a few thousand gas. Not catastrophic, but not free either.
 
 The off-chain trick: the user computes `sqrt(n)` themselves with infinite precision and submits the answer. The contract verifies the answer with two multiplications, costing about 50 gas total.
 
@@ -205,7 +205,7 @@ A short tour of where you'll meet this pattern as you keep learning:
 
 **Oracle attestations.** A user submits a data point with a signature from a trusted oracle. The contract verifies the signature and uses the data. Chainlink's data feeds work approximately this way internally, though with multiple signatures and aggregation.
 
-**ZK proofs.** A user computes a complex statement off-chain with a SNARK or STARK, producing a tiny proof. The contract verifies the proof in fixed-size constant work, regardless of how complex the underlying statement is. ZK rollups use this to compress thousands of transactions into a single chain proof.
+**ZK proofs.** A user proves a complex statement off-chain with a SNARK or STARK, producing a tiny proof. The contract verifies the proof in fixed-size constant work, regardless of how complex the underlying statement is. ZK rollups use this to compress thousands of transactions into a single chain proof.
 
 **Light clients.** A node tracks just the headers of a chain instead of the full state. To check a specific transaction, it asks a full node for a Merkle proof that the transaction is in the chain. Verification is logarithmic in the chain size.
 
