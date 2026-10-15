@@ -24,7 +24,7 @@ faq:
       signature yields the same 4 bytes in every contract.
 ---
 
-> Three language features that show up across nearly every Solidity contract. Loops iterate over data and run code repeatedly, with a constraint that doesn't exist outside Solidity: every iteration costs gas, and the total gas available in a transaction is bounded by the block. Data locations control where values live during execution, which determines what they cost and whether changes to them persist. Hashing produces a fixed-length hash of arbitrary data, and `keccak256` is the primary one used for storage slot derivation, function selectors, event topics, commitment schemes, and signature verification. All three are simple in their basic form and trickier than they look in production.
+> Three language features that show up across nearly every Solidity contract. Loops iterate over data and run code repeatedly, with a constraint that doesn't exist outside Solidity: every iteration costs gas, and the total gas available in a transaction is bounded by the block. Data locations control where values live during execution, which determines what they cost and whether changes to them persist. Hashing produces a fixed-length hash of arbitrary data, and `keccak256` is the primary hash function used for storage slot derivation, function selectors, event topics, commitment schemes, and signature verification. All three are simple in their basic form and trickier than they look in production.
 
 ## Loops in Solidity
 
@@ -49,7 +49,7 @@ contract Loops {
 }
 ```
 
-`break` exits the current loop. `continue` skips to the next iteration. There's also `do-while` which works identically to other languages. Nothing here is Solidity-specific.
+`break` exits the current loop. `continue` skips to the next iteration. There's also `do-while`, which works the same as in other languages. Nothing here is Solidity-specific.
 
 What is Solidity-specific is the cost. Every operation inside a loop costs gas. Reading from storage costs around 2,100 gas the first time and 100 gas thereafter in the same transaction. Writing to storage costs 22,100 gas for a fresh slot and 5,000 gas to update an existing one. A loop that reads or writes storage on every iteration multiplies these costs by the number of iterations.
 
@@ -106,9 +106,9 @@ The contract still iterates, but each call is bounded by `count` instead of by `
 
 **Pull over push.** Instead of the contract pushing tokens or ETH to many recipients, let each recipient pull their own share. The contract records what each recipient is owed, and `claim()` is a fixed-size operation with no loop. The contract works correctly no matter how many recipients exist.
 
-**Off-chain iteration.** Compute the result off-chain, submit it on-chain as a single transaction. This is how Merkle-proof airdrops work: the contract verifies one proof per transaction, which is bounded.
+**Off-chain iteration.** Compute the result off-chain and submit it on-chain as a single transaction. This is how Merkle-proof airdrops work: the contract verifies one proof per transaction, which is bounded.
 
-Each pattern shifts the work somewhere different. Pagination spreads it across multiple transactions, pull-over-push moves it to the recipients, off-chain iteration moves it off the chain entirely. All three avoid the block-gas-limit pitfall.
+Each pattern shifts the work somewhere different. Pagination spreads it across multiple transactions, pull-over-push moves it to the recipients, and off-chain iteration moves it off the chain entirely. All three avoid the block-gas-limit pitfall.
 
 ## Data locations: storage, memory, calldata
 
@@ -145,7 +145,7 @@ contract Users {
 }
 ```
 
-The choice between `calldata` and `memory` for an input parameter has a real cost difference. `calldata` parameters are read in place from the transaction bytes, no copy needed. `memory` parameters require copying the calldata into memory first. For any input you only need to read, prefer `calldata`. Use `memory` when you need to modify the value or pass it to another function that requires memory.
+The choice between `calldata` and `memory` for an input parameter has a real cost difference. `calldata` parameters are read in place from the transaction bytes, with no copy needed. `memory` parameters require copying the calldata into memory first. For any input you only need to read, prefer `calldata`. Use `memory` when you need to modify the value or pass it to another function that requires memory.
 
 ## The aliasing trap
 
@@ -190,9 +190,9 @@ bytes32 h = keccak256(encoded);
 
 Note that the result of `abi.encode` is `bytes memory`. The encoding is built in a fresh memory region. You can't encode into storage directly, and you don't need to. The hash is what gets stored or compared.
 
-`abi.encode` produces standard ABI-encoded bytes: every value padded to 32 bytes, dynamic types prefixed with offset and length. This is the same encoding the EVM uses for function calls and return values.
+`abi.encode` produces standard ABI-encoded bytes: every value padded to 32 bytes, dynamic types prefixed with offset and length. This is the same encoding used for function calls and return values.
 
-`abi.encodePacked` produces the same bytes but without the padding. Each value takes only as many bytes as it actually needs. Strings and bytes are concatenated raw.
+`abi.encodePacked` encodes the same values but without the padding. Each value takes only as many bytes as it actually needs. Strings and bytes are concatenated raw.
 
 ```solidity
 bytes memory padded = abi.encode("hello");        // 96 bytes
@@ -217,7 +217,7 @@ Both inputs produce the same byte sequence `helloworld`, so they hash to the sam
 
 If your contract uses `keccak256(abi.encodePacked(...))` as an identifier or as part of a signature scheme, an attacker who can choose the inputs may be able to construct two different argument sets that hash to the same value. Real exploits have been published against contracts that used this pattern naively.
 
-The rule: when hashing multiple dynamic-type values like strings, bytes, or dynamic arrays, always use `abi.encode` rather than `abi.encodePacked`. The padding `encode` adds removes the collision risk because each value gets a length prefix.
+The rule: when hashing multiple dynamic-type values like strings, bytes, or dynamic arrays, always use `abi.encode` rather than `abi.encodePacked`. The padding that `encode` adds removes the collision risk, because each value gets a length prefix.
 
 When hashing only static-type values like uint, address, or bytes32, `abi.encodePacked` is safe because static types have fixed sizes that cannot be reinterpreted as different boundaries.
 
@@ -233,7 +233,7 @@ A few places `keccak256` shows up in real contracts.
 bytes32 orderId = keccak256(abi.encode(msg.sender, tokenAddress, amount, nonce));
 ```
 
-The order ID is deterministic from the inputs. Two callers with the same inputs and different nonces get different IDs.
+The order ID is deterministic from the inputs. Two calls with the same inputs and different nonces get different IDs.
 
 **Commitment schemes.** Committing to a value without revealing it.
 
