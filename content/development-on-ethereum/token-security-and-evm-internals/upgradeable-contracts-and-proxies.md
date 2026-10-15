@@ -30,7 +30,7 @@ faq:
       inheritance order. OpenZeppelin's plugin refuses an upgrade that breaks the layout.
 ---
 
-> Smart contracts are immutable. Once deployed, the code at an address cannot change. This is a security feature: users can audit a contract once and trust that what they read is what they're interacting with forever. But it's also a real limitation. If you find a bug in production, you can't patch it. If you want to add a new feature, you can't add it. If the protocol evolves, your users are stuck with the version you released. The proxy pattern solves this by separating where a contract's data lives from where its code lives. Once you understand it, you'll see it underneath almost every major DeFi protocol, every NFT collection designed with future upgrades in mind, and every account abstraction wallet. This lesson covers what proxies are, how they work, the two production patterns Transparent and UUPS, and the rules you have to follow to use them safely.
+> Smart contracts are immutable. Once deployed, the code at an address cannot change. This is a security feature: users can audit a contract once and trust that what they read is what they're interacting with forever. But it's also a real limitation. If you find a bug in production, you can't patch it. If you want to add a new feature, you can't add it. If the protocol evolves, your users are stuck with the version you released. The proxy pattern solves this by separating where a contract's data lives from where its code lives. Once you understand it, you'll see it underneath almost every major DeFi protocol, every NFT collection designed with future upgrades in mind, and every account abstraction wallet. This lesson covers what proxies are, how they work, the two production patterns, Transparent and UUPS, and the rules you have to follow to use them safely.
 
 ## The problem
 
@@ -102,13 +102,13 @@ This is one of several reasons the naive proxy above is dangerous. Even if you r
 
 ## Function selector collisions
 
-When a user calls a function on the proxy, the EVM looks at the first 4 bytes of calldata, called the function selector. The selector is `bytes4(keccak256(functionSignature))`. The proxy's compiled bytecode contains a dispatcher that checks the selector against each function it knows about. If the selector matches one of the proxy's own functions, the dispatcher routes the call there. If not, the call falls through to the fallback, which delegatecalls the implementation.
+When a user calls a function on the proxy, the proxy looks at the first 4 bytes of calldata, called the function selector. The selector is `bytes4(keccak256(functionSignature))`. The proxy's compiled bytecode contains a dispatcher that checks the selector against each function it knows about. If the selector matches one of the proxy's own functions, the dispatcher routes the call there. If not, the call falls through to the fallback, which delegatecalls the implementation.
 
 Now consider this scenario. The proxy has a function `upgrade(address)`. Its selector is some specific 4-byte value. By coincidence, the implementation has a function that hashes to the SAME 4-byte selector. A user wants to call that function on the implementation. They send a transaction with the colliding selector. The proxy's dispatcher matches the selector against its own `upgrade` function and routes the call to the proxy itself. The implementation's function is never reached.
 
 Worse: the user thought they were calling the implementation. They might be calling `upgrade` with arguments that the implementation's function would have accepted but that the proxy interprets completely differently. This is a real security issue rather than a mere annoyance.
 
-Two patterns solve the collision problem in different ways. They're both production-grade and you should always use one of them rather than writing your own proxy.
+Two patterns solve the collision problem in different ways. They're both production-grade, and you should always use one of them rather than writing your own proxy.
 
 ## Transparent proxy
 
@@ -128,7 +128,7 @@ The cost is that the admin can't use the contract like a normal user. If you're 
 
 UUPS stands for Universal Upgradeable Proxy Standard. It takes a different approach: all the upgrade logic lives in the implementation rather than in the proxy. The proxy is minimal. It does nothing except `delegatecall`. It has no admin functions at all.
 
-The implementation contract inherits from a base contract that provides upgrade machinery. The upgrade function looks something like `upgradeTo(address newImplementation)`, and it's a function on the implementation rather than the proxy. When you want to upgrade, you call `upgradeTo` on the proxy, which is the user-facing address, which delegatecalls into the implementation's `upgradeTo` function. The implementation, executing in the proxy's storage context, updates the proxy's stored implementation pointer.
+The implementation contract inherits from a base contract that provides upgrade machinery. The upgrade function looks something like `upgradeTo(address newImplementation)`, and it's a function on the implementation rather than the proxy. When you want to upgrade, you call `upgradeTo` on the proxy (the user-facing address), which delegatecalls into the implementation's `upgradeTo` function. The implementation, executing in the proxy's storage context, updates the proxy's stored implementation pointer.
 
 This is more compact than the transparent proxy because the proxy contract itself contains only the fallback. Deploying a UUPS proxy is cheaper. When you're deploying many copies of the same proxy, common in account abstraction wallets where each user gets their own proxy, the cumulative gas savings are significant.
 
@@ -225,7 +225,7 @@ The `initialize` function calls each parent's initializer to set up its state. T
 
 `_authorizeUpgrade` is the access-control hook that UUPS requires. Whenever someone calls `upgradeTo`, the UUPS base calls `_authorizeUpgrade` first. The implementation must override this function and put its access check inside. The `onlyOwner` modifier here means only the owner can upgrade. The function body is empty because there's nothing else to do once the check passes.
 
-**Storage layout must be preserved across upgrades.** This is non-negotiable. If your first state variable is `uint256 totalSupply`, it's stored at slot 0 of the proxy. When you upgrade to a new implementation, the new implementation's first state variable also lives at slot 0. If the new implementation reorders or removes variables, slot 0 now means something different. The same memory that used to be `totalSupply` is now read as something else: bookkeeping silently corrupts.
+**Storage layout must be preserved across upgrades.** This is non-negotiable. If your first state variable is `uint256 totalSupply`, it's stored at slot 0 of the proxy. When you upgrade to a new implementation, the new implementation's first state variable also lives at slot 0. If the new implementation reorders or removes variables, slot 0 now means something different. The same slot that used to be `totalSupply` is now read as something else: bookkeeping silently corrupts.
 
 Rules for safe upgrades:
 
@@ -271,7 +271,7 @@ The plugin deploys the new implementation, checks that the storage layout is com
 
 ## The Diamond pattern
 
-One more pattern worth knowing exists, even though we won't use it. The diamond pattern (EIP-2535) is a more advanced proxy structure where instead of one implementation, you have many. The proxy routes each function call to whichever implementation contract handles that function. This is used when a single contract's logic exceeds the 24KB bytecode size limit, or when you want different parts of a system to be upgradeable independently.
+One more pattern is worth knowing about, even though we won't use it. The diamond pattern (EIP-2535) is a more advanced proxy structure where instead of one implementation, you have many. The proxy routes each function call to whichever implementation contract handles that function. This is used when a single contract's logic exceeds the 24KB bytecode size limit, or when you want different parts of a system to be upgradeable independently.
 
 Diamond proxies are complex and not what you'd reach for first. The transparent and UUPS patterns cover the vast majority of upgrade needs. It is worth knowing it exists in case you encounter it in a real project. Ignore it until you have a specific reason to use it.
 
