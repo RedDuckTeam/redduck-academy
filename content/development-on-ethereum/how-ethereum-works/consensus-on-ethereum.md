@@ -29,7 +29,7 @@ faq:
       the proposer signs the highest-paying one. Most validators run MEV-Boost.
 ---
 
-> Ethereum doesn't use proof of work anymore. Since September 2022, it has used proof of stake. Validators put up 32 ETH as collateral, take turns proposing blocks, and lose part of their stake if they cheat. The mechanics are different from Bitcoin in almost every detail, but the goal is the same. Get a network of independent nodes to agree on which blocks count, without anyone in charge.
+> Ethereum doesn't use proof of work anymore. Since September 2022, it has used proof of stake. Validators put up 32 ETH as collateral, take turns proposing blocks, and lose part of their stake if they cheat. The mechanics are different from Bitcoin in almost every detail, but the goal is the same: get a network of independent nodes to agree on which blocks count, without anyone in charge.
 
 ## What changed at the Merge
 
@@ -41,21 +41,23 @@ Three things drove the change. The first was energy. PoW Ethereum was using roug
 
 ## Who runs Ethereum now
 
-A **validator** is an entity with 32 ETH locked into a special contract on the Ethereum chain. The 32 ETH minimum exists to keep the validator set small enough to coordinate but large enough to be decentralized. At the time of writing there are over a million active validators on the network. They aren't a million different people. Many of them are run by staking services, exchanges, or pools where users deposit smaller amounts of ETH that get bundled into validator-sized chunks. Each validator is still a distinct identity with its own signing key, and each one acts independently in the protocol.
+A **validator** is an entity with 32 ETH locked into a special contract on the Ethereum chain. The 32 ETH minimum exists to keep the validator set small enough to coordinate but large enough to be decentralized. At the time of writing there are over a million active validators on the network.
+
+They aren't a million different people. Many of them are run by staking services, exchanges, or pools where users deposit smaller amounts of ETH that get bundled into validator-sized chunks. Each validator is still a distinct identity with its own signing key, and each one acts independently in the protocol.
 
 Running a validator means running two pieces of software side by side. The **execution client**, such as Geth or Reth, processes transactions and maintains the EVM state. The **consensus client**, such as Lighthouse or Prysm, handles attestations, block proposals, and the proof-of-stake mechanics. The two communicate over a local API. Before the Merge, a single client did everything. The split exists because PoS consensus is a fundamentally different concern from transaction execution, and separating them lets each evolve independently.
 
-Validators have two main jobs. First, when their turn comes, they propose a block. Second, every chance they get, they vote on which block they think should be the canonical one. These votes are called **attestations**. The protocol bundles validators into committees, with each slot getting one committee of around 128 validators tasked with attesting to that slot's block. Across an entire epoch, every active validator attests exactly once. The protocol aggregates all those attestations to decide what the chain looks like.
+Validators have two main jobs. First, when their turn comes, they propose a block. Second, once every epoch, they vote on which block they think should be the canonical one. These votes are called **attestations**. The protocol bundles validators into committees, with each slot getting one committee of around 128 validators tasked with attesting to that slot's block. Across an entire epoch, every active validator attests exactly once. The protocol aggregates all those attestations to decide what the chain looks like.
 
-Selection of the proposer for each slot is pseudo-random but not arbitrary. The protocol uses a mechanism called **RANDAO**, which mixes in entropy contributed by validators themselves over many slots. The next proposer for slot N is determined by RANDAO output from earlier slots, plus the validator's stake weight. Nobody can predict the exact proposer schedule far in advance, but it is fully deterministic given the chain's state, which means every node agrees on whose turn it is.
+Selection of the proposer for each slot is pseudo-random but not arbitrary. The protocol uses a mechanism called **RANDAO**, which mixes in entropy contributed by validators themselves over many slots. The proposer for slot N is determined by RANDAO output from earlier slots, plus the validator's stake weight. Nobody can predict the exact proposer schedule far in advance, but it is fully deterministic given the chain's state, which means every node agrees on whose turn it is.
 
-A validator that does its job correctly earns small rewards on roughly every slot it attests in and a larger reward when it proposes a block. A validator that misbehaves loses some or all of its stake, an event called **slashing**. Slashing punishes specific provable bad behavior: signing two conflicting attestations, or proposing two different blocks for the same slot. The minimum slashing penalty is 1 ETH, but the protocol also applies a **correlation penalty** that scales with how many other validators were slashed around the same time. A lone bug that slashes one validator costs that validator 1 ETH. A coordinated attack that slashes thousands of validators at once costs each of them their entire 32 ETH stake. This is the math that makes attacking Ethereum economically catastrophic.
+A validator that does its job correctly earns a small reward for each attestation and a larger reward when it proposes a block. A validator that misbehaves loses some or all of its stake, an event called **slashing**. Slashing punishes specific provable bad behavior: signing two conflicting attestations, or proposing two different blocks for the same slot. The minimum slashing penalty is 1 ETH, but the protocol also applies a **correlation penalty** that scales with how many other validators were slashed around the same time. A lone bug that slashes one validator costs that validator 1 ETH. A coordinated attack that slashes thousands of validators at once costs each of them their entire 32 ETH stake. This is the math that makes attacking Ethereum economically catastrophic.
 
 ## How time works on Ethereum
 
 Bitcoin's block timing is loose, because mining is a random process. Ethereum's PoS clock is rigid. The chain divides time into fixed units.
 
-A **slot** is 12 seconds. Every 12 seconds, the protocol expects a new block. One validator is selected as the proposer for that slot. If they propose a valid block on time, the chain advances. If they miss their slot, that slot is skipped, the chain moves on to the next slot's proposer, and the missing validator earns no reward and pays a small penalty. Missed slots happen for ordinary reasons: an offline validator, an unreliable internet connection, a software bug. At the time of writing, the missed-slot rate hovers around 1%.
+A **slot** is 12 seconds. Every 12 seconds, the protocol expects a new block. One validator is selected as the proposer for that slot. If they propose a valid block on time, the chain advances. If they miss their slot, that slot is skipped, the chain moves on to the next slot's proposer, and the validator who missed it earns no reward and pays a small penalty. Missed slots happen for ordinary reasons: an offline validator, an unreliable internet connection, a software bug. At the time of writing, the missed-slot rate hovers around 1%.
 
 An **epoch** is 32 slots. So one epoch is 32 × 12 = 384 seconds, about 6.4 minutes. Epochs are where higher-level consensus events happen. At the end of each epoch, validators vote on a **checkpoint**: a specific block at an epoch boundary that they agree should be locked in.
 
@@ -140,30 +142,30 @@ The second stage is **finalization**. A justified checkpoint becomes finalized w
 
 This two-thirds threshold is what makes the whole security model work. It means an attacker needs to control more than one-third of the total stake to prevent finalization, by withholding their attestations. The same one-third threshold also makes finalized blocks essentially permanent: reverting a finalized block requires at least one-third of all staked ETH to attest to a conflicting checkpoint, which the protocol detects as a slashable offense. Slashing one-third of all stake is tens of billions of dollars at current stake levels. So in practice, finalized blocks are as close to permanent as any computer system gets.
 
-This is genuinely different from Bitcoin. Bitcoin has **probabilistic finality**. The probability that a block gets reverted decreases as more blocks are built on top of it, but it never reaches zero. Ethereum has **economic finality**. After about 12.8 minutes, the protocol mathematically guarantees the block stays unless attackers willingly destroy a third of all staked ETH. The first kind of finality is statistical. The second kind is contractual.
+This is genuinely different from Bitcoin. Bitcoin has **probabilistic finality**. The probability that a block gets reverted decreases as more blocks are built on top of it, but it never reaches zero. Ethereum has **economic finality**. After about 12.8 minutes, the protocol mathematically guarantees the block stays unless attackers willingly destroy a third of all staked ETH. The first kind of finality is statistical. The second kind is economic.
 
 ## How conflicting blocks get resolved
 
 What happens if a network split or a misbehaving proposer produces two valid blocks at the same slot, or two competing chains? Ethereum uses a fork-choice rule called **LMD-GHOST**, short for Latest Message Driven Greediest Heaviest Observed Sub-Tree.
 
-Every validator's most recent attestation counts as a vote for a particular block. When choosing the canonical chain, each node looks at all the votes it knows about, weights them by the validator's stake, and picks the chain branch with the most weight behind it. Validators are required to only vote on the head of the chain they think is canonical, so as long as a supermajority is honest, the votes converge.
+Every validator's most recent attestation counts as a vote for a particular block. When choosing the canonical chain, each node looks at all the votes it knows about, weights them by the validator's stake, and picks the chain branch with the most weight behind it. Validators are required to vote only on the head of the chain they think is canonical, so as long as a supermajority is honest, the votes converge.
 
-This is similar in spirit to Bitcoin's "longest chain wins" rule, but the unit of weight is different. Bitcoin counts cumulative proof of work. Ethereum counts cumulative stake-weighted attestations. Both produce a single canonical chain that the rest of the protocol can rely on.
+This is similar in spirit to Bitcoin's "longest chain wins" rule, but the unit of weight is different. Bitcoin counts cumulative proof of work. Ethereum counts the latest stake-weighted attestations. Both produce a single canonical chain that the rest of the protocol can rely on.
 
 ## Who actually builds the block
 
 In current Ethereum, the validator selected as proposer almost never builds the block themselves. The block-building process is split between two actors through a system called **proposer-builder separation**, or PBS. Specialized **builders** assemble blocks, typically optimizing them to extract maximum value from the transactions they include. The proposer, when their slot arrives, picks the highest-paying block from the builders and signs it. The proposer earns the priority fees plus a payment from the chosen builder.
 
-This split exists because building an optimal block is a hard problem. It means simulating thousands of transactions, finding the most profitable ordering of them, and offering a higher price than other builders. That most profitable ordering is known as MEV, or maximal extractable value. Hobbyist validators can't compete with professional builder operations. Rather than let block-building centralize into a few large validators, the protocol effectively lets validators stay decentralized while specialized builders handle the optimization. The mechanism that makes this work in practice is software called **MEV-Boost**, run by most validators, which relays builder blocks to the proposer for selection.
+This split exists because building an optimal block is a hard problem. It means simulating thousands of transactions, finding the most profitable ordering of them, and offering a higher price than other builders. The value captured through that ordering is known as MEV, or maximal extractable value. Hobbyist validators can't compete with professional builder operations. Rather than let block-building centralize into a few large validators, the protocol effectively lets validators stay decentralized while specialized builders handle the optimization. The mechanism that makes this work in practice is software called **MEV-Boost**, run by most validators, which relays builder blocks to the proposer for selection.
 
 ## What this means in practice
 
 Three implications matter for the rest of this course.
 
-Block times are short. Twelve seconds between blocks means transactions confirm fast. A user who submits a transaction with sufficient priority fee can usually expect it to appear in the next block or the one after.
+Block times are short. Twelve seconds between blocks means transactions confirm fast. A user who submits a transaction with a sufficient priority fee can usually expect it to appear in the next block or the one after.
 
 Finality takes minutes. Bridges, exchanges, and high-value applications wait for finalization at around 12.8 minutes before treating a transaction as settled. Smaller applications often treat one or two confirmations as enough, depending on what's at stake.
 
-Reorgs happen rarely and only at the tip. A block can be reorged out if the network briefly disagrees on the head, which usually resolves within a slot or two. Once justified, reorgs become very unlikely. Once finalized, reorgs become economically impossible without a catastrophic attack.
+Reorgs (chain reorganizations) happen rarely and only at the tip. A block can be reorged out if the network briefly disagrees on the head, which usually resolves within a slot or two. Once justified, reorgs become very unlikely. Once finalized, reorgs become economically impossible without a catastrophic attack.
 
 The PoS machinery has more moving parts than PoW, but the practical effect is the same: a network of independent nodes converges on a single shared history, and you can write code that relies on that convergence.
