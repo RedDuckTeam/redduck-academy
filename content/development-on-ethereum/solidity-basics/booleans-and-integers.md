@@ -32,7 +32,7 @@ faq:
 
 ## How a Solidity file is structured
 
-Solidity source code lives in files with the `.sol` extension. A minimal Solidity file has three things before any contract code: a license declaration, a pragma directive, and at least one contract.
+Solidity source code lives in files with the `.sol` extension. A minimal Solidity file has three things: a license declaration, a pragma directive, and at least one contract.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -85,7 +85,7 @@ function safeWithdraw() external {
 }
 ```
 
-Short-circuiting is the same as in most languages. It's worth pointing out because Solidity has no implicit type coercion to bool. You cannot write `if (someUint)` to test for "non-zero". You write `if (someUint != 0)`. The compiler will reject anything that isn't already typed `bool`.
+Short-circuiting is the same as in most languages. What's worth pointing out is that Solidity has no implicit type coercion to bool. You cannot write `if (someUint)` to test for "non-zero". You write `if (someUint != 0)`. The compiler will reject anything that isn't already typed `bool`.
 
 One quirk: a `bool` takes up one byte on the stack but always occupies a full 32-byte word when stored in a struct or array slot. So a standalone `bool` state variable costs the same to store as a `uint256`. The compiler can pack multiple booleans together into one storage slot if you declare them consecutively as state variables, which becomes relevant once you're thinking about storage layout for gas optimization.
 
@@ -147,7 +147,7 @@ uint256 d = 2 ** 8;   // 256
 uint256 e = 10 % 3;   // 1
 ```
 
-The twist that catches developers from dynamically-typed languages: **integer division truncates toward zero**. No floats, no rounding. Whatever was after the decimal point is discarded.
+The twist that catches developers from dynamically typed languages: **integer division truncates toward zero**. No floats, no rounding. Whatever was after the decimal point is discarded.
 
 ```solidity
 uint256 half = 1 / 2;          // 0, not 0.5
@@ -155,7 +155,7 @@ uint256 third = 10 / 3;        // 3, not 3.33...
 uint256 percent = 1 * 100 / 200; // 0, not 0.5
 ```
 
-Solidity has no native floating-point type for production use, and truncating division is the predictable behavior across every fixed-precision language. But it is the source of an entire category of accounting bugs in beginner contracts. A fee calculation that "should be 0.5%" silently becomes 0% for any input that isn't a multiple of 200. The fix in production code is always the same. Scale your numerators up by some factor, typically `1e18`, before dividing, then scale results back down at the boundary where you need a human-readable number. This is the foundation of how every DeFi protocol handles fractional math.
+Solidity has no native floating-point type for production use, and truncating division is the predictable behavior across every fixed-precision language. But it is the source of an entire category of accounting bugs in beginner contracts. A fee calculation that "should be 0.5%" silently becomes 0 for any input below 200. The fix in production code is always the same. Scale your numerators up by some factor, typically `1e18`, before dividing, then scale results back down at the boundary where you need a human-readable number. This is the foundation of how every DeFi protocol handles fractional math.
 
 Division by zero reverts the transaction. So does modulo by zero.
 
@@ -163,7 +163,7 @@ Division by zero reverts the transaction. So does modulo by zero.
 
 Before Solidity 0.8.0, integer overflow wrapped silently. If you incremented a `uint8` past 255, it became 0 with no warning and no revert. This caused real exploits in production contracts. The BatchOverflow incident in 2018 created vast token balances out of nothing in multiple ERC-20 contracts by exploiting unchecked multiplication. That incident was the canonical case study that pushed the language toward fixing this by default.
 
-From Solidity 0.8.0 onward, arithmetic that would overflow or underflow **reverts the transaction by default**. No silent wraparound. The transaction is rolled back as if it never happened, any ETH sent with it is returned to the sender, and the contract state is unchanged. Here is the canonical demonstration:
+From Solidity 0.8.0 onward, arithmetic that would overflow or underflow **reverts the transaction by default**. No silent wraparound. The transaction is rolled back, any ETH sent with it is returned to the sender, and the contract state is unchanged. Here is the canonical demonstration:
 
 ```solidity
 contract OverflowDemo {
@@ -175,7 +175,7 @@ contract OverflowDemo {
 }
 ```
 
-Call `increment()` once, `value` becomes 255. Call it a second time and the call reverts. `value` stays at 255. The sender still pays gas for the failed transaction, since you cannot get free reverts on Ethereum, but the bad state change does not happen.
+Call `increment()` once and `value` becomes 255. Call it a second time and the call reverts. `value` stays at 255. The sender still pays gas for the failed transaction, since you cannot get free reverts on Ethereum, but the bad state change does not happen.
 
 This guarantee matters. In a financial contract, "the operation silently does the wrong thing" is almost never what you want. "The transaction fails and the user is told" is almost always what you want.
 
@@ -196,7 +196,7 @@ function unsafeIncrement(uint256 x) external pure returns (uint256) {
 }
 ```
 
-Inside `unchecked`, an overflow wraps around to the bottom of the type's range, and an underflow wraps to the top. Subtracting 1 from a `uint8` whose value is 0 produces 255. Solidity 0.8 just stopped letting you see this by accident.
+Inside `unchecked`, an overflow wraps around to the bottom of the type's range, and an underflow wraps to the top. Subtracting 1 from a `uint8` whose value is 0 produces 255. Solidity 0.8 just stopped letting this happen by accident.
 
 A practical rule for your first year of Solidity: **do not use ****`unchecked`**** unless you can write down, in one sentence, why the bounds it bypasses cannot be exceeded**. The gas savings are real but small, around 30 to 40 gas per arithmetic op. The cost of being wrong is a security bug auditors will absolutely find.
 
@@ -223,6 +223,6 @@ A few patterns to internalize early.
 
 **Assuming integer division rounds.** It truncates. `1 / 2` is `0`, not `1`. Scale numerators or use a fixed-point library for percentages and rates.
 
-**Reaching for ****`unchecked`**** to optimize without justification.** The gas savings are small and the worst-case is a real vulnerability. The bar should be: you can articulate the bound you're relying on in one sentence.
+**Reaching for ****`unchecked`**** to optimize without justification.** The gas savings are small and the worst case is a real vulnerability. The bar should be: you can articulate the bound you're relying on in one sentence.
 
 **Treating ****`unchecked`**** as "old Solidity behavior, faster."** It's faster, but the reason 0.8 made checking the default is that the unchecked behavior was the cause of major historical exploits.
