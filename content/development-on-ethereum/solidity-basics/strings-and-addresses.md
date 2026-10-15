@@ -29,7 +29,7 @@ Two types you'll meet in the first hour of any non-trivial contract. They handle
 
 ## What strings actually are
 
-A string in Solidity is not an array of characters the way it is in higher-level languages. It's a sequence of UTF-8 bytes. When you write a Latin letter, you get one byte. A Cyrillic letter takes two. An emoji takes three or four. The string type stores the bytes faithfully and refuses to commit to any single answer for "how long is this."
+A string in Solidity is not an array of characters the way it is in many other languages. It's a sequence of UTF-8 bytes. When you write a Latin letter, you get one byte. A Cyrillic letter takes two. An emoji takes three or four. The string type stores the bytes faithfully and refuses to commit to any single answer for "how long is this."
 
 This single fact explains every limitation that follows. Solidity did not decide to make strings weak. It decided not to pick a wrong answer for length, equality, or concatenation when the right answer depends on what you mean by "character."
 
@@ -78,7 +78,7 @@ string memory greeting = string.concat(a, " world");
 uint byteLength = bytes(a).length;
 ```
 
-All of these are expensive in gas. Hashing a long string is O(n) in its byte length. Concatenation allocates fresh memory. For anything string-heavy, ask whether the work belongs off-chain.
+These can be expensive in gas. Hashing a long string is O(n) in its byte length. Concatenation allocates fresh memory. For anything string-heavy, ask whether the work belongs off-chain.
 
 ## What strings are good for
 
@@ -88,7 +88,7 @@ If you find yourself wanting to slice, search, lowercase, or compare strings on-
 
 ## What addresses identify
 
-An address in Solidity is a 20-byte value that identifies an account on Ethereum. Both externally owned accounts and contracts have addresses. Externally owned accounts are the wallets people use. From the type system's perspective they're identical. You can call into either, transfer ETH to either, query the balance of either.
+An address in Solidity is a 20-byte value that identifies an account on Ethereum. Both externally owned accounts and contracts have addresses. Externally owned accounts are the wallets people use. From the type system's perspective, the two are identical. You can call into either, transfer ETH to either, query the balance of either.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -109,7 +109,7 @@ Addresses are written as hex literals without quotes. They are not strings, and 
 
 All balance data on Ethereum is public, which is why you can query any address's balance, including ones your contract does not own. The `view` keyword on these functions is a promise that they don't modify state, which lets them be called for free without sending a transaction.
 
-One implementation detail worth knowing. Even though an address is 20 bytes logically, on the EVM stack it occupies a full 32-byte word with the top 12 bytes zeroed. This is why you'll occasionally see code cast between `address` and `uint160`. The cast is well-defined because `uint160` is exactly the bit width an address fits into.
+One implementation detail worth knowing. Even though an address is 20 bytes logically, on the EVM stack it occupies a full 32-byte word with the top 12 bytes zeroed. You'll also occasionally see code cast between `address` and `uint160`. The cast is well-defined because `uint160` is exactly the bit width an address fits into.
 
 ## The payable capability
 
@@ -153,7 +153,7 @@ Low-level calls have meaningful depth beyond what this lesson covers. The takeaw
 
 ## Receiving ETH
 
-The other side. For your contract to receive ETH at all, it needs at least one function marked `payable`. The keyword is the signal to both the compiler and the EVM that this function accepts attached value.
+The other side. For your contract to receive ETH at all, it needs at least one function marked `payable`. The keyword is the signal to the compiler that this function accepts attached value.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -174,7 +174,7 @@ Notice `address(this).balance` in the second function. `address(this)` is the cu
 
 ## Where the two meet: `msg.sender` and `msg.value`
 
-Every function call has access to a global `msg` object that describes the incoming call. Two of its fields tie this lecture together.
+Every function call has access to a global `msg` object that describes the incoming call. Two of its fields tie this lesson together.
 
 `msg.sender` is the address that called the current function. For an EOA-initiated transaction, that's the wallet. For a contract-to-contract call, it's the calling contract. Either way, it's typed as plain `address`, not `address payable`. If you want to send ETH back to `msg.sender`, you have to cast: `payable(msg.sender)`.
 
@@ -193,7 +193,7 @@ contract Logger {
 }
 ```
 
-Inside `log`, `msg.sender` is whoever called this transaction. `msg.value` is whatever ETH they attached. The state writes commit if the function returns normally. They roll back if anything in the function reverts.
+Inside `log`, `msg.sender` is whoever called the function. `msg.value` is whatever ETH they attached. The state writes commit if the function returns normally. They roll back if anything in the function reverts.
 
 ## A small contract using both
 
@@ -225,7 +225,7 @@ contract ForwardingWallet {
 }
 ```
 
-The constructor captures the deployer's address as `msg.sender`. The `deposit` function is external `payable` with an empty body. The ETH is credited automatically when the function is called with attached value. The `forward` function casts the target to `payable` and sends the requested amount via a low-level `call`. Production code would add access control on `forward` and check that the requested amount is actually available before sending, but the skeleton you see here is the minimum that compiles and runs.
+The constructor stores `msg.sender`, the deployer's address, as `owner`. The `deposit` function is external `payable` with an empty body. The ETH is credited automatically when the function is called with attached value. The `forward` function casts the target to `payable` and sends the requested amount via a low-level `call`. Production code would add access control on `forward` and check that the requested amount is actually available before sending, but the skeleton you see here is the minimum that compiles and runs.
 
 ## Things that catch developers
 
