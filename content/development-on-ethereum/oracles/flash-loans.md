@@ -235,8 +235,8 @@ Three main approaches in production today:
 
 **External oracles** like Chainlink. The price is set by off-chain aggregation across many exchanges. A single on-chain swap can't move it. This is the dominant defense.
 
-**Time-weighted prices**, where the oracle reports an average over a window rather than a spot read. A one-block manipulation contributes only one block's worth of price to the average, which dilutes its impact to near zero. The next lecture covers this in detail.
+**Time-weighted prices**, where the oracle reports an average over a window rather than a spot read. A one-block manipulation contributes only one block's worth of price to the average, which dilutes its impact to near zero. The next lesson covers this in detail.
 
 **Multi-source checks**, where the protocol consumes two oracles and reverts if they diverge significantly. This catches the case where one of them is wrong or being attacked.
 
-The next lecture covers TWAP oracles, which are the main on-chain answer to this problem when an external oracle isn't available or sufficient. Having seen the attack pattern above, the design choices TWAP makes will be clearer.
+The next lesson covers TWAP oracles, which are the main on-chain answer to this problem when an external oracle isn't available or sufficient. Having seen the attack pattern above, the design choices TWAP makes will be clearer.
