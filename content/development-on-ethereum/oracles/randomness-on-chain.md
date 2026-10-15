@@ -24,11 +24,11 @@ faq:
       deliver the same response twice.
 ---
 
-> Smart contracts can't generate random numbers on their own. The reasons are structural and cannot be solved by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.
+> Smart contracts can't generate random numbers on their own. The reasons are structural and cannot be solved by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lesson covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.
 
 ## Why a blockchain can't roll dice
 
-A blockchain is a deterministic state machine. Every node must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement is incompatible with native randomness. If a contract called some `rand()` function and each node returned a different value, no two nodes would agree on the chain state.
+A blockchain is a deterministic state machine. Every node must execute every transaction and arrive at the same result; otherwise consensus breaks. That requirement is incompatible with native randomness. If a contract called some `rand()` function and each node returned a different value, no two nodes would agree on the chain state.
 
 The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain. Block timestamp, block hash, previous block's randao value, the sender's address, transaction hashes. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the entity proposing the block.
 
@@ -271,7 +271,7 @@ address winner = participants[randomWords[0] % participants.length];
 
 Modulo introduces very slight bias when the modulus does not divide cleanly into the range of `uint256`, but for any modulus you'd use in a contract the bias is undetectable. For a 20-sided die, the bias is on the order of one part in 2^251.
 
-The number is fully revealed on chain the moment the coordinator delivers it. If your contract logic depends on keeping the number hidden until later, that's not something VRF gives you. The fulfillment transaction publishes everything, and anyone watching the mempool sees the result as soon as it's mined. Use cases that need committed-but-hidden randomness need a different protocol.
+The number is fully revealed on chain the moment the coordinator delivers it. If your contract logic depends on keeping the number hidden until later, that's not something VRF gives you. The fulfillment transaction publishes everything, and anyone watching the mempool sees the result as soon as it's broadcast. Use cases that need committed-but-hidden randomness need a different protocol.
 
 ## What can go wrong
 
