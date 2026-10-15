@@ -42,7 +42,7 @@ function name(parameters) visibility [mutability] [modifiers] [returns (types)] 
 }
 ```
 
-Visibility is required. The brackets denote optional pieces. The mutability annotation is one of them: add `view` if the function only reads state, `pure` if it reads nothing, and leave it off if the function modifies state. Names follow `mixedCase` convention: first word lowercase, subsequent words capitalized, no underscores.
+Visibility is required. The brackets denote optional pieces. The mutability annotation is one of them: add `view` if the function only reads state, `pure` if it reads nothing, and leave it off if the function modifies state. Names follow the `mixedCase` convention: first word lowercase, subsequent words capitalized, no underscores.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -67,19 +67,19 @@ Every function declares one of four visibility levels. The choice affects what c
 
 **`public`** functions can be called from anywhere. Off-chain callers can invoke them via transactions. Other contracts can call them. The contract's own code can call them. This is the most permissive option. Production code rarely needs it.
 
-**`external`** functions can only be called from outside the contract. An off-chain transaction or a call from another contract works. The contract calling its own `external` function does not, unless it goes through `this.functionName()` which is itself an external call and costs extra gas. The key reason `external` exists is gas efficiency. It lets the compiler read arguments directly from calldata. This is significantly cheaper than the `public` case, where arguments have to be copied into memory in case an internal caller passes them. For functions with large reference-type parameters like `bytes calldata` or `uint256[] calldata`, this difference can be hundreds of gas per call.
+**`external`** functions can only be called from outside the contract. An off-chain transaction or a call from another contract works. The contract calling its own `external` function does not, unless it goes through `this.functionName()`, which is itself an external call and costs extra gas. The key reason `external` exists is gas efficiency. It lets the compiler read arguments directly from calldata. This is significantly cheaper than the `public` case, where arguments have to be copied into memory in case an internal caller passes them. For functions with large reference-type parameters like `bytes calldata` or `uint256[] calldata`, this difference can be hundreds of gas per call.
 
 **`internal`** functions can be called from inside the contract and from contracts that inherit from it. They cannot be called from outside. This is the right visibility for helper functions, shared logic that subclasses extend, and any code you want exposed to the contract family but not to external callers.
 
-**`private`** functions are even more restrictive. They can only be called from inside the same contract. Inheriting contracts cannot reach them. Use `private` when you want to be explicit that no subclass should call this function, but note that `private` is not a security boundary. The bytecode is still on chain. Anyone reading the contract's bytecode can see what private functions do.
+**`private`** functions are even more restrictive. They can only be called from inside the same contract. Inheriting contracts cannot reach them. Use `private` when you want to be explicit that no subclass should call this function. Note, though, that `private` is not a security boundary. The bytecode is still on chain. Anyone reading the contract's bytecode can see what private functions do.
 
-For state variables, the same four keywords apply with slightly different effects. A `public` state variable auto-generates a getter function. An `internal` one is accessible to inheriting contracts. A `private` one is not. There is no `external` for state variables.
+For state variables, the same keywords apply with slightly different effects. A `public` state variable auto-generates a getter function. An `internal` one is accessible to inheriting contracts. A `private` one is not. There is no `external` for state variables.
 
 If you don't specify a visibility for a function, the compiler refuses to compile. There is no implicit default.
 
 ## State mutability: what this can touch
 
-A function that doesn't modify state has options for advertising that fact, which unlocks cheaper invocation patterns. The two relevant modifiers are `view` and `pure`.
+A function that doesn't modify state has options for advertising that fact, which unlocks cheaper invocation patterns. The two relevant keywords are `view` and `pure`.
 
 **`view`** declares that the function reads state but doesn't modify it. Reading state variables is fine. Reading `block.number`, `block.timestamp`, the contract's own balance, or another contract's storage via a view function call is fine. Writing anything, emitting events, calling non-view functions on other contracts, or sending ETH is forbidden. The compiler enforces this.
 
@@ -109,17 +109,17 @@ contract Tokens {
 
 The mutability annotation is checked at compile time. A `view` function that tries to write state, or a `pure` function that tries to read state, is a compile error.
 
-If a function modifies state, you don't write any mutability modifier at all. The absence is the marker.
+If a function modifies state, you don't write any mutability keyword at all. The absence is the marker.
 
 ## Why view and pure functions are free to call
 
 A function annotated `view` or `pure` doesn't change anything on chain. That means a node can answer the question "what does this function return?" by running it locally, in memory, without making it part of any block. There's no transaction, no consensus, no gas paid by anyone. The RPC method `eth_call` does exactly this.
 
-A function that modifies state can't work that way. To change the chain's state, the operation has to go through a transaction, get mined into a block, and be applied by every full node. That's where the gas cost comes from: every node runs the function as part of validating the block.
+A function that modifies state can't work that way. To change the chain's state, the operation has to go through a transaction, get included in a block, and be applied by every full node. That's where the gas cost comes from: every node runs the function as part of validating the block.
 
-The practical consequence: calling `getCount` from your frontend is free, instant, and doesn't need a connected wallet. Calling `increment` costs gas, requires a signed transaction, and takes a few seconds to be mined. The mutability annotation `view` or `pure` is the signal that switches between these two worlds.
+The practical consequence: calling `getCount` from your frontend is free, instant, and doesn't need a connected wallet. Calling `increment` costs gas, requires a signed transaction, and takes a few seconds to be included in a block. The mutability annotation `view` or `pure` is the signal that switches between these two worlds.
 
-The same function can be called either way from contract code. When contract A calls `B.getCount()` from inside its own state-mutating function, it costs gas as part of A's transaction. When the same function is called from a frontend's `eth_call`, it's free. The cost depends on the calling context rather than the function itself.
+The same function can be called either way. When contract A calls `B.getCount()` from inside its own state-mutating function, it costs gas as part of A's transaction. When the same function is called from a frontend's `eth_call`, it's free. The cost depends on the calling context rather than the function itself.
 
 ## Return values
 
@@ -158,7 +158,7 @@ function getCount() external view returns (uint256 result) {
 
 The two forms produce the same compiled output. Named returns can be useful when the function has multiple exit points and you want to set the return value in one place. Explicit `return` statements are clearer for short functions. Both are used in production code.
 
-One subtle but important point about state-mutating functions. They can declare return values, and other contracts calling them can read those return values. But **off-chain callers cannot read the return value of a state-mutating transaction**. This is a property of how Ethereum transactions work rather than of Solidity. At the moment a transaction is signed and broadcast, its eventual return value is unknown. By the time the transaction is mined, the network only records whether it succeeded or reverted, never what it returned. To communicate results from state-mutating functions to off-chain code, contracts emit events, which are written to the transaction receipt and are readable by frontends and indexers.
+One subtle but important point about state-mutating functions. They can declare return values, and other contracts calling them can read those return values. But **off-chain callers cannot read the return value of a state-mutating transaction**. This is a property of how Ethereum transactions work rather than of Solidity. At the moment a transaction is signed and broadcast, its eventual return value is unknown. By the time the transaction is included in a block, the network only records whether it succeeded or reverted, never what it returned. To communicate results from state-mutating functions to off-chain code, contracts emit events, which are written to the transaction receipt and are readable by frontends and indexers.
 
 ## Function arguments
 
@@ -170,7 +170,7 @@ function transfer(address to, uint256 amount) external returns (bool) {
 }
 ```
 
-For value type parameters, that's all you need. For reference type parameters, you must specify a data location. `string`, `bytes`, dynamic arrays, and structs all need `memory` or `calldata`:
+For value-type parameters, that's all you need. For reference-type parameters, you must specify a data location. `string`, `bytes`, dynamic arrays, and structs all need `memory` or `calldata`:
 
 ```solidity
 function process(uint256[] calldata items, string memory note) external {
@@ -205,7 +205,7 @@ After the constructor finishes, it's gone. The bytecode of the deployed contract
 
 ## Payable: accepting ETH
 
-By default, a function rejects any ETH attached to the call. If a transaction with non-zero value calls a non-payable function, the EVM reverts.
+By default, a function rejects any ETH attached to the call. If a transaction with non-zero value calls a non-payable function, the call reverts.
 
 To accept ETH, mark the function `payable`:
 
@@ -222,7 +222,7 @@ contract Tipping {
 
 Inside a `payable` function, `msg.value` is the amount of ETH in wei that the caller sent. Outside a `payable` function, `msg.value` is always zero. The ETH is automatically credited to the contract's balance the moment the function is entered. There's no explicit transfer.
 
-A `payable` function can also be marked with other modifiers. `external payable` is the most common combination. `public payable` is also valid. You can't combine `payable` with `view` or `pure`, since accepting ETH is itself a state change.
+A `payable` function can also be marked with other keywords. `external payable` is the most common combination. `public payable` is also valid. You can't combine `payable` with `view` or `pure`, since accepting ETH is itself a state change.
 
 ## Receive and fallback: handling untargeted calls
 
