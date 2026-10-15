@@ -102,7 +102,7 @@ When the vault's balance finally drops below 1 ETH, `receive()` returns without 
 
 ## The DAO hack
 
-This attack pattern destroyed The DAO in June 2016, the largest crowdfunded project in Ethereum's early history. The DAO was a decentralized investment fund holding around $150M in ETH at the time, contributed by thousands of investors. Its withdrawal function had exactly this reentrancy bug: it sent ETH before zeroing out the investor's balance.
+This attack pattern destroyed The DAO, the largest crowdfunded project in Ethereum's early history, in June 2016. The DAO was a decentralized investment fund holding around $150M in ETH at the time, contributed by thousands of investors. Its withdrawal function had exactly this reentrancy bug: it sent ETH before zeroing out the investor's balance.
 
 An attacker exploited it on June 17, 2016, draining about $60M worth of ETH over several hours. The recursive nature of the attack meant the attacker had to do almost nothing once it started: each call into `receive` triggered another withdrawal automatically.
 
@@ -171,7 +171,7 @@ contract Vault {
 }
 ```
 
-If your fix added a modifier like `nonReentrant`, this is what you did. The first call to `withdraw` sets `locked = true` and runs the function body. If the body triggers a callback that tries to re-enter `withdraw`, the modifier hits `if (locked) revert`, which now fails because `locked` is true. The re-entry reverts. When the original call finishes, `locked` is set back to `false` so future calls work normally.
+If your fix added a modifier like `nonReentrant`, this is what you did. The first call to `withdraw` sets `locked = true` and runs the function body. If the body triggers a callback that tries to re-enter `withdraw`, the modifier hits `if (locked) revert`. Because `locked` is true, the re-entry reverts. When the original call finishes, `locked` is set back to `false` so future calls work normally.
 
 OpenZeppelin's `ReentrancyGuard` is the production-quality version of this. It uses a `uint256` instead of a `bool` for gas efficiency, since the storage slot transitions are cheaper, and exposes the modifier as `nonReentrant`. Most production contracts that hold value inherit from it.
 
