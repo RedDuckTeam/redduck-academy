@@ -60,7 +60,7 @@ The default value of an enum variable is always the first declared value. In the
 You can convert between enum values and their underlying integer with an explicit cast:
 
 ```solidity
-uint8 statusIndex = uint8(currentStatus);  // explicit downcast to integer
+uint8 statusIndex = uint8(currentStatus);  // explicit conversion to integer
 Status reconstructed = Status(2);          // build a Status from an integer
 ```
 
@@ -96,7 +96,7 @@ contract FixedArray {
 }
 ```
 
-The size goes inside the brackets after the element type. Indexing is zero-based, the same as most mainstream languages. Reading or writing an index that's out of bounds reverts the transaction. This is a runtime check the EVM performs automatically.
+The size goes inside the brackets after the element type. Indexing is zero-based, the same as most mainstream languages. Reading or writing an index that's out of bounds reverts the transaction. This is a runtime check the compiler inserts automatically.
 
 The unfilled slots have the zero value of the element type. So in the example above, every position from 0 to 9 reads as 0 immediately after deployment, until you write to it. This is consistent with how all storage works in Solidity, but it's worth saying out loud because some languages return `null` or undefined for unset array slots.
 
@@ -160,7 +160,7 @@ contract Matrix {
 
 The trick is that `uint256[3][2]` should be read right-to-left as "an array of length 2, where each element is `uint256[3]`." So the outer index is the second number in the type, and the inner index is the first.
 
-The brackets in the access expression go in the opposite order from the type declaration. Declaring `[3][2]` and then accessing `grid[outer][inner]` looks contradictory until you remember that the access reads left-to-right, with the outer index first and the inner second, while the type reads right-to-left, with the innermost type first.
+The brackets in the access expression go in the opposite order from the type declaration. Declaring `[3][2]` and then accessing `grid[outer][inner]` looks contradictory until you remember that the access reads left-to-right, with the outer index first and the inner second, while the type is written with the innermost dimension first.
 
 The same right-to-left logic applies to higher dimensions. Until you are used to it, double-check every nested array declaration. Real bugs have reached production because someone declared `uint256[5][10]` thinking they were getting 5 rows of 10 columns when they actually got 10 rows of 5 columns.
 
@@ -180,69 +180,4 @@ contract MemoryArrays {
 }
 ```
 
-Two things to flag. First, the `new T[](size)` syntax is mandatory for memory arrays, and the size must be specified at allocation. There's no equivalent of `push()` for memory arrays. Their length is fixed once they're allocated. If you need to "grow" a memory array, you allocate a new one of the larger size and copy.
-
-Second, the size argument can be a variable rather than only a constant. So `new uint256[](msg.value / 100)` is valid and will allocate an array sized at runtime based on the incoming ETH. This is one of the few places in Solidity where you allocate memory whose size depends on runtime inputs.
-
-Returning a memory array from a function uses the type `T[] memory`, as shown in the example. The function caller receives a copy. This is how you produce dynamic-sized result data, for example a list of token IDs owned by an address.
-
-## Byte arrays
-
-Byte arrays come in two forms. Fixed-width sizes are `bytes1`, `bytes2`, and so on up to `bytes32`. The dynamic version is just `bytes`.
-
-The fixed-width forms are exactly what they sound like. `bytes1` is one byte. `bytes32` is 32 bytes, which is exactly the size of an EVM word and the natural size for storing a hash. The reason to use a smaller width is when packing several into one slot together with other small types.
-
-```solidity
-// Solidity 0.8.24, Ethereum mainnet
-contract ByteArrays {
-    bytes32 public hash = keccak256("hello");
-    bytes4 public selector = 0xa9059cbb;       // ERC-20 transfer() selector
-    bytes public data;                          // dynamic, grows as needed
-
-    function appendByte(bytes1 b) external {
-        data.push(b);                           // bytes supports push, like dynamic arrays
-    }
-}
-```
-
-Dynamic `bytes` is essentially `bytes1[]` but with a more efficient storage layout. It supports `push`, `pop`, `length`, and index access in storage. It's the right type whenever you're handling arbitrary-length raw byte data: hashed pre-images, ABI-encoded payloads, signatures, and similar.
-
-A note on `bytes` versus `string`: they have the same underlying storage layout. The difference is purely semantic. `string` carries the convention that the bytes are valid UTF-8 text. `bytes` carries no such convention. Use `string` when the data is meant to be displayed as text, `bytes` for everything else.
-
-## Why bytes look like a fix for string length, but aren't
-
-The previous lesson noted that you can cast a string to bytes to get its byte count. The natural follow-up question is whether that byte count is the same as the character count. For ASCII it is. For anything else, it isn't.
-
-```solidity
-// Solidity 0.8.24, Ethereum mainnet
-contract StringLength {
-    function asciiLength() external pure returns (uint256) {
-        bytes memory b = bytes("hello");
-        return b.length;  // returns 5
-    }
-
-    function unicodeLength() external pure returns (uint256) {
-        bytes memory b = bytes(unicode"привіт");  // 6 Cyrillic letters
-        return b.length;  // returns 12, not 6
-    }
-}
-```
-
-The Cyrillic example has 6 visible characters but takes 12 bytes because each Cyrillic letter is 2 bytes in UTF-8. An emoji can take 4 bytes. A flag emoji can take 8.
-
-The takeaway: `bytes(s).length` is the byte count rather than the character count. Use it knowingly. If you need character counts on internationalized text, the answer is to do that work off-chain.
-
-The `unicode""` literal in the example is required when the string contains non-ASCII characters. Plain `"..."` literals reject them at compile time. This is Solidity's way of making you opt into the encoding question.
-
-## Reading individual bytes
-
-You can index into a byte array to pull out a single byte:
-
-```solidity
-function firstByte(bytes memory b) external pure returns (bytes1) {
-    require(b.length > 0, "empty");
-    return b[0];
-}
-```
-
-The return type is `bytes1`, a single byte. You can compare it, convert it to a small integer, or use it in switch-style logic. This is how you'd parse a custom binary format on-chain, though if you find yourself doing that frequently it's usually a sign the format should be redesigned.
+Two things to flag. First, the `new T[](size)` syntax is mandatory for dynamic memory arrays, and the size must be specified at allocation. There's
