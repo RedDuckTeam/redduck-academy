@@ -9,6 +9,12 @@ The common-sense check is a fast test for design mistakes. Retell a design as a 
 
 This task gives you a small order service with one flaw of exactly that kind. It works for an honest user and falls apart for a self-interested one. Your job is to find the flaw by running the common-sense check, then fix it.
 
-Clone the template repository, open the `01-common-sense-check` folder, and complete the starter in the language you choose. Then fill in `SOLUTION.md`: describe the attack as a concrete sequence of steps, explain your fix, and say whether you patched the attack or removed the condition that made it possible. Push your work to your own fork and submit the repository URL.
+Fork the template repository, clone your fork, open the `01-common-sense-check` folder, and complete the starter in the language you choose. Then fill in `SOLUTION.md`: describe the attack as a concrete sequence of steps, explain your fix, and say whether you patched the attack or removed the condition that made it possible. Push your work to your fork and submit the repository URL.
 
 You are graded on your explanation of the attack as much as on the code.
+
+Starter repository: https://github.com/RedDuckTeam/redduck-academy-engineering-template
+
+## How to submit
+
+Paste a link to your repository.
