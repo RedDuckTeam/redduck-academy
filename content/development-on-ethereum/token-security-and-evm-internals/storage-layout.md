@@ -31,7 +31,7 @@ faq:
       value it never sees.
 ---
 
-> Solidity state variables live in storage. So far you've been declaring them and using them without thinking about where they actually sit. They sit in a giant array of 32-byte slots, with 2^256 slots in total, indexed starting from 0. The compiler decides which variable goes in which slot, and for dynamic types like mappings and arrays the slot derivation involves hashing. This lesson walks through how storage is actually laid out: how the compiler packs small types together, where dynamic arrays put their elements, where mappings put their values, and the security implication that follows from all of this. Anyone can read any slot of any contract. Marking a state variable `private` does not make it secret.
+> Solidity state variables live in storage. So far you've been declaring them and using them without thinking about where they actually sit. They sit in a giant array of 32-byte slots, with 2^256 slots in total, indexed starting from 0. The compiler decides which variable goes in which slot, and for dynamic types like mappings and arrays the slot derivation involves hashing. This lesson walks through how storage is actually laid out: how the compiler packs small types together, where dynamic arrays put their elements, where mappings put their values, and the security implication that follows from all of this: anyone can read any slot of any contract. Marking a state variable `private` does not make it secret.
 
 ## Storage is an array of slots
 
@@ -108,7 +108,7 @@ Slot 0 reads as `0x...7b`, where `7b` is the hex of 123, the value of `a`. The l
 
 Slot 1 reads as `0x...0014...000a`. Two values are visible inside the slot. The high 16 bytes hold `0x14`, which is 20 in decimal, the value of `c`. The low 16 bytes hold `0x0a`, which is 10 in decimal, the value of `b`. They share the slot exactly as the diagram showed.
 
-Note that the contract didn't expose `a`, `b`, or `c` as `public`. The variables aren't decorated with any visibility modifier at all. They could even be marked `private`. None of that changes what `eth_getStorageAt` returns. The data is in storage, the storage is on chain, the chain is public.
+Note that the contract didn't expose `a`, `b`, or `c` as `public`. The variables aren't decorated with any visibility keyword at all. They could even be marked `private`. None of that changes what `eth_getStorageAt` returns. The data is in storage, the storage is on chain, the chain is public.
 
 ## Dynamic arrays
 
@@ -293,7 +293,7 @@ Each level of dynamic indirection is one more `keccak256` step. The chain is det
 
 The `private` keyword in Solidity controls who can reference the variable in source code. A `private uint256 secret` cannot be referenced by name from a contract that inherits yours. The Solidity compiler enforces this at compile time.
 
-Storage doesn't know any of that. Storage is a flat array of bytes that the EVM persists between transactions. There is no access control at the storage level, and there couldn't be. As the earlier section showed, every node stores every slot, and any client can read any of them via `eth_getStorageAt`. The `private` keyword is a Solidity visibility modifier. It is not a security feature.
+Storage doesn't know any of that. Storage is a flat array of bytes that the EVM persists between transactions. There is no access control at the storage level, and there couldn't be. As the earlier section showed, every node stores every slot, and any client can read any of them via `eth_getStorageAt`. The `private` keyword is a Solidity visibility keyword. It is not a security feature.
 
 The common mistake looks like this:
 
