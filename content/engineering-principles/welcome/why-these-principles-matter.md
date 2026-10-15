@@ -33,7 +33,7 @@ Each of these is one principle away from never happening. Learning the principle
 
 ## The principle outlives the tool
 
-Languages change. Frameworks come and go. The database you build on today may be gone in five years. A principle does not expire that way, because it describes why a good design is good rather than how one particular tool works. Understand why keeping the smallest amount of logic in the position of highest trust makes a system safer, and you will apply it in a language that has not been invented yet. So each lesson here teaches the reason under a design. The reason is the part that keeps paying long after the specifics have moved on.
+Languages change. Frameworks come and go. The database you build on today may be gone in five years. A principle does not expire that way, because it describes why a good design is good rather than how one particular tool works. Understand why keeping the smallest amount of logic in the position of highest trust makes a system safer, and you will apply it in a language that has not been invented yet. So each lesson here teaches the reason behind a design. The reason is the part that keeps paying long after the specifics have moved on.
 
 ## A fair warning
 
