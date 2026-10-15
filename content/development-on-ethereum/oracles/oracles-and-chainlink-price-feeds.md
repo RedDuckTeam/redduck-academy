@@ -25,11 +25,11 @@ faq:
       operator goes offline.
 ---
 
-> Smart contracts are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. This lecture covers what oracles actually are, why they matter for any serious DeFi protocol, how Chainlink's price feed architecture solves the trust problem, and how to consume a feed safely.
+> Smart contracts are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. This lesson covers what oracles actually are, why they matter for any serious DeFi protocol, how Chainlink's price feed architecture solves the trust problem, and how to consume a feed safely.
 
 ## The oracle problem
 
-The EVM is a deterministic state machine. Every node must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement rules out anything that could return different values to different nodes: HTTP requests, random number generators, file system reads, system clocks beyond `block.timestamp`. None of these are available inside Solidity, and no compiler flag will give them to you.
+The EVM is a deterministic state machine. Every node must execute every transaction and arrive at the same result; otherwise consensus breaks. That requirement rules out anything that could return different values to different nodes: HTTP requests, random number generators, file system reads, system clocks beyond `block.timestamp`. None of these are available inside Solidity, and no compiler flag will give them to you.
 
 This is a problem because most interesting financial applications depend on real-world data. A lending protocol needs to know what its collateral is worth, in dollars, right now, so it can liquidate undercollateralized loans. A stablecoin needs to know what the dollar is doing to maintain its peg. A derivatives platform needs to know the price of whatever asset its contracts settle against. An insurance contract needs to know whether a flight was delayed, whether a hurricane hit, whether a parametric trigger condition was met.
 
