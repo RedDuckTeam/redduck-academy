@@ -5,7 +5,7 @@ type: review_task
 order: 13
 ---
 
-You have the toolkit. The last module walked you through every piece of Solidity you need to write a real, useful contract: mappings keyed by address, structs, events, custom errors, modifiers, inheritance, payable functions. You've built two contracts already, but both were exercises designed to drill specific lessons. This one is different. The contract you write here is the contract future lessons in this course will actually use.
+You have the toolkit. This module walked you through every piece of Solidity you need to write a real, useful contract: mappings keyed by address, structs, events, custom errors, modifiers, inheritance, payable functions. You've built two contracts already, but both were exercises designed to drill specific lessons. This one is different. The contract you write here is the contract future lessons in this course will actually use.
 
 ## The story
 
@@ -17,7 +17,7 @@ Call it whatever you want. The name and symbol are constructor parameters.
 
 Fork the repository and read `TASK.md` for the full setup. The starter contract is there with the function signatures, the interface it inherits from, and the test suite. Your job is to fill in the bodies so every test passes. The tests double as the spec: every behavior the contract must exhibit is encoded in a test.
 
-The contract is small. Around 80-120 lines depending on how concise your code is.
+The contract is small: around 80–120 lines, depending on how concise your code is.
 
 ## The one rule
 
@@ -29,6 +29,6 @@ Everything you need is in the tests and in this course's prior lessons. The Soli
 
 ## What you've actually built
 
-When you finish, you'll have written ERC-20, the most widely used smart contract standard on Ethereum. Every fungible token on Ethereum implements the same interface you just implemented: USDC, DAI, UNI, LINK, all of them. The next lesson covers what ERC-20 is, why it's structured the way it is, and how the rest of the ecosystem builds on top of it. By then, you'll already know the answer from the inside.
+When you finish, you'll have implemented ERC-20, the most widely used smart-contract standard on Ethereum. Every fungible token on Ethereum implements the same interface you just implemented: USDC, DAI, UNI, LINK, all of them. The next lesson covers what ERC-20 is, why it's structured the way it is, and how the rest of the ecosystem builds on top of it. By then, you'll already know the answer from the inside.
 
 Good luck.
