@@ -27,7 +27,6 @@ contract X {
         // body
     }
 }
-
 ```
 
 A non-owner calls `adminAction()` while the contract is paused. What is the revert message?
@@ -77,7 +76,7 @@ The contract deploys without errors. What happens when a user calls `doStuff()`?
 - [ ] The function body runs first and the modifier code is appended afterward  <!-- a:6a0f916bc53e8c549713cc6f -->
 
 <!-- q:6a0f91d7c53e8c549713cc70 -->
-A vault contract reverts all direct ETH transfers via `receive`
+A vault contract reverts all direct ETH transfers via `receive`:
 
 ```solidity
 contract Vault {
@@ -104,7 +103,7 @@ An attacker creates a separate contract, sends 5 ETH to it, then calls `selfdest
 **Approve without sufficient balance.** Alice has a balance of 50 USDC. She calls `usdc.approve(bob, 1000)`. What is the result?
 
 - [ ] The transaction reverts because Alice cannot approve more than her balance  <!-- a:6a0f97eff81a4e01ee9fd961 -->
-- [x] Alice's allowance to Bob is set to 1000, even though her balance is only 50.  <!-- a:6a0f97f5f81a4e01ee9fd962 -->
+- [x] Alice's allowance to Bob is set to 1000, even though her balance is only 50  <!-- a:6a0f97f5f81a4e01ee9fd962 -->
 - [ ] The allowance is automatically capped at 50  <!-- a:6a0f9807f81a4e01ee9fd963 -->
 
 <!-- q:6a0f98a5f81a4e01ee9fd965 -->
