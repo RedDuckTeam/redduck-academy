@@ -24,7 +24,7 @@ faq:
       Interface Definition Language file describing what each instruction expects.
 ---
 
-> Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model. Where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one follows directly from the parallel-execution goal at the top.
+> Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model: where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one follows directly from the parallel-execution goal at the top.
 
 ## What the choice costs
 
@@ -123,4 +123,4 @@ You stop worrying about contract storage growing unboundedly. Every account is s
 
 The cost of all this is that the programming model has more pieces. A Solana program is harder to write than the equivalent on a serial chain, especially the first time. You have to think about accounts, ownership, declaration, rent. You have to write tests that exercise the runtime's checks rather than relying on the runtime to discover them at execution time.
 
-What you get is a chain where a token swap on one decentralized exchange does not have to wait for an unrelated NFT mint, and where the network can process thousands of independent transactions per second without one of them blocking the rest. The applications people built on Solana, payments at credit-card speeds, on-chain order books, decentralized exchanges with sub-cent fees, exist because the runtime can run their transactions in parallel. Without parallel execution, the chain becomes another serial chain, slower than it should be.
+What you get is a chain where a token swap on one decentralized exchange does not have to wait for an unrelated NFT mint, and where the network can process thousands of independent transactions per second without one of them blocking the rest. The applications people built on Solana (payments at credit-card speeds, on-chain order books, decentralized exchanges with sub-cent fees) exist because the runtime can run their transactions in parallel. Without parallel execution, the chain becomes another serial chain, slower than it should be.
