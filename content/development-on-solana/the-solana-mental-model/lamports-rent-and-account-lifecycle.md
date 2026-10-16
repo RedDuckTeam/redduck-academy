@@ -35,7 +35,7 @@ faq:
 
 SOL is the main currency unit of Solana. One SOL is divided into one billion smaller units called lamports. One lamport is the smallest amount of value the chain knows how to talk about. Everything is measured in lamports underneath: balances, fees, storage deposits, validator rewards. SOL is the friendlier label humans put on top of large lamport numbers.
 
-The conversion is exact. One SOL is one billion lamports. Half a SOL is five hundred million lamports. The base fee for one transaction signature is five thousand lamports, or 0.000005 SOL. Storage deposit for a typical token account is around two million lamports, or 0.00204 SOL. The numbers stay in the thousands and millions for almost everything you'll do day to day.
+The conversion is exact. One SOL is one billion lamports. Half a SOL is five hundred million lamports. The base fee for one transaction signature is five thousand lamports, or 0.000005 SOL. The storage deposit for a typical token account is around two million lamports, or 0.00204 SOL. The numbers stay in the thousands and millions for almost everything you'll do day to day.
 
 <svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>SOL to lamports table: five amounts from 1 SOL down to 1 lamport</title><desc>A header shows that 1 SOL equals 1,000,000,000 lamports, the smallest unit. Below it, a table lists five amounts, from 1 SOL down to 0.000000001 SOL, with each row giving the lamport value and a real example, such as a token account storage deposit or a transaction signature fee.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
