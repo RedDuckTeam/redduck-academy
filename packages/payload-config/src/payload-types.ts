@@ -199,6 +199,10 @@ export interface Course {
    */
   previewable?: boolean | null;
   /**
+   * When checked, the course is listed and readable as usual but no certificate can be claimed — the site shows a badge in place of the claim button. For courses whose lessons are still being written. Does not affect already-issued certificates.
+   */
+  inProgress?: boolean | null;
+  /**
    * This course is locked until the selected prerequisite course is fully completed. Lectures are always accessible.
    */
   prerequisiteCourse?: (number | null) | Course;
@@ -668,6 +672,7 @@ export interface CoursesSelect<T extends boolean = true> {
   publishedAt?: T;
   isHidden?: T;
   previewable?: T;
+  inProgress?: T;
   prerequisiteCourse?: T;
   updatedAt?: T;
   createdAt?: T;

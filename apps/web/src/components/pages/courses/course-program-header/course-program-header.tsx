@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from '@/components/ui/dialog'
 import { LockedCourseBadge } from '@/components/pages/home/my-progress/locked-course-badge'
+import { InProgressCourseBadge } from '@/components/pages/home/my-progress/in-progress-course-badge'
 import { isCourseFullyCompleted } from '@/lib/lessons/course-completion'
 import { cn } from '@/lib/utils'
 import { useUserCertificates } from '@/hooks/api/certificates/useUserCertificates'
@@ -100,18 +101,18 @@ export const CourseProgramHeader = ({
                 prerequisiteCourseTitle={prerequisiteCourseTitle}
                 prerequisiteCourseSlug={prerequisiteCourseSlug}
               />
+            ) : certificate ? (
+              <Button size="sm" className="text-[#000]" asChild>
+                <Link to="/certificates/$certificateId" params={{ certificateId: certificate.humanId }}>
+                  View Certificate
+                </Link>
+              </Button>
+            ) : course.inProgress ? (
+              <InProgressCourseBadge />
             ) : showCertificate ? (
-              certificate ? (
-                <Button size="sm" className="text-[#000]" asChild>
-                  <Link to="/certificates/$certificateId" params={{ certificateId: certificate.humanId }}>
-                    View Certificate
-                  </Link>
-                </Button>
-              ) : (
-                <Button size="sm" className="text-[#000]" onClick={openNameDialog} disabled={isClaiming}>
-                  {isClaiming ? 'Claiming…' : 'Claim Certificate'}
-                </Button>
-              )
+              <Button size="sm" className="text-[#000]" onClick={openNameDialog} disabled={isClaiming}>
+                {isClaiming ? 'Claiming…' : 'Claim Certificate'}
+              </Button>
             ) : null}
           </div>
           <Text variant="main-16" className="text-[#000]">

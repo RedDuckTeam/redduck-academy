@@ -120,6 +120,16 @@ export const Courses: CollectionConfig = {
       },
     },
     {
+      name: 'inProgress',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'When checked, the course is listed and readable as usual but no certificate can be claimed — the site shows a badge in place of the claim button. For courses whose lessons are still being written. Does not affect already-issued certificates.',
+      },
+    },
+    {
       name: 'prerequisiteCourse',
       type: 'relationship',
       relationTo: 'courses',

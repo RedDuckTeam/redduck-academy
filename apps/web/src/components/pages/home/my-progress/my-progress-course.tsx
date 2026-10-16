@@ -8,6 +8,7 @@ import { ArrowRight } from '@/components/ui/icons/arrow-right'
 import { LockedCourseStatusTooltip } from '@/components/pages/home/my-progress/locked-course-status-tooltip'
 import { cn } from '@/lib/utils'
 import { padIndex } from '@/lib/format-index'
+import { IN_PROGRESS_LABEL } from '@/components/pages/home/my-progress/in-progress-course-badge'
 
 const statusLabels: Record<CourseStatus, string> = {
   start: 'Start',
@@ -33,6 +34,7 @@ type Action =
   | { kind: 'locked' }
   | { kind: 'next'; lesson: { moduleSlug: string; lessonSlug: string }; label: string }
   | { kind: 'claim' }
+  | { kind: 'in-progress' }
   | { kind: 'done'; label: string }
 
 export const MyProgressCourse = ({
@@ -54,9 +56,10 @@ export const MyProgressCourse = ({
   const action = useMemo<Action>(() => {
     if (isLocked) return { kind: 'locked' }
     if (nextLesson) return { kind: 'next', lesson: nextLesson, label: statusLabels[status] }
-    if (!hasCertificate) return { kind: 'claim' }
-    return { kind: 'done', label: statusLabels[status] }
-  }, [isLocked, nextLesson, hasCertificate, status])
+    if (hasCertificate) return { kind: 'done', label: statusLabels[status] }
+    if (course.inProgress) return { kind: 'in-progress' }
+    return { kind: 'claim' }
+  }, [isLocked, nextLesson, hasCertificate, status, course.inProgress])
 
   const containerClass =
     layout === 'table'
@@ -107,6 +110,13 @@ export const MyProgressCourse = ({
           <Text variant={'caps-20'}>Claim Certificate</Text>
           <ArrowRight />
         </Link>
+      )
+      break
+    case 'in-progress':
+      actionElement = (
+        <div className={containerClass}>
+          <Text variant={'caps-20'}>{IN_PROGRESS_LABEL}</Text>
+        </div>
       )
       break
     case 'done':

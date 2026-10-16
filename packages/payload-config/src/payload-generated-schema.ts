@@ -133,6 +133,7 @@ export const courses = db_schema.table(
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true, precision: 3 }),
     isHidden: boolean('is_hidden').default(false),
     previewable: boolean('previewable').default(false),
+    inProgress: boolean('in_progress').default(false),
     prerequisiteCourse: integer('prerequisite_course_id').references((): AnyPgColumn => courses.id, {
       onDelete: 'set null',
     }),

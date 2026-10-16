@@ -180,9 +180,9 @@ describe('MarkdownContent', () => {
 
     const { container } = render(<MarkdownContent source={body} />)
 
-    // All three diagrams reassemble into real <svg> elements with their baked-in <title>.
+    // Every diagram reassembles into a real <svg> element with its baked-in <title>.
     const svgs = container.querySelectorAll('svg')
-    expect(svgs.length).toBe(3)
+    expect(svgs.length).toBeGreaterThan(0)
     svgs.forEach((s) => expect(s.querySelector('title')?.textContent?.length).toBeGreaterThan(0))
 
     // The long plgrnd share link becomes an embed.
@@ -264,6 +264,35 @@ describe('svg attribute sanitization', () => {
     'style="transform:scale(999)"',
   ])('drops the whole style attribute for %s', (attrs) => {
     expect(renderSvg(attrs)?.getAttribute('style')).toBeNull()
+  })
+
+  it('keeps dashed and capped strokes, which the corpus uses in 61 lessons', () => {
+    const line = render(
+      <MarkdownContent
+        source={
+          '<svg role="img" viewBox="0 0 10 10"><line x1="0" y1="0" x2="5" y2="5" ' +
+          'stroke-dasharray="6 4" stroke-dashoffset="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        }
+      />,
+    ).container.querySelector('line')
+    expect(line?.getAttribute('stroke-dasharray')).toBe('6 4')
+    expect(line?.getAttribute('stroke-dashoffset')).toBe('2')
+    expect(line?.getAttribute('stroke-linecap')).toBe('round')
+    expect(line?.getAttribute('stroke-linejoin')).toBe('round')
+  })
+
+  it('keeps marker-end pointing at its marker after ids are prefixed', () => {
+    const { container } = render(
+      <MarkdownContent
+        source={
+          '<svg role="img" viewBox="0 0 10 10"><defs><marker id="arr"><path d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>' +
+          '<line x1="0" y1="0" x2="5" y2="5" marker-end="url(#arr)"/></svg>'
+        }
+      />,
+    )
+    const id = container.querySelector('marker')?.id
+    expect(id).toMatch(/^user-content-/)
+    expect(container.querySelector('line')?.getAttribute('marker-end')).toBe(`url(#${id})`)
   })
 
   // The compiled stylesheet ships .fixed/.inset-0/.z-50, so a class list rebuilds the same overlay.

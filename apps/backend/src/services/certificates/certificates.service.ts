@@ -69,6 +69,10 @@ export class CertificatesService {
 
     if (existing) return formatCert(existing)
 
+    if (course.inProgress === true) {
+      throw new AppError(403, 'This course is still being written — a certificate is not available yet')
+    }
+
     // Snapshot the user's name at issue time for display on the certificate.
     const name = userRow.name
 

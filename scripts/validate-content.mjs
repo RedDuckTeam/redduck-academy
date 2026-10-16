@@ -25,7 +25,7 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 // the DB sync assigns them on merge. Multi-answer questions must cue it in the stem (matches the
 // runtime's `isMultipleChoices = correctCount > 1`).
 const ALLOWED = {
-  course: ['id', 'title', 'order', 'isHidden'],
+  course: ['id', 'title', 'order', 'isHidden', 'inProgress'],
   module: ['id', 'title', 'order', 'isHidden'],
   lesson: ['id', 'title', 'type', 'order', 'isHidden', 'faq'],
 }
@@ -121,6 +121,8 @@ function validate(file, raw, sets) {
   for (const k of Object.keys(data)) {
     if (!ALLOWED[c.role].includes(k)) warn.push(`unknown field "${k}" (allowed: ${ALLOWED[c.role].join(', ')})`)
   }
+
+  if (c.role === 'course') optType('inProgress', 'boolean')
 
   if (c.role === 'lesson') {
     if (!LESSON_TYPES.includes(data.type)) {

@@ -85,6 +85,7 @@ async function readCourse(courseDir) {
     title: str(course.data.title, basename(courseDir)),
     description: course.body.trim(),
     isHidden: course.data.isHidden === true,
+    inProgress: course.data.inProgress === true,
     modules,
   }
 }
@@ -95,7 +96,7 @@ function render(course) {
   L.push('     Regenerated from the lesson .md files by scripts/generate-course-index.mjs,')
   L.push('     which runs on the content pre-commit hook and is verified in CI. -->')
   L.push('')
-  L.push(`# ${course.title}${course.isHidden ? ' _(hidden)_' : ''}`)
+  L.push(`# ${course.title}${course.isHidden ? ' _(hidden)_' : ''}${course.inProgress ? ' _(in progress)_' : ''}`)
   if (course.description) {
     L.push('')
     L.push(course.description)

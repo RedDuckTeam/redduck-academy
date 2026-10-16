@@ -22,6 +22,7 @@ import * as migration_20260523_153915_drop_ai_possible_solutions from './2026052
 import * as migration_20260529_132454 from './20260529_132454';
 import * as migration_20260707_222909 from './20260707_222909';
 import * as migration_20260718_140637_add_previewable_flag from './20260718_140637_add_previewable_flag';
+import * as migration_20261006_170841_add_in_progress_flag from './20261006_170841_add_in_progress_flag';
 
 export const migrations = [
   {
@@ -142,6 +143,11 @@ export const migrations = [
   {
     up: migration_20260718_140637_add_previewable_flag.up,
     down: migration_20260718_140637_add_previewable_flag.down,
-    name: '20260718_140637_add_previewable_flag'
+    name: '20260718_140637_add_previewable_flag',
+  },
+  {
+    up: migration_20261006_170841_add_in_progress_flag.up,
+    down: migration_20261006_170841_add_in_progress_flag.down,
+    name: '20261006_170841_add_in_progress_flag',
   },
 ];

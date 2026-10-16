@@ -1,7 +1,9 @@
 ---
+id: 1761656643
 title: Solana PRO
 order: 4
 isHidden: false
+inProgress: true
 ---
 
 The architecture patterns behind the top protocols on Solana, inferred from the code of the TOP-50 projects. 
