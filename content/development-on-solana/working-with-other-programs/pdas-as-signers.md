@@ -214,15 +214,15 @@ Third, the only thing your program needed to provide that a wallet-signed transf
 
 There are a handful of failure modes specific to PDA signing that account for most of the questions developers ask in their first week. Worth naming them.
 
-Forgetting the bump. The most common bug. Your seeds derive a different address, the runtime doesn't find a match in the call's account list, and you get an unauthorized-signer error. The fix is mechanical: put the bump byte at the end of the seeds array, every time.
+**Forgetting the bump.** The most common bug. Your seeds derive a different address, the runtime doesn't find a match in the call's account list, and you get an unauthorized-signer error. The fix is mechanical: put the bump byte at the end of the seeds array, every time.
 
-Using the wrong bump. If you stored a bump on initialization and your account-fetching logic returns a stale or incorrect value, you'll derive a different PDA. Always read the bump from the account itself, never compute it fresh in a signing path. Re-running `find_program_address` would also work but costs significant compute units, so use the stored bump.
+**Using the wrong bump.** If you stored a bump on initialization and your account-fetching logic returns a stale or incorrect value, you'll derive a different PDA. Always read the bump from the account itself, never compute it fresh in a signing path. Re-running `find_program_address` would also work but costs significant compute units, so use the stored bump.
 
-Lifetime errors. The `&[&[&[u8]]]` shape is fragile in Rust. Inline `as_ref` calls fail to compile. Bind your Pubkeys to locals before using them in seeds.
+**Lifetime errors.** The `&[&[&[u8]]]` shape is fragile in Rust. Inline `as_ref` calls fail to compile. Bind your Pubkeys to locals before using them in seeds.
 
-Seeds matching the wrong PDA. If your program manages many PDAs of the same kind, such as per-user vaults, per-pool authorities, or per-proposal escrows, the seeds in your CPI must match the specific PDA you're trying to act on behalf of. Mixing seeds for one user's vault into a transaction acting on another user's vault is a real bug that the compiler can't catch. Test these paths carefully.
+**Seeds for the wrong PDA.** If your program manages many PDAs of the same kind, such as per-user vaults, per-pool authorities, or per-proposal escrows, the seeds in your CPI must match the specific PDA you're trying to act on behalf of. Mixing seeds for one user's vault into a transaction acting on another user's vault is a real bug that the compiler can't catch. Test these paths carefully.
 
-Wrong program ID at derivation. If a PDA was derived under one program but you try to sign for it from a different program, the derivation produces a different address. This usually only happens during program upgrades where the program ID changed, but it's worth being aware of.
+**Wrong program ID at derivation.** If a PDA was derived under one program but you try to sign for it from a different program, the derivation produces a different address. This usually only happens during program upgrades where the program ID changed, but it's worth being aware of.
 
 When PDA signing fails, the error is usually `Cross-program invocation with unauthorized signer or writable account`. The runtime is telling you that an account in the inner call needed to be a signer but wasn't, or needed to be writable but wasn't. For PDA signing failures, signer is almost always the missing flag. Review the seeds, confirm the bump is correct and last, and check that the PDA address you are trying to sign for is in your accounts list.
 
