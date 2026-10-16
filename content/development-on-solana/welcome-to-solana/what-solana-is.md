@@ -24,15 +24,15 @@ faq:
       rent-exempt.
 ---
 
-> Most blockchains run transactions one after another. Solana was designed to run them at the same time wherever it can. Every other choice in the system, the way state is stored, the way fees are priced, the cryptographic clock that orders the work, follows from that single decision. Picturing Solana as a world computer built for parallel execution is the mental model that makes the rest of the course make sense.
+> Most blockchains run transactions one after another. Solana was designed to run them at the same time wherever it can. Every other choice in the system (the way state is stored, the way fees are priced, the cryptographic clock that orders the work) follows from that single decision. Picturing Solana as a world computer built for parallel execution is the mental model that makes the rest of the course make sense.
 
 ## The shape of the thing
 
-You already know what a blockchain is. A network of nodes that hold the same data, agree on what gets added next, and chain blocks together with hashes so nothing can be quietly changed. Solana starts from that same architecture and adds one constraint that shapes everything else: the runtime should be able to execute unrelated work in parallel.
+You already know what a blockchain is: a network of nodes that hold the same data, agree on what gets added next, and chain blocks together with hashes so nothing can be quietly changed. Solana starts from that same architecture and adds one constraint that shapes everything else: the runtime should be able to execute unrelated work in parallel.
 
-The way to picture this: imagine a global computer where the state is broken into millions of small, independently-owned cells. Anyone can read any cell. Writing to a cell requires permission. Every transaction that wants to run on the chain has to declare up front which cells it will read and which it will write. The runtime takes those declarations, sorts the incoming transactions into groups whose cell-sets do not overlap, and runs the groups on different threads at the same time.
+The way to picture this: imagine a global computer where the state is broken into millions of small, independently owned cells. Anyone can read any cell. Writing to a cell requires permission. Every transaction that wants to run on the chain has to declare up front which cells it will read and which it will write. The runtime takes those declarations, sorts the incoming transactions into groups whose cell-sets do not overlap, and runs the groups on different threads at the same time.
 
-That is the picture worth holding. A world computer where every transaction comes with a manifest of what it touches, so the runtime never has to guess.
+That is the picture worth holding: a world computer where every transaction comes with a manifest of what it touches, so the runtime never has to guess.
 
 <svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Declared account lists let Solana run non-overlapping transactions in parallel</title><desc>Three transactions each declare which accounts they touch: Tx 1 uses A and B, Tx 2 uses C and D, Tx 3 uses B and E. The runtime runs Tx 1 and Tx 2 in parallel since they share no accounts, but makes Tx 3 wait because it overlaps with Tx 1 on account B.</desc>
   <defs>
@@ -86,7 +86,7 @@ That is the picture worth holding. A world computer where every transaction come
 
 ## What lives on it
 
-The cells in the picture above are called **accounts**. Every account has an address, a balance in lamports, which is Solana's smallest unit at one billionth of a SOL, some bytes of data, and an owner. The owner is what makes the model work. Each account is owned by exactly one program, and only that program is allowed to change the account's data. Reads are open to anyone. Writes go through the owner.
+The cells in the picture above are called **accounts**. Every account has an address, a balance in lamports (Solana's smallest unit, one billionth of a SOL), some bytes of data, and an owner. The owner is what makes the model work. Each account is owned by exactly one program, and only that program is allowed to change the account's data. Reads are open to anyone. Writes go through the owner.
 
 There are no separate categories the way other chains split user accounts from contract accounts. Programs are accounts too. A program is just an account whose data is executable code and whose owner is the special loader program that knows how to run it. A user's wallet is an account owned by the System Program. A token balance is an account owned by the Token Program. Everything is the same kind of object with different ownership.
 
@@ -104,7 +104,7 @@ SOL is what the fees are paid in. SOL is also what every account's rent-exempt b
 
 Anything an application can express as a program that operates on accounts. Tokens with custom rules. Decentralized exchanges that hold pools of liquidity in accounts and let traders swap between them. Lending markets, on-chain games, prediction markets, governance systems, identity records. The same capabilities as any general-purpose smart-contract chain.
 
-The thing Solana is built to do faster than most chains is to run all of those at the same time. When the runtime can schedule a swap on one DEX in parallel with a vote on a governance proposal in parallel with a token transfer between two wallets, throughput climbs. That design comes with trade-offs that the rest of this course addresses. You have to think about state differently, you have to declare your access patterns up front, and you have to be careful about what your program assumes when other transactions touched the same accounts a millisecond before yours.
+The thing Solana is built to do faster than most chains is to run all of those at the same time. When the runtime can schedule a swap on one DEX, a vote on a governance proposal, and a token transfer between two wallets all in parallel, throughput climbs. That design comes with trade-offs that the rest of this course addresses. You have to think about state differently, you have to declare your access patterns up front, and you have to be careful about what your program assumes when other transactions touched the same accounts a millisecond before yours.
 
 ## Where this fits
 
