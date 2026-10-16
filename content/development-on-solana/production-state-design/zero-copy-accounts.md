@@ -342,7 +342,7 @@ Scope the `RefMut` to the smallest region that needs write access, drop it befor
 
 ## Box as the middle ground
 
-If your account is too big for the stack but you don't want the Pod discipline, `Box<Account<'info, T>>` is the right answer. The copy still happens on every call, so the CU cost stays, but for accounts in the low-kilobyte range that cost is manageable. The copy still happens on every call, so the CU cost stays, but for accounts in the low-kilobyte range that cost is manageable.
+If your account is too big for the stack but you don't want the Pod discipline, `Box<Account<'info, T>>` is the right answer. The copy still happens on every call, so the CU cost stays, but for accounts in the low-kilobyte range that cost is manageable.
 
 The signature looks like this:
 
