@@ -266,7 +266,7 @@ This error pattern is less common in Anchor code than the first two, because acc
 
 You don't need to track lifetimes by hand. The compiler does that. What you need is the rule of thumb that catches 90% of cases:
 
-If you need to write to an account, reach `ctx.accounts.the_account.field = value` directly, or take one `&mut` reference and do all the work through it. Don't take two mutable references to the same struct.
+If you need to write to an account, write `ctx.accounts.the_account.field = value` directly, or take one `&mut` reference and do all the work through it. Don't take two mutable references to the same struct.
 
 If you need to read an account, just read it. `ctx.accounts.config.rddk_mint` works without ceremony.
 
@@ -276,4 +276,4 @@ If the compiler complains about a borrow, the first question to ask is: how long
 
 In your first few days writing Anchor handlers, you will get borrow-checker errors regularly. After a week or two, the patterns become automatic. You'll start writing code that compiles the first time, because you'll think about ownership and borrows as you write rather than after the compiler rejects you.
 
-That's the goal. Not to memorize lifetime syntax, but to internalize the two reference rules well enough that you write code the compiler accepts without thinking about it.
+The goal is not to memorize lifetime syntax but to internalize the two reference rules well enough that you write code the compiler accepts without thinking about it.
