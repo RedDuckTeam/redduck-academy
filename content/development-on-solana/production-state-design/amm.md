@@ -38,7 +38,7 @@ faq:
 
 Centralized exchanges work with order books. Buyers post bids, sellers post asks, the exchange matches them. On chain this is hard. Every post and every cancel is a transaction that costs compute and rent. A market maker who wants to update quotes every slot goes bankrupt fast.
 
-Uniswap V2 took a different approach, and Solana AMMs (Automated Market Maker) inherited it. Instead of matching orders, the AMM holds a pool of both tokens and uses a formula to set the price. Anyone can swap one token for the other against the pool. Anyone can add tokens to the pool to make it deeper. The price comes out of one piece of math.
+Uniswap V2 took a different approach, and Solana automated market makers (AMMs) inherited it. Instead of matching orders, the AMM holds a pool of both tokens and uses a formula to set the price. Anyone can swap one token for the other against the pool. Anyone can add tokens to the pool to make it deeper. The price comes out of one piece of math.
 
 ## The pool and its rule
 
@@ -302,7 +302,7 @@ There is no separate fee accounting in the program. No per-LP fee tracker. No cl
 
 ## Impermanent loss: the cost LPs actually pay
 
-The fee section described the LP's real risk: as traders swap, the pool rebalances, and the LP ends up holding proportionally more of whichever token fell in value. That effect has a name: impermanent loss. Here is how it works. Fees are the reward side, impermanent loss is the cost side, and the LP picture only makes sense with both on the table.
+The fee section described the LP's real risk: as traders swap, the pool rebalances, and the LP ends up holding proportionally more of whichever token fell in value. That effect has a name: impermanent loss. Fees are the reward side, impermanent loss is the cost side, and the LP picture only makes sense with both on the table.
 
 The mechanism is simple. The constant-product invariant rebalances the pool every time price changes. If SOL appreciates, swappers buy SOL from the pool, so the pool loses SOL and gains USDC. By the time price has doubled, the pool holds less SOL than at entry. An LP who owns a fixed share of the pool holds proportionally less SOL too. They missed part of the SOL appreciation.
 
@@ -399,7 +399,7 @@ If you withdraw at any other price, the loss is realized and permanent. Most LP 
 
 ### Fees vs IL
 
-The central LP question. Do earned fees exceed IL?
+The central LP question is whether earned fees exceed IL.
 
 For stablecoin pairs the price ratio barely moves, so IL stays negligible and small fee income wins. For volatile pairs the math is closer. SOL/USDC on a 0.3 percent pool needs enough trading volume to pay back the IL accumulated from price movement. Pools with high volume-to-TVL ratios earn back IL and then some. Quiet pools do not.
 
@@ -426,7 +426,7 @@ All four accounts are derived from the same seeds, typically the two token mints
 
 The first LP into a fresh pool gets `sqrt(x_deposit * y_deposit)` LP tokens. A correct implementation mints them slightly less than that, and locks a small amount, typically 1000 base units of the LP mint, by sending it to a non-spendable PDA or burning it outright. This is the **minimum liquidity lock**.
 
-Why is this needed? Without it, an attacker can manipulate the share price for the next depositor. Roughly. An attacker deposits a tiny amount as the first LP and mints a tiny number of LP tokens, say 1 base unit. They then transfer a large donation of tokens directly into the pool's vaults, using a plain SPL transfer to the vault account address, bypassing the add-liquidity instruction entirely. The pool's reserves balloon, but the LP supply stays at the tiny number from the first deposit.
+Why is this needed? Without it, an attacker can manipulate the share price for the next depositor. Roughly: an attacker deposits a tiny amount as the first LP and mints a tiny number of LP tokens, say 1 base unit. They then transfer a large donation of tokens directly into the pool's vaults, using a plain SPL transfer to the vault account address, bypassing the add-liquidity instruction entirely. The pool's reserves balloon, but the LP supply stays at the tiny number from the first deposit.
 
 Now the next user who tries to deposit normally finds that their proportional share rounds down to zero LP tokens, because each LP token now represents a hugely inflated amount of underlying. They lose their deposit to the attacker, who can then withdraw and walk away with the donation plus the victim's funds.
 
