@@ -51,9 +51,9 @@ faq:
 
 Three facts about Solana rule out one kind of design. Nothing happens by itself, a transaction is small and has a compute limit, and the client brings every account. That rules out designs like paying the reward to all holders, charging funding on every position every hour, or marking every open proposal as old when the signers change.
 
-Think about what these designs need. A transaction can hold only about 40 accounts, so a protocol with 10,000 stakers needs hundreds of transactions just to pay everyone once, and someone has to build, sign and pay for each of them. If the rewards are daily, that is hundreds of transactions a day from a server that has to stay up. The simplest design is to run that server, and then the protocol works only as long as the server does.
+A transaction can hold only about 40 accounts, so a protocol with 10,000 stakers needs hundreds of transactions just to pay everyone once, and someone has to build, sign and pay for each of them. If the rewards are daily, that is hundreds of transactions a day from a server that has to stay up. The simplest design is to run that server, and then the protocol works only as long as the server does.
 
-In normal programming, lazy loading is an optimization, where you don't compute or fetch something until someone asks for it. On Solana it is usually the only design that works, because the transaction that computes the result for everyone simply can't be built.
+In normal programming, lazy loading is an optimization, where you don't compute or fetch something until someone asks for it. On Solana it is usually the only design that works, because the transaction that computes the result for everyone can't be built.
 
 ## Store the inputs, not the result
 
@@ -105,9 +105,7 @@ Two details matter here. First, settle before you change anything. The differenc
 
 ## Drift: funding is settled when the position is touched
 
-Drift is a perpetuals exchange. Perpetual markets have funding. Funding is a payment between longs and shorts that keeps the perpetual's price close to the real price, and it is charged every hour on every open position.
-
-Think about the simplest design. A market has thousands of open positions, and charging each of them every hour means hundreds of thousands of writes a day, all sent and paid for by Drift. Instead, the market account stores a cumulative funding rate, the total funding per unit of position since the market opened, and the hourly update changes only that one number. Each position stores the cumulative rate it saw last. When a trade, a close or a liquidation touches a position, the program first takes the difference between the two rates, multiplies it by the position size and settles the result. Then it moves the position's marker to the current market value, and only then does the actual trade, close or liquidation. A position nobody touched for a week settles a week of funding in one subtraction.
+Drift is a perpetuals exchange, and it charges funding on every open position every hour without touching any of them. A market has thousands of open positions, and charging each of them every hour would be hundreds of thousands of writes a day, all sent and paid for by Drift. Instead, the market account stores a cumulative funding rate, the total funding per unit of position since the market opened, and the hourly update changes only that one number. Each position stores the cumulative rate it saw last. When a trade, a close or a liquidation touches a position, the program first takes the difference between the two rates, multiplies it by the position size and settles the result. Then it moves the position's marker to the current market value, and only then does the actual trade, close or liquidation. A position nobody touched for a week settles a week of funding in one subtraction.
 
 ## Helium: a million devices, one claim each
 
@@ -117,11 +115,11 @@ So Helium sends nothing. Oracles sign the total a device has earned since the be
 
 ## Squads: one counter instead of a loop
 
-Squads is a multisig. Members approve proposals, and when enough of them approve, the proposal executes. Now say the members change, because a member is removed or the threshold goes up. Proposals approved by the old members must not execute under the new ones. The simplest design goes through every open proposal and marks it as old, but the proposals are separate accounts, and none of them is in the transaction that changed the members.
+Squads is a multisig. Members approve proposals, and when enough of them approve, the proposal executes. When the members change, because a member is removed or the threshold goes up, proposals approved by the old members must not execute under the new ones. The simplest design goes through every open proposal and marks it as old, but the proposals are separate accounts, and none of them is in the transaction that changed the members.
 
 Squads keeps one number in the multisig account, the stale transaction index. When the members or the threshold change, this number is set to the index of the latest proposal. Every proposal already has an index, assigned when it was created. When someone approves or executes a proposal, the program compares the two. If the proposal's index is at or below the stale index, the proposal is old and cannot execute. That is one write when the members change and one comparison when a proposal is touched, whether the multisig has ten open proposals or ten thousand.
 
-Notice that the marker was not added for the pattern. The proposal's index already existed, and the pattern only needed something to compare it with.
+The marker was not added for the pattern. The proposal's index already existed, and the pattern only needed something to compare it with.
 
 ## Fragmetric: the update happens on every transfer
 
@@ -172,8 +170,8 @@ Lazy loading has one cost. An account nobody touches is never updated. For rewar
 
 If an update has to happen on time, lazy loading alone is not enough. You can pay someone to touch the account, for example a bot that earns a reward for every liquidation it triggers. Or you can change the design so that an old value does no harm, for example by checking the condition whenever the account is touched next, instead of requiring an action at a fixed time.
 
-One more thing. Since the result is not stored anywhere, anything that reads the chain, a wallet, an indexer, your own frontend, has to compute it from the same two numbers. That is fine as long as both fields are public and the formula is documented. It becomes a problem only when a client expects to read the result as a ready field.
+The result is not stored anywhere, so anything that reads the chain, a wallet, an indexer, your own frontend, has to compute it from the same two numbers. That is fine as long as both fields are public and the formula is documented. It becomes a problem only when a client expects to read the result as a ready field.
 
-## Find the loop in your design
+## Nothing is computed for everyone
 
-Look for every sentence in your design that starts with "for all", "for every" or "every hour". Each one is a loop over accounts that nobody can send. For each, ask three questions. What does each account need to compute its own result? Who touches the account, and does that happen when the result is needed? What happens to an account nobody touches? And wherever you settle, settle first and change second.
+Every sentence in a design that says "for all" or "every hour" describes a transaction that nobody can send. The protocols that work store what each account needs to compute its own result, and the result appears when someone touches the account and pays for it. An account nobody touches stays as it was, and either the design is fine with that, or it pays someone to touch it.

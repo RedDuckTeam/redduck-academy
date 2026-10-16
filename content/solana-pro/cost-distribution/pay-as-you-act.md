@@ -45,7 +45,7 @@ faq:
 
 Take an election. The simplest design stores the votes, each as an account or a slot in an array with the voter and their choice. When the voting period ends, someone goes through all the votes, counts them, and finds the winner.
 
-Think about what that costs. If each vote is an account, counting 10,000 votes takes hundreds of transactions, because one transaction holds only about 40 accounts. If all votes sit in one account, the count is one transaction that reads every slot, but a loop over data that anyone can add to grows until it no longer fits in the compute budget. And even if it fits, who sends this transaction? The voters already voted, and whoever closes the vote gains nothing from paying for everyone's count. You could pay someone to send it, but a reward does not help when the transaction does not fit in the limits.
+If each vote is an account, counting 10,000 votes takes hundreds of transactions, because one transaction holds only about 40 accounts. If all votes sit in one account, the count is one transaction that reads every slot, but a loop over data that anyone can add to grows until it no longer fits in the compute budget. And even if it fits, who sends this transaction? The voters already voted, and whoever closes the vote gains nothing from paying for everyone's count. You could pay someone to send it, but a reward does not help when the transaction does not fit in the limits.
 
 ## Give every action a part of the final step
 
@@ -106,7 +106,7 @@ This is **pay-as-you-act**. The key is to store the answer rather than the input
 
 Hxro runs parimutuel markets, pool betting on whether a price goes up or down over an interval. There are no odds set in advance. All bets on each side go into that side's pool, and when the outcome is known, the losing pool is split between the winners in proportion to their bets.
 
-While betting is open, each bet adds its amount to its side's total. There are only two numbers, the up total and the down total, and every bettor updated one of them as part of their own bet. When the interval ends, an oracle names the winning side. Say the up side has 600, the down side has 400, and the oracle says up. A bettor who put 60 on up gets 60 / 600 of the whole pool of 1,000, which is 100 before fees. That is two reads and one multiplication per winner, done when that winner is paid. Nobody adds up the bets at the end, because each bet was added to its total when it was placed. These numbers are only an example.
+While betting is open, each bet adds its amount to its side's total. There are only two numbers, the up total and the down total, and every bettor updated one of them as part of their own bet. When the interval ends, an oracle names the winning side. With 600 on the up side, 400 on the down side and up winning, a bettor who put 60 on up gets 60 / 600 of the whole pool of 1,000, which is 100 before fees. That is two reads and one multiplication per winner, done when that winner is paid. Nobody adds up the bets at the end, because each bet was added to its total when it was placed. These numbers are only an example.
 
 ## Orca: the swap pays for the fee accounting
 
@@ -118,7 +118,7 @@ So each swap does its own part of the work instead. The pool stores a fee growth
 
 Not every answer can be updated in one step in both directions. A total goes down as easily as it goes up, and so does a count or an average stored as a sum and a count. A maximum does not. If the leading candidate loses a vote, the new leader is whoever was second, and the program cannot know who that was without reading all the other counts. The same is true for any answer that is the best of its inputs.
 
-So if the answer is a maximum or a leader, one of three things has to be true. Either the action is final, so a vote can't be withdrawn and the maximum only grows. Or the answer is stored in more than one field, for example as a sorted list where the client finds the position and the program only checks the neighbors. Or the reverse action is allowed, but its effect on the answer waits until someone is willing to pay to read all the inputs. Choose before the first vote arrives, because the structure of the answer is part of the account layout.
+So if the answer is a maximum or a leader, one of three things has to be true. Either the action is final, so a vote can't be withdrawn and the maximum only grows. Or the answer is stored in more than one field, for example as a sorted list where the client finds the position and the program only checks the neighbors. Or the reverse action is allowed, but its effect on the answer waits until someone is willing to pay to read all the inputs. This is decided before the first vote arrives, because the structure of the answer is part of the account layout.
 
 Ties need the same care. When two candidates have the same count, the rule has to be in the program already, whether the first candidate to reach that count wins or the latest one. The program decides, not the order in which the two transactions were processed.
 
@@ -159,6 +159,6 @@ Ties need the same care. When two candidates have the same count, the rule has t
   <text x="360" y="346" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Adding an input is one comparison. Removing one means reading every count.</text>
 </svg>
 
-## Do the final step inside the actions
+## Nobody pays for everyone
 
-Write down every step your design does at the end, on a schedule, or for everyone at once. Find the winner, pay out the pool, close the voting. For each step, ask three questions. What answer does it produce? Can one action update that answer in one step without reading the other inputs? Can the reverse action undo the update, and if not, is the action final? What is left for the closing transaction should be a single read.
+Every step a design does at the end, on a schedule, or for everyone at once is a transaction that nobody sends. So the answer of that step is stored instead of its inputs, and every action moves the answer by one step. When an action cannot be undone in one step, either the action is final or someone has to pay to read all the inputs, and that is decided before the first input arrives.
