@@ -39,7 +39,7 @@ Every transaction on Solana has the same fee structure. The base fee is fixed, m
 
 The **base fee** is five thousand lamports per signature. A transaction with one signer pays five thousand lamports total in base fees. A transaction with two signers, say a multisig, pays ten thousand. The amount doesn't change with the size or complexity of what the transaction does. It exists to cover the cost of signature verification, which every validator has to perform, and to put a floor under spam. Half of the base fee gets burned, removed from circulation permanently. The other half goes to the validator that produced the block.
 
-The **priority fee** is on top of that and is yours to set. It is the way a transaction tells the leader "schedule me ahead of the others." When the network is busy and more transactions arrive than fit in a block, the leader's scheduler sorts the incoming traffic by how much priority fee each transaction is paying per unit of computation, and works through them from highest to lowest. Pay more priority fee, get included sooner. The priority fee goes entirely to the validator, none of it is burned.
+The **priority fee** is on top of that and is yours to set. It is the way a transaction tells the leader "schedule me ahead of the others." When the network is busy and more transactions arrive than fit in a block, the leader's scheduler sorts the incoming traffic by how much priority fee each transaction is paying per unit of computation, and works through them from highest to lowest. Pay more priority fee, get included sooner. The priority fee goes entirely to the validator; none of it is burned.
 
 <svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Solana transaction fee split into base fee and priority fee</title><desc>Two side-by-side panels compare the base fee (5,000 lamports per signature, always paid, 50% burned and 50% to the validator) with the priority fee (CU price times CU limit, optional, 100% to the validator, example totaling 200,000 lamports). Below them, total fee equals base fee plus priority fee, charged whether the transaction succeeds or fails.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -88,7 +88,7 @@ Both fees are paid up front, before the transaction runs. If the transaction suc
 
 ## Compute units
 
-The value that determines the size of the priority fee is the compute unit, abbreviated CU. Every operation a Solana program performs costs a fixed number of compute units. Adding two integers, reading a byte from an account, calling another program, hashing some data, each one has a CU cost set by the runtime. The total CU consumption of your transaction is the sum across every operation it executes.
+The value that determines the size of the priority fee is the compute unit, abbreviated CU. Every operation a Solana program performs costs a fixed number of compute units. Adding two integers, reading a byte from an account, calling another program, hashing some data: each one has a CU cost set by the runtime. The total CU consumption of your transaction is the sum across every operation it executes.
 
 Two CU numbers matter, and they are different things.
 
