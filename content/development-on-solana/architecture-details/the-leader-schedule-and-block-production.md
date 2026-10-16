@@ -33,7 +33,7 @@ faq:
       reward.
 ---
 
-> The previous lecture said "the leader schedule is public and known in advance." That schedule is stake-weighted, assigns each leader four consecutive slots, and is fixed two days ahead. It determines which validator can include your transaction in any given slot, which in turn shapes priority fees, transaction routing, and the entire MEV landscape on Solana. Those three properties, the stake-weighting, the four-slot window, and the two-day lead time, are what the network actually runs on, and each one has a concrete reason behind it.
+> The previous lesson said "the leader schedule is public and known in advance." That schedule is stake-weighted, assigns each leader four consecutive slots, and is fixed two days ahead. It determines which validator can include your transaction in any given slot, which in turn shapes priority fees, transaction routing, and the entire MEV landscape on Solana. Those three properties (the stake-weighting, the four-slot window, and the two-day lead time) are what the network actually runs on, and each one has a concrete reason behind it.
 
 ## What "the leader" means
 
@@ -146,7 +146,7 @@ The leader doesn't stop at one block. Slot N+1 starts immediately, and the leade
 
 While producing, the leader is also broadcasting. Each entry, as it's finalized, gets shredded by Turbine and sent out to the validator tree. The other validators are receiving and replaying in parallel with the leader's production. By the time the leader finishes a block, most of the network already has most of it.
 
-This pipelining is what makes 400ms slots viable. The leader isn't doing one slot end-to-end and then handing off. They're doing four overlapping pieces of work simultaneously: receiving transactions, executing them, generating PoH, shredding, broadcasting, and starting the next slot. The network is doing the same work, but for replay rather than production.
+This pipelining is what makes 400ms slots viable. The leader isn't doing one slot end-to-end and then handing off. They're doing several overlapping pieces of work simultaneously: receiving transactions, executing them, generating PoH, shredding, broadcasting, and starting the next slot. The network is doing the same work, but for replay rather than production.
 
 At the end of the 4th slot, the leader's window ends. The next validator's window begins. The new leader has been receiving transactions for the upcoming window all along via Gulf Stream, so they don't start cold. The handoff is invisible from the outside.
 
