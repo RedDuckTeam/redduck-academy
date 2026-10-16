@@ -32,9 +32,9 @@ Solana draws a sharper line between on-chain and off-chain data than the EVM doe
 
 First, account data is the only thing programs can read from each other. There's no on-chain API for reading another program's logs, no way to subscribe to events at the program level, no shared memory between executions. If your program needs to react to something another program did, you read that program's account state. Logs and events don't enter the picture.
 
-Second, account storage is expensive. Every byte you store costs rent at the rent-exempt rate. A 1KB account locks up about 7 million lamports. Storing the full history of every action a user has taken would mean creating new accounts indefinitely, which gets prohibitively expensive after the first thousand operations.
+Second, account storage is expensive. Every byte you store costs rent at the rent-exempt rate. A 1KB account locks up about 8 million lamports. Storing the full history of every action a user has taken would mean creating new accounts indefinitely, which gets prohibitively expensive after the first thousand operations.
 
-These two facts together create a strict division of labor. State that other programs need to read goes into account data. Everything else, the user-facing log of what happened, analytical data, historical traces, search-friendly indexes, lives off-chain and is built by reading the chain.
+These two facts together create a strict division of labor. State that other programs need to read goes into account data. Everything else (the user-facing log of what happened, analytical data, historical traces, search-friendly indexes) lives off-chain and is built by reading the chain.
 
 <svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>How data leaves the chain: on-chain data to off-chain reads</title><desc>The diagram shows on-chain data (account data, program logs, transaction data) flowing into three ways to read it: direct RPC reads, a third-party indexer, or a self-hosted worker. These feed off-chain uses like frontend UI, notifications, analytics, and search, noting the choice between paid third-party and self-hosted is mostly economic.</desc>
   <defs>
@@ -126,7 +126,7 @@ This is the right choice for most applications. The infrastructure to reliably i
 
 ## Running your own indexer
 
-What most tutorials skip: you can also run your own, and it's much less infrastructure than it sounds. You don't need to run a validator. You don't need a streaming gRPC plugin. The standard pattern is a small worker process that polls a regular RPC endpoint, decodes what it finds, and writes the result into your database. That's the whole thing.
+What most tutorials skip: you can also run your own, and it's much less infrastructure than it sounds. You don't need to run a validator. You don't need a streaming gRPC plugin. The standard pattern is a small worker process that polls a regular RPC endpoint, decodes what it finds, and writes the result into your database.
 
 The shape of a typical polling indexer:
 
