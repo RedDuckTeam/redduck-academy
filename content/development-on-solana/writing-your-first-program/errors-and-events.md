@@ -56,7 +56,7 @@ pub enum CounterError {
 }
 ```
 
-Three details worth knowing. The numeric error codes start at 6000, because Anchor reserves 0 through 5999 for framework errors. The messages end up in the IDL and are what client tools display when the error fires. The variant order is positional, so once a program is deployed, adding new variants is safe but reordering or inserting breaks every later error code for clients.
+Three details worth knowing. The numeric error codes start at 6000, because Anchor reserves 0 through 5999 for framework errors. The messages end up in the IDL and are what client tools display when the error fires. The variant order is positional, so once a program is deployed, appending new variants is safe, but reordering or inserting breaks every later error code for clients.
 
 That's the whole enum. Now you need to actually raise these errors from your handlers.
 
@@ -267,7 +267,7 @@ Events are anything that off-chain consumers need to know about but no on-chain 
 
 ## A complete example
 
-Here's the same counter program's `increment` handler, with all the patterns above working together. Authority is enforced with `require_keys_eq!`. Boolean preconditions use `require!`. The arithmetic overflow check uses `checked_add` and `require!`. On success, state is updated and an event is emitted.
+Here's the same counter program's `increment` handler, with all the patterns above working together. Authority is enforced with `require_keys_eq!`. Boolean preconditions use `require!`. The arithmetic overflow check uses `checked_add` and `ok_or`. On success, state is updated and an event is emitted.
 
 ```rust
 #[program]
