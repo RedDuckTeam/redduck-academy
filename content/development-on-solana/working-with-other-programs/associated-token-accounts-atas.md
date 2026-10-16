@@ -27,7 +27,7 @@ faq:
       your transaction, and they pay only when the account is missing.
 ---
 
-> A user can have many token accounts. So can a program. The question that hits you the first time you try to send tokens to someone is which token account, exactly, do I send them to? Without a convention, you'd have to ask the recipient for their token account address every time. The Solana ecosystem solved this by standardizing one canonical address per wallet per mint: the Associated Token Account. Given a wallet and a mint, anyone can compute the address. Wallets, frontends, and protocols all use the same derivation. The Associated Token Program is the small piece of infrastructure that creates these accounts and proves they're canonical.
+> A user can have many token accounts. So can a program. The question that hits you the first time you try to send tokens to someone is which token account, exactly, to send them to. Without a convention, you'd have to ask the recipient for their token account address every time. The Solana ecosystem solved this by standardizing one canonical address per wallet per mint: the Associated Token Account. Given a wallet and a mint, anyone can compute the address. Wallets, frontends, and protocols all use the same derivation. The Associated Token Program is the small piece of infrastructure that creates these accounts and proves they're canonical.
 
 ## The problem ATAs solve
 
@@ -186,11 +186,11 @@ The constraint works as described, but it comes with genuine risk. It's disabled
 
 The attack against generic PDAs goes like this. Your program declares an account with predictable seeds, like `seeds = [b"user_state", user.key().as_ref()]`. An attacker computes that address ahead of time, then crafts a transaction that creates an account at exactly that address through some other means, populating it with adversarial data. When the victim later calls your handler, the constraint sees the account exists and proceeds, treating the attacker-controlled bytes as your program's state.
 
-For ATAs, this attack path closes. The ATA's address is a PDA derived under the Associated Token Program. The only way to create an account at that address is through the Associated Token Program's Create instruction, which always initializes the account as a proper TokenAccount with the correct mint and owner. An attacker cannot pre-create one with bad data, because there's no path to put bad data into an ATA. There is no way for an attacker to create an account at the ATA address without going through the Associated Token Program's Create instruction.
+For ATAs, this attack path closes. The ATA's address is a PDA derived under the Associated Token Program. The only way to create an account at that address is through the Associated Token Program's Create instruction, which always initializes the account as a proper TokenAccount with the correct mint and owner. An attacker cannot pre-create one with bad data, because there's no path to put bad data into an ATA.
 
 That said, ATA-specific tradeoffs remain. Using `init_if_needed` means the payer of your transaction pays for the ATA creation when the account doesn't already exist. If the payer did not expect to pay, this can cause unexpected costs. The handler also behaves differently depending on whether the account already exists, which makes its semantics implicit rather than explicit. Production protocols often prefer to require the client to create the ATA in a separate instruction before calling the handler, so the create-or-use distinction is plainly visible in the transaction's instruction list.
 
-For your own program's PDAs, the rule is simpler: don't use `init_if_needed`. Use plain `init` and require the client to create the account exactly once. If the account already exists when init runs, the constraint fails, which is the safe behavior. The client can detect this and skip the init in subsequent calls, exactly the same effect as `init_if_needed` would have given but without the reinitialization risk.
+For your own program's PDAs, the rule is simpler: don't use `init_if_needed`. Use plain `init` and require the client to create the account exactly once. If the account already exists when init runs, the constraint fails, which is the safe behavior. The client can detect this and skip the init in subsequent calls, with exactly the same effect as `init_if_needed` would have given but without the reinitialization risk.
 
 ## ATAs in Anchor
 
@@ -222,7 +222,7 @@ pub struct Deposit<'info> {
 
 The `associated_token::mint = mint` and `associated_token::authority = user` constraints tell Anchor to verify that the account at `user_ata` is in fact the canonical ATA derived from `user` and `mint`. If the constraint fails, the runtime rejects the transaction before your handler runs. This is the cleanest way to require an ATA: the client supplies the address, Anchor verifies it's the right one, and your handler uses it without further checks.
 
-When you want to create the ATA only if it doesn't exist, you'd add `init_if_needed` to the constraint block, along with `payer = user` to fund the rent if creation is needed. You'd also need to enable the `init-if-needed` feature on the `anchor-lang` dependency in your Cargo.toml, since it's opt-in by default.
+When you want to create the ATA only if it doesn't exist, you'd add `init_if_needed` to the constraint block, along with `payer = user` to fund the rent if creation is needed. You'd also need to enable the `init-if-needed` feature on the `anchor-lang` dependency in your Cargo.toml, since it's opt-in.
 
 ## The pattern, summarized
 
