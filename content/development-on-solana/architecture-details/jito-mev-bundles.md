@@ -6,7 +6,7 @@ order: 47
 faq:
   - question: What is MEV if there is no public mempool to watch?
     answer: >-
-      MEV is maximum extractable value, the profit from controlling the order of transactions
+      MEV is maximal extractable value, the profit from controlling the order of transactions
       in a block. Buy a token right before a large swap lifts its price, sell right after. The
       leader sees every transaction they are about to include and picks the order, so the
       value goes to whoever is closest to the leader. Jito turned that into an open auction.
@@ -34,7 +34,7 @@ faq:
       on.
 ---
 
-> When a leader produces a block, they choose which transactions to include and in what order. That choice has value, because the right ordering can capture real profit from things like DEX arbitrage. The name for this profit is MEV: maximum extractable value. Jito is the system most of the Solana network uses to organize how MEV gets captured. It does this through two mechanisms, tips and bundles.
+> When a leader produces a block, they choose which transactions to include and in what order. That choice has value, because the right ordering can capture real profit from things like DEX arbitrage. The name for this profit is MEV: maximal extractable value. Jito is the system most of the Solana network uses to organize how MEV gets captured. It does this through two mechanisms, tips and bundles.
 
 ## What MEV actually is
 
