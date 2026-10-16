@@ -84,7 +84,7 @@ There are four meaningfully different ways to test a Solana program. Each one is
   <text x="360" y="605" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">For an Anchor course with TypeScript tests, bankrun is the default. The others are tools you may meet later.</text>
 </svg>
 
-A quick tour through the four options. `solana-test-validator` is the high-overhead option: a real validator running in a subprocess, communicating over a real RPC port. Startup is slow, ten to thirty seconds, and every transaction goes through real slot timing of around 400ms. The realism is the point. You're testing your code against an actual validator the same way it'll run in production. Useful right before a release, when you want to verify the full integration including your client-side RPC code. Painful as an inner-loop tool because the suite takes minutes to run.
+A quick tour through the four options. `solana-test-validator` is the high-overhead option: a real validator running in a subprocess, communicating over a real RPC port. Startup is slow, ten to thirty seconds, and every transaction goes through real slot timing of around 400ms. The realism is the point. You're testing your code against an actual validator the same way it'll run in production. It is useful right before a release, when you want to verify the full integration including your client-side RPC code, and painful as an inner-loop tool because the suite takes minutes to run.
 
 `solana-bankrun` is the inner-loop tool. It wraps `solana-program-test`, the Rust framework that runs your program's compiled BPF bytecode in-process against an in-memory Bank. The TypeScript bindings make it work with the Anchor SDK without any setup beyond installing a package. Tests run in milliseconds. You can warp time to any future slot, set account state directly, and inspect outcomes through the same Anchor client SDK production code uses. This is what most Anchor projects use, and it's the default for this course.
 
@@ -92,7 +92,7 @@ A quick tour through the four options. `solana-test-validator` is the high-overh
 
 `Mollusk` is in a different niche. It's a minimalist single-instruction SVM tester written in Rust, used heavily for testing native Solana programs, meaning non-Anchor ones, and for fuzz testing. It's extremely fast because it does very little beyond running one instruction at a time and snapshotting account state. If you're writing native programs or doing security fuzzing, Mollusk is the right tool. For Anchor projects with TypeScript tests, it's not the fit.
 
-For this course, bankrun is what you'll use. The rest of the lecture shows what that looks like.
+For this course, bankrun is what you'll use. The rest of the lesson shows what that looks like.
 
 ## What a bankrun test actually looks like
 
@@ -302,7 +302,7 @@ it("respects the 24-hour lockup", async () => {
 
 `context.warpToSlot` jumps the chain's slot counter to the value you specify. The `Clock` sysvar updates accordingly, so when your handler reads `Clock::get()?.unix_timestamp`, it sees the new value. The whole test runs in milliseconds despite simulating a day passing.
 
-This is the feature that justifies bankrun over any client-only test approach. Vesting contracts that release tokens over a year, staking pools that accrue rewards by the second, timelocks on treasury withdrawals, subscriptions that expire after thirty days. Without time control, none of these is properly testable. With bankrun, you write the test the way you describe the feature: "after 24 hours, the admin can reset," and the assertion runs in a millisecond.
+This is the feature that justifies bankrun over any client-only test approach. Vesting contracts that release tokens over a year, staking pools that accrue rewards by the second, timelocks on treasury withdrawals, and subscriptions that expire after thirty days: without time control, none of these is properly testable. With bankrun, you write the test the way you describe the feature: "after 24 hours, the admin can reset," and the assertion runs in a millisecond.
 
 ## Common patterns and small mistakes
 
