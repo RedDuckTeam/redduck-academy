@@ -92,7 +92,7 @@ The strength of this design shows up when you see how many different things fit 
 
 **Alice's wallet.** When someone "has a Solana address," what they actually have is an account owned by the System Program, the built-in program that handles SOL transfers. The data field is empty. The lamports field is Alice's SOL balance. The executable flag is false. That's a wallet.
 
-**Alice's USDC balance.** Token balances do not live inside the user's wallet. They live in their own separate accounts, owned by the Token Program. The data field contains 165 bytes: the mint that issued the token, the user who owns the balance, and the current amount. The lamports field holds just enough to cover the storage cost. The executable flag is false. Alice does not own this account in the runtime sense, the Token Program does. Alice is recorded inside the data as the authorized user, and the Token Program enforces that nobody else can move the balance.
+**Alice's USDC balance.** Token balances do not live inside the user's wallet. They live in their own separate accounts, owned by the Token Program. The data field contains 165 bytes: the mint that issued the token, the user who owns the balance, and the current amount. The lamports field holds just enough to cover the storage cost. The executable flag is false. Alice does not own this account in the runtime sense; the Token Program does. Alice is recorded inside the data as the authorized user, and the Token Program enforces that nobody else can move the balance.
 
 **A deployed program.** When you build and deploy a program to Solana, the deployment produces an account at a fresh address. The data field contains the compiled bytecode, often a few hundred kilobytes of it. The owner is a system-level program called the BPF Loader, which is the only thing allowed to modify program code. The executable flag is true. That flag is how the runtime knows to treat this account's data as code rather than as plain bytes.
 
@@ -165,61 +165,8 @@ Same five fields, three completely different roles.
 
 ## The owner field is the security model
 
-The single most important field on any account is the owner. Reads on Solana are public, anyone can fetch an account by address and see its contents. Writes go through one path. The runtime checks, before any program code runs, that any account marked writable in the transaction is owned by the program trying to modify it. If the check fails, the transaction is rejected before the program even starts.
+The single most important field on any account is the owner. Reads on Solana are public: anyone can fetch an account by address and see its contents. Writes go through one path. The runtime checks, before any program code runs, that any account marked writable in the transaction is owned by the program trying to modify it. If the check fails, the transaction is rejected before the program even starts.
 
 This is what keeps your token balance safe. The Token Program owns your USDC balance account. When you sign a transaction asking the Token Program to move 50 USDC from your balance to Bob's, the Token Program runs, checks that you authorized the move, and updates both balance accounts. If a different program tries to write to your balance account directly, the runtime stops it before the program runs.
 
-<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Who can read and write Alice's USDC balance account</title><desc>Alice's USDC balance account is owned by the Token Program, which is the only one allowed to write to it. Other programs and outside users querying the chain can read the account's data, but writing without going through the owner program is blocked.</desc>
-  <defs>
-    <marker id="arrS22cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
-    </marker>
-    <marker id="arrS22cG" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#565653"/>
-    </marker>
-  </defs>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Who can read, who can write</text>
-  <rect x="270" y="170" width="180" height="100" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="270" y="170" width="180" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="190" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Alice's USDC balance</text>
-  <text x="360" y="220" text-anchor="middle" font-family="monospace" font-size="10">data: amount = 100</text>
-  <text x="360" y="240" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">owner: Token Program</text>
-  <text x="360" y="258" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">lamports: 2,039,280</text>
-  <rect x="270" y="80" width="180" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="100" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Token Program</text>
-  <text x="360" y="118" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">the listed owner</text>
-  <line x1="360" y1="132" x2="360" y2="167" stroke="#ed4937" stroke-width="2" marker-end="url(#arrS22cR)"/>
-  <text x="370" y="155" font-family="monospace" font-size="10" font-weight="bold" fill="#ed4937">can write</text>
-  <rect x="40" y="320" width="180" height="65" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="130" y="342" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Some other program</text>
-  <text x="130" y="358" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">e.g. a DEX, a game,</text>
-  <text x="130" y="372" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">anything you wrote</text>
-  <line x1="218" y1="332" x2="268" y2="225" stroke="#565653" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrS22cG)"/>
-  <text x="180" y="280" font-family="monospace" font-size="10" font-style="italic" fill="#565653">can read</text>
-  <line x1="225" y1="350" x2="272" y2="260" stroke="#ed4937" stroke-width="1.5" marker-end="url(#arrS22cR)"/>
-  <line x1="232" y1="290" x2="262" y2="320" stroke="#ed4937" stroke-width="3"/>
-  <line x1="262" y1="290" x2="232" y2="320" stroke="#ed4937" stroke-width="3"/>
-  <text x="170" y="395" font-family="monospace" font-size="10" font-weight="bold" fill="#ed4937">cannot write</text>
-  <rect x="500" y="320" width="180" height="65" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="590" y="342" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Anyone (a user, a node)</text>
-  <text x="590" y="358" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">querying the chain</text>
-  <text x="590" y="372" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">from outside</text>
-  <line x1="502" y1="332" x2="452" y2="225" stroke="#565653" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrS22cG)"/>
-  <text x="510" y="280" font-family="monospace" font-size="10" font-style="italic" fill="#565653">can read</text>
-  <text x="360" y="430" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Reads are open. Writes go through the owner program. The runtime enforces this before code runs.</text>
-</svg>
-
-When you write a program of your own, the same rules apply to you. The accounts your program creates are owned by your program. No other program can touch their data. You don't write defensive code to check who's calling you. The runtime has already filtered out anyone who shouldn't be there.
-
-## Programs are accounts too
-
-Programs themselves are just accounts. When you deploy a program, you produce an account. The account's address becomes the program's identifier, the one you reference whenever you want to call into it. The data field holds the compiled bytecode. The executable flag is true.
-
-Calling a program is the act of submitting a transaction that points at the program's address and provides the accounts the program needs to work with. The runtime sees the executable flag, loads the bytecode from the data field, and runs it with the listed accounts as inputs.
-
-This is why Solana has no separate "contract address space". There is one address space, with one kind of account. Some of them happen to hold code instead of data.
-
-## What you'll be doing with accounts
-
-When you write your first program, you will be creating accounts, reading from them, and writing to them. You will set up each account at a deterministic address, decide how many bytes its data field should hold, and pay the lamports needed to keep it on chain. The runtime will check the ownership and the access lists on every call. Most of the bugs new Solana developers hit come from getting one of these wrong, which is why every piece of the model is worth understanding clearly before you write code that depends on it.
+<svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Who can read and write Alice's USDC balance account</title><desc>Alice's USDC balance account is owned by the Token Program, which is the only one allowed to write to it. Other programs and outside users querying the chain can read the account's data, but
