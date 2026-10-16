@@ -33,9 +33,9 @@ faq:
 
 ## Why a blockchain can't roll dice
 
-The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement is incompatible with native randomness. If a program called some `rand()` function and each validator returned a different value, no two validators would agree on the chain state.
+The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result; otherwise consensus breaks. That requirement is incompatible with native randomness. If a program called some `rand()` function and each validator returned a different value, no two validators would agree on the chain state.
 
-The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain. The Clock sysvar's unix timestamp, the current slot number, the SlotHashes sysvar, recent transaction hashes, the caller's pubkey. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the slot leader producing the block.
+The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain: the Clock sysvar's unix timestamp, the current slot number, the SlotHashes sysvar, recent transaction hashes, the caller's pubkey. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the slot leader producing the block.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Lottery seed inputs a slot leader controls: Clock, SlotHashes, and tx inclusion</title><desc>A code box shows a lottery program picking a winner from a seed made of the Clock sysvar timestamp and slot number. Three boxes below show that the Clock sysvar, the SlotHashes sysvar, and transaction inclusion are all set or seen by the slot leader, and a red box lists four steps a malicious leader can use to simulate the lottery and skip transactions until the outcome favors them.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
