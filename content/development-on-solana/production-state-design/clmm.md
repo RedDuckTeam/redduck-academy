@@ -290,7 +290,7 @@ You've effectively placed a sell order that fills around $250. Same logic in rev
 
 The fill price isn't exactly the target. There's some spread between Pl and Pu, so the actual execution price is an average within the range. Tighter ranges mean closer-to-exact fills but smaller fee earnings while filling. This is the difference between a true limit order and a CLMM range order: the CLMM version still earns fees during the fill, in exchange for some slippage.
 
-Several Solana limit-order frontends are built on this idea, mounting their UI on top of CLMM positions.
+Several Solana limit-order interfaces are built on top of CLMM positions.
 
 ## NFT positions
 
