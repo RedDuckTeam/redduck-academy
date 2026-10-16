@@ -104,7 +104,7 @@ Programs don't upgrade themselves. Every upgradeable program has an **upgrade au
 
 The upgrade authority is set when the program is first deployed. It defaults to the deployer's keypair, but you can change it later: transfer it to a multisig, transfer it to a DAO-controlled account, or set it to `None` to make the program permanently immutable.
 
-That last option is important. **Setting the upgrade authority to ****`None`**** is irreversible.** Once you do it, no one can ever upgrade the program again. The bytecode is frozen forever. Some protocols do this on purpose, as a credibility signal. They're saying "we've audited this code and we promise you the rules won't change."
+That last option is important. **Setting the upgrade authority to `None` is irreversible.** Once you do it, no one can ever upgrade the program again. The bytecode is frozen forever. Some protocols do this on purpose, as a credibility signal. They're saying "we've audited this code and we promise you the rules won't change."
 
 Most production protocols don't do this, at least not initially. They keep the upgrade authority on a multisig controlled by the team, so they can release bug fixes if something goes wrong. Some transfer it to a governance program later, so the community votes on upgrades instead of the team deciding unilaterally. The choice is a trust signal to users.
 
@@ -122,4 +122,4 @@ You don't have to perform these checks yourself for every program you interact w
 
 ## Summary
 
-A Solana program is an account with executable bytecode. That bytecode can be replaced by whoever holds the upgrade authority, without touching any of the state the program operates on. Set the authority to `None` and the program becomes permanent. Verifiable builds let users confirm the code on chain matches a published source. That covers everything about program upgrades.
+A Solana program is an account with executable bytecode. That bytecode can be replaced by whoever holds the upgrade authority, without touching any of the state the program operates on. Set the authority to `None` and the program becomes permanent. Verifiable builds let users confirm the code on chain matches a published source.
