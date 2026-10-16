@@ -186,25 +186,4 @@ You import the JSON file in your TypeScript code. You hand it to a `Program` con
   <text x="60" y="208" font-family="monospace" font-size="11" font-weight="bold">2. Wrap it in an Anchor Program object</text>
   <text x="60" y="230" font-family="monospace" font-size="10">const program = new Program(idl, provider);</text>
   <text x="60" y="250" font-family="monospace" font-size="9" fill="#565653">Anchor reads the IDL at runtime and builds a fully typed client</text>
-  <rect x="40" y="280" width="640" height="115" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="60" y="303" font-family="monospace" font-size="11" font-weight="bold">3. Call instructions like normal functions</text>
-  <text x="60" y="325" font-family="monospace" font-size="10">await program.methods</text>
-  <text x="80" y="341" font-family="monospace" font-size="10">.deposit(new BN(100))           // amount, typed as u64</text>
-  <text x="80" y="357" font-family="monospace" font-size="10">.accounts({ vault, depositor }) // the accounts the struct wants</text>
-  <text x="80" y="373" font-family="monospace" font-size="10">.rpc();                          // sign and send</text>
-  <text x="60" y="389" font-family="monospace" font-size="9" fill="#565653" font-style="italic">autocomplete works. wrong types are caught at compile time.</text>
-  <rect x="40" y="410" width="640" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="60" y="432" font-family="monospace" font-size="10">The IDL is what makes the typed SDK possible.</text>
-  <text x="60" y="450" font-family="monospace" font-size="10">Without it, you would be building raw instruction byte arrays by hand.</text>
-  <text x="360" y="495" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Your Rust program is the server. The IDL is the contract. The TypeScript client is the typed SDK.</text>
-</svg>
-
-Behind the scenes, the SDK looks up `deposit` in the IDL's instructions array, finds its argument schema and account list, serializes your arguments according to that schema, builds an instruction with the right shape, packages it in a transaction, signs it with the provider's wallet, and sends it to the RPC endpoint. All the work covered in the instructions and transactions lessons, the SDK is doing for you, using the IDL as its map.
-
-The same pattern applies in other languages. There is a Python SDK, a Go SDK, a Swift SDK, all of which consume the IDL in the same way. The IDL is the universal description that lets each of those clients work with your program without coordinating directly with you.
-
-## Treating the IDL as a deliverable
-
-When you publish a Solana program, you publish two things, even if you only think about one. The deployed binary is the program. The IDL is the program's public API surface. Anyone integrating with your program will read your IDL, generate a client from it, and write code against the resulting types. Breaking changes to the IDL break their code.
-
-Versioning the IDL the way you'd version a library helps. Many production programs keep a history of IDL versions in their repo so integrators can pin to a known shape. When you rename a field or add a new instruction, the IDL changes in ways that show up as a diff. Reviewing that diff during code review is one of the cheapest ways to catch accidental API breaks before they are released.
+  <rect x="40" y="280" width="640" height="115" fill="#e0deda"
