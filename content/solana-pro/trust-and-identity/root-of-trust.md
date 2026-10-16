@@ -44,17 +44,17 @@ faq:
 
 ## The caller created the accounts
 
-A Solana program does not look anything up on its own. It reads only the accounts that the caller, the person who sent the transaction, chose to include.
+A Solana program does not look anything up on its own. It reads only the accounts that the caller put into the transaction.
 
-The simplest way to check an account is to compare it with another one. For example, a vault holds tokens of one mint, so the deposit instruction checks that the user's token account has the same mint as the vault. The problem is that both accounts came from the caller, and accounts are cheap to create. The caller makes a mint, a vault that points to it, and a token account for the same mint. The vault and the token account have the same mint, so the check passes, and the caller can drain the vault. Creating the fake accounts costs almost nothing, and the caller can take everything the program holds. So the program cannot stop fakes by making them expensive. It has to make them impossible.
+The simplest way to check an account is to compare it with another one. For example, a vault holds tokens of one mint, so the deposit instruction checks that the user's token account has the same mint as the vault. The problem is that both accounts came from the caller, and accounts are cheap to create. The caller makes a mint, a vault that points to it, and a token account for the same mint. The vault and the token account have the same mint, so the check passes, and the caller can drain the vault. Creating the fake accounts costs almost nothing, and the caller can take everything the program holds. So the program has to make fakes impossible.
 
 The same is true for other inputs. The caller can choose which oracle account the price comes from. The caller can add an instruction to the transaction that only looks like a signature check. The caller can create an account with the right data layout. In every case the program sees data that looks right, but that data can be faked.
 
 ## Where the checks stop depending on the caller
 
-Every check depends on some other account. The mint check is only useful if the vault is real. So we ask the same question about the vault. Which account is it compared with? Then we ask the same question about that account, and so on. This chain has to end at an account the caller could not have created. That account is the **root of trust**. Every other check in the instruction depends on it, and a check that does not depend on the root depends on the caller.
+Every check depends on some other account. The mint check is only useful if the vault is real. So we ask the same question about the vault. Which account is it compared with? Then we ask the same question about that account, and so on. This chain has to end at an account that cannot be faked. That account is the **root of trust**. Every other check in the instruction depends on it, and a check that does not depend on the root depends on the caller.
 
-There are three kinds of accounts the caller cannot create. The first is a PDA of your program. Its address is computed from the seeds and your program id, and only your program can create an account there. The second is an account with a hardcoded address, such as the SPL Token program or the instructions sysvar. The caller can pass a different account in its place, but its address will not match the one your program expects. The third is an account owned by your program, with one condition. If your program has an instruction that creates such accounts, anyone can call it, and then the owner check only proves that your program wrote the account, not that it is the one you wanted. So the address still has to come from seeds, or from a field in an account that already has a root.
+There are three kinds of accounts the caller cannot create. The first is a PDA of your program. Its address is computed from the seeds and your program id, and only your program can create an account there. The second is an account with a hardcoded address, such as the SPL Token program or a sysvar. A sysvar is a system account with a fixed address that the runtime fills with data, for example the current clock or the list of instructions in the current transaction. The caller can pass a different account in its place, but its address will not match the one your program expects. The third is an account owned by your program, but only with one condition. Often a program creates such accounts for anyone who asks, for example a position account for each user. Then anyone can have one, and the owner check proves only that your program created the account, not that it is the right one. So the address still has to come from seeds, or from a field in an account that already has a root.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>A fake vault with and without an address check</title><desc>Two boxes side by side. On the left, the caller creates a vault and a token account with the same mint X. The program only checks that the mints are the same, so the check passes. On the right, the caller creates a fake vault, but the real vault was created by the program at a PDA address. The program checks that the vault's address is the PDA, the fake vault fails, and the transaction is rejected. Accounts created by the caller have a red border.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -117,27 +117,38 @@ There are three kinds of accounts the caller cannot create. The first is a PDA o
 
 ## Cashio: anyone could create a bank
 
-Cashio was a stablecoin. A user deposited Saber LP tokens, the tokens a liquidity provider gets from a Saber pool, as collateral and minted CASH for them. The mint instruction took a bank account, the user's collateral token account, and the Saber pool accounts. The bank says which collateral the protocol accepts, and the pool accounts give the collateral its value.
+Cashio was a stablecoin, and it lost about 50 million dollars because anyone could create a bank. A user put LP tokens from a Saber pool into Cashio as collateral and received CASH for them. To mint CASH, the user passed three things to the program. The first was a bank account, which says which collateral is accepted. The second was the user's token account with the collateral. The third was the Saber pool accounts, which say what that collateral is worth.
 
-The program checked that the collateral token account matched the bank, and that the Saber pool accounts matched each other. It never checked that the bank was one of the protocol's own, and the instruction that creates banks was open to anyone. So one caller created a bank, a fake pool and token accounts that all matched, and minted CASH with no real collateral. None of the checks used an account the caller could not have created.
+The hole was in what the program compared. It checked that the collateral token account matched the bank, and that the Saber pool accounts matched each other. It never checked that the bank was one of the protocol's own, and the instruction that creates banks was open to anyone. So one caller faked the bank, the pool and the token accounts, minted two billion CASH with no real collateral, and took about 50 million dollars out of the liquidity pools. None of the checks used an account the caller could not have created.
 
 ## Wormhole: the list of instructions came from the caller
 
-Wormhole is a bridge between chains. A message from another chain comes with signatures from Wormhole's guardians, and the program has to verify them before it mints wrapped tokens.
+Wormhole is a bridge between chains, and it lost about 320 million dollars because its program read the list of instructions from an account that the caller passed in. A message from another chain comes with the guardians' signatures, and the program has to verify them before it mints wrapped ETH. Signatures are verified by a built-in Solana program, Secp256k1 or Ed25519 depending on the signature type. It is not something your program calls. The caller puts it into the transaction as a separate instruction, right before the instruction of your program, and a bad signature simply fails the whole transaction.
 
-Verifying a signature inside a program is too expensive, so Solana has built-in programs for it. The Secp256k1 and Ed25519 programs check a signature and return nothing. If the signature is bad, the whole transaction fails, so if the transaction is still running, the signature was good. But how does your program know that this check ran at all? It reads the list of instructions in the current transaction from the instructions sysvar, a special account that the runtime fills with the transaction's own instructions. Your program looks at the instruction next to itself and checks that it was a call to the built-in program.
+```typescript
+const tx = new Transaction().add(
+  // instruction 0: the built-in program verifies the signature.
+  // It returns nothing. If the signature is bad, the whole transaction fails.
+  Ed25519Program.createInstructionWithPublicKey({ publicKey, message, signature }),
 
-Wormhole's program read this list from the account the caller passed as the sysvar, and the function it used never compared that account's address with the real one. So the caller passed a normal account with the data of a successful signature check written inside. The program read it, believed that the guardians had signed, and minted 120,000 wrapped ETH out of nothing. In 2022 that was about 320 million dollars.
+  // instruction 1: the bridge program. It cannot call instruction 0 and cannot
+  // ask it for a result. It can only read the instructions sysvar to see
+  // that instruction 0 is there and what it verified.
+  bridgeInstruction,
+);
+```
 
-Everything else in that instruction was checked correctly, the signature format, the guardian set and the message layout. But all of those checks depended on the list of instructions, and the list came from the caller. One comparison of one address would have stopped the attack. Without it, the other checks did not matter, because all of them depended on data the caller controlled.
+So the bridge program reads the list of instructions in the transaction from the instructions sysvar, an account that the runtime fills with that list, and checks that the built-in program was called.
+
+The hole was one missing comparison. The program read that list from whatever account the caller passed as the sysvar, and never compared its address with the real sysvar address. So the caller passed a normal account with a fake successful signature check inside, the program believed that the guardians had signed, and minted 120,000 wrapped ETH out of nothing. In 2022 that was about 320 million dollars, still the largest hack on Solana. The signature format, the guardian set and the message layout were all checked correctly, but all of that was read from a list that came from the caller.
 
 ## Switchboard: the same list, but the address is checked first
 
-Switchboard On-Demand is an oracle. Its oracles sign price updates off-chain, and the program that uses a price has to verify the signature. It uses the same built-in Ed25519 program and the same instructions sysvar as Wormhole.
+Switchboard On-Demand is an oracle, and it reads the same list of instructions from the same sysvar, but it has no hole. Its oracles sign price updates off-chain, and the program that uses a price has to verify the signature. It uses the same built-in Ed25519 program and the same instructions sysvar as Wormhole.
 
-The difference is the order of the checks. First the program compares the account passed as the sysvar with the real sysvar address. Then it reads the instruction at the expected position and checks that it was a call to the Ed25519 program. Then it checks that the public key in that instruction belongs to the expected oracle, and that the signed message is the price it is about to use. Each check depends on the previous one, and the first depends on a hardcoded address, so the whole chain has a root.
+The difference is the order of the checks. Switchboard first compares the sysvar account with the real sysvar address. Only then it reads the instruction list, finds the Ed25519 instruction, and checks that the key in it is the oracle's key and the message is the price it is about to use. Each check depends on the previous one, and the first depends on a hardcoded address, so the whole chain has a root.
 
-Switchboard does not have more checks than Wormhole had. It has the same checks in a different order, with one hardcoded address at the start. That one comparison is why Switchboard is safe and Wormhole was not.
+Switchboard does not have more checks than Wormhole had. It has the same checks in a different order, with one hardcoded address at the start. That one comparison is why Switchboard is safe and Wormhole lost 320 million dollars.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Where the instruction list comes from</title><desc>Two boxes side by side. On the left, Wormhole: the caller creates an account with a fake instruction list that says the signatures are ok. The program does not check the address of that account, so it believes the list and mints wrapped ETH. On the right, Switchboard: the caller creates the same fake list, but the runtime also provides the real list at the sysvar address. The program checks that the address is the sysvar address, the fake list fails, and the transaction is rejected. Accounts created by the caller have a red border.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -191,8 +202,8 @@ Switchboard does not have more checks than Wormhole had. It has the same checks 
 
 ## One root for every instruction
 
-The root has to be checked the same way in every instruction. Say nine instructions check the vault's address and the tenth does not, because it only reads one field. Then the caller will simply use the tenth, since the caller chooses which instruction to call. So use the same root across the whole program, the same config PDA, seeds and hardcoded addresses, checked the same way everywhere.
+The root has to be checked in every instruction. If nine instructions check the vault's address and the tenth does not, the caller will use the tenth one. The caller chooses which instruction to call. So the whole program has to use the same root, the same config PDA, the same seeds and the same hardcoded addresses, and check them in every instruction.
 
-## Follow every input to its root
+## One question for every input
 
-Take an instruction you are working on and list every account it receives. For each one, ask three questions. Could the caller have created it? If yes, which other account is it compared with? Does that chain end at a PDA of your program, a hardcoded address, or another account the caller could not have created? If any chain does not end there, the instruction trusts the caller.
+Every piece of data the program receives gets the same question: if this one is fake, what happens? The answer points to the next piece of data, and that one gets the same question. The chain either ends at something that cannot be faked, or the program has no root of trust, no matter how many checks it has.
