@@ -64,7 +64,7 @@ const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
 The second argument, `"confirmed"`, is the commitment level. It controls how strict the RPC is about what counts as "known." Higher commitment means more validators have agreed, but it also means slightly higher latency. For reads where you want to make sure the transaction has actually landed, `"confirmed"` is the standard choice. For the strictest possible read after a transaction has been finalized, use `"finalized"`.
 
-The Connection is a thin wrapper around the JSON-RPC API the validator exposes. Almost everything else you'll do, fetching account data, sending transactions, subscribing to changes, goes through this object.
+The Connection is a thin wrapper around the JSON-RPC API the validator exposes. Almost everything else you'll do (fetching account data, sending transactions, subscribing to changes) goes through this object.
 
 ## Keypairs and wallets: who actually signs
 
@@ -274,4 +274,4 @@ What happens during a wallet sign-and-send, step by step:
 
 The key thing: your app never sees the user's private key. The wallet holds it, the wallet signs, and the wallet returns only the signature. This is the whole reason for the architecture. You can't accidentally leak what you don't have.
 
-The library handles wallet detection, connection state, account changes, and the common API across all the wallets. In React projects you wrap your app in a `WalletProvider` and use the `useWallet()` hook to get the currently connected wallet's pubkey and signing functions. We'll cover the React setup in a dedicated lecture before the first frontend milestone.
+The library handles wallet detection, connection state, account changes, and the common API across all the wallets. In React projects you wrap your app in a `WalletProvider` and use the `useWallet()` hook to get the currently connected wallet's pubkey and signing functions. We'll cover the React setup in a dedicated lesson before the first frontend milestone.
