@@ -33,11 +33,11 @@ faq:
       accept private bundles for tips.
 ---
 
-> Every design choice behind Solana came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. What was given up to get those wins deserves an honest accounting. Every design decision in distributed systems has a cost. Solana made specific trades, and understanding them is what separates a developer who can reason about chains from one who just picks whichever chain is currently popular.
+> Every design choice behind Solana came with a cost. You've seen the wins throughout the track: 400ms slots, parallel execution, low fees, throughput that no other L1 has matched. What was given up to get those wins deserves an honest accounting. Solana made specific trades, and understanding them is what separates a developer who can reason about chains from one who just picks whichever chain is currently popular.
 
 ## Throughput in exchange for validator hardware
 
-The biggest single trade. Solana's target throughput is orders of magnitude above what Bitcoin or Ethereum mainnet handles. The actual sustained throughput today on mainnet is around 1,000-3,000 transactions per second in real workloads, with theoretical peaks much higher. That's possible because validators run on hardware that's far more demanding than what Bitcoin or Ethereum require.
+The biggest single trade. Solana's target throughput is orders of magnitude above what Bitcoin or Ethereum mainnet handles. The actual sustained throughput today on mainnet is around 1,000–3,000 transactions per second in real workloads, with theoretical peaks much higher. That's possible because validators run on hardware that's far more demanding than what Bitcoin or Ethereum require.
 
 A Solana validator needs a 12+ core CPU, 256GB+ of RAM, multiple NVMe SSDs in RAID, and a 1 Gbps symmetric network connection at minimum. Recommended specs are higher. Running a Solana validator is comparable to running a small data-center node, with monthly costs in the four-figure range. Running a Bitcoin or Ethereum full node, by contrast, can be done on a Raspberry Pi.
 
