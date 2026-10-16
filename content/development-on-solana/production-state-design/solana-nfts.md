@@ -106,7 +106,7 @@ Metaplex's Token Metadata program is the de facto standard for attaching descrip
 
 The metadata account is a PDA owned by the Token Metadata program, with seeds derived from the mint's pubkey. This is what makes the pairing automatic: given any mint address, anyone can compute where its metadata account should live and look up whether one exists. The metadata account stores the name, symbol, URI pointing at off-chain JSON, the list of creators with royalty shares, the collection the NFT belongs to, and various flags.
 
-The URI is where the actual image lives. The metadata account is too small and too expensive to hold image bytes. Instead, the URI points at a JSON file on Arweave or IPFS, which describes the NFT and includes another link to the actual image asset. The chain doesn't store the picture. The chain stores a pointer to a pointer to the picture. This is fine in practice because Arweave promises permanent storage and IPFS is pinned by enough services that NFT images stay accessible.
+The URI is how you reach the actual image. The metadata account is too small and too expensive to hold image bytes. Instead, the URI points at a JSON file on Arweave or IPFS, which describes the NFT and includes another link to the actual image asset. The chain doesn't store the picture. The chain stores a pointer to a pointer to the picture. This is fine in practice because Arweave promises permanent storage and IPFS is pinned by enough services that NFT images stay accessible.
 
 Metaplex also defines other related accounts that show up in production:
 
@@ -204,7 +204,7 @@ The math works because Merkle trees compress logarithmically. A tree of depth 14
 
 The trade-off is that cNFTs cannot be read trivially from chain state alone. Reading a regular NFT means fetching two accounts and decoding them. Reading a cNFT means querying an indexer that maintains the off-chain leaf data and the proofs. Helius, Triton, and others provide cNFT-aware RPC endpoints that let you query a wallet's cNFTs as if they were regular NFTs. The indexer is doing the work behind the scenes.
 
-cNFTs are common for use cases that would have been impossible with regular NFTs at scale. Game items that get distributed to every player. Achievement badges minted on action. Loyalty tokens that an airline gives out by the million. Anything where you want NFT semantics, meaning each one is distinct, transferable, and identifiable, but couldn't justify the rent of millions of full accounts. They're less common for art collections in the traditional sense, where the rent is a small fraction of the mint price and the indexer dependency is a friction.
+cNFTs are common for use cases that would have been impossible with regular NFTs at scale. Examples include game items distributed to every player, achievement badges minted on action, and loyalty tokens an airline gives out by the million: anything where you want NFT semantics, meaning each one is distinct, transferable, and identifiable, but couldn't justify the rent of millions of full accounts. They're less common for art collections in the traditional sense, where the rent is a small fraction of the mint price and the indexer dependency is a friction.
 
 ## Where you'll encounter NFTs as a developer
 
