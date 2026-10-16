@@ -85,7 +85,7 @@ Step 2 zeros the data. Stale fields are a problem the program needs to handle. E
 
 Step 3 is the most commonly missed. The first 8 bytes of every Anchor account are a discriminator, a hash identifying which struct type the bytes represent. After steps 1 and 2, the account's data is all zeros. If an attacker funds the account back to rent-exempt in a separate transaction, since anyone can transfer lamports to any pubkey, the runtime keeps the account alive. The discriminator is still gone, but the old discriminator hash could be re-attached by the program itself if someone calls a path that doesn't check carefully. To eliminate this risk entirely, Anchor writes a special "closed" discriminator of all `0xFF` bytes. Any subsequent attempt to deserialize the account as its original type fails immediately.
 
-The historical name for the attack this prevents is the "revival attack." Early Anchor versions would close an account without writing the closed-account discriminator. An attacker could re-fund the account in a follow-up transaction, then call an instruction that re-initialized the donor_record assuming it was fresh, and slip in adversarial values. The closed discriminator pattern killed that class of attack. When you use the `close = recipient` constraint, all three steps are handled automatically.
+The historical name for the attack this prevents is the "revival attack." Early Anchor versions would close an account without writing the closed-account discriminator. An attacker could re-fund the account in a follow-up transaction, then call an instruction that re-initializes the `donor_record`, assuming it is fresh, and slip in adversarial values. The closed discriminator pattern killed that class of attack. When you use the `close = recipient` constraint, all three steps are handled automatically.
 
 ## Using the close constraint
 
@@ -114,7 +114,7 @@ pub fn close_donor_record(_ctx: Context<CloseDonorRecord>) -> Result<()> {
 }
 ```
 
-Three things to notice. The `close = donor` sends the rent SOL back to the donor's wallet. The `has_one = donor` constraint enforces that the signer is the same donor whose pubkey is stored on the record, blocking a stranger from closing someone else's account. The handler body is essentially empty because the constraint does everything. If you need to do work before the close, such as recording an event, checking invariants, or returning leftover token balances from a vault PDA, put it in the handler body before `Ok(())`. The close happens after the handler returns.
+Three things to notice. The `close = donor` constraint sends the rent SOL back to the donor's wallet. The `has_one = donor` constraint enforces that the signer is the same donor whose pubkey is stored on the record, blocking a stranger from closing someone else's account. The handler body is essentially empty because the constraint does everything. If you need to do work before the close, such as recording an event, checking invariants, or returning leftover token balances from a vault PDA, put it in the handler body before `Ok(())`. The close happens after the handler returns.
 
 ## Where the rent goes
 
