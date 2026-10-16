@@ -166,7 +166,7 @@ The trade-off, as you've internalized by now, is that the access pattern has to 
 
 ## The transaction lifecycle, end to end
 
-Now, putting it together. Here's what actually happens when a user signs a transaction.
+Putting it together, here is what happens when a user signs a transaction.
 
 <svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The life of a Solana transaction, from RPC submission to finalized block</title><desc>Six stacked boxes connected top to bottom show the steps of a Solana transaction: a user signs and submits it via an RPC node, Gulf Stream forwards it to upcoming leaders, the leader builds a block using Proof of History, Turbine fans the block out to all validators, validators verify and vote with Tower BFT, and the block is finalized once supermajority votes accumulate.</desc>
   <defs>
