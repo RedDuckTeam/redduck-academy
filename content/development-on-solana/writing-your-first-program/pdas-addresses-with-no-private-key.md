@@ -43,7 +43,7 @@ A program can't do this. The program is open-source bytecode running on every va
 
 But programs need to control accounts. They need vaults that hold user deposits. They need state accounts that only the program is allowed to mutate. They need to sign for token transfers out of their own pools. None of that works with the standard keypair model.
 
-The resolution is to invent a kind of address that nobody can sign for in the normal way, and grant the program a special ability to sign for it instead. That's what a PDA is. A 32-byte value that looks like a public key but isn't one, derived deterministically from the program's address and some seeds chosen by the developer. No private key exists for it, because the derivation lands at a point that isn't on the Ed25519 curve, and the curve is where valid keypairs come from. The runtime gives the program a back door: if a program submits the seeds, the runtime treats it as authorization for the PDA those seeds derive to.
+The resolution is to invent a kind of address that nobody can sign for in the normal way, and grant the program a special ability to sign for it instead. That's what a PDA is: a 32-byte value that looks like a public key but isn't one, derived deterministically from the program's address and some seeds chosen by the developer. No private key exists for it, because the derivation lands at a point that isn't on the Ed25519 curve, and the curve is where valid keypairs come from. The runtime gives the program a back door: if a program submits the seeds, the runtime treats it as authorization for the PDA those seeds derive to.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two ways an account gets an address: normal wallet vs program-derived PDA</title><desc>The diagram compares two ways a Solana account gets its address, side by side: a normal wallet on the left and a PDA on the right. The wallet's private key derives a public key, a point on the curve, as its address; the PDA's program ID and seeds go through a hash and bump search to land on a point off the curve, so only the program can sign for it.</desc>
   <defs>
@@ -235,7 +235,7 @@ The concept is similar to content-addressed storage: the address of an item is d
 
 This composes well. A vote record that's unique per user and per proposal can use seeds `[b"vote", user.key(), proposal.key()]`. A daily counter PDA could use `[b"counter", day_number.to_le_bytes()]`. Any tuple of public values that uniquely identifies the account you want can be the seeds. The runtime guarantees the resulting address is unique to that tuple under your program.
 
-The constraint is that seeds together cannot exceed 32 bytes per seed and the total seed count is capped at 16. That's plenty for almost any indexing scheme you'd want, and it's a small price for the architectural simplicity.
+The constraint is that each seed can be at most 32 bytes, and there can be at most 16 seeds. That's plenty for almost any indexing scheme you'd want, and it's a small price for the architectural simplicity.
 
 ## Storing the bump
 
