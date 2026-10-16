@@ -26,7 +26,7 @@ faq:
       four.
 ---
 
-> Solana programs are not isolated. A program can call another program in the middle of its own execution, pass it accounts, and observe the result before continuing. This is how a swap program moves SPL tokens, how a lending program reads price oracles, how any nontrivial protocol composes services. The mechanism is called Cross-Program Invocation. The runtime gives you two syscalls, `invoke` and `invoke_signed`, plus a strict set of rules about what authority crosses with the call. Once you understand those rules, the rest of Solana's ecosystem opens up to your programs.
+> Solana programs are not isolated. A program can call another program in the middle of its own execution, pass it accounts, and observe the result before continuing. This is how a swap program moves SPL tokens, how a lending program reads price oracles, how any non-trivial protocol composes services. The mechanism is called Cross-Program Invocation. The runtime gives you two syscalls, `invoke` and `invoke_signed`, plus a strict set of rules about what authority crosses with the call. Once you understand those rules, the rest of Solana's ecosystem opens up to your programs.
 
 ## Programs need to call programs
 
@@ -82,7 +82,7 @@ The depth is bounded. A transaction can invoke up to four levels deep: your hand
 
 ## Privileges propagate, and they never grow
 
-This is the most important conceptual point in the lecture. The rules about what authority a CPI carries with it are the entire security model of Solana's composition layer.
+This is the most important conceptual point in the lesson. The rules about what authority a CPI carries with it are the entire security model of Solana's composition layer.
 
 When your handler runs, each account in its frame carries flags: was this account a signer in the transaction, and is it marked writable. When you CPI to another program, those flags travel through. An account that signed your transaction is still a signer in the called program's frame. An account marked writable in your handler is still writable in the called program's frame, if you pass it as writable.
 
@@ -140,7 +140,7 @@ When your handler runs, each account in its frame carries flags: was this accoun
   <text x="360" y="605" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A program can only delegate authority it already has. This is the entire security model of CPI.</text>
 </svg>
 
-What you cannot do is escalate authority. If an account arrived in your handler as readonly, you cannot pass it to a CPI as writable. The runtime checks. If an account arrived as a non-signer, you cannot pretend it signed on the way down. The runtime checks. The principle: a program can only delegate authority it already has.
+What you cannot do is escalate authority. If an account arrived in your handler as readonly, you cannot pass it to a CPI as writable. The runtime checks. If an account arrived as a non-signer, you cannot pretend it signed on the way down. The runtime checks. The principle is that a program can only delegate authority it already has.
 
 You can drop authority. If your handler can write to an account, you can pass it to a CPI as readonly, telling the called program it may read the account but not write to it. This is a useful capability, since it lets you call programs that need to read state without granting them write access they don't need.
 
