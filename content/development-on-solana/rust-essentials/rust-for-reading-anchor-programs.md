@@ -35,7 +35,7 @@ faq:
 
 Solana programs compile to BPF bytecode. The runtime needs to execute that bytecode deterministically across hundreds of validators with bounded resource use, no garbage collector, and no hidden memory allocation. Rust hits exactly those constraints: zero-cost abstractions, no runtime, predictable memory layout, and a type system strict enough to catch entire classes of bugs at compile time. It's the language Solana chose, and Anchor was built on top of it.
 
-For your purposes, Rust is a means to an end. You read Rust to understand Anchor programs, and you write Rust inside the patterns Anchor establishes. You don't need to know async runtimes, smart pointers, or unsafe Rust. You need the syntax in this lecture, the borrow checker in the next, and the Anchor macros that build on both.
+For your purposes, Rust is a means to an end. You read Rust to understand Anchor programs, and you write Rust inside the patterns Anchor establishes. You don't need to know async runtimes, smart pointers, or unsafe Rust. You need the syntax in this lesson, the borrow checker in the next, and the Anchor macros that build on both.
 
 ## Variables and mutability
 
@@ -84,7 +84,7 @@ let p: Pubkey = ctx.accounts.user.key(); // a Solana public key
 
 `Vec<T>` is the heap-allocated growable list. `String` is the same, but for UTF-8 text. Both are owned, sized at runtime, and stored on the heap.
 
-You'll also see `&str` (string slice) and `&[u8]` (byte slice) in function signatures. These are borrowed views into someone else's data, which is covered in the next lecture.
+You'll also see `&str` (string slice) and `&[u8]` (byte slice) in function signatures. These are borrowed views into someone else's data, which is covered in the next lesson.
 
 ## Functions
 
@@ -122,7 +122,7 @@ let config = Config {
 };
 ```
 
-To read a field, dot syntax: `config.rddk_mint`. To modify a field, the binding must be mutable, and then `config.bump = 253;` works.
+To read a field, use dot syntax: `config.rddk_mint`. To modify a field, the binding must be mutable, and then `config.bump = 253;` works.
 
 You'll occasionally see tuple structs, where the fields don't have names:
 
@@ -355,4 +355,4 @@ Walking through:
 - `checked_add(1).ok_or(...)?` does a checked addition, converting a `None`, which signals overflow, into an error, then unwrapping the result.
 - `Ok(())` signals success.
 
-If that reads cleanly now, you have the Rust you need to start writing Anchor handlers. The only remaining concept you need is the borrow checker, which is the next lecture.
+If that reads cleanly now, you have the Rust you need to start writing Anchor handlers. The only remaining concept you need is the borrow checker, which is the next lesson.
