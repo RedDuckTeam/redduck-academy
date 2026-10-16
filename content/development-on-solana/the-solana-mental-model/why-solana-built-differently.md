@@ -24,7 +24,7 @@ faq:
       Interface Definition Language file describing what each instruction expects.
 ---
 
-> Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model. Where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one follows directly from the parallel-execution goal at the top.
+> Most blockchains were built to run transactions one after another. Solana was built to run as many of them at the same time as possible. This single decision shapes everything else in the programming model: where state lives, who owns it, what a transaction has to declare, how the runtime decides what runs together, what you pay to store a byte on chain. None of these choices are arbitrary. Each one follows directly from the parallel-execution goal at the top.
 
 ## What the choice costs
 
@@ -90,37 +90,4 @@ These four are not separate ideas. They are different views of the same decision
   <text x="463" y="294" text-anchor="middle" font-family="monospace" font-size="10">program with</text>
   <text x="463" y="310" text-anchor="middle" font-family="monospace" font-size="10">write rights</text>
 
-<rect x="559" y="215" width="125" height="120" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="621" y="235" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">Consequence 4</text>
-  <line x1="572" y1="244" x2="671" y2="244" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="621" y="262" text-anchor="middle" font-family="monospace" font-size="10">accounts pay</text>
-  <text x="621" y="278" text-anchor="middle" font-family="monospace" font-size="10">for storage</text>
-  <text x="621" y="294" text-anchor="middle" font-family="monospace" font-size="10">with rent-</text>
-  <text x="621" y="310" text-anchor="middle" font-family="monospace" font-size="10">exempt SOL</text>
-
-<rect x="40" y="365" width="640" height="115" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
-  <text x="360" y="386" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">What this feels like when you write code</text>
-  <line x1="55" y1="395" x2="665" y2="395" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="360" y="415" text-anchor="middle" font-family="monospace" font-size="10">Your program is a function. The transaction supplies the inputs.</text>
-  <text x="360" y="433" text-anchor="middle" font-family="monospace" font-size="10">The runtime checks that the inputs were declared and that you own the ones you write.</text>
-  <text x="360" y="451" text-anchor="middle" font-family="monospace" font-size="10">Everything else, what is parallel and what is not, is the runtime's job.</text>
-  <text x="360" y="469" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653" font-style="italic">You stop thinking about state ownership. The system does it for you.</text>
-
-<text x="360" y="515" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Every constraint below follows from the top box. The four are not separate ideas.</text>
-</svg>
-
-## What this changes in practice
-
-The programming model that comes out of these four constraints feels different to anyone who has written code for a serial chain. Three differences are worth naming.
-
-You think about state ownership constantly during the early lessons and then stop thinking about it once the model is internalized. Every byte you read or write belongs to some account, and every account belongs to some program. The question "who can write this" is never ambiguous on Solana, because the runtime answers it for every transaction.
-
-You build the access plan on the client side, before sending the transaction. The client has to know which accounts the program will read and which it will write. Most of the work in a Solana client library is figuring this out, because the program author has to either document the access pattern or expose it through a machine-readable interface called an IDL (Interface Definition Language). IDL will be covered in a later lesson.
-
-You stop worrying about contract storage growing unboundedly. Every account is sized at creation. Growing an account takes a deliberate call that pays for the new bytes. Programs cannot quietly accumulate state because every byte of state has an account behind it and someone paid for that account.
-
-## What you give up and what you get
-
-The cost of all this is that the programming model has more pieces. A Solana program is harder to write than the equivalent on a serial chain, especially the first time. You have to think about accounts, ownership, declaration, rent. You have to write tests that exercise the runtime's checks rather than relying on the runtime to discover them at execution time.
-
-What you get is a chain where a token swap on one decentralized exchange does not have to wait for an unrelated NFT mint, and where the network can process thousands of independent transactions per second without one of them blocking the rest. The applications people built on Solana, payments at credit-card speeds, on-chain order books, decentralized exchanges with sub-cent fees, exist because the runtime can run their transactions in parallel. Without parallel execution, the chain becomes another serial chain, slower than it should be.
+<rect x="559" y="215" width="125" height="120" fill="#e0deda" stroke="#000000"
