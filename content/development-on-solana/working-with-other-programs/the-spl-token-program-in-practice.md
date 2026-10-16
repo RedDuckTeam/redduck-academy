@@ -28,7 +28,7 @@ faq:
       be zero first, and the owner signs.
 ---
 
-> Most of what makes Solana useful flows through one program: the SPL Token Program. USDC, USDT, every project's governance token, every meme coin, every staking receipt, every wrapped asset, every position token from every protocol. The same program manages all of them. You've already called it twice through CPI without seeing its formal shape. Its formal shape comes down to three things: the state that lives in its accounts, the instructions it accepts, and the authorities that gate each action. Once you have these pieces, working with tokens in your own programs becomes mechanical.
+> Most of what makes Solana useful flows through one program, the SPL Token Program: USDC, USDT, every project's governance token, every meme coin, every staking receipt, every wrapped asset, every position token from every protocol. The same program manages all of them. You've already called it twice through CPI without seeing its formal shape. Its formal shape comes down to three things: the state that lives in its accounts, the instructions it accepts, and the authorities that gate each action. Once you have these pieces, working with tokens in your own programs becomes mechanical.
 
 ## The Token Program is just a program
 
@@ -236,7 +236,7 @@ Tokens involve three distinct authority concepts, and developers who blur them t
   <text x="360" y="510" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Two authorities live on the mint (one per currency). One lives on each token account.</text>
 </svg>
 
-The **mint authority** lives on a Mint account and controls one thing: who can call MintTo against that mint. Set it to a wallet, that wallet can mint new tokens. Set it to a PDA your program controls, your program can mint via `invoke_signed`. Set it to `None`, and the supply is permanently fixed. The supply-frozen case is one-way. Once mint authority is None, you cannot reinstate it. The supply you have is the supply you'll always have.
+The **mint authority** lives on a Mint account and controls one thing: who can call MintTo against that mint. Set it to a wallet, and that wallet can mint new tokens. Set it to a PDA your program controls, and your program can mint via `invoke_signed`. Set it to `None`, and the supply is permanently fixed. The supply-frozen case is one-way. Once mint authority is None, you cannot reinstate it. The supply you have is the supply you'll always have.
 
 The **freeze authority** also lives on a Mint and controls FreezeAccount, an instruction that locks a specific token account from doing transfers. Most tokens you'll work with have no freeze authority, since most token issuers don't want the ability to seize holdings. Regulated tokens like real-world-asset representations often do. If a mint has a freeze authority, every holder is taking on the implicit risk that their balance could be frozen.
 
@@ -246,7 +246,7 @@ The split between mint authorities and token account owners is what people miss.
 
 ## Working with tokens in Anchor
 
-The `anchor_spl` crate gives you typed Rust bindings for everything above. The Mint type, the TokenAccount type, and CPI helpers for each instruction. You add it to your `Cargo.toml`, import the pieces you need, and you can declare token accounts in your Accounts struct alongside your own program's accounts.
+The `anchor_spl` crate gives you typed Rust bindings for everything above: the Mint type, the TokenAccount type, and CPI helpers for each instruction. You add it to your `Cargo.toml`, import the pieces you need, and you can declare token accounts in your Accounts struct alongside your own program's accounts.
 
 ```rust
 use anchor_spl::token::{Mint, Token, TokenAccount};
