@@ -199,7 +199,7 @@ You import the JSON file in your TypeScript code. You hand it to a `Program` con
   <text x="360" y="495" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Your Rust program is the server. The IDL is the contract. The TypeScript client is the typed SDK.</text>
 </svg>
 
-Behind the scenes, the SDK looks up `deposit` in the IDL's instructions array, finds its argument schema and account list, serializes your arguments according to that schema, builds an instruction with the right shape, packages it in a transaction, signs it with the provider's wallet, and sends it to the RPC endpoint. All the work covered in the instructions and transactions lessons, the SDK is doing for you, using the IDL as its map.
+Behind the scenes, the SDK looks up `deposit` in the IDL's instructions array, finds its argument schema and account list, serializes your arguments according to that schema, builds an instruction with the right shape, packages it in a transaction, signs it with the provider's wallet, and sends it to the RPC endpoint. The SDK does all the work covered in the instructions and transactions lessons for you, using the IDL as its map.
 
 The same pattern applies in other languages. There is a Python SDK, a Go SDK, a Swift SDK, all of which consume the IDL in the same way. The IDL is the universal description that lets each of those clients work with your program without coordinating directly with you.
 
