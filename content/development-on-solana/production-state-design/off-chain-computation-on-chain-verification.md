@@ -58,7 +58,7 @@ The chain, in contrast, has powerful verification primitives. Hashing, signature
 
 This suggests a split: do the hard work off-chain, then submit the result to the chain along with whatever the chain needs to verify the work was done correctly. The program no longer computes anything expensive. It receives a claim and checks the claim. If the claim is valid, the program uses the result. If the claim is invalid, the program reverts.
 
-This is the pattern. The user does work, the program verifies.
+This is the pattern. The user does the work, and the program verifies it.
 
 The important property: the program never trusts the user's claim blindly. The verification step is the security boundary. A user can submit any claim they want, but if it doesn't pass verification, nothing happens. They can lie, but lying only causes their own transaction to revert. They can't corrupt state by lying. The cost of trying and failing is just their priority fee and the base fee for the signature.
 
@@ -146,7 +146,7 @@ This is the pattern at its purest. The same construction is how every modern Sol
 
 Some Solana programs need to compute square roots. AMMs use them for invariant calculations. Bonding curves use them for pricing. Constant-product math like `x * y = k` often needs `sqrt(k)` for the initial liquidity tokens minted to the first depositor.
 
-Computing `sqrt(n)` for a `u64` requires an iterative algorithm, typically Newton's method or a binary search. A good implementation takes around 20-30 iterations and costs a few thousand CU. Not catastrophic, but not free either.
+Computing `sqrt(n)` for a `u64` requires an iterative algorithm, typically Newton's method or a binary search. A good implementation takes around 20–30 iterations and costs a few thousand CU. Not catastrophic, but not free either.
 
 The off-chain trick: the user computes `sqrt(n)` themselves, without any compute unit constraint, and submits the answer. The program verifies the answer with two multiplications, costing about 50 CU total.
 
