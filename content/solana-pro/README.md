@@ -20,3 +20,14 @@ The course is written to the point. You won't read through formal, padded langua
 
 1. [What this course is](welcome/what-this-course-is.md)
 2. [Constraints behind patterns](welcome/constraints-behind-patterns.md)
+
+### 2. Trust and identity
+
+1. [Root of trust](trust-and-identity/root-of-trust.md)
+2. [Identity rejection](trust-and-identity/identity-rejection.md)
+
+### 3. Cost distribution
+
+1. [Lazy loading](cost-distribution/lazy-loading.md)
+2. [Pay-as-you-act](cost-distribution/pay-as-you-act.md)
+3. [Trust and execution - Test](cost-distribution/trust-and-execution-test.md) — test
