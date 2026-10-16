@@ -35,39 +35,39 @@ faq:
       at once.
 ---
 
-> A Solana transaction is small, compute is limited, and one big account gets more expensive with every user. Divide and conquer splits a program's state into many small accounts and keeps the shared values in one central account. Each transaction touches only the parts its action needs, so its cost depends only on the action.
+> A Solana transaction is small, compute is limited, and one big account gets more expensive with every user. Divide and conquer splits a program's state into many small accounts and keeps the values every action needs in one central account. A transaction touches only the accounts its action needs, so its cost stays the same however big the program grows.
 
 ## From algorithms to accounts
 
-In algorithms, divide and conquer means splitting a task into independent parts, solving each part on its own, and merging the results. Solana programs use the same idea for their state. The parts are accounts, the combined values live in one central account, and the reason to split is the chain's limits.
+In algorithms, divide and conquer means splitting a task into independent parts, solving each on its own, and merging the results. Solana programs split their state the same way, because of the chain's limits. Each part is a separate account, and values that combine all the parts, like a total, live in one central account.
 
 ## Why one big account stops working
 
-Remember from the [constraints lecture](/courses/solana-pro/welcome/constraints-behind-patterns) that a transaction is small and bounded. A program that keeps all its state in one account runs into those limits as it grows.
+Remember from the [constraints lecture](/courses/solana-pro/welcome/constraints-behind-patterns) that a transaction is small and bounded. Keep all of your program's state in one account, and you hit those limits as the program grows.
 
-A transaction can use at most 1.4 million compute units, so any work that grows with the size of the data stops fitting at some point. An account can never grow past 10 MiB.
+A transaction can use at most 1.4 million compute units, so work that grows with the data, like a loop over every user, eventually stops fitting. An account can never grow past 10 MiB.
 
-An account is also read as a whole. With Anchor's `Account` type, the program deserializes the full account when the instruction starts and, if the account is mutable, writes all of it back at the end. Change one byte in a 10,000-byte account, and the program still processes 10,000 bytes. The data also has to fit in the program's heap, 32 KiB by default and 256 KiB at most, so a regular Anchor account stops working long before 10 MiB. Zero-copy accounts skip the deserialization and the heap, but a loop over their data still runs into the compute limit, and they still cannot grow past 10 MiB.
+With Anchor's `Account` type, the program deserializes the whole account when the instruction starts and, if the account is mutable, writes all of it back at the end. Change one byte in a 10,000-byte account, and the program still processes all 10,000. The data must also fit in the program's heap, which is 32 KiB by default and 256 KiB at most. So a regular Anchor account stops working long before 10 MiB. Zero-copy accounts skip deserialization and the heap, but a loop over their data still hits the compute limit.
 
-There is one more cost. Solana runs transactions in parallel, but two transactions that write the same account cannot run at the same time. If every user writes to one account, their transactions run one after another.
+Solana also runs transactions in parallel, except those that write the same account. If every user writes to one account, their transactions run one after another.
 
 ## Split the state, keep shared values in one place
 
-The pattern is to store the data in many small accounts, called partitions, and keep one central account with the values every action needs, such as a total, the current price or a Merkle root. A transaction includes only the partitions its action needs, plus the central account.
+The pattern is to store the data in many small accounts, called partitions, plus one central account with the values every action needs, such as a total, the current price or a Merkle root. A transaction includes only the partitions its action needs and the central account.
 
-The 1232-byte transaction limit works the other way. A transaction lists only the address of each account, 32 bytes however big the account is. So one big account is cheap to include, and every partition an action needs adds another 32 bytes. A good split keeps that number small for every action.
+Splitting has one cost. Every account a transaction uses adds its 32-byte address to the 1232-byte limit, however big the account is. One big account takes 32 bytes, and every partition adds 32 more, so a good split keeps each action to a few partitions.
 
-Often the same transaction also updates the central account, so the user who acts pays to keep it current. We call this Pay-As-You-Act. Some programs update the central account separately instead, when doing it in every transaction is not needed or costs too much. That update can be a job that anyone can call, like the ones in the [untrusted executor lecture](/courses/solana-pro/permissionless-execution/untrusted-executor).
+Often the transaction that changes a partition also updates the central account, so the user who acts pays to keep it current. We call this Pay-As-You-Act. When that is not needed or costs too much, programs update the central account separately, for example with a job anyone can call, like those in the [untrusted executor lecture](/courses/solana-pro/permissionless-execution/untrusted-executor).
 
 ## Orca: only the ticks a swap crosses
 
-Orca Whirlpools is a concentrated liquidity DEX. Liquidity providers choose a price range for their liquidity. Prices are split into small steps called ticks, and each tick records how much liquidity starts or ends at that price. A pool with the finest price steps has about 887,000 possible ticks. At 113 bytes per tick, that is around 100 MB, about ten times what one account can hold. Even where they fit, every swap would load and save all of them to use only a few.
+Orca Whirlpools is a concentrated liquidity DEX. Liquidity providers pick a price range, and prices are split into small steps called ticks. Each tick records how much liquidity starts or ends at that price.
 
-So Orca splits them. Ticks are grouped into tick arrays, separate accounts of 88 ticks each. A tick array exists only if someone created it, usually a liquidity provider opening a position in that range. A price range where nobody has ever opened a position has no account at all. The pool account is the central state. It holds the current price, the current tick and the active liquidity.
+With the smallest price steps, a pool has about 887,000 possible ticks. At 113 bytes each, that is around 100 MB, ten times what one account can hold. Even in pools with fewer ticks, every swap would load and save all of them to use a few.
 
-A swap passes the pool account and up to three tick arrays, the ones the price can move through during this swap. The client works out which arrays those are. Every other tick array stays out of the transaction, so the program loads at most 264 ticks however many the pool has. The swap also updates the price and liquidity in the pool account in the same transaction, which is Pay-As-You-Act at work.
+So Orca groups ticks into tick arrays, separate accounts of 88 ticks each. A tick array exists only once someone creates it, usually a liquidity provider opening a position in that range. A range where nobody has ever opened a position has no account at all. The pool account is the central state, holding the current price, the current tick and the active liquidity.
 
-The split has costs too. A swap can only move the price as far as the tick arrays it was given, so the client has to pick them correctly. And splitting does not remove the write lock on the central account. Every Orca swap writes its pool account, so swaps in one pool run one after another, while swaps in different pools run in parallel. To get more parallel writes, a program writes the central account only in the actions that must change it, or splits the central account too, for example into several Merkle trees for one collection.
+A swap passes the pool account and up to three tick arrays, the ones the price can move through. The client picks them, and every other tick array stays out of the transaction. So the program loads at most 264 ticks, three arrays of 88, however many the pool has. The same swap updates the price and liquidity in the pool account, which is Pay-As-You-Act at work.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>One Orca pool split into tick arrays</title><desc>A pool account at the top holds the central state: current price, current tick and active liquidity. Below it is a row of five tick arrays ordered by price. The middle three are highlighted as the ones passed to this swap and chosen by the client. The current price sits in the first highlighted array and moves toward higher prices during the swap. The first tick array exists but is not in this swap, and the last one has no account because nobody ever opened a position in that range.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -118,17 +118,21 @@ The split has costs too. A swap can only move the price as far as the tick array
   <text x="360" y="362" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A swap carries the pool and only the tick arrays its price can cross.</text>
 </svg>
 
+The split has costs. A swap can only move the price as far as its tick arrays reach, so the client must pick them correctly. And every swap still writes its pool account, so swaps in one pool run one after another, while swaps in different pools run in parallel.
+
 ## Compressed NFTs: a million NFTs in one account
 
-A regular NFT is several accounts, such as a mint, a metadata account and a token account. A million NFTs means millions of accounts, each with its own rent deposit. Bubblegum, Metaplex's compressed NFT program, keeps a million NFTs in one account.
+A regular NFT is several accounts, such as a mint, a metadata account and a token account, each with its own rent deposit. Bubblegum, Metaplex's compressed NFT program, keeps a million NFTs in one account.
 
-It stores them as a [Merkle tree](/courses/blockchain-basics/cryptography/merkle-trees). Each NFT is a leaf, a hash of the NFT's data. Leaves are hashed in pairs, level by level, up to a single hash at the top, the root. Change one bit in any leaf and the root changes, so the root protects every NFT in the tree. The account keeps the root and a short history of recent changes. A client builds its proof against the root it last saw. If another update lands first, the history lets the program still accept that proof.
+It stores them as a [Merkle tree](/courses/blockchain-basics/cryptography/merkle-trees). Each NFT is a leaf, a hash of its data, and leaves are hashed in pairs, level by level, up to a single root. Change one bit in any leaf and the root changes, so storing the root protects every NFT in the tree.
 
-Here the partitions are not accounts at all. The NFT data is kept off-chain by indexers, which read it from the transactions that created and changed each NFT. When an action needs one NFT, the client brings that NFT's data in the transaction, and the root lets the program check it.
+The partitions here are not accounts at all. Indexers keep the NFT data off-chain, reading it from the transactions that created and changed each NFT. When an action needs an NFT, the client brings its data, and the program checks it against the root.
 
-To make that check possible, the client also brings the hashes along the leaf's path to the root, one hash per level. A tree with a million leaves has 20 levels, because 2^20 is 1,048,576, so the path is 20 hashes. The program recomputes the root from the leaf and the path and compares it with the stored root. If they match, the leaf the client sent is really in the tree, so its owner and data are correct.
+To make that check possible, the client also sends the hashes along the leaf's path to the root, one per level. A million leaves means 20 levels, since 2^20 is 1,048,576, so the path is 20 hashes. The program recomputes the root and compares it with the stored one. If they match, the leaf is really in the tree, so its owner and data are correct.
 
-Twenty hashes of 32 bytes each is 640 bytes, more than half of a 1232-byte transaction. So the tree account also stores the top levels of the tree, called the canopy. With a canopy of 10 levels, the program already has the upper half of every path, and the client sends only the bottom 10 hashes, 320 bytes. The canopy has a cost. Ten levels hold about 2,000 hashes, around 65 KB, and the tree creator pays rent for all of it up front. A deeper canopy means a bigger account and shorter proofs.
+The account also keeps a short history of recent changes. A client builds its proof against the root it last saw, and if another update lands first, the history lets the program still accept that proof.
+
+Twenty 32-byte hashes take 640 bytes, more than half of a 1232-byte transaction. So the tree account also stores the top levels of the tree, called the canopy. With a 10-level canopy, the client sends only the bottom 10 hashes, 320 bytes. The canopy has a cost. Ten levels hold about 2,000 hashes, around 65 KB, and the tree creator pays rent for all of it up front. A deeper canopy means shorter proofs and a bigger account.
 
 <svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Proving one NFT in a Merkle tree with a canopy</title><desc>A Merkle tree with eight NFT leaves, four hashes on the next level, two on the level above, and the root at the top. The root and the level below it are stored in the on-chain account, the canopy. To prove NFT 5, the client sends the leaf and two hashes, NFT 4 and h67. The program takes h0-3 from the canopy, rebuilds the root along the path from NFT 5 and compares it with the stored root. A real tree of a million leaves has 20 levels.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -202,8 +206,14 @@ Twenty hashes of 32 bytes each is 640 bytes, more than half of a 1232-byte trans
 
 ## ZK Compression: one proof for many accounts
 
-ZK Compression does the same for any account. An account's data is hashed into a leaf of a Merkle tree, and the transaction brings the data when an action needs it. Instead of a path of hashes for each account, the transaction carries one zero-knowledge proof that all of its accounts are stored in the trees. The proof is always 128 bytes, whether it covers one account or several. The account data itself still has to fit in the transaction, and checking the proof costs about 100,000 compute units.
+ZK Compression applies the same idea to any account. Each account's data is a leaf in a Merkle tree, and the transaction brings the data when an action needs it. Instead of a path of hashes per account, the transaction carries one zero-knowledge proof that all of its accounts are in their trees. The proof is always 128 bytes, whether it covers one account or several. The account data still has to fit in the transaction, and checking the proof costs about 100,000 compute units.
 
 ## Find the partitions in your own state
 
-Look at every account your program writes. If an account grows with the number of users, orders, positions or items, it will reach one of the limits above sooner or later. For each such account, ask two questions. What does a single action actually need to read and write? That part becomes a partition. What do all actions need to agree on? That part stays in the central account. Then decide how the central account stays current, in the same transaction with Pay-As-You-Act or separately, and whether one central account can handle all the writes. Once the split is right, a transaction only pays for the action it performs.
+Look at every account your program writes. If one grows with the number of users, orders, positions or items, it will hit one of the limits above.
+
+For each such account, ask what a single action needs to read and write. That part becomes a partition. What all actions must agree on stays in the central account.
+
+Then decide how the central account stays current, with Pay-As-You-Act or separately. Also check whether one central account can take all the writes. If it can't, write it only in the actions that must change it, or split it too, for example into several Merkle trees for one NFT collection.
+
+Once the split is right, a transaction pays only for its own action.

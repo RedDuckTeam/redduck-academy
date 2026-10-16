@@ -28,27 +28,37 @@ faq:
       is fixed when the tree is created, so it does not grow as NFTs are minted.
 ---
 
-> Engineers choose a data structure by its cost in time and memory. On Solana there is one more cost to weigh, the on-chain complexity, and it can be very different from the total. An operation can cost O(n) in total and O(1) on-chain, because the O(n) part runs off-chain on the client.
+> Engineers choose a data structure by its cost in time and memory. On Solana, you also weigh the part of the work that runs on-chain, which can be far smaller than the total. An operation can cost O(n) in total and O(1) on-chain, because the O(n) part runs on the client.
 
 ## One more variable
 
-On-chain programs add one more variable to time and memory, the on-chain complexity. This is the part the program itself pays for. Compute is paid in compute units and limited per transaction. Memory is paid in rent for the accounts the program keeps. The rest runs on the client or on an indexer, where it costs the program nothing. The gap between the total cost and the on-chain cost is called **complexity asymmetry**.
+On-chain programs add one more variable, the on-chain complexity. This is the work the program pays for. Compute costs compute units, with a limit per transaction, and memory costs rent for every account the program keeps. The rest runs on the client or on an indexer, a server that keeps a copy of chain data, and costs the program nothing. The gap between the total cost and the on-chain cost is called **complexity asymmetry**.
 
 ## Why O(n) on-chain is dangerous
 
-Remember from the [constraints lecture](/courses/solana-pro/welcome/constraints-behind-patterns) that anyone can call any instruction. In most protocols anyone can also add data, for example by opening an order, creating a position or minting an item. If an instruction walks through all of that data, its cost grows with every entry, and an attacker can keep adding entries cheaply. Once the walk no longer fits in 1.4 million compute units, the instruction fails for every caller, and nobody can use that part of the program anymore. This is a denial-of-service attack, often called a DoS.
+Remember from the [constraints lecture](/courses/solana-pro/welcome/constraints-behind-patterns) that anyone can call any instruction. In most protocols anyone can also add data, by opening an order, creating a position or minting an item.
 
-So the work inside an instruction should grow very slowly, or not at all, with data that anyone can add. O(log n) is fine, because a billion entries need only about 30 steps. A loop over a list with a fixed size is safe too, because nobody can make it longer. Anything heavier belongs off-chain.
+Now imagine an instruction that walks through all of that data. Every entry makes it more expensive, and an attacker can add entries cheaply. Once the walk needs more than the 1.4 million compute units a transaction allows, the instruction fails for every caller, and nobody can use that part of the program. This is a denial-of-service attack, or DoS.
+
+So the work inside an instruction should not grow with data anyone can add, or should grow very slowly. O(log n) is fine, since a billion entries need only about 30 steps. A loop over a fixed-size list is safe too, because nobody can make it longer. Anything heavier belongs off-chain.
 
 ## The sorted linked list
 
-A sorted linked list is surprisingly common in Solana programs. In general it is a slow structure. Finding the right position for a new element takes O(n), because you walk the list from the start. Linking the element in is O(1), but only once you have found the position.
+A sorted linked list is surprisingly common in Solana programs, though in general it is slow. Finding the position for a new element takes O(n), because you walk the list from the start. Linking it in is O(1) once you have the position.
 
-On-chain, the search disappears. The client finds the position off-chain, by walking the list it has already read from the account, and sends it with the instruction. The program does not search. It only checks that the position is correct by looking at the two neighbors of the new element, and that check takes the same time however long the list is. The client spends O(n) to find the position, and the program spends O(1) to verify it. This holds only when the program reads just the cells it needs, for example with a zero-copy account. If it deserializes the whole account, it pays for every cell on every call.
+On-chain, the search disappears. The client walks the list off-chain and sends the position with the instruction. The program only checks the two neighbors of the new element, which takes the same time however long the list is. The client spends O(n) to find the position, and the program spends O(1) to check it.
+
+This holds only if the program reads just the elements it needs, as a zero-copy account allows. If it deserializes the whole account, it pays for every element on every call.
 
 ## Monaco's order book
 
-You met Monaco's order book in the [role inversion lecture](/courses/solana-pro/permissionless-execution/role-inversion). Here is how its check works. The book is a fixed set of cells in one account, sorted from the highest price to the lowest. A new order takes any free cell, so cell numbers do not follow price, and each order points to its neighbors by cell number. The client works out where the new order goes and sends "after this order". The program checks three things. The order on the left is not cheaper than the new one. The order on the right is cheaper. Both cells hold open orders, so neither is empty or cancelled. Because the right neighbor must be strictly cheaper, the new order can only go after the last order at its own price. Older orders at that price stay ahead of it and fill first.
+You met Monaco's order book in the [role inversion lecture](/courses/solana-pro/permissionless-execution/role-inversion). Here is how it adds an order.
+
+The book is one account with a fixed set of cells. Orders are sorted from the highest price to the lowest, and each points to its neighbors by cell number. A new order takes any free cell, so cell numbers do not follow the price.
+
+The client works out where the new order goes and sends "after this order". The program checks three things. The order on the left is not cheaper than the new one. The order on the right is cheaper. Both cells hold open orders.
+
+Because the right neighbor must be strictly cheaper, a new order always goes after older orders at the same price, so those fill first.
 
 The cell numbers and prices in the diagram below are illustrative.
 
@@ -107,17 +117,21 @@ The cell numbers and prices in the diagram below are illustrative.
   <text x="360" y="422" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">does an O(1) check, however long the book grows.</text>
 </svg>
 
-Because the book has a fixed number of cells, it can never outgrow its account. Walking the whole book on-chain would fit in the compute budget too, but then every new order would pay for every cell. The neighbor check makes it pay for two. The price of a fixed book is a hard limit on open orders. An attacker could fill every free cell and block real traders, so each order locks some of its owner's funds, which makes filling the book expensive.
+A fixed number of cells means the book never outgrows its account, so walking the whole book on-chain would also fit in the compute budget. But then every new order would pay for every cell. The neighbor check makes it pay for two.
+
+The downside is a hard limit on open orders. An attacker could fill every free cell to block real traders, so each order locks some of its owner's funds to make that expensive.
 
 ## Bubblegum: memory moved off-chain
 
-Bubblegum, the compressed NFT program from the [divide and conquer lecture](/courses/solana-pro/state-partitioning/divide-and-conquer), uses the same asymmetry for memory. One account keeps the root of a Merkle tree that covers a million NFTs. The full tree, with every leaf, is kept off-chain by indexers. To change one NFT, the client sends the leaf and the hashes on its path to the root, except the top ones the canopy already stores. The program rebuilds the root and compares it with the stored one.
+Bubblegum from the [divide and conquer lecture](/courses/solana-pro/state-partitioning/divide-and-conquer) uses the same asymmetry for memory. One account keeps the root of a Merkle tree covering a million NFTs, and indexers keep the full tree off-chain.
 
-Count the costs. The account has a fixed size that does not grow as NFTs are minted, so on-chain memory is O(1). The check walks one path from a leaf to the root, so on-chain compute is O(log n). The O(n) part, storing every leaf, lives with the indexer.
+To change one NFT, the client sends the leaf and the hashes on its path to the root, except the top levels the account already keeps in its canopy. The program rebuilds the root and compares it with the stored one.
 
-In a normal backend, a Merkle tree would be a strange way to store records. The backend puts a million records in a database and reads any one of them in a single step. Nobody would hash them into a tree.
+Count the costs. The account's size is fixed and does not grow as NFTs are minted, so on-chain memory is O(1). The check walks one path from leaf to root, so on-chain compute is O(log n). The O(n) part, every leaf, lives with the indexer.
 
-On Solana, the usual way to store a million records is a million PDAs, one per record. Each PDA is a separate account, and each one needs its own rent deposit. A Merkle tree replaces all of them with one account that holds one root. That saving is why the Merkle tree is one of the most popular structures on Solana.
+Why bother? A normal backend would never hash a million records into a Merkle tree. It puts them in a database and reads any one in a single step.
+
+On Solana, the usual way to store a million records is a million PDAs, each a separate account with its own rent deposit. A Merkle tree replaces all of them with one account holding one root. That saving makes the Merkle tree one of the most popular structures on Solana.
 
 <svg role="img" viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Where the work lives</title><desc>A table of three designs. A sorted list insert costs O(n) search in total, an O(1) check on-chain, and the client walks the list off-chain. A Bubblegum update costs O(n) memory in total, O(1) memory and an O(log n) check on-chain, and an indexer keeps the tree off-chain. A program that searches its own list pays the O(n) search on-chain on every call, the cost grows with every entry, and nothing is kept off-chain.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -153,10 +167,12 @@ On Solana, the usual way to store a million records is a million PDAs, one per r
   <text x="340" y="220" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">grows with every entry</text>
   <text x="520" y="212" font-family="monospace" font-size="10">nothing</text>
 
-  <text x="360" y="258" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The working designs keep the O(n) part off-chain. The searching</text>
-  <text x="360" y="274" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">program keeps it on-chain, where anyone can grow it.</text>
+  <text x="360" y="258" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The first two designs keep the O(n) part off-chain. The third</text>
+  <text x="360" y="274" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">keeps it on-chain, where anyone can make it grow.</text>
 </svg>
 
 ## Count the on-chain part
 
-When you choose a data structure for a program, write down two complexities for every operation, the total one and the on-chain one. Then ask how the on-chain part grows if someone adds a million entries on purpose. If it stays at O(1) or O(log n), the structure is safe. If it grows linearly, move the search to the client and leave the program only the check. A structure that a textbook would not recommend, like a sorted linked list or a Merkle tree, is often the right one on-chain once its expensive part runs off-chain.
+When you choose a data structure, write down two complexities for every operation, the total and the on-chain part. Then ask how the on-chain part grows if someone adds a million entries on purpose. If it stays at O(1) or O(log n), the structure is safe. If it grows linearly, move the search to the client and leave the program only the check.
+
+A textbook would not recommend a sorted linked list or a Merkle tree. On-chain, they are often the right choice once their expensive part runs off-chain.
