@@ -34,13 +34,13 @@ faq:
       the gap sat in the single implementation running it.
 ---
 
-> Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that affected real money, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. Four notable outages make that pattern clear. Treat this as a debugging-the-network exercise. Afterward, you'll look at your own programs differently.
+> Solana has gone down several times. Long enough each time to make the news, short enough that the network has always come back. The outages are an awkward topic to discuss because they're real failures that affected real money, but they're also some of the most honest education the network has produced about its own architecture. Each outage was a stress test that revealed an assumption the design didn't hold, followed by a specific engineering response. Four notable outages make that pattern clear. Treat this as a debugging-the-network exercise.
 
 ## Why outages teach more than uptime does
 
 A network that has never gone down has never been tested. You don't know which assumptions held up because they were correct and which held up because they were never seriously challenged. Outages are where the gap between "the design works" and "the design works under adversarial conditions" gets measured. Every chain that's run real money for years has its list. Bitcoin had its 2010 value-overflow incident. Ethereum had the DAO fork, the Constantinople delay, multiple congestion events. Solana has its outages, and they map cleanly onto specific architectural decisions.
 
-What's worth paying attention to is not the outage itself but the pattern between trigger and fix. Each outage took an aspect of the design that worked under benign conditions and stress-tested it under adversarial ones. The fixes weren't admissions of fundamental flaws, they were upgrades to assumptions. Watching this pattern repeat is what gives you a real sense of how the network evolved into what it is now.
+What's worth paying attention to is not the outage itself but the pattern between trigger and fix. Each outage took an aspect of the design that worked under benign conditions and stress-tested it under adversarial ones. The fixes weren't admissions of fundamental flaws; they were upgrades to assumptions. Watching this pattern repeat is what gives you a real sense of how the network evolved into what it is now.
 
 ## September 2021: the IDO bot storm
 
