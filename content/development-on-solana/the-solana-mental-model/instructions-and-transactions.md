@@ -132,7 +132,7 @@ First, **parallel scheduling**. Two transactions whose writable account sets do 
 
 Second, **signer enforcement**. If an instruction expects an account to be a signer, say a transfer expecting the sender to have signed, the runtime checks that the corresponding signature is present in the transaction's signatures list. If not, the transaction fails before the program even loads. Your program code can rely on the fact that any account marked as a signer was actually signed for.
 
-Third, **owner enforcement**. Before letting a program write to a writable account, the runtime checks that the account's owner field matches the program being invoked. A program cannot write to accounts it does not own. This is the security model from the accounts lecture, made operational on every transaction.
+Third, **owner enforcement**. Before letting a program write to a writable account, the runtime checks that the account's owner field matches the program being invoked. A program cannot write to accounts it does not own. This is the security model from the accounts lesson, made operational on every transaction.
 
 The cost of all this is that the client building the transaction has to know in advance which accounts the program will need and how each of them should be marked. The benefit is that every transaction arrives with its security and parallelism contract on the outside, fully readable by the runtime without executing a single line of code.
 
@@ -186,4 +186,4 @@ Alice wants to send Bob 100 USDC. Here is what her transaction actually looks li
 
 Three accounts on the list. Two of them are the actual balances, marked writable because their data is going to change. The third is Alice's wallet, marked as a signer because the Token Program will check that whoever owns alice_usdc authorized the transfer. Alice's wallet does not need to be writable. The Token Program does not modify the wallet itself, only the balance accounts.
 
-When this transaction lands on the network, the runtime does its checks, then loads the Token Program's code from the Token Program account and runs it. The program reads the data field of alice_usdc, subtracts 100 from the amount, writes the new value back. Does the same for bob_usdc in reverse. Returns success. The transaction commits, the new state is included in the next block, and the network keeps going.
+When this transaction lands on the network, the runtime does its checks, then loads the Token Program's code from the Token Program account and runs it. The program reads the data field of alice_usdc, subtracts 100 from the amount, and writes the new value back. It does the same for bob_usdc in reverse and returns success. The transaction commits, the new state is included in the next block, and the network keeps going.
