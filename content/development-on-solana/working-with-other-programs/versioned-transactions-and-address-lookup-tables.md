@@ -29,8 +29,9 @@ faq:
       30 pubkeys at a time.
   - question: When do I get the rent back from a closed table?
     answer: >-
-      After a cooldown of about 500 slots, roughly 5 minutes. The cooldown keeps the address
-      from being reused while transactions that reference the old table are still in flight.
+      After a cooldown of about 500 slots, roughly 3 to 4 minutes. The cooldown keeps the
+      address from being reused while transactions that reference the old table are still in
+      flight.
 ---
 
 > Solana transactions have a hard 1,232-byte size limit at the wire level. Legacy transactions put every account's full 32-byte pubkey directly in the message, so a 30-account transaction spends close to a kilobyte on pubkeys alone. The v0 transaction format introduced Address Lookup Tables: accounts that store pubkeys at fixed offsets, referenced from the transaction by a 1-byte index instead of a 32-byte pubkey. The same 30-account transaction now fits comfortably with hundreds of bytes to spare.
@@ -108,13 +109,13 @@ The practical ceiling jumps from roughly 30 accounts in a legacy transaction to 
 
 An ALT is an account owned by the Address Lookup Table program. It stores up to 256 pubkeys at fixed offsets. Anyone can create one and populate it with whatever pubkeys are useful.
 
-The lifecycle has four steps. **Create** allocates the ALT and stamps it with the current slot, which becomes part of how the table is identified. **Extend** appends pubkeys to the table. Because the 1,232-byte ceiling also applies to the extend instruction itself, adding pubkeys takes multiple transactions to fill a large table, roughly 30 pubkeys per call. **Freeze** is optional and makes the table immutable. **Close** marks the table for deactivation. The rent is not released immediately. A cooldown of about 500 slots, roughly 5 minutes, runs before the close completes. This prevents the ALT's address from being used to create a new table before any in-flight transactions that reference the old one have been processed.
+The lifecycle has four steps. **Create** allocates the ALT and stamps it with the current slot, which becomes part of how the table is identified. **Extend** appends pubkeys to the table. Because the 1,232-byte ceiling also applies to the extend instruction itself, adding pubkeys takes multiple transactions to fill a large table, roughly 30 pubkeys per call. **Freeze** is optional and makes the table immutable. **Close** marks the table for deactivation. The rent is not released immediately. A cooldown of about 500 slots, roughly 3 to 4 minutes, runs before the close completes. This prevents the ALT's address from being used to create a new table before any in-flight transactions that reference the old one have been processed.
 
 A newly created ALT cannot be used immediately. The runtime requires one slot to pass before transactions can reference it. This protects against last-second changes that would alter the meaning of in-flight transactions.
 
 A single transaction can reference up to four ALTs. Aggregators commonly pull from one ALT for token program IDs and common mints, one for the DEX they're routing through, and one for oracles or supporting accounts.
 
-Signed accounts cannot come from an ALT. Signers always live in the static account list, because the runtime has to verify signatures before any account resolution happens.
+Signer accounts cannot come from an ALT. Signers always live in the static account list, because the runtime has to verify signatures before any account resolution happens.
 
 ## What changes for you
 
