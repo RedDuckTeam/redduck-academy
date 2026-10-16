@@ -35,7 +35,7 @@ faq:
 
 ## The oracle problem
 
-The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement rules out anything that could return different values to different validators: HTTP requests, random number generators, file system reads, system clocks beyond the Clock sysvar. None of these are available inside a Solana program, and no compiler flag will give them to you.
+The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result; otherwise consensus breaks. That requirement rules out anything that could return different values to different validators: HTTP requests, random number generators, file system reads, system clocks beyond the Clock sysvar. None of these are available inside a Solana program, and no compiler flag will give them to you.
 
 This is a problem because most interesting financial applications depend on real-world data. A lending protocol needs to know what its collateral is worth, in dollars, right now, so it can liquidate undercollateralized loans. A stablecoin needs to know what the dollar is doing to maintain its peg. A derivatives platform needs to know the price of whatever asset its contracts settle against. An insurance program needs to know whether a flight was delayed, whether a hurricane hit, whether a parametric trigger condition was met.
 
@@ -183,7 +183,7 @@ The `load_price_feed_from_account_info` call deserializes the account, verifies 
 The result has four fields you care about:
 
 - `price`: the price as a signed integer (`i64`)
-- `conf`: the confidence interval, also `u64`, expressed in the same scale as the price
+- `conf`: the confidence interval as a `u64`, expressed in the same scale as the price
 - `expo`: the exponent, almost always negative, so the actual price is `price * 10^expo`
 - `publish_time`: when the price was last updated, as a unix timestamp
 
