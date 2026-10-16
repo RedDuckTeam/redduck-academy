@@ -92,7 +92,7 @@ The strength of this design shows up when you see how many different things fit 
 
 **Alice's wallet.** When someone "has a Solana address," what they actually have is an account owned by the System Program, the built-in program that handles SOL transfers. The data field is empty. The lamports field is Alice's SOL balance. The executable flag is false. That's a wallet.
 
-**Alice's USDC balance.** Token balances do not live inside the user's wallet. They live in their own separate accounts, owned by the Token Program. The data field contains 165 bytes: the mint that issued the token, the user who owns the balance, and the current amount. The lamports field holds just enough to cover the storage cost. The executable flag is false. Alice does not own this account in the runtime sense, the Token Program does. Alice is recorded inside the data as the authorized user, and the Token Program enforces that nobody else can move the balance.
+**Alice's USDC balance.** Token balances do not live inside the user's wallet. They live in their own separate accounts, owned by the Token Program. The data field contains 165 bytes: the mint that issued the token, the user who owns the balance, and the current amount. The lamports field holds just enough to cover the storage cost. The executable flag is false. Alice does not own this account in the runtime sense; the Token Program does. Alice is recorded inside the data as the authorized user, and the Token Program enforces that nobody else can move the balance.
 
 **A deployed program.** When you build and deploy a program to Solana, the deployment produces an account at a fresh address. The data field contains the compiled bytecode, often a few hundred kilobytes of it. The owner is a system-level program called the BPF Loader, which is the only thing allowed to modify program code. The executable flag is true. That flag is how the runtime knows to treat this account's data as code rather than as plain bytes.
 
@@ -165,7 +165,7 @@ Same five fields, three completely different roles.
 
 ## The owner field is the security model
 
-The single most important field on any account is the owner. Reads on Solana are public, anyone can fetch an account by address and see its contents. Writes go through one path. The runtime checks, before any program code runs, that any account marked writable in the transaction is owned by the program trying to modify it. If the check fails, the transaction is rejected before the program even starts.
+The single most important field on any account is the owner. Reads on Solana are public: anyone can fetch an account by address and see its contents. Writes go through one path. The runtime checks, before any program code runs, that any account marked writable in the transaction is owned by the program trying to modify it. If the check fails, the transaction is rejected before the program even starts.
 
 This is what keeps your token balance safe. The Token Program owns your USDC balance account. When you sign a transaction asking the Token Program to move 50 USDC from your balance to Bob's, the Token Program runs, checks that you authorized the move, and updates both balance accounts. If a different program tries to write to your balance account directly, the runtime stops it before the program runs.
 
