@@ -21,7 +21,7 @@ faq:
   - question: Who executes the real step?
     answer: >-
       Whoever brings the accounts, often a keeper or any user. The program checks the stored
-      result and the accounts, not the sender.
+      result and the accounts that were brought, and it does not care who sent the transaction.
   - question: How does Drift use it?
     answer: >-
       A position's profit and loss is written into the position as it changes. Moving it into
@@ -41,13 +41,13 @@ In an order book, a taker sends a transaction with their order, their token acco
 
 The naive solution is to store the maker's token account inside the order and make the taker's client find every order it will hit and pass those accounts along. This costs rent on every order and compute on every match, and it still breaks when an order matches more makers than fit into one transaction.
 
-The same thing happens in other protocols, for different reasons. On a perpetuals exchange, a trade can close with a profit, but the money for that profit comes from a pool of other traders' losses, and that pool may be empty at that moment. In ZK Compression, spending a compressed account means removing it from a Merkle tree that thousands of other accounts share, so every transaction that touches the tree would have to wait for every other one. In each case the transaction has everything it needs to decide the result, and not what it needs to carry it out.
+The same thing happens in other protocols, for different reasons. On a perpetuals exchange, a trade can close with a profit, but the money for that profit comes from a pool of other traders' losses, and that pool may be empty at that moment. In ZK Compression, spending a compressed account means removing it from a Merkle tree that thousands of other accounts share, so every transaction that touches the tree would have to wait for every other one. In each case the program can decide the result in this transaction, but the accounts or the money for carrying it out are missing.
 
 ## Record the result, deliver it later
 
 The program splits the action into two parts: deciding the result and carrying it out. The match transaction does the first part. It writes two things into the maker's order: the order is filled, and the maker is owed 40 tokens. The maker's order is inside the book account, and the book is in the transaction, so the program can write there, and no tokens move yet.
 
-The second part is a separate transaction. Whoever brings the maker's token account can send it: the maker, a keeper, anyone. The program reads the record from the order, sends the 40 tokens, and marks the record as paid. With **virtual execution**, the action is executed in the program's state first, and the real transfer is performed later, when the accounts for it arrive.
+The second part is a separate transaction. Whoever brings the maker's token account can send it: the maker, a keeper, or any other user. The program reads the record from the order, sends the 40 tokens, and marks the record as paid. With **virtual execution**, the action is executed in the program's state first, and the real transfer is performed later, when the accounts for it arrive.
 
 <svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two transactions, one trade</title><desc>Left: transaction 1, the match, sent by the taker, contains the taker's order, the book with the maker's order, and the taker's token account. The book now says the maker's order is filled and 40 is owed. The maker's token account is drawn outside the transaction, marked not in transaction 1. Right: transaction 2, the settlement, sent by anyone, contains the book, where the record changes from owed 40 to paid, and the maker's token account, which receives 40. An arrow from the record in transaction 1 to transaction 2 shows that the record carries the result.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -88,7 +88,7 @@ Monaco is an order book for betting markets, and its matching instruction never 
 
 ## Drift: the profit is in the position, the money comes on settlement
 
-Drift is a perpetuals exchange, and a trader's profit is written into their position long before it reaches their collateral, the balance they can withdraw. A trade or a liquidation changes the position and records the profit or loss in it. The money does not move in that transaction, because profits are paid out of a pool that collects settled losses, and that pool may not have enough at that moment. Moving the profit into the collateral is a separate instruction, settle PnL, and anyone can call it for any trader once the pool can pay. The position already records the result, and the settlement only transfers it.
+Drift is a perpetuals exchange, and a trader's profit is written into their position long before it reaches their collateral, the balance they can withdraw. A trade or a liquidation changes the position and records the profit or loss in it. The money does not move in that transaction, because profits are paid out of a pool that collects settled losses, and that pool may not have enough at that moment. Moving the profit into the collateral is a separate instruction, settle PnL, and anyone can call it for any trader once the pool can pay.
 
 ## ZK Compression: spent accounts wait in a queue
 
