@@ -41,3 +41,9 @@ The course is written to the point. You won't read through formal, padded langua
 
 1. [Divide and conquer](state-partitioning/divide-and-conquer.md)
 2. [Complexity asymmetry](state-partitioning/complexity-asymmetry.md)
+
+### 6. Deferred execution
+
+1. [Commit-execution split](deferred-execution/commit-execution-split.md)
+2. [Action as data](deferred-execution/action-as-data.md)
+3. [Virtual execution](deferred-execution/virtual-execution.md)
