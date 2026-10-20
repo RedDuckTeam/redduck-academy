@@ -1,4 +1,5 @@
 ---
+id: 1891819216
 title: Internal Oracle
 type: lecture
 order: 1
