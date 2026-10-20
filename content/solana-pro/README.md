@@ -20,3 +20,54 @@ The course is written to the point. You won't read through formal, padded langua
 
 1. [What this course is](welcome/what-this-course-is.md)
 2. [Constraints behind patterns](welcome/constraints-behind-patterns.md)
+
+### 2. Trust and identity
+
+1. [Root of trust](trust-and-identity/root-of-trust.md)
+2. [Identity rejection](trust-and-identity/identity-rejection.md)
+
+### 3. Permissionless execution
+
+1. [Untrusted executor](permissionless-execution/untrusted-executor.md)
+2. [Role inversion](permissionless-execution/role-inversion.md)
+
+### 4. Cost distribution
+
+1. [Lazy loading](cost-distribution/lazy-loading.md)
+2. [Pay-as-you-act](cost-distribution/pay-as-you-act.md)
+3. [Trust and execution - Test](cost-distribution/trust-and-execution-test.md) — test
+
+### 5. State partitioning
+
+1. [Divide and conquer](state-partitioning/divide-and-conquer.md)
+2. [Complexity asymmetry](state-partitioning/complexity-asymmetry.md)
+
+### 6. Deferred execution
+
+1. [Commit-execution split](deferred-execution/commit-execution-split.md)
+2. [Action as data](deferred-execution/action-as-data.md)
+3. [Virtual execution](deferred-execution/virtual-execution.md)
+
+### 7. Order and consent
+
+1. [One-way state](order-and-consent/one-way-state.md)
+2. [Boundary of consent](order-and-consent/boundary-of-consent.md)
+3. [State and time - Test](order-and-consent/state-and-time-test.md) — test
+
+### 8. Outside Data
+
+1. [Internal Oracle](outside-data/internal-oracle.md)
+2. [Defensive Computation](outside-data/defensive-computation.md)
+3. [Fail-Fast](outside-data/fail-fast.md)
+4. [Value the position at its worst](outside-data/value-the-position-at-its-worst.md) — review task
+
+### 9. Dependencies and exits
+
+1. [Execution Layer Shift](dependencies-and-exits/execution-layer-shift.md)
+2. [Dependency Independency](dependencies-and-exits/dependency-independency.md)
+3. [Outside World and Dependencies - Test](dependencies-and-exits/outside-world-and-dependencies.md) — test
+4. [Write the exit](dependencies-and-exits/write-the-exit.md) — review task
+
+### 10. Conclusion
+
+1. [Dependency Independency](conclusion/congratulations.md)

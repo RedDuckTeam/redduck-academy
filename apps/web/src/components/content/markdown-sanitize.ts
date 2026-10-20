@@ -1,3 +1,4 @@
+import type { Nodes, Root } from 'hast'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 
@@ -27,12 +28,14 @@ const SAFE_STYLE_RE = new RegExp(
 // `className` is absent because the compiled stylesheet ships `.fixed`, `.inset-0` and `.z-50`, so
 // a class list is simply a slower way to write the overlay that SAFE_STYLE_RE rejects. No lesson
 // has ever used `class` on an <svg>.
+// Names are hast property names, not attribute names: `stroke-dasharray` is `strokeDashArray`, and a
+// name that doesn't match is silently stripped.
 const SVG_ATTRS = [
   ['style', SAFE_STYLE_RE],
   'role', 'ariaLabel', 'ariaHidden', 'id',
   'viewBox', 'xmlns', 'preserveAspectRatio', 'width', 'height',
-  'fill', 'fillOpacity', 'fillRule', 'stroke', 'strokeWidth', 'strokeLinecap',
-  'strokeLinejoin', 'strokeDasharray', 'strokeDashoffset', 'strokeOpacity', 'opacity',
+  'fill', 'fillOpacity', 'fillRule', 'stroke', 'strokeWidth', 'strokeLineCap',
+  'strokeLineJoin', 'strokeDashArray', 'strokeDashOffset', 'strokeOpacity', 'opacity',
   'd', 'points', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
   'dx', 'dy', 'transform', 'offset', 'textAnchor', 'dominantBaseline',
   'fontFamily', 'fontSize', 'fontStyle', 'fontWeight', 'letterSpacing',
@@ -61,5 +64,24 @@ const schema = {
   },
 }
 
+// rehype-sanitize prefixes every `id` (DOM-clobbering protection) but leaves the `url(#id)`
+// references that point at them, so every marker arrowhead and gradient resolved to nothing.
+// Re-point those references at the prefixed ids instead of dropping the prefix.
+const CLOBBER_PREFIX = schema.clobberPrefix ?? 'user-content-'
+const URL_REF_RE = /^url\(#(.+)\)$/
+
+function rehypePrefixUrlRefs() {
+  const visit = (node: Nodes) => {
+    if (node.type === 'element') {
+      for (const [key, value] of Object.entries(node.properties)) {
+        const ref = typeof value === 'string' ? URL_REF_RE.exec(value)?.[1] : undefined
+        if (ref && !ref.startsWith(CLOBBER_PREFIX)) node.properties[key] = `url(#${CLOBBER_PREFIX}${ref})`
+      }
+    }
+    if ('children' in node) node.children.forEach(visit)
+  }
+  return (tree: Root) => visit(tree)
+}
+
 /** rehype pipeline for MarkdownContent: parse raw HTML (our <svg> diagrams), then sanitize. */
-export const markdownRehypePlugins = [rehypeRaw, [rehypeSanitize, schema]] as never
+export const markdownRehypePlugins = [rehypeRaw, [rehypeSanitize, schema], rehypePrefixUrlRefs] as never
