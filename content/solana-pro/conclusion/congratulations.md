@@ -12,12 +12,14 @@ Real protocols use several patterns in one feature. Helium, for example:
 * The device's account stores how much was already paid, and the payout is the difference to the signed total, which is *lazy loading*. 
 * The paid amount only goes up. A repeated payout sends zero, and a total smaller than what was already paid is rejected, which is *one-way state*. 
 
-The developers of such protocols are usually smart people, all of these patterns were integrated in one rewards feature not because they just wanted to, but because each pattern is the answer for a particular constraint.
+The developers of such protocols are usually pretty smart, and all of these patterns were integrated in one feature not because they just wanted to do it, but because each pattern was the answer to a particular constraint.
 
 ## What to do with it
 
-Try to pick a protocol you use and read its program end to end. It doesn't matter if it will be Drift (Velocity), Kamino, Squads or Helium, they all are good places to start, and every one of them appeared in this course. Give yourself a moment to find the patterns we discussed.
+Try to pick a protocol you use and read its program end to end. It doesn't matter if it will be Drift (Velocity), Kamino, Squads or Helium, they all are good places to start, and every one of them appeared in this course. Give yourself a moment to find the patterns we discussed. If you've found more patterns - feel free to submit a PR to this academy and describe the pattern you've found.
 
-But don’t be a very overcomplicated engineer (and watch after your LLM): write the constraints you have first and only after this try to apply patterns. Each pattern you bring to the protocol only because “oh I just learned one interesting thing” will only add complexity to your protocol and give your more chances to make a mistake.
+But don’t be an overengineering engineer: write the constraints you have first and only after this try to apply the patterns. Each pattern you bring to the protocol simply because you learned it would only add complexity to your protocol and make the likelyhood of making a mistake higher.
 
-Good work getting here.
+***As a team that spent multiple months researching and describing the patterns that you've learned throughout this module, we'd like to thank you for your dedication in getting to this point.***
+
+***Good luck!***
