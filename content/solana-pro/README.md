@@ -65,8 +65,8 @@ The course is written to the point. You won't read through formal, padded langua
 
 1. [Execution Layer Shift](dependencies-and-exits/execution-layer-shift.md)
 2. [Dependency Independency](dependencies-and-exits/dependency-independency.md)
-3. [Outside World and Dependencies - Test](dependencies-and-exits/outside-world-and-dependencies.md) — test
-4. [Write the exit](dependencies-and-exits/write-the-exit.md) — review task
+3. [Write the exit](dependencies-and-exits/write-the-exit.md) — review task
+4. [Outside World and Dependencies - Test](dependencies-and-exits/outside-world-and-dependencies.md) — test
 
 ### 10. Conclusion
 

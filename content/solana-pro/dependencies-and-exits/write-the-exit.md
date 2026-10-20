@@ -2,7 +2,7 @@
 id: 299
 title: Write the exit
 type: review_task
-order: 4
+order: 3
 ---
 
 Every protocol stands on things it does not control. This task gives you a round-based game with three of them: an ephemeral rollup that runs the rounds, an external DEX for paying with another token, and an upgrade key held in a third-party multisig with no timelock. All three work on day one, and none of them has a way out.
