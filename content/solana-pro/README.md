@@ -59,12 +59,14 @@ The course is written to the point. You won't read through formal, padded langua
 1. [Internal Oracle](outside-data/internal-oracle.md)
 2. [Defensive Computation](outside-data/defensive-computation.md)
 3. [Fail-Fast](outside-data/fail-fast.md)
+4. [Value the position at its worst](outside-data/value-the-position-at-its-worst.md) — review task
 
 ### 9. Dependencies and exits
 
 1. [Execution Layer Shift](dependencies-and-exits/execution-layer-shift.md)
 2. [Dependency Independency](dependencies-and-exits/dependency-independency.md)
 3. [Outside World and Dependencies - Test](dependencies-and-exits/outside-world-and-dependencies.md) — test
+4. [Write the exit](dependencies-and-exits/write-the-exit.md) — review task
 
 ### 10. Conclusion
 
