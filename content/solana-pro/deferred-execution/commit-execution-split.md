@@ -2,58 +2,13 @@
 title: Commit-execution split
 type: lecture
 order: 10
-faq:
-  - question: What is the commit-execution split?
-    answer: >-
-      The action is split into two transactions. In the first, the user commits: they place the
-      bet, the order or the request, and lock what it needs. In the second, the action is
-      executed, when the missing piece exists, such as the random number or the maker's price.
-      The user does not decide whether the second transaction happens.
-  - question: Why can't a program decide a random outcome in the same transaction as the bet?
-    answer: >-
-      Because the user can simulate the transaction first and send it only when it wins.
-      Anything the program can read inside the transaction, the simulation can read too. The
-      outcome has to depend on something that does not exist yet when the user signs.
-  - question: Who sends the execute transaction?
-    answer: >-
-      Anyone except the person whose outcome it decides. An oracle, a maker, a keeper or any
-      user. If the committer could decide whether execution happens, they would execute only the
-      outcomes they like.
-  - question: What happens to a commit that nobody executes?
-    answer: >-
-      It needs an exit that does not leak the outcome. A commit can expire after a deadline, and
-      the stake returns to the user. It must not be cancellable once the outcome is known.
-  - question: How does a Drift market order use the split?
-    answer: >-
-      The order is the commit. It sits in the trader's account with an auction that lasts a few
-      seconds. Makers fill it during the auction in their own transactions, and what is left goes
-      to the order book and the AMM at the end. The trader does not pick the fill.
-  - question: How does Switchboard's randomness fit the pattern?
-    answer: >-
-      In the first transaction the program commits, and Switchboard stores the previous slot's
-      hash as the seed. Later the oracle reveals the signed random value, and the program
-      settles in the same transaction as the reveal. Nobody knows the value at commit time.
 ---
 
-> Some actions cannot be executed in the moment they are committed. A bet needs a random number that nobody knows yet, and a market order needs a price that nobody has quoted yet. On Solana a transaction either does everything now or nothing, and the sender sees the result before sending it. An outcome that the sender must not choose cannot be decided in the sender's transaction.
+Some actions that users **commit** cannot be **executed** in the same instant, whether for security or architectural reasons. For those cases, the best practical approach is to split the actions into commit and execute phases.
 
-## The transaction that only wins
+The best example is your typical program with a random outcome. You can't implement a secure program that lets a user get the random outcome in the same transaction as they're submitting. Because if you did, the user could simply simulate transactions many times and only send them those few times when they actually succeed to produce the winning outcome for them.
 
-Suppose we write the simplest coin flip. The user sends one transaction with the bet, the program reads something that looks random, say the hash of the current slot, and pays the win in the same instruction.
-
-The problem is that the user does not have to send this transaction blindly. Anyone can simulate a transaction before sending it. The simulation is free, and it shows exactly what the transaction would do. So the user simulates the bet. If the simulation shows a loss, they do not send it. A slot later they simulate again, and they send the transaction only when it shows a win.
-
-The program did nothing wrong: the randomness is real, and the check is correct. The user still wins every time, because the user decides which transactions happen and the same user can see what will happen after their transaction before they send it.
-
-## Commit now, execute later
-
-The fix is the **commit-execution split**: the action becomes two transactions.
-
-In the first transaction the user commits. They place the bet, the stake is locked, and the program records that a round is open. At this moment nobody knows the outcome, neither the user nor the program, because the thing that decides it does not exist yet.
-
-In the second transaction the action is executed. The random number arrives, or the price is set, and the program settles the round against the commitment that is already locked. The user cannot back out, because the stake is already in.
-
-Two things have to be true for this to work. First, the outcome must not exist at commit time. If it did, the user would simulate the commit transaction instead. Second, the user must not be the one who decides whether the second transaction happens. If they were, they would execute only the rounds they win. So the second transaction is sent by someone else: an oracle, a maker, or any user who is paid for it. If the user has to send it themselves, they can cheat by never sending a losing one.
+In fact, because of it, you also can't let them have the authority of being the sender of that "execute" part of the transaction at all. So naturally, you want to split it into "commit" and "execute" types of transactions, because you can't let them have the "execute" part.
 
 <svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>One transaction, or a commit and an execution</title><desc>Top row: in one transaction the user's bet and its result sit in the same box, with a loop arrow labeled simulate until it wins, so the user picks the result. Bottom: two swimlanes over a time axis. In the user lane, transaction 1 commits the bet and locks the stake. The seed, a slot hash, is fixed and handed to the oracle lane, where the random value is computed, and transaction 2 reveals it and settles the bet. The user cannot start a new round until this one is settled.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -93,32 +48,8 @@ Two things have to be true for this to work. First, the outcome must not exist a
   <text x="360" y="398" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The user sends only the commit. The result arrives in a transaction the user does not choose.</text>
 </svg>
 
-## Switchboard: the seed is fixed before the number exists
+## Examples
 
-A coin flip on Switchboard's randomness does this in two transactions.
+**Switchboard VRF (coin flip).** In the first transaction players pick a side, pay, and the program creates a request for a random number. Nobody knows the number yet, not the player, not the operator. In Switchboard's current randomness the request commits to the hash of a recent slot as the seed, and the oracle derives the value from that seed inside its secure hardware, so neither the player nor the oracle can choose the number. In the second transaction the oracle (not the player!) writes the number into that request, and the program settles the bet whose resolution is already locked. The player cannot simulate this transaction into a win, because nothing the player controls decides the value, and cannot start a new round until this one is settled, so there is no way to abandon a losing bet.
 
-In the first transaction the player picks a side and pays, and the program asks Switchboard to commit. Switchboard writes the hash of the previous slot into a randomness account. This hash is the seed. The random value will be computed from this seed and the oracle's key, inside the oracle's secure hardware. This means the oracle cannot change the value, and the player cannot compute it.
-
-In the second transaction the oracle's signed value is revealed, and the program settles the bet right there. The player cannot simulate this transaction into a win, because nothing the player controls decides the value.
-
-The program also keeps the round open until the reveal settles it. Otherwise the player could leave a losing round behind and start a new one.
-
-## Drift: the order is the commit, the fill is the execution
-
-Drift is a perpetuals exchange, and a market order on Drift is not filled in the transaction that places it.
-
-Instead, the order is written into the trader's account together with an auction: a start price, an end price, and a duration of a few seconds. During the auction, makers send their own transactions and fill the order at a price inside that range. Whatever is left at the end of the auction goes to the order book and then to the AMM.
-
-The trader committed to the order and to the price range. The fills are executed by other people. There is nothing for the trader to simulate, because the fill price does not exist when they sign.
-
-## What the split costs
-
-Between the commit and the execution, the protocol has to remember that something is open: a round, an order, a request. That means an account for each of them, and someone pays rent for it.
-
-Someone also has to send the second transaction. The design has to say who that is and why they will do it.
-
-And every open commit needs an exit for the case when nobody executes it. Usually this is a deadline after which the stake returns to the user. The exit must not leak the outcome. If a player could cancel after the reveal, they would cancel every loss. So a cancel is allowed only while the outcome does not exist yet, or after a timeout when the oracle did not answer at all.
-
-## Assume the user looks first
-
-The user always looks at the result before sending a transaction. So every action gets the same question: would the user still send it after seeing the result? For a transfer or a deposit the answer is yes, because the result is the same either way. For a bet or a fill the answer is no, because the user would send only the good results. Those actions are committed first and decided later, in a transaction the user does not choose.
+**Drift.** Drift is a perpetuals exchange, and a market order on it is not filled in the transaction that places it. Before the pool fills the order, makers get a short window to bid for it: the order is written into the trader's account with an auction, a start price, an end price and a duration of a few seconds. During the auction, makers fill the order in their own transactions at a price inside that range, and whatever is left at the end goes to the order book and then to the AMM. The trader committed to the order and to the range, and the fills are executed by other people. There is nothing for the trader to simulate, because the fill price does not exist when they sign.

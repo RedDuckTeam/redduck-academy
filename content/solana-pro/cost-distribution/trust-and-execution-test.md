@@ -85,12 +85,12 @@ A staking pool's reward per staked token is 0.08. A staker with 200 tokens last 
 - [ ] 10 tokens are paid, and the staker's marker stays 0.05
 
 <!-- q -->
-A staker deposits more tokens into a lazy loading pool. In what order should the program act?
+In Fragmetric, when is a holder's reward balance updated?
 
-- [x] Settle the rewards owed on the old stake, move the marker, then add the deposit
-- [ ] Add the deposit, then settle rewards on the new stake
-- [ ] Add the deposit and move the marker without settling
-- [ ] Wait for the next reward to arrive, then settle
+- [x] In the transfer hook, at the moment the token is transferred, because the program already runs on that account
+- [ ] Every hour, by a bot that walks through all holders
+- [ ] When the protocol's admin triggers a distribution
+- [ ] Never, the balance is computed off-chain
 
 <!-- q -->
 Which of these can rely on lazy loading alone, with no paid executor? (Select all that apply.)
@@ -109,12 +109,12 @@ In Squads, the members of a multisig change. How many proposal accounts does the
 - [ ] One per remaining member
 
 <!-- q -->
-Which answers can one action move by a single step both when an input is added and when it is removed? (Select all that apply.)
+Pay-as-you-act stores the answer instead of the inputs. Which of these can be that answer? (Select all that apply.)
 
-- [x] A total
 - [x] A count
-- [x] An average stored as a sum and a count
-- [ ] A maximum
+- [x] A total
+- [x] A maximum or a leader
+- [ ] The full list of votes, to be counted at the end
 
 <!-- q -->
 In Hxro's parimutuel market, what does a winner's payout depend on?

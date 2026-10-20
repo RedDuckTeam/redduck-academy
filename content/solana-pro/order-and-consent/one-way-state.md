@@ -2,55 +2,13 @@
 title: One-way state
 type: lecture
 order: 10
-faq:
-  - question: What is one-way state?
-    answer: >-
-      State that only moves forward: a counter that never goes down, rights that only narrow.
-      The program accepts a message by comparing it with the current state, never with other
-      messages, so two transactions land on the same final state in either order, and a
-      duplicate changes nothing.
-  - question: Why can't my program rely on the order of transactions?
-    answer: >-
-      Solana has no sender nonce. Two transactions sent at the same time can land in either
-      order, and one of them can be resent. A program that assumes an order breaks the first
-      time the order flips.
-  - question: Why not store the last message id in an account?
-    answer: >-
-      It costs an account and its rent, and it only gives uniqueness. It does not make the result
-      the same in both orders. Two steps with ids are still two steps: applied in the wrong order
-      they give a wrong intermediate state, and a lost one is lost.
-  - question: What should the oracle sign, a step or a total?
-    answer: >-
-      The total, not the step. A total applied twice is just the total. A step applied twice is double. Bring
-      an old total and the program pays nothing, because the paid amount is already above it.
-  - question: How does Squads use it?
-    answer: >-
-      When signers change, one index moves forward, and every older proposal can be cancelled but
-      not approved or executed. Rights only narrow, so a late approval of an old proposal is
-      rejected by the state, not by timing.
-  - question: How do I check my design?
-    answer: >-
-      Take any two transactions, swap their order, and compare the final state. If it is the
-      same, the state is one-way.
 ---
 
-> Sometimes one transaction has to happen before another, or the state becomes wrong. On Solana there is no sender nonce, so two transactions sent at the same time can land in either order, and either of them can land twice. Restoring the order on Solana is an antipattern.
+Sometimes the program logic requires one transaction to happen strictly before another, otherwise the state becomes invalid. On Solana there is no sender nonce, so two transactions can land in either order if sent simultaneously.
 
-## Two transactions, either order
+EVM contracts rely on transaction nonces to enforce sequential order, and track message ids natively. Trying to replicate this on Solana would be an antipattern. You would allocate a separate account to store the number and pay rent for it, and it still wouldn't be bullet-proof: used ids and nonces give uniqueness, but they do not guarantee commutativity (A + B = B + A).
 
-Suppose an oracle pays a device its daily reward: 5 tokens today, 7 tokens tomorrow. Each reward is a signed message, and the program adds the amount to what the device may claim.
-
-Now suppose two messages are in flight at once. If one of them is resent, the device is paid twice, and if one is lost, it is lost. When the second lands before the first, the state is wrong until the first arrives. The program cannot tell a late message from a duplicate, because a message says what to add, not where the result should end up.
-
-EVM contracts solve this with the transaction nonce and with message ids. Every message has a number, and the contract accepts the next number only. We could copy this to Solana: an extra account for the number, and rent for it. But it is still not enough. A number proves that a message is new. It does not make A then B equal B then A.
-
-## The message carries the destination
-
-The one-way design flips the problem. Instead of restoring the order, we shape the state so that the order stops mattering.
-
-The message carries the destination, not the step. The oracle signs the total a device has earned so far, not today's reward. A total applied twice is just the total, and a total that arrives late is below the current state and does nothing. A step cannot do this, even one that only moves forward, because +5 applied twice is not +5 applied once.
-
-With **one-way state**, the program accepts only moves in one direction. A counter can go up, never down. A set of rights can shrink, never grow. The program never compares two messages with each other. It compares the message with the current state and checks only whether this has already been taken into account. When you are moving in one direction, you cannot find yourself at 80 after you have passed 100.
+The **One-Way State** pattern flips the design: instead of attempting to restore message delivery order, you design in a way that order stops mattering at all. The message carries the destination, not the step: the total earned so far, not today's reward. Deltas break this even when they only move forward: +5 applied twice is not +5 applied once. A total applied twice is just the total.
 
 <svg role="img" viewBox="0 0 720 382" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The same message arrives twice</title><desc>Two boxes. On the left, the message is a step: paid starts at 0, a plus five message makes it 5, and the same message arriving again makes it 10, which is wrong. On the right, the message is a destination: paid starts at 0, a total of 5 makes it 5, and the same total arriving again leaves it at 5.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -86,22 +44,14 @@ With **one-way state**, the program accepts only moves in one direction. A count
   <text x="360" y="360" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A total applied twice is the total. A step applied twice is double.</text>
 </svg>
 
-## Helium: the oracle signs the total, not the reward
+The program only accepts actions that move state progress forward or restrict capabilities, strictly rejecting attempts to roll back the value or broaden access. When the state can only move in one direction (never down, never wider), a delayed, re-submitted transaction is no longer a security risk. The program never compares two messages with each other, it only checks the message against the current state. You don't have to ask the question "which one came later" when you can ask the question "has this already been taken into account". When you're moving in one direction, you can't suddenly find yourself at point 80 if you've already passed point 100.
 
-Helium pays rewards to about a million devices, and its oracle does not sign daily rewards. It signs the total a device has earned since the beginning.
+## Examples
 
-The device's account stores how much was already paid. A claim pays the difference and moves the paid amount up to the signed total. Send the same claim twice, and the second pays zero, because the paid amount already equals the total. Bring an older signature with a smaller total, and it pays nothing, because the paid amount is already above it. The counter never goes down, so nobody can take back what was paid, and no claim can land in a wrong order.
+**Helium rewards.** Helium pays rewards to about a million devices, and its oracle signs the total a device has earned since the beginning, not the daily reward. The device's account stores how much was already paid. A claim pays the difference and moves the paid amount up to the signed total. Send it twice, and the second claim pays zero, because the paid amount already equals the total. Bring an older signature with a smaller total, and it pays nothing, because the paid amount is already above it. The counter never goes down, so nobody can take back what was paid, and no claim can land in a wrong order.
 
-## Squads: rights only narrow
+**Squads** does the same with rights. When its signers or its threshold change, it moves one index, the stale transaction index, up to the latest proposal, and every proposal with a number at or below that index is stale: it can be cancelled, but it cannot be approved or executed, in whatever order the transactions arrive. An approval that was in flight when the signers changed lands after the index moved, and the state rejects it. No timestamp is compared.
 
-Squads is a multisig. When its signers or its threshold change, every proposal approved by the old signers has to become invalid.
+**Drift's** markets with an expiry turn reduce-only before they expire: you can close a position but not open or grow one. The set of allowed actions only narrows as the market approaches settlement, so a late order to open does not depend on whether it was signed before or after the switch. It is rejected because the state says the market is reduce-only.
 
-Squads does not look at when the proposals were created or approved relative to the change. It moves one index, the stale transaction index, up to the latest proposal. Every proposal with a number at or below that index is stale. A stale proposal can be cancelled, but it cannot be approved or executed, in whatever order the transactions arrive. An approval that was in flight when the signers changed lands after the index moved, and the state rejects it. No timestamp is compared.
-
-## Drift: close, but do not open
-
-Drift's markets with an expiry go into reduce-only mode before they expire. A trader can close a position but cannot open a new one or grow an existing one. The set of allowed actions only narrows as the market approaches settlement. So a late order to open does not depend on whether it was signed before or after the switch. It is rejected because the state says the market is reduce-only.
-
-## Swap any two transactions
-
-One-way state survives one test: take any two transactions, swap their order, and the final state is the same. A duplicate is a transaction swapped with itself, and it changes nothing. The program never asks which message came first. It only asks whether the state has already passed this point.
+The One-Way State survives a simple test: any two transactions, swapped, land on the same final state.
