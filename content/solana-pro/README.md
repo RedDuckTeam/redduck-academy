@@ -47,3 +47,25 @@ The course is written to the point. You won't read through formal, padded langua
 1. [Commit-execution split](deferred-execution/commit-execution-split.md)
 2. [Action as data](deferred-execution/action-as-data.md)
 3. [Virtual execution](deferred-execution/virtual-execution.md)
+
+### 7. Order and consent
+
+1. [One-way state](order-and-consent/one-way-state.md)
+2. [Boundary of consent](order-and-consent/boundary-of-consent.md)
+3. [State and time - Test](order-and-consent/state-and-time-test.md) — test
+
+### 8. Permissionless execution
+
+1. [Internal Oracle](outside-data/internal-oracle.md)
+2. [Defensive Computation](outside-data/defensive-computation.md)
+3. [Fail-Fast](outside-data/fail-fast.md)
+
+### 9. Dependencies and exits
+
+1. [Execution Layer Shift](dependencies-and-exits/execution-layer-shift.md)
+2. [Dependency Independency](dependencies-and-exits/dependency-independency.md)
+3. [Outside World and Dependencies - Test](dependencies-and-exits/outside-world-and-dependencies.md) — test
+
+### 10. Conclusion
+
+1. [Dependency Independency](conclusion/congratulations.md)
