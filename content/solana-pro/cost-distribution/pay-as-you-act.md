@@ -5,55 +5,52 @@ order: 20
 faq:
   - question: What is pay-as-you-act?
     answer: >-
-      The protocol's shared work is split into small parts, each done inside the action that
-      causes it, so each user pays for their own part when they act. The program stores the
-      answer rather than the inputs, and every action moves the answer one step. By the end the
-      answer is already there, and nobody has to pay to read all the inputs.
+      The final step is split into pieces, and each action does its piece at the moment it
+      happens. The program stores the answer instead of the inputs, and every action moves the
+      answer one step. Everyone pays for their own piece of the work, and nobody pays for the
+      whole protocol at once.
   - question: How do I find the winner of an on-chain vote without iterating over the votes?
     answer: >-
-      Update the answer on every vote. When a vote comes in, add it to that candidate's count
-      and compare the count with the leader's. If it is higher, the candidate becomes the
-      leader. The closing transaction reads one field, and each voter paid for one addition and
-      one comparison inside the transaction they sent anyway.
+      Update the answer on every vote. When a vote comes in, increase that candidate's count and
+      compare it with the leader's. If it is higher, the candidate becomes the leader. Each
+      voter paid for one addition and one comparison, and the closing transaction reads one
+      field.
   - question: Which answers can be updated one step at a time?
     answer: >-
-      A count, a total, an average stored as a sum and a count, a maximum, a leader, a share of
-      a pool. The rule is that one action can update the answer without reading the other
-      inputs. A total can be updated by one deposit. A median cannot.
+      Any answer that one action can update without reading the other inputs: a count, a total,
+      a maximum, a leader, an average stored as a sum and a count, a share of a pool. A total
+      can be updated by one deposit, and a median cannot.
   - question: How does a parimutuel market pay winners without a loop?
     answer: >-
-      Each bet adds its amount to its side's total while betting is open. When the oracle
-      names the winning side, a winner's payout is their bet divided by the winning side's
-      total, times the pool. The bettors paid for the totals as they bet, and each payout is
-      computed from them when that winner is paid.
+      Each bet adds its amount to its side's total while betting is open. When the oracle names
+      the winning side, a winner's share is their bet divided by the winning total. The bettors
+      paid for the totals when they bet, and each winner pays for their own payout when they
+      claim.
   - question: When does pay-as-you-act break?
     answer: >-
-      When an action has to be undone and the answer can't step back. A total goes down as
-      easily as it goes up. A maximum or a leader does not, because finding the new leader
-      after the old one loses votes means reading the other inputs. Then either the action has
-      to be final, or the answer needs a structure that supports removal.
-  - question: My staking pool already uses lazy loading. Where does pay-as-you-act come in?
+      When an action has to be undone and the answer cannot be corrected in one step. A total goes down as
+      easily as it goes up. A maximum or a leader does not, because finding the new leader after
+      the old one loses votes means reading the other counts. Then either the action is final,
+      or the answer needs a structure that supports removal.
+  - question: Who sends the closing transaction?
     answer: >-
-      When the rewards arrive. The transaction that brings them updates the reward per staked
-      token, and whoever brings them pays for that write. Each staker then computes their share
-      from the difference when they claim, and pays for that. Nobody pays for everyone.
+      Anyone who wants the result. The leader is already in the state, so closing the vote reads
+      one field and costs almost nothing.
 ---
 
-> Every protocol has work that is useful for everyone but that no single user has a reason to do. Count the votes, pay out the pool, keep a total up to date. Nobody sends the transaction that does it for everyone, and often that transaction would not even fit. On Solana this work cannot be left for the end.
+> Many protocols have a step that is done at the end, for everyone at once: the votes are counted, the pool is paid out, the average is updated. Every such step is a loop over everyone's data, and on Solana nobody sends that transaction. What if there was no final step at all?
 
 ## The transaction nobody sends
 
-Take an election. The simplest design stores the votes, each as an account or a slot in an array with the voter and their choice. When the voting period ends, someone goes through all the votes, counts them, and finds the winner.
+In an election, the bad design stores the votes, one account or one slot per vote. When the voting period closes, someone walks through all of the votes to find the winner. That is the loop from the previous lecture: the sender pays for every vote, a common effort shifted onto a single person. With thousands of votes the loop also runs out of compute, because every transaction has a compute limit, and so does the block. A paid executor does not help here, because no amount of money raises that limit.
 
-If each vote is an account, counting 10,000 votes takes hundreds of transactions, because one transaction holds only about 40 accounts. If all votes sit in one account, the count is one transaction that reads every slot, but a loop over data that anyone can add to grows until it no longer fits in the compute budget. And even if it fits, who sends this transaction? The voters already voted, and whoever closes the vote gains nothing from paying for everyone's count. You could pay someone to send it, but a reward does not help when the transaction does not fit in the limits.
+## The final step is spread over the actions
 
-## Give every action a part of the final step
+The good design spreads the final step over the actions that happen anyway. When a vote comes in, the program immediately adds one to that candidate's count and compares the count with the leader's count. If the count is higher, this candidate becomes the new leader. Each voter runs one addition and one comparison inside their own transaction, and by the end of the voting period the count is already done. The leader is recorded in the state, and the closing transaction reads one field.
 
-The better design does not store the votes to count later. It counts them as they arrive. When a vote comes in, the program adds one to that candidate's count and compares it with the leader's. If the new count is higher, the candidate becomes the leader. Each voter pays for one addition and one comparison inside the transaction they sent anyway. When the period ends, the winner is already in the state, and the closing transaction reads one field.
+This is **pay-as-you-act**. The program stores the answer instead of the inputs, and every action updates the answer. Most steps that a protocol would do at the end can be spread this way: finding the winner, computing a payout, keeping an average. The answer has to be something that one action can update without reading the other inputs, such as a count, a total, a maximum, a leader, or an average stored as a sum and a count.
 
-This is **pay-as-you-act**. The key is to store the answer rather than the inputs, and to let every action update it. For that to work, the answer has to be something one action can update in one step without reading the other inputs. Examples are a count, a total, a maximum, an average stored as a sum and a count, or a leader. Each of these can be updated by the action that just arrived, without looking at the ones that came before.
-
-<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Counting at the end versus counting as you go</title><desc>Two boxes side by side. On the left, votes one to ten thousand are stored as separate accounts, and a closing count has to read all of them, which takes hundreds of transactions, paid by one person for everyone. On the right, each vote arrives, adds one to the candidate's count, compares it with the leader and replaces the leader if higher. The leader field is always current, and the closing transaction reads one field. Each voter pays for one addition and one comparison.</desc>
+<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Counting at the end versus counting as you go</title><desc>Two boxes side by side. On the left, votes one to ten thousand are stored as separate accounts, and a closing count has to read all of them, paid by one person for everyone. On the right, each vote arrives, adds one to the candidate's count, compares it with the leader and replaces the leader if higher. The leader field is always current, and the closing transaction reads one field. Each voter pays for one addition and one comparison.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
   <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Who pays for the count</text>
 
@@ -74,7 +71,7 @@ This is **pay-as-you-act**. The key is to store the answer rather than the input
   <polygon points="194,181 194,193 204,187" fill="#000000"/>
   <rect x="200" y="160" width="120" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
   <text x="260" y="181" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">closing count</text>
-  <text x="260" y="196" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">hundreds of txs</text>
+  <text x="260" y="196" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">reads every vote</text>
   <text x="190" y="284" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">10,000 accounts to read</text>
   <text x="190" y="304" text-anchor="middle" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">paid by one person, for everyone</text>
 
@@ -104,23 +101,33 @@ This is **pay-as-you-act**. The key is to store the answer rather than the input
 
 ## Hxro: each bet updates the total
 
-Hxro runs parimutuel markets, pool betting on whether a price goes up or down over an interval. There are no odds set in advance. All bets on each side go into that side's pool, and when the outcome is known, the losing pool is split between the winners in proportion to their bets.
+Hxro runs parimutuel markets. Everyone bets on whether a price goes up or down over an interval, and when the interval ends, the losing side's money is split between the winners in proportion to their bets. The step at the end would be to add up every bet on both sides and then pay every winner. Hxro does neither, because each bet adds its amount to its side's total at the moment it is placed, so when the round ends, both totals are already there. The oracle names the winning side, and each winner claims on their own:
 
-While betting is open, each bet adds its amount to its side's total. There are only two numbers, the up total and the down total, and every bettor updated one of them as part of their own bet. When the interval ends, an oracle names the winning side. With 600 on the up side, 400 on the down side and up winning, a bettor who put 60 on up gets 60 / 600 of the whole pool of 1,000, which is 100 before fees. That is two reads and one multiplication per winner, done when that winner is paid. Nobody adds up the bets at the end, because each bet was added to its total when it was placed. These numbers are only an example.
+```
+// the winner's share of the whole pool before fees, from the two totals that the bets already built
+payout = bet / winning_total * (winning_total + losing_total)
+```
 
-## Orca: the swap pays for the fee accounting
+The bettors paid for the totals when they bet, and each winner pays for their own payout when they claim.
 
-Orca Whirlpools is a concentrated liquidity DEX that takes a fee on every swap. The fee belongs to the liquidity providers whose positions were active at the swap price, and a pool can have thousands of positions. Paying each of them on every swap would be the same loop as in the election, but inside every swap.
+## Orca: the swap updates the fee total
 
-So each swap does its own part of the work instead. The pool stores a fee growth number per token, the total fee earned per unit of liquidity since the pool opened, and every swap adds its fee divided by the active liquidity to that number inside the swap transaction. Each position stores the fee growth it saw last. When a liquidity provider touches their position, the program multiplies the difference by the position's liquidity and credits the fees. That second half is lazy loading, and the two patterns usually go together. Pay-as-you-act updates the shared answer when an action happens, and lazy loading computes one account's result from that answer when the account is touched. The same swap also updates the pool's price and active liquidity, so the pool account is always current and nobody has to maintain it separately.
+Orca Whirlpools is a DEX. Every swap pays a fee, and that fee belongs to the liquidity providers whose liquidity the swap used. A pool has thousands of such positions, and none of them is in the swap transaction. The step at the end would be to go through every position and hand out its part of the fees.
 
-## When one step is not enough
+Instead, the pool stores one number per token: how much fee one unit of liquidity has earned since the pool opened. When a swap happens, the program takes the swap's fee, divides it by the liquidity that was active in that swap, and adds the result to this number. This happens inside the swap transaction, so the swapper pays for it. Each position keeps its own copy of this number from the last time it collected fees. When the owner collects, the program pays the difference:
 
-Not every answer can be updated in one step in both directions. A total goes down as easily as it goes up, and so does a count or an average stored as a sum and a count. A maximum does not. If the leading candidate loses a vote, the new leader is whoever was second, and the program cannot know who that was without reading all the other counts. The same is true for any answer that is the best of its inputs.
+```
+// what one unit of liquidity earned since this position last collected, times its liquidity
+owed = (pool.fee_per_liquidity - position.last_fee_per_liquidity) * position.liquidity
+```
 
-So if the answer is a maximum or a leader, one of three things has to be true. Either the action is final, so a vote can't be withdrawn and the maximum only grows. Or the answer is stored in more than one field, for example as a sorted list where the client finds the position and the program only checks the neighbors. Or the reverse action is allowed, but its effect on the answer waits until someone is willing to pay to read all the inputs. This is decided before the first vote arrives, because the structure of the answer is part of the account layout.
+The swap pays for the shared number, and each owner pays for their own share.
 
-Ties need the same care. When two candidates have the same count, the rule has to be in the program already, whether the first candidate to reach that count wins or the latest one. The program decides, not the order in which the two transactions were processed.
+## When an action cannot be undone
+
+Undoing an action is not always as easy as doing it. A total can go down as easily as it goes up: a withdrawal subtracts what a deposit added. The same is true for a count and for an average stored as a sum and a count. A maximum cannot go down like that. In the election, the leader is a maximum. If a voter takes their vote back from the leading candidate, the leader may change, and the new leader is whoever had the second highest count. The program does not know who that was, and the only way to find out is to read every candidate's count. With a few fixed candidates that is a short loop, and the program can afford it. With an open list of candidates it is the same loop that does not fit.
+
+So when the answer is a maximum, the design has to decide what happens on a withdrawal before the first vote arrives, because the structure of the answer is part of the account layout. The simplest decision is to forbid the withdrawal: a vote is final, and the maximum only grows. If votes have to be withdrawable, the program needs a structure that can remove an element without reading everything, for example a sorted list of candidates where the client finds the new position and the program only checks the two neighbors.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Adding a vote and removing a vote</title><desc>Two boxes side by side. Both start with candidate A at 5 votes, B at 3 and C at 2, with A as the leader. On the left, one vote is added to B, so B has 4. The program compares 4 with the leader's 5, and A stays the leader. That is one comparison. On the right, one vote is removed from A, so A has 4. To know whether A is still the leader, the program has to read the counts of B and C, so it reads every count.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -159,6 +166,6 @@ Ties need the same care. When two candidates have the same count, the rule has t
   <text x="360" y="346" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Adding an input is one comparison. Removing one means reading every count.</text>
 </svg>
 
-## Nobody pays for everyone
+## Everyone pays for their own piece
 
-Every step a design does at the end, on a schedule, or for everyone at once is a transaction that nobody sends. So the answer of that step is stored instead of its inputs, and every action moves the answer by one step. When an action cannot be undone in one step, either the action is final or someone has to pay to read all the inputs, and that is decided before the first input arrives.
+A protocol on Solana has no moment when it stops and sums up what happened, because nobody would pay for that moment. So the protocol never keeps a pile of inputs waiting to be processed. It keeps the answer from the very first action, and every action that arrives moves the answer one step further. By the time the protocol would have needed the final step, the step has already been done by everyone who took part. Everyone paid for their own piece of the work at the moment of their own action, and nobody paid for the whole protocol at once.

@@ -5,63 +5,63 @@ order: 10
 faq:
   - question: What does lazy loading mean in a Solana program?
     answer: >-
-      The program computes an account's result only when someone touches that account,
-      instead of writing the result into every account when something changes. Each account
-      stores enough data to compute its own result later, usually two numbers. One is a
-      running total kept in a central place. The other is a marker that says how much of that
-      total the account has already seen. The result is the difference, and whoever touches
-      the account pays for the computation.
+      The program does not write the result into every account when something changes.
+      Instead, each account stores what is needed to compute its result later: usually a
+      running total that is kept in one place, and a marker of how much of that total the
+      account has already seen. The result is the difference between the two. It is computed
+      when someone touches the account, and that person pays for it.
   - question: My staking program has to pay rewards to every staker. Do I have to loop over them?
     answer: >-
-      No, and on Solana you can't. A transaction holds only about 40 accounts, so paying
-      10,000 stakers takes hundreds of transactions every time. Instead, keep one number in
-      the pool, the reward per staked token, and raise it when rewards arrive. Each staker's
-      account keeps the value it saw last. When a staker touches their account, pay the
-      difference times their stake and update their marker.
+      No, and you do not need to. Keep one number in the pool, the reward per staked token, and
+      raise it when rewards arrive. Each staker's account keeps the value it saw last. When a
+      staker touches their account, pay the difference times their stake and move their marker
+      to the current value. Nobody else's account is in that transaction.
   - question: How does Drift charge funding without touching every position?
     answer: >-
-      The market stores a cumulative funding rate, the total funding per unit of position
-      since the market opened, and the hourly update changes only that one number. Each
-      position stores the rate it saw last. When a trade, a close or a liquidation touches the
-      position, the program first settles the difference times the position size, then updates
-      the marker.
-  - question: Why does Helium call its rewards program the lazy distributor?
+      The market stores a running total of funding per unit of position, and the hourly update
+      changes only that number. Each position stores the total it last saw. When a trade, a
+      close or a liquidation touches the position, the difference times the position size is
+      settled first, and the marker moves to the current total.
+  - question: Why does Squads need only one counter when the signers change?
     answer: >-
-      Because nothing is distributed until someone touches a device. Oracles sign the total a
-      device has earned since the beginning, the device's account stores how much was already
-      paid, and a claim pays the difference. A million devices earn rewards every day, and
-      Helium pays for none of those updates.
+      Because every proposal already has a number. The multisig sets the counter to the number
+      of the latest proposal, and a proposal with a number at or below the counter is stale.
+      One write when the signers change, one comparison when a proposal is read.
   - question: What happens to accounts that nobody touches?
     answer: >-
-      Nothing, and that is the cost of the pattern. For a reward this is fine, since the
-      difference is paid whenever the claim comes. For a liquidation it is not. If an update
-      has to happen on time, someone has to be paid to touch the account, or the design has to
-      change so that an old value does no harm.
+      Nothing happens to them. For a reward this is fine, because the difference is paid
+      whenever the claim comes. For a liquidation or an expiry it is not. If an action has to
+      happen at a certain time, someone has to be paid to touch the account, or the design has
+      to change so that an old value does no harm.
   - question: In what order do I settle and change a position?
     answer: >-
-      Settle first, then change. The difference between the running total and the marker
-      belongs to the position as it was. So pay or charge that difference, move the marker to
-      the current total, and only then apply the deposit, withdrawal or trade. The other order
-      pays the new size for the old period.
+      Settle first, then change the stake. The difference belongs to the stake as it was, so
+      pay it, move the marker to the current total, and only then apply the deposit, withdrawal
+      or trade. The other order pays the new size for the old period.
 ---
 
-> A program can't update every account when something changes, because every account it writes to has to be in the transaction, and someone has to send that transaction and pay for it. Every design that says "for all holders" or "every hour" has this problem, and the protocols that run at scale on Solana all solve it the same way.
+> A Solana program can only work with the accounts that the transaction brings, and no transaction happens by itself: someone has to send it and pay for it. Every design that has to update all holders or charge every position every hour runs into this, and most of them end up with a server that loops over the accounts. But what if we made the program lazy?
 
 ## For all holders
 
-Three facts about Solana rule out one kind of design. Nothing happens by itself, a transaction is small and has a compute limit, and the client brings every account. That rules out designs like paying the reward to all holders, charging funding on every position every hour, or marking every open proposal as old when the signers change.
+A staking pool has thousands of stakers, and when rewards arrive, the simplest design pays every staker their share right away. To do that, the program has to write to every staker's account, and a transaction holds only a few dozen accounts. So one reward turns into hundreds of transactions, and somebody has to build, sign and pay for all of them. The naive solution is your own server that sends them, and then the protocol lives exactly as long as your server does.
 
-A transaction can hold only about 40 accounts, so a protocol with 10,000 stakers needs hundreds of transactions just to pay everyone once, and someone has to build, sign and pay for each of them. If the rewards are daily, that is hundreds of transactions a day from a server that has to stay up. The simplest design is to run that server, and then the protocol works only as long as the server does.
+The same problem appears wherever one event changes many accounts. A perpetuals exchange charges funding on every open position every hour. A wireless network pays rewards to a million devices every day, and a multisig has to invalidate every open proposal when its signers change. In every case one event has to reach thousands of accounts, and no user will send those transactions, because the sender pays the fees for everyone else and gets nothing for it.
 
-In normal programming, lazy loading is an optimization, where you don't compute or fetch something until someone asks for it. On Solana it is usually the only design that works, because the transaction that computes the result for everyone can't be built.
+## Compute on touch
 
-## Store the inputs, not the result
+Instead of pushing the result into every account, the program stores in each account only what is needed to compute the result later, and computes it only when a transaction accesses that specific account. Whoever sent that transaction wanted the result, and that person pays for the computation. This is **lazy loading**. In traditional programming it is an optimization, where you don't compute something until someone asks for it. On Solana it is one of the best ways to build a protocol.
 
-The accounts do not store the result. Each one stores the data needed to compute its result later, and the program computes it inside the transaction that touches the account. That transaction belongs to whoever needed to touch the account, so that person pays. This is **lazy loading**. Nothing is computed until someone asks for it.
+In the staking pool, the pool account keeps one number, the reward per staked token. It says how much reward every staked token has earned since the pool started. When 10 tokens of rewards arrive on 1,000 staked tokens, the pool pays nobody. It only raises the reward per staked token by 0.01, because every staked token has now earned 0.01 more. Each staker's account keeps the reward per staked token as it was at their last claim. Everything their tokens earned since then is owed to them:
 
-In most protocols, this data is two numbers. The first is a running total, kept in one central place such as a pool account or a message signed by an oracle. The second is a marker, kept in each account, that records how much of the running total this account has already seen. The result is the difference between the two.
+```
+// what every staked token earned since this staker's last claim, times their stake
+owed = (pool.reward_per_token - staker.last_reward_per_token) * staker.stake
+```
 
-Take a staking pool with 1,000 staked tokens. Then 10 tokens of rewards arrive. The pool pays nobody. It only raises one number, the reward per staked token, by 10 / 1,000 = 0.01. Now a staker with 100 tokens comes to claim. Their account says the last reward per token they saw was 0.03, and the pool now says 0.05. The difference is 0.02, times 100 tokens, so the staker is owed 2 tokens. The program pays them and writes 0.05 into the staker's account. No other staker's account was in this transaction, and none of them is wrong. Each holds the same two numbers and will compute its result the same way when its owner comes. The numbers in the diagram below are only an example.
+Later a staker with 100 tokens comes to claim. The pool's reward per staked token is now 0.05, and the staker's account still says 0.03 from their last claim. The program puts these numbers into the formula: (0.05 - 0.03) * 100 = 2 tokens. It pays the 2 tokens and writes 0.05 into the staker's account, so the next claim starts from there. No other staker was in this transaction, and none of them is wrong. Each of them keeps their own last value, and the same formula will give them the right amount when they come.
+
+Every protocol below works the same way. One shared number grows over time and is kept in one place. Each account keeps its own copy of that number from the last time it was updated. The difference between the shared number and the copy is everything that this account has missed since then.
 
 <svg role="img" viewBox="0 0 720 370" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Only the touched account is updated</title><desc>A pool account at the top holds the central state, a reward per staked token of 0.05 and 1,000 tokens staked. Below it are three staker accounts. Staker A, with a stake of 100 and a last seen value of 0.03, is in the transaction and is highlighted. The program pays the difference of 0.02 times 100, which is 2 tokens, and moves the marker to 0.05. Staker B, with a stake of 300 and a last seen value of 0.05, is not in the transaction and is owed nothing yet. Staker C, with a stake of 50 and a last seen value of 0.00, is not in the transaction and has 2.5 tokens waiting for a touch.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -97,35 +97,11 @@ Take a staking pool with 1,000 staked tokens. Then 10 tokens of rewards arrive. 
   <text x="560" y="284" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">not in this transaction</text>
   <text x="560" y="300" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">2.5 waiting for a touch</text>
 
-  <text x="360" y="338" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">All three stakers hold the same two numbers. Only the one in the</text>
-  <text x="360" y="354" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">transaction computes its result, and that staker pays for it.</text>
+  <text x="360" y="338" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">All three stakers hold the same two numbers. Only staker A is in the</text>
+  <text x="360" y="354" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">transaction, so only A's reward is computed now.</text>
 </svg>
 
-Two details matter here. First, settle before you change anything. The difference belongs to the stake as it was, so pay it, move the marker, and only then apply the deposit or withdrawal. Second, keep the running total precise. It is a fraction that grows in small steps, so store it with plenty of extra precision and round only when you pay.
-
-## Drift: funding is settled when the position is touched
-
-Drift is a perpetuals exchange, and it charges funding on every open position every hour without touching any of them. A market has thousands of open positions, and charging each of them every hour would be hundreds of thousands of writes a day, all sent and paid for by Drift. Instead, the market account stores a cumulative funding rate, the total funding per unit of position since the market opened, and the hourly update changes only that one number. Each position stores the cumulative rate it saw last. When a trade, a close or a liquidation touches a position, the program first takes the difference between the two rates, multiplies it by the position size and settles the result. Then it moves the position's marker to the current market value, and only then does the actual trade, close or liquidation. A position nobody touched for a week settles a week of funding in one subtraction.
-
-## Helium: a million devices, one claim each
-
-Helium pays rewards to the owners of hotspots, the devices that provide its wireless network, and there are about a million of them. Paying every device once a day would be a million transactions a day, about twelve every second around the clock, all sent and paid for by Helium.
-
-So Helium sends nothing. Oracles sign the total a device has earned since the beginning, and the device's account stores how much was already paid out. When someone claims, the program compares the signed total with the paid amount, pays the difference, and sets the paid amount to the signed total. Here the running total is stored in a signed message instead of an account, and the marker is stored in the device's account. Helium's program for this is called the lazy distributor. Anyone can send the claim, but nobody has to until the owner wants the money.
-
-## Squads: one counter instead of a loop
-
-Squads is a multisig. Members approve proposals, and when enough of them approve, the proposal executes. When the members change, because a member is removed or the threshold goes up, proposals approved by the old members must not execute under the new ones. The simplest design goes through every open proposal and marks it as old, but the proposals are separate accounts, and none of them is in the transaction that changed the members.
-
-Squads keeps one number in the multisig account, the stale transaction index. When the members or the threshold change, this number is set to the index of the latest proposal. Every proposal already has an index, assigned when it was created. When someone approves or executes a proposal, the program compares the two. If the proposal's index is at or below the stale index, the proposal is old and cannot execute. That is one write when the members change and one comparison when a proposal is touched, whether the multisig has ten open proposals or ten thousand.
-
-The marker was not added for the pattern. The proposal's index already existed, and the pattern only needed something to compare it with.
-
-## Fragmetric: the update happens on every transfer
-
-Fragmetric is a liquid restaking protocol. Holders of its token, fragSOL, earn rewards based on how much they held and for how long, so the protocol needs every holder's balance over time. Reading every holder's account on a schedule is the same problem as in the first section, a loop over every account that nobody can send.
-
-fragSOL is a Token-2022 token with a transfer hook, a program that the token program calls on every transfer. The hook already runs on both the sender's and the receiver's account, because a transfer has to touch both, so Fragmetric updates the reward accounting of both holders inside it. The pattern needs someone to touch the account, and here that already happens on every transfer, so the accounting costs nothing extra.
+A deposit or a withdrawal changes the stake, and the payout has to happen before that change. Our staker with 100 tokens is owed 2 tokens, and now they deposit 50 more. If the program adds the deposit first, the stake becomes 150, and the formula gives (0.05 - 0.03) * 150 = 3 tokens. The extra token is a reward for 50 tokens that were not in the pool during that period. So the program first pays what the old stake earned, writes 0.05 as the last value, and only then adds the 50 tokens. The same order applies to a withdrawal.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Settle first, then change the stake</title><desc>Two boxes side by side. Both start with a stake of 100, a marker of 0.03 and a pool total of 0.05, and a deposit of 50 arrives. On the left, the deposit is applied first, the stake becomes 150, and then the program settles 0.02 times 150, which is 3 tokens, although only 2 were owed. On the right, the program first settles 0.02 times 100, which is 2 tokens, moves the marker to 0.05, and only then applies the deposit, so the staker is paid exactly 2.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -164,14 +140,26 @@ fragSOL is a Token-2022 token with a transfer hook, a program that the token pro
   <text x="360" y="346" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The difference belongs to the stake as it was. Settle before the stake changes.</text>
 </svg>
 
-## Accounts that nobody touches
+## Squads: one counter instead of a loop
 
-Lazy loading has one cost. An account nobody touches is never updated. For rewards this is fine. The money waits, and the difference is paid whenever the claim comes. For liquidations it is not. A position nobody touches is never liquidated, and the protocol takes the loss. The same goes for an order that has to expire or a vote that has to close.
+Squads is a multisig. When its signers change, every proposal that the old signers approved has to become stale, so that it cannot execute under the new signers. The proposals are separate accounts, and none of them is in the transaction that changes the signers. So the multisig does not go through them at all. Every proposal gets a number when it is created, and the multisig keeps one counter. When the signers change, the counter is set to the number of the latest proposal. Later, when someone tries to execute a proposal, the program compares the proposal's number with the counter. If the number is at or below the counter, the proposal was created before the signers changed, so it is stale. One write when the signers change, one comparison per proposal, no matter how many proposals there are.
 
-If an update has to happen on time, lazy loading alone is not enough. You can pay someone to touch the account, for example a bot that earns a reward for every liquidation it triggers. Or you can change the design so that an old value does no harm, for example by checking the condition whenever the account is touched next, instead of requiring an action at a fixed time.
+## Fragmetric: the update happens on every transfer
 
-The result is not stored anywhere, so anything that reads the chain, a wallet, an indexer, your own frontend, has to compute it from the same two numbers. That is fine as long as both fields are public and the formula is documented. It becomes a problem only when a client expects to read the result as a ready field.
+Fragmetric is a liquid restaking protocol. Holders of its token, fragSOL, earn rewards for how much they held and for how long, so the protocol has to know when every balance changed. Checking every holder on a schedule would be the same loop over every account that nobody sends. Instead, fragSOL is issued through Token-2022, the newer version of Solana's token program, which has extensions that the old token program does not. One of them is the transfer hook: the token's creator registers a program of their own, and Token-2022 calls that program every time someone transfers the token. Fragmetric registered its reward program as the hook. A balance can only change in a transfer, and a transfer already has both the sender's and the receiver's accounts in the transaction. So Fragmetric's program updates the reward accounting of both holders right there, and the accounting comes for free.
 
-## Nothing is computed for everyone
+## Helium: a million devices, one claim each
 
-Every sentence in a design that says "for all" or "every hour" describes a transaction that nobody can send. The protocols that work store what each account needs to compute its own result, and the result appears when someone touches the account and pays for it. An account nobody touches stays as it was, and either the design is fine with that, or it pays someone to touch it.
+Helium pays rewards to the owners of about a million devices. Paying each device once a day would be a million transactions a day, all sent and paid for by Helium. So Helium sends nothing. Its oracle signs one number per device: the total that the device has earned since the beginning. The device's account stores how much of that total was already paid out. When the owner claims, the program pays the difference between the two and writes the signed total as the new paid amount. These are the same two numbers as in the staking pool, except that the shared number comes in a signed message instead of an account.
+
+## Drift: funding is settled when the position is touched
+
+Drift is a perpetuals exchange. Every hour its markets charge funding, a payment between longs and shorts, on every open position. The program never goes through the positions for that. Instead, the market stores one shared number, the total funding per unit of position since the market opened, and the hourly update changes only this number. Each position stores its copy of the number from the last time it was updated. When a trade, a close or a liquidation brings a position into a transaction, the program first charges the difference between the two numbers times the position size, and then updates the position's copy. A position that nobody has used for a week pays a week of funding in one subtraction.
+
+## Untouched accounts never update
+
+Lazy means that untouched accounts never update. For rewards this is fine: the money waits, and the difference is paid whenever the claim comes. For liquidations it is not fine, because a position that nobody uses is never liquidated, and the protocol takes the loss. The same goes for an order that has to expire at a deadline. So if an action really needs to happen at a certain time, lazy loading alone is not enough. Either you pay an executor to send that transaction, or you rework the design so that an old value does no harm.
+
+## Nothing is up to date, nothing is wrong
+
+On Solana there is no background. Between two transactions nothing runs, so a protocol cannot keep thousands of accounts up to date, and a lazy protocol does not try. Every event changes only the shared number, so that one number already includes everything that happened. Every other account is behind, and its own copy of the number says exactly how far behind. The moment someone brings the account into a transaction, the program pays or charges the difference and writes the shared number into the copy. So nothing in a lazy protocol is up to date, and nothing in it is wrong: every result is computed at the moment it is needed, by the person who needs it.
