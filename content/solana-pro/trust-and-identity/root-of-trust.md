@@ -40,19 +40,19 @@ faq:
       caller wrote there, including a fake successful signature check.
 ---
 
-> On Solana, the caller sends every account that the program reads, and can create most of them. So comparing two accounts that both came from the caller proves nothing. This mistake is behind most Solana exploits.
+> On Solana, the caller sends every account that the program reads, and can create most of them. So comparing two accounts the caller sent proves nothing. This mistake is behind most Solana exploits.
 
 ## The caller created the accounts
 
-A Solana program does not look anything up on its own. It reads only the accounts that the caller put into the transaction.
+A Solana program does not look anything up on its own. It reads only the accounts that the caller included in the transaction.
 
 The simplest way to check an account is to compare it with another one. For example, a vault holds tokens of one mint, so the deposit instruction checks that the user's token account has the same mint as the vault. The problem is that both accounts came from the caller, and accounts are cheap to create. The caller makes a mint, a vault that points to it, and a token account for the same mint. The vault and the token account have the same mint, so the check passes, and the caller can drain the vault. Creating the fake accounts costs almost nothing, and the caller can take everything the program holds. So the program has to make fakes impossible.
 
-The same is true for other inputs. The caller can choose which oracle account the price comes from. The caller can add an instruction to the transaction that only looks like a signature check. The caller can create an account with the right data layout. In every case the program sees data that looks right, but that data can be faked.
+The same is true for other inputs. The caller chooses which oracle account the price comes from, can add an instruction that only looks like a signature check, and can create an account with the right data layout. In every case the program sees data that looks right, but that data can be faked.
 
 ## Where the checks stop depending on the caller
 
-Every check depends on some other account. The mint check is only useful if the vault is real. So we ask the same question about the vault. Which account is it compared with? Then we ask the same question about that account, and so on. This chain has to end at an account that cannot be faked. That account is the **root of trust**. Every other check in the instruction depends on it, and a check that does not depend on the root depends on the caller.
+Every check depends on some other account. The mint check is only useful if the vault is real. So we ask which account the vault is compared with, then the same about that account, and so on. This chain has to end at an account that cannot be faked. That account is the **root of trust**. Every other check in the instruction depends on it, and a check that does not depend on the root depends on the caller.
 
 There are three kinds of accounts the caller cannot create. The first is a PDA of your program. Its address is computed from the seeds and your program id, and only your program can create an account there. The second is an account with a hardcoded address, such as the SPL Token program or a sysvar. A sysvar is a system account with a fixed address that the runtime fills with data, for example the current clock or the list of instructions in the current transaction. The caller can pass a different account in its place, but its address will not match the one your program expects. The third is an account owned by your program, but only with one condition. Often a program creates such accounts for anyone who asks, for example a position account for each user. Then anyone can have one, and the owner check proves only that your program created the account, not that it is the right one. So the address still has to come from seeds, or from a field in an account that already has a root.
 
@@ -123,7 +123,7 @@ The hole was in what the program compared. It checked that the collateral token 
 
 ## Wormhole: the list of instructions came from the caller
 
-Wormhole is a bridge between chains, and it lost about 320 million dollars because its program read the list of instructions from an account that the caller passed in. A message from another chain comes with the guardians' signatures, and the program has to verify them before it mints wrapped ETH. Signatures are verified by a built-in Solana program, Secp256k1 or Ed25519 depending on the signature type. It is not something your program calls. The caller puts it into the transaction as a separate instruction, right before the instruction of your program, and a bad signature simply fails the whole transaction.
+Wormhole is a bridge between chains, and it lost about 320 million dollars because its program read the list of instructions from an account that the caller passed in. A message from another chain comes with the guardians' signatures, and the program has to verify them before it mints wrapped ETH. Signatures are verified by a built-in Solana program, Secp256k1 or Ed25519 depending on the signature type. It is not something your program calls. The caller puts it into the transaction as a separate instruction, right before the instruction of your program, and a bad signature fails the whole transaction.
 
 ```typescript
 const tx = new Transaction().add(

@@ -45,17 +45,17 @@ faq:
 
 The simplest check is a list of addresses, for example the admin, an allowlist, or the bot that the team runs. The problem is that anyone can create a new address without any effort. So the protocol has to maintain a list, and the caller only needs a new address to pass the check.
 
-There is a second problem. If the protocol accepts price updates only from its own bot, it has a price only while that bot is running. If only its own server can trigger payouts, payouts happen only while that server is up. Every trusted bot, server or address is a dependency. The whole point of putting a protocol on-chain was decentralization, and these dependencies break it.
+There is a second problem. If the protocol accepts price updates only from its own bot, it has a price only while that bot is running. If only its own server can trigger payouts, payouts happen only while that server is up. Every trusted bot, server or address is a dependency. Protocols go on-chain to be decentralized, and these dependencies break the whole idea of decentralization.
 
 ## Check what the transaction does
 
 The most important goal of a program is to stay integral and produce the intended results, whether it is a DEX that has to keep its pools in full integrity or any other protocol. Who, when, or why sends a transaction is not that goal. It is a peripheral question that should not affect anything most of the time.
 
-With **identity rejection**, the question is "Is this transaction good for the protocol and its integrity?", not "Is this a trustworthy address?". The one exception is ownership. The owner signs to move their tokens, the admin signs to change a fee, and nothing else depends on who is calling.
+With **identity rejection**, the question is "Is this transaction good for the protocol and its integrity?", not "Is this a trustworthy address?". The one exception is the instructions that must be available only to the owner. Nothing else depends on who is calling.
 
 ## Snipers: a list or a fee
 
-Sniper bot protection is designed with this principle. A bad solution is to block the sniper wallets. It would not last, because one address can be replaced with another one in seconds. A good solution does not depend on identity and prevents the bad action itself. Meteora and Heaven use a launch tax, a fee that starts at 99% and drops over the first seconds of the launch, or one that grows with the size of a single purchase. A sniper who buys at a 99% fee keeps 1% of what they paid for and cannot sell at a profit. The time since launch and the size of the trade stay true no matter which address is trading. The fee has a cost, an early buyer who is not a bot pays it too.
+Sniper bot protection is designed with this principle. A bad solution is to block the sniper wallets. It would not last, because one address can be replaced with another one in seconds. A good solution does not depend on identity and prevents the bad action itself. Meteora and Heaven use a launch tax, a fee that starts at 99% and drops over the first seconds of the launch, or one that grows with the size of a single purchase. A sniper who buys at a 99% fee keeps 1% of what they paid for and cannot sell at a profit. The time since launch and the size of the trade stay true no matter which address is trading. The fee has a downside. An early buyer who is not a bot pays it too.
 
 ## Meteora: a check on the name of an instruction
 
