@@ -54,7 +54,7 @@ The course is written to the point. You won't read through formal, padded langua
 2. [Boundary of consent](order-and-consent/boundary-of-consent.md)
 3. [State and time - Test](order-and-consent/state-and-time-test.md) — test
 
-### 8. Permissionless execution
+### 8. Outside Data
 
 1. [Internal Oracle](outside-data/internal-oracle.md)
 2. [Defensive Computation](outside-data/defensive-computation.md)
