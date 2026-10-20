@@ -4,17 +4,46 @@ type: lecture
 order: 1
 ---
 
-Not all programs really require to have an external oracle in order to receive the necessary state to work with. In some cases, programs can utilize their internal state if properly structured. Structuring of the internal state to function as an ‘oracle’ that provides an outside-chain view on the data, is what we call ‘Internal Oracle’. Programs derive state instead of attempting to calculate it or receive it from the outside.
+Not all programs really require to have an external oracle in order to receive the necessary state to work with. In some cases, programs can utilize their internal state if properly structured. Structuring of the internal state to function as an ‘oracle’ that provides an outside-chain view on the data, is the idea behind the pattern ‘Internal Oracle’. Programs derive outside state from the on-chain state, instead of attempting to receive it from the outside.
 
-## Derive it from your own state
+## The dependency problem
 
-For example DEX knows its own prices and the governance program knows who voted. Your main work is to properly store the state so anyone could get the value from it. Usually it can be achieved in two ways: on each transaction write a variable you need or (specific for solana) just create an account for something that should answer the question “does this exists” - existence of account already gives you this answer.
+The first and foremost reason to use this pattern is to avoid having an extra dependency. Especially an oracle dependency, because this dependency would be responsible for setting the price data in your protocol - the most vulnerable part of most projects.
 
-The best example is Raydium TWAP (and protocols that use it): Raydium already has the data on liquidity, positions, swaps, prices. And even though pricing data is commonly thought of as a reason to include an oracle, in some cases a program can simply structure its internal state to produce the indexed data that can later on act as an oracle. The only issue here is that “current price” is easy to move with one large swap transaction, so Raydium developers use average prices over time - Time-Weighted Average Price. They are developed in the way that this average price is not stored anywhere, they just store everything that is needed to calculate the average user’s needs. 
+If you were to just properly structure the state, chances are you could replace a data dependency with an internal function evaluating that data on its own.
 
-For the CP-Swap pool they store an observation ring - special account with 100 slots). To get the average between two periods of time, users can take the two observation points and divide the difference of the running totals by the seconds between them.
+Let's see how it's possible.
 
-For the CLMM pool they do almost the same but with ticks. Their observation keeps a running total of the tick multiplied by time and when the swap moves the tick the average of the tick turns back into a price.
+## Memoization
+
+Memoization in Computer Science refers to storing results of a function for future usage. The idea is that if you know that nothing would change in the function output no matter how many times you call it - and you need to reuse its results often - you could optimize the program to evaluate the output once, store it, and use it on the later stages of it.
+
+You could use this concept in your programs as well. Usually it is done in two ways: 
+
+* on each transaction write a variable you need
+* or just create an account for something that should answer the question “does this exist”, when just the fact of existence of an account already gives you an answer. *(*specific for solana*)*
+
+## Example: DEX and PRICE ORACLE
+
+A DEX is the best example on deriving outside-world prices from the on-chain available state. 
+
+Let's say we want to build a lending protocol and it has to see the current prices of assets in order to know its health ratio. The problem with simply asking a DEX what the current price is - is that a token's price can be very different from its real price at a specific point of time, given that it could be manipulated beforehand with a high volume transaction. 
+
+So, the most obvious solution here would be to include an oracle that provides prices that are already stable and known to be true.
+
+**However!**
+
+The DEXs already have all the necessary information for the stable prices to be reconstructed, they just don't have them in a specific transaction, instead, they have this information available throughout many transactions.
+
+So, the transactions have to memoize their outcomes in the DEXs state in order to make that information available.
+
+***That's exactly what TWAPs*** (Time-Weighted Average Prices) essentially are.
+
+We couldn't use the current token prices because they could be wrong, so we thought of oracles because they were meant to consolidate on-chain data together and provide reputable information to us. But Raydium developers store time-weighted average prices which allow us to compute the average prices across specified timespan, which already provides us with the data we needed - the consolidated and reliable pricing data.
+
+For the CP-Swap pools Raydium stores observation rings - special accounts with 100 slots. To evaluate the average price between two periods of time, users take two observation points and divide the difference of the running totals by the seconds between them.
+
+For the CLMM pool it's almost the same but with ticks instead of rings. Their observation keeps a running total of the tick multiplied by time and when the swap moves the tick - the average of the tick turns back into the resulting price.
 
 <svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;">
   <title>One swap moves the spot price, not the average</title>
@@ -44,11 +73,13 @@ For the CLMM pool they do almost the same but with ticks. Their observation keep
   <text x="360" y="378" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Black = spot price. Red = average over the window. The numbers are only an example.</text>
 </svg>
 
-TWAP is that indexed state, and if a program only works with prices of tokens that exist on Solana, then it may not even need any oracles, and could just utilize Solana’s DEXs and their TWAPs.
+TWAP is the indexed state, and if a program only works with prices of tokens that exist on Solana, then it may not even need any oracles, and could just utilize Solana’s DEXs and their TWAPs.
+
+A program could also figure out the price ratio between a pair of two tokens that does not even exist on Solana, by utilizing others pairs in which those two tokens are present. In that case, no oracle would be necessary in a seemingly oracle-requiring operation. 
 
 ## The account is the answer
 
-Realms utilizes the same pattern for the "already voted" state. Each vote is an account at an address computed from the proposal and the voter (a PDA). Nobody separately stores who voted and who didn’t. But if the address is taken, it logically means that they have already voted.
+Realms utilizes the same pattern for the "already voted" state. Each vote is an account at an address computed from the proposal and the voter (a PDA). There isn't a separate storage of who voted and who didn’t. But if the address is taken, it logically means that they have already voted.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:
 #e0deda; font-family: system-ui, sans-serif;">
