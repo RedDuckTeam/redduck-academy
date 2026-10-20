@@ -1,6 +1,6 @@
 ---
 id: 1811705423
-title: Dependency Independency
+title: Congratulations
 type: lecture
 order: 1
 ---

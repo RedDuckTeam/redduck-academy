@@ -70,4 +70,4 @@ The course is written to the point. You won't read through formal, padded langua
 
 ### 10. Conclusion
 
-1. [Dependency Independency](conclusion/congratulations.md)
+1. [Congratulations](conclusion/congratulations.md)
