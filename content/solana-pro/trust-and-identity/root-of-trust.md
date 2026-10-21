@@ -69,63 +69,33 @@ Ultimately, the pattern of having the root of trust in your programs means you s
 
 You could have SPL Token Program being the root of trust for the token programs, or PDA account being used to verify other custom accounts. The most important requirement for your program here is to have at least one root point that can help distinguish between malicious and valid accounts.
 
-<svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>A fake vault with and without an address check</title><desc>Two boxes side by side. On the left, the caller creates a vault and a token account with the same mint X. The program only checks that the mints are the same, so the check passes. On the right, the caller creates a fake vault, but the real vault was created by the program at a PDA address. The program checks that the vault's address is the PDA, the fake vault fails, and the transaction is rejected. Accounts created by the caller have a red border.</desc>
+<svg role="img" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Root of trust</title><desc>A chain of five accounts from the caller, drawn dashed, each one checked against the next, ending at one solid red account with a lock: the root, which the caller cannot create.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">A fake vault</text>
-
-  <rect x="40" y="70" width="300" height="250" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="40" y="70" width="300" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="89" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">No address check</text>
-  <rect x="140" y="108" width="100" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="127" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ffffff">the caller</text>
-  <line x1="190" y1="136" x2="190" y2="150" stroke="#ed4937" stroke-width="2"/>
-  <line x1="130" y1="150" x2="250" y2="150" stroke="#ed4937" stroke-width="2"/>
-  <line x1="130" y1="150" x2="130" y2="170" stroke="#ed4937" stroke-width="2"/>
-  <line x1="250" y1="150" x2="250" y2="170" stroke="#ed4937" stroke-width="2"/>
-  <polygon points="124,168 136,168 130,178" fill="#ed4937"/>
-  <polygon points="244,168 256,168 250,178" fill="#ed4937"/>
-  <rect x="80" y="178" width="100" height="40" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="130" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">vault</text>
-  <text x="130" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">mint X</text>
-  <rect x="200" y="178" width="100" height="40" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="250" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">token acct</text>
-  <text x="250" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">mint X</text>
-  <line x1="130" y1="218" x2="130" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="250" y1="218" x2="250" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="130" y1="232" x2="250" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="190" y1="232" x2="190" y2="246" stroke="#000000" stroke-width="2"/>
-  <polygon points="184,244 196,244 190,254" fill="#000000"/>
-  <rect x="90" y="254" width="200" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="276" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">same mint? yes</text>
-  <text x="190" y="310" text-anchor="middle" font-family="monospace" font-size="11" fill="#ed4937" font-weight="bold">passes</text>
-
-  <rect x="380" y="70" width="300" height="250" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <rect x="380" y="70" width="300" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="89" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">Address check</text>
-  <rect x="400" y="108" width="100" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="450" y="127" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ffffff">the caller</text>
-  <rect x="560" y="108" width="100" height="28" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="610" y="127" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">your program</text>
-  <line x1="450" y1="136" x2="450" y2="170" stroke="#ed4937" stroke-width="2"/>
-  <polygon points="444,168 456,168 450,178" fill="#ed4937"/>
-  <line x1="610" y1="136" x2="610" y2="170" stroke="#000000" stroke-width="2"/>
-  <polygon points="604,168 616,168 610,178" fill="#000000"/>
-  <rect x="400" y="178" width="100" height="40" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="450" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">vault</text>
-  <text x="450" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">fake</text>
-  <rect x="560" y="178" width="100" height="40" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="610" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">vault</text>
-  <text x="610" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">PDA</text>
-  <line x1="450" y1="218" x2="450" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="610" y1="218" x2="610" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="450" y1="232" x2="610" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="530" y1="232" x2="530" y2="246" stroke="#000000" stroke-width="2"/>
-  <polygon points="524,244 536,244 530,254" fill="#000000"/>
-  <rect x="430" y="254" width="200" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="276" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">address is PDA? no</text>
-  <text x="530" y="310" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">rejected</text>
-
-  <text x="360" y="346" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Red = created by the caller. Only the address check is one a fake cannot pass.</text>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Root of trust</text>
+  <rect x="60" y="120" width="90" height="50" rx="0" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="105" y="150" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">account</text>
+  <line x1="150" y1="145" x2="167.0" y2="145.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="167.0,139.0 167.0,151.0 178,145" fill="#000000"/>
+  <rect x="180" y="120" width="90" height="50" rx="0" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="225" y="150" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">account</text>
+  <line x1="270" y1="145" x2="287.0" y2="145.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="287.0,139.0 287.0,151.0 298,145" fill="#000000"/>
+  <rect x="300" y="120" width="90" height="50" rx="0" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="345" y="150" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">account</text>
+  <line x1="390" y1="145" x2="407.0" y2="145.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="407.0,139.0 407.0,151.0 418,145" fill="#000000"/>
+  <rect x="420" y="120" width="90" height="50" rx="0" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="465" y="150" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">account</text>
+  <line x1="510" y1="145" x2="527.0" y2="145.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="527.0,139.0 527.0,151.0 538,145" fill="#000000"/>
+  <rect x="548" y="110" width="120" height="70" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <path d="M 599 134 v -8 a 9 9 0 0 1 18 0 v 8" fill="none" stroke="#ed4937" stroke-width="2.5"/>
+  <rect x="595" y="134" width="26" height="20" rx="3" fill="#ed4937" stroke="#ed4937" stroke-width="2"/>
+  <circle cx="608" cy="144" r="3" fill="#e0deda" stroke="#e0deda" stroke-width="2"/>
+  <text x="608" y="172" text-anchor="middle" font-size="11" fill="#ed4937" font-family="monospace" font-weight="bold">root</text>
+  <text x="300" y="100" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">from the caller: can be faked</text>
+  <text x="608" y="100" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">cannot be faked</text>
+  <text x="360" y="228" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">Every check depends on the next one. The chain has to end at something the caller could not create.</text>
 </svg>
 
 ## Cashio: anyone could create a bank
@@ -162,56 +132,6 @@ Switchboard On-Demand is an oracle, and it reads the same list of instructions f
 The difference is the order of the checks. Switchboard first compares the sysvar account with the real sysvar address. Only then it reads the instruction list, finds the Ed25519 instruction, and checks that the key in it is the oracle's key and the message is the price it is about to use. Each check depends on the previous one, and the first depends on a hardcoded address, so the whole chain has a root. In this case, the root is the sysvar account.
 
 Switchboard does not have more checks than Wormhole had, it just has the same checks but in a different order, with one hardcoded address of the sysvar account at the start. That one comparison is why Switchboard didn't get hacked and Wormhole did.
-
-<svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Where the instruction list comes from</title><desc>Two boxes side by side. On the left, Wormhole: the caller creates an account with a fake instruction list that says the signatures are ok. The program does not check the address of that account, so it believes the list and mints wrapped ETH. On the right, Switchboard: the caller creates the same fake list, but the runtime also provides the real list at the sysvar address. The program checks that the address is the sysvar address, the fake list fails, and the transaction is rejected. Accounts created by the caller have a red border.</desc>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Where the instruction list comes from</text>
-
-  <rect x="40" y="70" width="300" height="250" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="40" y="70" width="300" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="89" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">Wormhole</text>
-  <rect x="140" y="108" width="100" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="127" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ffffff">the caller</text>
-  <line x1="190" y1="136" x2="190" y2="170" stroke="#ed4937" stroke-width="2"/>
-  <polygon points="184,168 196,168 190,178" fill="#ed4937"/>
-  <rect x="120" y="178" width="140" height="40" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="190" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">instructions</text>
-  <text x="190" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">fake: signatures ok</text>
-  <line x1="190" y1="218" x2="190" y2="246" stroke="#000000" stroke-width="2"/>
-  <polygon points="184,244 196,244 190,254" fill="#000000"/>
-  <rect x="90" y="254" width="200" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="276" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">address checked? no</text>
-  <text x="190" y="310" text-anchor="middle" font-family="monospace" font-size="11" fill="#ed4937" font-weight="bold">120,000 wETH minted</text>
-
-  <rect x="380" y="70" width="300" height="250" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <rect x="380" y="70" width="300" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="89" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">Switchboard</text>
-  <rect x="400" y="108" width="100" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="450" y="127" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ffffff">the caller</text>
-  <rect x="560" y="108" width="100" height="28" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="610" y="127" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">the runtime</text>
-  <line x1="450" y1="136" x2="450" y2="170" stroke="#ed4937" stroke-width="2"/>
-  <polygon points="444,168 456,168 450,178" fill="#ed4937"/>
-  <line x1="610" y1="136" x2="610" y2="170" stroke="#000000" stroke-width="2"/>
-  <polygon points="604,168 616,168 610,178" fill="#000000"/>
-  <rect x="400" y="178" width="100" height="40" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="450" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">instructions</text>
-  <text x="450" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">fake</text>
-  <rect x="560" y="178" width="100" height="40" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="610" y="195" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">instructions</text>
-  <text x="610" y="210" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">at sysvar address</text>
-  <line x1="450" y1="218" x2="450" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="610" y1="218" x2="610" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="450" y1="232" x2="610" y2="232" stroke="#000000" stroke-width="2"/>
-  <line x1="530" y1="232" x2="530" y2="246" stroke="#000000" stroke-width="2"/>
-  <polygon points="524,244 536,244 530,254" fill="#000000"/>
-  <rect x="430" y="254" width="200" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="276" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">address is sysvar? no</text>
-  <text x="530" y="310" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">rejected</text>
-
-  <text x="360" y="346" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The instruction list is an account too, so the caller can fake it.</text>
-  <text x="360" y="362" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Wormhole took it from the caller. Switchboard checks its address first.</text>
-</svg>
 
 ## Summary
 

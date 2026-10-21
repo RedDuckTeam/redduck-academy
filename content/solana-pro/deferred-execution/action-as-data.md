@@ -13,44 +13,38 @@ One workaround is to keep the user's request on a server and let it act with its
 
 Action as Data is the pattern of storing the future action on-chain, without executing it. A Program Derived Account (PDA) stores the target program address, the account list and the instruction payload. Later, when the conditions are met, a keeper (such as an **[untrusted executor](/courses/solana-pro/permissionless-execution/untrusted-executor)**) submits the transaction, and **the PDA approves the transaction with `invoke_signed`**. The action that the user put on-chain before its execution was always public: anyone could read it and execute it once the condition is met.
 
-<svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The action is stored in an account</title><desc>In the middle, a PDA account card holds a pending action: program swap, the accounts, the data sell 10 SOL, and the condition price at or above 150. On the left, the user at 10:00 stores the action and locks the tokens, signing once. On the right, a keeper at 14:00 sends execute, and the PDA signs the call to the swap program through invoke signed. A crossed-out note shows that a signed transaction would have expired after about a minute.</desc>
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Action as data</title><desc>A user puts an action into an account, drawn as a document inside a box with a clock next to it, meaning it waits. Later a keeper sends execute, and the PDA signs for the user.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The action is stored in an account</text>
-  <rect x="250" y="80" width="220" height="190" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <rect x="250" y="80" width="220" height="28" fill="#ed4937" stroke="#ed4937" stroke-width="2"/>
-  <text x="360" y="99" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">PDA: pending action</text>
-  <text x="262" y="132" text-anchor="start" font-size="10" fill="#000000" font-family="monospace">program:   swap</text>
-  <text x="262" y="162" text-anchor="start" font-size="10" fill="#000000" font-family="monospace">accounts:  user tokens, pool</text>
-  <text x="262" y="192" text-anchor="start" font-size="10" fill="#000000" font-family="monospace">data:      sell 10 SOL</text>
-  <text x="262" y="222" text-anchor="start" font-size="10" fill="#000000" font-family="monospace">condition: price &gt;= 150</text>
-  <line x1="250" y1="148" x2="470" y2="148" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <line x1="250" y1="178" x2="470" y2="178" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <line x1="250" y1="208" x2="470" y2="208" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <rect x="40" y="140" width="150" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="115" y="160" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">user</text>
-  <text x="115" y="178" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">10:00</text>
-  <line x1="190" y1="165" x2="240.0" y2="165.0" stroke="#000000" stroke-width="2"/>
-  <polygon points="240.0,159.0 240.0,171.0 250,165" fill="#000000"/>
-  <text x="220" y="153" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">store</text>
-  <text x="115" y="215" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">locks the tokens</text>
-  <text x="115" y="229" text-anchor="middle" font-size="9.5" fill="#ed4937" font-family="monospace" font-weight="bold">signs once</text>
-  <rect x="530" y="96" width="150" height="50" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="605" y="116" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">keeper, anyone</text>
-  <text x="605" y="134" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">14:00, price is 150</text>
-  <line x1="530" y1="121" x2="480.0" y2="121.0" stroke="#000000" stroke-width="2"/>
-  <polygon points="480.0,127.0 480.0,115.0 470,121" fill="#000000"/>
-  <text x="500" y="109" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">execute</text>
-  <rect x="550" y="220" width="130" height="50" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="615" y="240" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">swap program</text>
-  <text x="615" y="258" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">sells 10 SOL</text>
-  <line x1="470" y1="245" x2="540.0" y2="245.0" stroke="#000000" stroke-width="2"/>
-  <polygon points="540.0,239.0 540.0,251.0 550,245" fill="#000000"/>
-  <text x="510" y="236" text-anchor="middle" font-size="8.5" fill="#ed4937" font-family="monospace" font-weight="bold">PDA signs</text>
-  <text x="510" y="260" text-anchor="middle" font-size="8.5" fill="#ed4937" font-family="monospace">invoke_signed</text>
-  <rect x="40" y="290" width="220" height="44" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="5 4"/>
-  <text x="150" y="309" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">a signed transaction instead</text>
-  <text x="150" y="324" text-anchor="middle" font-size="9.5" fill="#ed4937" font-family="monospace">would have expired after a minute</text>
-  <text x="360" y="372" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The user signs once, at 10:00. At 14:00 the PDA signs for them.</text>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Action as data</text>
+  <circle cx="80" cy="136" r="8" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <path d="M 66 166 Q 80 144 94 166 Z" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="80" y="182" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">user</text>
+  <line x1="102" y1="145" x2="149.0" y2="145.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="149.0,139.0 149.0,151.0 160,145" fill="#000000"/>
+  <text x="130" y="135" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">stores</text>
+  <rect x="160" y="100" width="170" height="90" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="245" y="122" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">account</text>
+  <rect x="215" y="132" width="60" height="46" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <line x1="224" y1="144" x2="266" y2="144" stroke="#000000" stroke-width="1"/>
+  <line x1="224" y1="154" x2="266" y2="154" stroke="#000000" stroke-width="1"/>
+  <line x1="224" y1="164" x2="254" y2="164" stroke="#000000" stroke-width="1"/>
+  <circle cx="300" cy="160" r="11" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <line x1="300" y1="160" x2="300" y2="153" stroke="#000000" stroke-width="2"/>
+  <line x1="300" y1="160" x2="305" y2="163" stroke="#000000" stroke-width="2"/>
+  <text x="300" y="185" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">waits</text>
+  <line x1="330" y1="145" x2="409.0" y2="145.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="409.0,139.0 409.0,151.0 420,145" fill="#000000"/>
+  <text x="375" y="135" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">later</text>
+  <circle cx="450" cy="136" r="8" fill="#e0deda" stroke="#565653" stroke-width="2"/>
+  <path d="M 436 166 Q 450 144 464 166 Z" fill="#e0deda" stroke="#565653" stroke-width="2"/>
+  <text x="450" y="182" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">anyone</text>
+  <line x1="472" y1="145" x2="529.0" y2="145.0" stroke="#ed4937" stroke-width="3"/>
+  <polygon points="529.0,139.0 529.0,151.0 540,145" fill="#ed4937"/>
+  <text x="506" y="135" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace">execute</text>
+  <rect x="540" y="120" width="120" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="600" y="142" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace" font-weight="bold">target</text>
+  <text x="600" y="158" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">PDA signs</text>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The action waits on-chain as data. When its time comes, anyone sends it and the PDA signs for the user.</text>
 </svg>
 
 ## Examples

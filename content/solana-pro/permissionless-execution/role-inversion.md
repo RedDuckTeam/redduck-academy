@@ -63,6 +63,33 @@ Role inversion moves the job from the party that does it by default to the party
 
 You have already seen a small version of this in the lecture on [constraints behind patterns](/courses/solana-pro/welcome/constraints-behind-patterns). The client already finds the right accounts, so the program doesn't search and only agrees or disagrees with the proposed accounts. Role inversion applies the same idea to any role in a design.
 
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Role inversion</title><desc>Left: the oracle pushes prices into the program, doing all the work. Right: the user who needs the price brings it, and the program only checks it. A curved arrow between the panels shows the roles flipped.</desc>
+  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Role inversion</text>
+  <text x="190" y="88" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">inherited role</text>
+  <text x="530" y="88" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">inverted role</text>
+  <rect x="60" y="120" width="110" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="115" y="150" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">oracle</text>
+  <line x1="170" y1="145" x2="249.0" y2="145.0" stroke="#000000" stroke-width="3"/>
+  <polygon points="249.0,139.0 249.0,151.0 260,145" fill="#000000"/>
+  <text x="215" y="135" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">does</text>
+  <rect x="260" y="120" width="110" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="315" y="150" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">program</text>
+  <circle cx="430" cy="136" r="8" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <path d="M 416 166 Q 430 144 444 166 Z" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="430" y="182" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">needs it</text>
+  <line x1="452" y1="145" x2="529.0" y2="145.0" stroke="#ed4937" stroke-width="3"/>
+  <polygon points="529.0,139.0 529.0,151.0 540,145" fill="#ed4937"/>
+  <text x="496" y="135" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace">brings</text>
+  <rect x="540" y="120" width="120" height="50" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="600" y="145" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">program</text>
+  <text x="600" y="160" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace">only checks</text>
+  <path d="M 330 200 Q 400 240 470 200" fill="none" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="468" y1="201" x2="463.2" y2="204.6" stroke="#565653" stroke-width="2"/>
+  <polygon points="459.6,199.8 466.8,209.4 472,198" fill="#565653"/>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The job moves to the party that needs its result. The program keeps only the verification.</text>
+</svg>
+
 ## Pyth: from writing prices to checking them
 
 Pyth is a price oracle. It used to work in the push model, where Pyth's data publishers sent every price update on-chain themselves and paid the fees. Each update of each feed, for example SOL/USD, was a transaction, whether or not anyone needed that price at that moment. A program read whatever value was stored in the price account, and that value was only as fresh as the last update.

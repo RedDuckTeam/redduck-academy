@@ -92,6 +92,37 @@ The reward could be small, as long as it covers what the bot owner spent on the 
   <text x="360" y="340" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A team bot runs the job while one server runs. A paid job runs while anyone wants the reward.</text>
 </svg>
 
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Untrusted executor</title><desc>A job box holding a reward coin. Three anonymous bots and a question mark all have arrows to the job. One arrow leads out of the job to the same result for every caller.</desc>
+  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Untrusted executor</text>
+  <rect x="50" y="82" width="70" height="26" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="85" y="99" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace">bot A</text>
+  <line x1="122" y1="95" x2="240.2" y2="155.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="242.9,149.7 237.5,160.4 250,160" fill="#000000"/>
+  <rect x="50" y="122" width="70" height="26" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="85" y="139" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace">bot B</text>
+  <line x1="122" y1="135" x2="239.2" y2="157.9" stroke="#000000" stroke-width="2"/>
+  <polygon points="240.4,152.0 238.1,163.8 250,160" fill="#000000"/>
+  <rect x="50" y="162" width="70" height="26" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="85" y="179" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace">bot C</text>
+  <line x1="122" y1="175" x2="239.1" y2="161.3" stroke="#000000" stroke-width="2"/>
+  <polygon points="238.4,155.3 239.8,167.2 250,160" fill="#000000"/>
+  <rect x="50" y="202" width="70" height="26" rx="0" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="85" y="219" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">anyone</text>
+  <line x1="122" y1="215" x2="239.9" y2="164.3" stroke="#000000" stroke-width="2"/>
+  <polygon points="237.5,158.8 242.3,169.9 250,160" fill="#000000"/>
+  <rect x="250" y="120" width="170" height="80" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="335" y="150" text-anchor="middle" font-size="13" fill="#000000" font-family="monospace" font-weight="bold">job</text>
+  <circle cx="335" cy="175" r="9" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
+  <text x="335" y="179" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">$</text>
+  <text x="360" y="179" text-anchor="start" font-size="10" fill="#ed4937" font-family="monospace">reward</text>
+  <line x1="420" y1="160" x2="509.0" y2="160.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="509.0,154.0 509.0,166.0 520,160" fill="#000000"/>
+  <rect x="520" y="135" width="150" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="595" y="165" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">same result</text>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">Pay for the job and let anyone do it. The result does not depend on who sends it.</text>
+</svg>
+
 ## Nobody runs a liquidation service
 
 Liquidation is the best-known paid job on Solana. Drift, Marginfi and Kamino all rely on outside bots to liquidate positions. When a borrower's collateral no longer covers the loan with enough margin, someone has to close the position fast, or the protocol takes the loss. The liquidator gets a reward taken from the failed position, usually collateral at a discount. Because every liquidation pays, bots watch every position on these protocols, and the borrower whose position failed pays for the service.
@@ -106,7 +137,7 @@ Helium pays rewards to the owners of hotspots (the devices that provide its wire
 
 Monaco, a prediction market, separates matching from paying out. Matching only marks the orders as filled. Paying out is a separate instruction that anyone can call later, and the money goes to the order owners. Governance works the same way. After a vote passes, anyone can send the transaction that executes the proposal. The vote decided what happens. The executor only decides when.
 
-The executor cannot change what the instruction does, but it still chooses when to send the transaction and which accounts to pass. Timing matters when the result depends on a price or a clock, so the instruction has to be correct at any moment it can be called. The accounts matter because the client brings every account, so the instruction checks each one exactly as it would for any other caller. More about callers passing the accounts themselves in the [root of trust lecture](/courses/solana-pro/trust-and-identity/root-of-trust).
+The executor cannot change what the instruction does, but it still chooses when to send the transaction and which accounts to pass. Timing matters when the result depends on a price or a clock, so the instruction has to be correct at any moment it can be called. The accounts matter because the client brings every account, so the instruction checks each one exactly as it would for any other caller. More about callers passing the accounts themselves in the **[root of trust lecture](/courses/solana-pro/trust-and-identity/root-of-trust)**.
 
 ## Let bots compete on the reward
 

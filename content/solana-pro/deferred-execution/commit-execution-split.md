@@ -11,42 +11,38 @@ The best example is your typical program with a random outcome. You can't implem
 
 In fact, because of it, you also can't let them have the authority of being the sender of that "execute" part of the transaction at all. So naturally, you want to split it into "commit" and "execute" types of transactions, because you can't let them have the "execute" part.
 
-<svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>One transaction, or a commit and an execution</title><desc>Top row: in one transaction the user's bet and its result sit in the same box, with a loop arrow labeled simulate until it wins, so the user picks the result. Bottom: two swimlanes over a time axis. In the user lane, transaction 1 commits the bet and locks the stake. The seed, a slot hash, is fixed and handed to the oracle lane, where the random value is computed, and transaction 2 reveals it and settles the bet. The user cannot start a new round until this one is settled.</desc>
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Commit-execution split</title><desc>Two transactions on a timeline. The first, from the user, locks the bet with a padlock while the outcome is still unknown, shown as a question mark. The second, from someone else, holds the dice and settles the result.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">One transaction, or a commit and an execution</text>
-  <text x="40" y="96" text-anchor="start" font-size="10" fill="#565653" font-family="monospace" font-weight="bold">one transaction</text>
-  <rect x="170" y="72" width="200" height="40" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="270" y="97" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">bet + result</text>
-  <path d="M 380 92 C 440 60, 440 124, 380 92" fill="none" stroke="#ed4937" stroke-width="2"/>
-  <polygon points="384,86 384,98 374,92" fill="#ed4937"/>
-  <text x="455" y="88" text-anchor="start" font-size="9.5" fill="#ed4937" font-family="monospace">simulate, send only</text>
-  <text x="455" y="101" text-anchor="start" font-size="9.5" fill="#ed4937" font-family="monospace">when it wins</text>
-  <text x="640" y="96" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">user picks the result</text>
-  <line x1="40" y1="130" x2="680" y2="130" stroke="#565653" stroke-width="1" stroke-dasharray="4 3"/>
-  <text x="40" y="150" text-anchor="start" font-size="10" fill="#565653" font-family="monospace" font-weight="bold">two transactions</text>
-  <rect x="40" y="160" width="640" height="80" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="5 4"/>
-  <text x="50" y="205" text-anchor="start" font-size="10" fill="#565653" font-family="monospace" font-weight="bold">user</text>
-  <rect x="40" y="255" width="640" height="80" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="5 4"/>
-  <text x="50" y="300" text-anchor="start" font-size="10" fill="#565653" font-family="monospace" font-weight="bold">oracle, anyone</text>
-  <rect x="150" y="172" width="170" height="56" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="235" y="194" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">tx 1: commit</text>
-  <text x="235" y="212" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">bet placed, stake locked</text>
-  <text x="470" y="203" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">no new round until settled</text>
-  <line x1="235" y1="228" x2="235.0" y2="258.0" stroke="#000000" stroke-width="2"/>
-  <polygon points="241.0,258.0 229.0,258.0 235,268" fill="#000000"/>
-  <text x="245" y="250" text-anchor="start" font-size="9.5" fill="#565653" font-family="monospace">seed = slot hash</text>
-  <rect x="150" y="268" width="200" height="56" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="250" y="290" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace" font-weight="bold">random value computed</text>
-  <text x="250" y="308" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">from seed + oracle key</text>
-  <line x1="350" y1="296" x2="430.0" y2="296.0" stroke="#000000" stroke-width="2"/>
-  <polygon points="430.0,290.0 430.0,302.0 440,296" fill="#000000"/>
-  <rect x="440" y="268" width="220" height="56" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="550" y="290" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">tx 2: reveal + settle</text>
-  <text x="550" y="308" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">nothing to simulate</text>
-  <line x1="40" y1="358" x2="670.0" y2="358.0" stroke="#565653" stroke-width="2"/>
-  <polygon points="670.0,352.0 670.0,364.0 680,358" fill="#565653"/>
-  <text x="360" y="374" text-anchor="middle" font-size="9.5" fill="#565653" font-family="monospace">time</text>
-  <text x="360" y="398" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The user sends only the commit. The result arrives in a transaction the user does not choose.</text>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Commit-execution split</text>
+  <line x1="50" y1="200" x2="669.0" y2="200.0" stroke="#565653" stroke-width="2"/>
+  <polygon points="669.0,194.0 669.0,206.0 680,200" fill="#565653"/>
+  <text x="640" y="218" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">time</text>
+  <circle cx="110" cy="106" r="8" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <path d="M 96 136 Q 110 114 124 136 Z" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="110" y="152" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">user</text>
+  <line x1="132" y1="130" x2="169.8" y2="145.8" stroke="#000000" stroke-width="2"/>
+  <polygon points="172.2,140.2 167.5,151.3 180,150" fill="#000000"/>
+  <rect x="180" y="110" width="150" height="70" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="255" y="133" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">tx 1: commit</text>
+  <path d="M 246 154 v -8 a 9 9 0 0 1 18 0 v 8" fill="none" stroke="#ed4937" stroke-width="2.5"/>
+  <rect x="242" y="154" width="26" height="20" rx="3" fill="#ed4937" stroke="#ed4937" stroke-width="2"/>
+  <circle cx="255" cy="164" r="3" fill="#e0deda" stroke="#e0deda" stroke-width="2"/>
+  <text x="365" y="152" text-anchor="middle" font-size="26" fill="#565653" font-family="monospace" font-weight="bold">?</text>
+  <text x="365" y="172" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">unknown</text>
+  <circle cx="610" cy="106" r="8" fill="#e0deda" stroke="#565653" stroke-width="2"/>
+  <path d="M 596 136 Q 610 114 624 136 Z" fill="#e0deda" stroke="#565653" stroke-width="2"/>
+  <text x="610" y="152" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">someone else</text>
+  <line x1="588" y1="130" x2="550.2" y2="145.8" stroke="#000000" stroke-width="2"/>
+  <polygon points="552.5,151.3 547.8,140.2 540,150" fill="#000000"/>
+  <rect x="400" y="110" width="140" height="70" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="470" y="133" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">tx 2: execute</text>
+  <rect x="458" y="148" width="24" height="24" rx="4" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <circle cx="464" cy="154" r="2" fill="#000000" stroke="#000000" stroke-width="1"/>
+  <circle cx="476" cy="166" r="2" fill="#000000" stroke="#000000" stroke-width="1"/>
+  <circle cx="470" cy="160" r="2" fill="#000000" stroke="#000000" stroke-width="1"/>
+  <circle cx="464" cy="166" r="2" fill="#000000" stroke="#000000" stroke-width="1"/>
+  <circle cx="476" cy="154" r="2" fill="#000000" stroke="#000000" stroke-width="1"/>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The user commits before the outcome exists. The outcome arrives in a transaction the user does not choose.</text>
 </svg>
 
 ## Examples

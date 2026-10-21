@@ -64,7 +64,7 @@ In a commit-execution split, who must not decide whether the execute transaction
 <!-- q:92373b31d381c9dd4f77301c -->
 Why does "sign an order once, let a server submit it when the price is right" fail on Solana?
 
-- [x] The transaction's recent blockhash expires in about a minute, and the signature dies with it  <!-- a:4a56527a025befa2c26c67ec -->
+- [x] A transaction signature is valid only for about a minute, so it is dead long before the price is reached  <!-- a:4a56527a025befa2c26c67ec -->
 - [ ] Solana does not allow servers to submit transactions  <!-- a:33f2649694a5aae5bc60fd1a -->
 - [ ] The order would need the user's private key on the server  <!-- a:212c60343c0644b683b7c6ca -->
 - [ ] A signed transaction cannot contain a price  <!-- a:db9ad5bb01473d178e077db6 -->

@@ -18,42 +18,32 @@ In a staking pool, the running total is the reward per staked token, kept in the
 owed = (pool.reward_per_token - staker.last_reward_per_token) * staker.stake
 ```
 
-<svg role="img" viewBox="0 0 720 370" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Only the touched account is updated</title><desc>A pool account at the top holds the central state, a reward per staked token of 0.05 and 1,000 tokens staked. Below it are three staker accounts. Staker A, with a stake of 100 and a last seen value of 0.03, is in the transaction and is highlighted. The program pays the difference of 0.02 times 100, which is 2 tokens, and moves the marker to 0.05. Staker B, with a stake of 300 and a last seen value of 0.05, is not in the transaction and is owed nothing yet. Staker C, with a stake of 50 and a last seen value of 0.00, is not in the transaction and has 2.5 tokens waiting for a touch.</desc>
+<svg role="img" viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Lazy loading</title><desc>One shared number at the top. Six small accounts below, five of them gray and untouched. One account is touched by a transaction, drawn red, and only that one computes its result from the shared number.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Only the touched account is updated</text>
-
-  <rect x="235" y="75" width="250" height="78" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="235" y="75" width="250" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="93" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">pool account, central state</text>
-  <text x="360" y="121" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">reward per staked token 0.05</text>
-  <text x="360" y="139" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">1,000 tokens staked</text>
-
-  <line x1="300" y1="153" x2="160" y2="205" stroke="#ed4937" stroke-width="2"/>
-  <line x1="360" y1="153" x2="360" y2="205" stroke="#565653" stroke-width="1" stroke-dasharray="4 3"/>
-  <line x1="420" y1="153" x2="560" y2="205" stroke="#565653" stroke-width="1" stroke-dasharray="4 3"/>
-
-  <rect x="85" y="205" width="150" height="58" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="160" y="224" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">staker A</text>
-  <text x="160" y="239" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">stake 100</text>
-  <text x="160" y="253" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">last seen 0.03</text>
-  <rect x="285" y="205" width="150" height="58" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="224" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">staker B</text>
-  <text x="360" y="239" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">stake 300</text>
-  <text x="360" y="253" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">last seen 0.05</text>
-  <rect x="485" y="205" width="150" height="58" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="560" y="224" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">staker C</text>
-  <text x="560" y="239" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">stake 50</text>
-  <text x="560" y="253" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">last seen 0.00</text>
-
-  <text x="160" y="284" text-anchor="middle" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">(0.05 - 0.03) x 100 = 2 paid</text>
-  <text x="160" y="300" text-anchor="middle" font-family="monospace" font-size="9" fill="#ed4937">marker moves to 0.05, A pays the fee</text>
-  <text x="360" y="284" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">not in this transaction</text>
-  <text x="360" y="300" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">nothing owed yet</text>
-  <text x="560" y="284" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">not in this transaction</text>
-  <text x="560" y="300" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">2.5 waiting for a touch</text>
-
-  <text x="360" y="338" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">All three stakers hold the same two numbers. Only staker A is in the</text>
-  <text x="360" y="354" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">transaction, so only A's reward is computed now.</text>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Lazy loading</text>
+  <rect x="285" y="78" width="150" height="44" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="360" y="105" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">shared total</text>
+  <line x1="360" y1="122" x2="110" y2="185" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <rect x="70" y="185" width="80" height="44" rx="0" fill="#e0deda" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="110" y="212" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">untouched</text>
+  <line x1="360" y1="122" x2="210" y2="185" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <rect x="170" y="185" width="80" height="44" rx="0" fill="#e0deda" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="210" y="212" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">untouched</text>
+  <line x1="360" y1="122" x2="310" y2="185" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <rect x="270" y="185" width="80" height="44" rx="0" fill="#e0deda" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="310" y="212" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">untouched</text>
+  <line x1="360" y1="122" x2="410" y2="185" stroke="#ed4937" stroke-width="2"/>
+  <rect x="370" y="185" width="80" height="44" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="410" y="212" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace" font-weight="bold">computed</text>
+  <line x1="360" y1="122" x2="510" y2="185" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <rect x="470" y="185" width="80" height="44" rx="0" fill="#e0deda" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="510" y="212" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">untouched</text>
+  <line x1="360" y1="122" x2="610" y2="185" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <rect x="570" y="185" width="80" height="44" rx="0" fill="#e0deda" stroke="#565653" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="610" y="212" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">untouched</text>
+  <line x1="410" y1="262" x2="410.0" y2="243.0" stroke="#ed4937" stroke-width="3"/>
+  <polygon points="404.0,243.0 416.0,243.0 410,232" fill="#ed4937"/>
+  <text x="410" y="278" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">a transaction touches it</text>
 </svg>
 
 ## Examples

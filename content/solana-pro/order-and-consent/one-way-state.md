@@ -11,41 +11,37 @@ EVM contracts rely on transaction nonces to enforce sequential order, and track 
 
 The **One-Way State** pattern flips the design: instead of attempting to restore message delivery order, you design in a way that order stops mattering at all. The message carries the destination, not the step: the total earned so far, not today's reward. Deltas break this even when they only move forward: +5 applied twice is not +5 applied once. A total applied twice is just the total.
 
-<svg role="img" viewBox="0 0 720 382" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The same message arrives twice</title><desc>Two boxes. On the left, the message is a step: paid starts at 0, a plus five message makes it 5, and the same message arriving again makes it 10, which is wrong. On the right, the message is a destination: paid starts at 0, a total of 5 makes it 5, and the same total arriving again leaves it at 5.</desc>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The same message arrives twice</text>
-  <rect x="40" y="70" width="300" height="254" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="40" y="70" width="300" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="89" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">Message = step</text>
-  <rect x="80" y="110" width="220" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="132" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#565653">paid 0</text>
-  <line x1="190" y1="146" x2="190" y2="160" stroke="#000000" stroke-width="2"/>
-  <polygon points="184,158 196,158 190,168" fill="#000000"/>
-  <rect x="80" y="168" width="220" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="190" y="190" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#565653">+5 arrives: paid 5</text>
-  <line x1="190" y1="204" x2="190" y2="218" stroke="#000000" stroke-width="2"/>
-  <polygon points="184,216 196,216 190,226" fill="#000000"/>
-  <rect x="80" y="226" width="220" height="36" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="190" y="248" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="bold">+5 arrives again: paid 10</text>
-  <text x="190" y="306" text-anchor="middle" font-family="monospace" font-size="11" fill="#ed4937" font-weight="bold">paid twice</text>
-  <rect x="380" y="70" width="300" height="254" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <rect x="380" y="70" width="300" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="89" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">Message = destination</text>
-  <rect x="420" y="110" width="220" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="132" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#565653">paid 0</text>
-  <line x1="530" y1="146" x2="530" y2="160" stroke="#000000" stroke-width="2"/>
-  <polygon points="524,158 536,158 530,168" fill="#000000"/>
-  <rect x="420" y="168" width="220" height="36" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="530" y="190" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#565653">total 5 arrives: paid 5</text>
-  <line x1="530" y1="204" x2="530" y2="218" stroke="#000000" stroke-width="2"/>
-  <polygon points="524,216 536,216 530,226" fill="#000000"/>
-  <rect x="420" y="226" width="220" height="36" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="530" y="248" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="bold">total 5 arrives again: paid 5</text>
-  <text x="530" y="306" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">same state</text>
-  <text x="360" y="360" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A total applied twice is the total. A step applied twice is double.</text>
-</svg>
-
 The program only accepts actions that move state progress forward or restrict capabilities, strictly rejecting attempts to roll back the value or broaden access. When the state can only move in one direction (never down, never wider), a delayed, re-submitted transaction is no longer a security risk. The program never compares two messages with each other, it only checks the message against the current state. You don't have to ask the question "which one came later" when you can ask the question "has this already been taken into account". When you're moving in one direction, you can't suddenly find yourself at point 80 if you've already passed point 100.
+
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>One-way state</title><desc>A number line pointing right with the state at 100. A message with 80 arrives late and bounces off, rejected. A message with 100 arrives twice and changes nothing. A message with 120 moves the state forward.</desc>
+  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">One-way state</text>
+  <line x1="60" y1="170" x2="669.0" y2="170.0" stroke="#000000" stroke-width="3"/>
+  <polygon points="669.0,164.0 669.0,176.0 680,170" fill="#000000"/>
+  <line x1="220" y1="162" x2="220" y2="178" stroke="#000000" stroke-width="2"/>
+  <text x="220" y="196" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">80</text>
+  <line x1="370" y1="162" x2="370" y2="178" stroke="#000000" stroke-width="2"/>
+  <text x="370" y="196" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">100</text>
+  <line x1="520" y1="162" x2="520" y2="178" stroke="#000000" stroke-width="2"/>
+  <text x="520" y="196" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">120</text>
+  <circle cx="370" cy="170" r="12" fill="#ed4937" stroke="#ed4937" stroke-width="2"/>
+  <text x="390" y="150" text-anchor="start" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">state</text>
+  <line x1="220" y1="95" x2="220.0" y2="139.0" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <polygon points="226.0,139.0 214.0,139.0 220,150" fill="#565653"/>
+  <text x="220" y="85" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">80 arrives late</text>
+  <line x1="213" y1="111" x2="227" y2="125" stroke="#ed4937" stroke-width="3"/>
+  <line x1="213" y1="125" x2="227" y2="111" stroke="#ed4937" stroke-width="3"/>
+  <line x1="330" y1="95" x2="356.5" y2="140.5" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <polygon points="361.7,137.5 351.3,143.5 362,150" fill="#565653"/>
+  <text x="300" y="85" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">100 again</text>
+  <text x="312" y="130" text-anchor="end" font-size="9" fill="#565653" font-family="monospace">= same</text>
+  <line x1="520" y1="95" x2="520.0" y2="139.0" stroke="#ed4937" stroke-width="3"/>
+  <polygon points="526.0,139.0 514.0,139.0 520,150" fill="#ed4937"/>
+  <text x="520" y="85" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace" font-weight="bold">120</text>
+  <path d="M 532 118 l 6 6 l 11 -13" fill="none" stroke="#ed4937" stroke-width="3"/>
+  <text x="640" y="196" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">only forward</text>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The message carries the destination, not the step. Order and duplicates stop mattering.</text>
+</svg>
 
 ## Examples
 
