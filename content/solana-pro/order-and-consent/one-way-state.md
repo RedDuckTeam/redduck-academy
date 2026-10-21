@@ -45,10 +45,10 @@ The program only accepts actions that move state progress forward or restrict ca
 
 ## Examples
 
-**Helium rewards.** Helium pays rewards to about a million devices, and its oracle signs the total a device has earned since the beginning, not the daily reward. The device's account stores how much was already paid. A claim pays the difference and moves the paid amount up to the signed total. Send it twice, and the second claim pays zero, because the paid amount already equals the total. Bring an older signature with a smaller total, and it pays nothing, because the paid amount is already above it. The counter never goes down, so nobody can take back what was paid, and no claim can land in a wrong order.
+**Helium rewards**. The oracle signs the total a device has earned since the beginning. The device's account stores how much was already paid. A claim pays the difference and moves the paid amount up to the signed total. Send it twice, and the second claim pays zero. Bring an older signature with a smaller total, and it pays nothing, because the paid amount is already above it. The counter never goes down, so nobody can take back what was paid.
 
-**Squads** does the same with rights. When its signers or its threshold change, it moves one index, the stale transaction index, up to the latest proposal, and every proposal with a number at or below that index is stale: it can be cancelled, but it cannot be approved or executed, in whatever order the transactions arrive. An approval that was in flight when the signers changed lands after the index moved, and the state rejects it. No timestamp is compared.
+**Squads** does the same with rights: when signers change, one counter moves to the latest proposal, and every older proposal can be cancelled but not approved.
 
-**Drift's** markets with an expiry turn reduce-only before they expire: you can close a position but not open or grow one. The set of allowed actions only narrows as the market approaches settlement, so a late order to open does not depend on whether it was signed before or after the switch. It is rejected because the state says the market is reduce-only.
+**Drift's** binary markets turn reduce-only near expiry: you can close a position but not open or grow one.
 
 The One-Way State survives a simple test: any two transactions, swapped, land on the same final state.

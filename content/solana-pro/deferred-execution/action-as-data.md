@@ -49,10 +49,8 @@ Action as Data is the pattern of storing the future action on-chain, without exe
 
 ## Examples
 
-**Squads** is a multisig, and its members are rarely online at the same time. Squads creates an account for every proposed transaction, storing the full list of instructions inside it. Members approve the proposal one by one, over hours or days, and each approval is a small transaction of its own. Once enough members vote yes, a member with execute rights triggers the execution, and the program runs the stored instructions with the vault PDA as the signer through `invoke_signed`. The vault owns the funds, so the stored action can move them, and no member's key is needed at execution time.
-
-**Realms**, the governance program behind most Solana DAOs, does the same by keeping governance instructions inside the proposal's accounts. Voters vote over days. Once a vote passes and the hold-up time ends, a delay during which the proposal can still be stopped, any user can trigger the stored instructions to execute. The governance PDA is the authority over the treasury, so it signs for the instructions, and the person who sends the transaction only pays the fee.
-
-**Jupiter.** A limit order is an account with a price and a size, and the tokens being sold are moved into an account the program controls when the order is placed. DCA is an account with a schedule. When the price or the time comes, a keeper sends the transaction that executes the stored swap, and the user has not signed anything since the order was placed.
+- **Squads** creates an account for every proposed transaction, storing the full list of instructions inside it. Members approve the proposal one by one. Once enough members vote yes, anyone can trigger the execution (even if they aren't a member), and the program named 'vault' will execute the stored instructions.
+- **Realms** does the same, by keeping governance instructions inside the proposal account itself. Once a vote passes, any user could trigger the stored instructions to execute.
+- A **Jupiter** limit order is an account with a price, DCA is an account with a schedule, and when the price or the time comes, anyone can fill it.
 
 The only trade-off in this pattern is that the rent for every pending action has to be paid, and the funds are locked until it runs. So every action needs a way to cancel or expire.

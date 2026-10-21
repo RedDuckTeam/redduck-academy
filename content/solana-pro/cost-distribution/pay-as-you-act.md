@@ -64,20 +64,4 @@ Most of the "at the end" steps can be embedded into intermediate in-process tran
 
 ## Examples
 
-**Hxro's parimutuel (pool betting) markets.** Everyone bets on whether a price goes up or down over an interval, and when the interval ends, the losing side's money is split between the winners in proportion to their bets. The step at the end would be to add up every bet on both sides and then pay every winner, and Hxro does neither. A bet on "up" or "down" adds its amount to that side's total at the moment it is placed, so when the round ends, both totals are already there. The oracle names the winning side, and the losing pool goes to the winners. Each winner claims on their own: their share is their bet divided by the winning total.
-
-```
-// the winner's share of the whole pool before fees, from the two totals that the bets already built
-payout = bet / winning_total * (winning_total + losing_total)
-```
-
-Bettors paid for the totals when they bet, and each winner pays for their own payout when they claim.
-
-**Orca Whirlpools.** Orca is a DEX. Every swap pays a fee, and that fee belongs to the liquidity providers whose liquidity the swap used: thousands of positions, none of which is in the swap transaction. The step at the end would be to go through every position and hand out its part of the fees. Instead, the pool stores one number per token, how much fee one unit of liquidity has earned since the pool opened. When a swap happens, the program takes the swap's fee, divides it by the liquidity active in that swap, and adds the result to this number inside the swap transaction, so the swapper pays for it. Each position keeps its own copy of this number from the last time it collected fees, and when the owner collects, the program pays the difference:
-
-```
-// what one unit of liquidity earned since this position last collected, times its liquidity
-owed = (pool.fee_per_liquidity - position.last_fee_per_liquidity) * position.liquidity
-```
-
-The swap pays for the shared number, and each owner pays for their own share.
+**Hxro's parimutuel (pool betting) markets.** A bet on "up" or "down" adds its amount to that side's total. When the round ends, the oracle names the winning side, and the losing pool goes to the winners. Each winner claims on their own: their share is their bet divided by the winning total. Bettors paid for the totals when they bet, and each winner pays for his own payout when he claims.
