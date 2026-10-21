@@ -68,6 +68,8 @@ Most of the "at the end" steps can be embedded into intermediate in-process tran
 
 **Realms (SPL Governance)** lets token holders vote on proposals. Each vote updates the proposal's totals right on the spot, and the cost of that update is paid in the voting transaction. When voting ends, the program checks the totals instead of counting all the votes.
 
+The same approach **DEXes** (e.g. Orca and Drift V2) utilizes in calculations of liquidity. Once maker (liquidity provider) adds or removes liquidity, they only update the metric stored in the two (or more) ticks of their range as they do not need other ticks. During the swap process taker uses only the ticks swap crosses. In this way liqudity is managed by the users which update it step-by-step.
+
 ## In code
 
 Each action updates the answer in one step, so no final tally is ever needed.
