@@ -38,3 +38,20 @@ Sometimes you can't predict or know the exact execution details of an action. To
 **Monaco Protocol's order book:** When a match happens between a maker and a taker, the protocol doesn't yet know how to send the tokens to the maker, because in order to do that, it would have to know the accounts of the maker, for which it would require to store additional data and have the taker compute the account addresses. So it marks them as eligible for sending, and later on, when someone is ready to perform the execution, they bring the virtually executed send into a real one.
 
 **ZK Compression** drops each spent record into a queue on the spot. Anyone running a node later moves the queue into the tree, for a reward.
+
+## In code
+
+The result is written down first and carried out later. The match records what the maker is owed, and a separate settle pays it once the maker's account is in the transaction.
+
+```rust
+// the match has the book but not the maker's token account, so it only records
+maker_order.filled = true;
+maker_order.owed = fill_amount;
+
+// a later settle, with the maker's token account now in the transaction
+require!(maker_order.filled, OrderError::NotFilled);
+transfer(&ctx, maker_order.owed)?;
+maker_order.owed = 0;
+```
+
+Until the settle runs, the recorded amount is not real money yet, so the program must not let it be spent.

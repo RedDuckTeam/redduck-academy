@@ -35,3 +35,16 @@ The boundaries can be signed together with the intended execution data: maximum 
 ## Examples
 
 **Jupiter:** an expected output can be calculated right on the spot, but the user in fact signs the minimum acceptable output they can agree to. The swap executes while the result stays above that minimum, but completely fails when it is below the acceptable minimum.
+
+## In code
+
+The boundary is an argument the user signs with the action. The program runs the action and fails if the result falls outside it.
+
+```rust
+pub fn swap(ctx: Context<Swap>, amount_in: u64, min_amount_out: u64) -> Result<()> {
+    let amount_out = run_swap(&ctx, amount_in)?;
+    // min_amount_out is the boundary the user signed, below it the swap fails
+    require!(amount_out >= min_amount_out, SwapError::SlippageExceeded);
+    settle(ctx, amount_out)
+}
+```

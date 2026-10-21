@@ -65,3 +65,21 @@ Most of the "at the end" steps can be embedded into intermediate in-process tran
 ## Examples
 
 **Hxro's parimutuel (pool betting) markets.** A bet on "up" or "down" adds its amount to that side's total. When the round ends, the oracle names the winning side, and the losing pool goes to the winners. Each winner claims on their own: their share is their bet divided by the winning total. Bettors paid for the totals when they bet, and each winner pays for his own payout when he claims.
+
+## In code
+
+Each action updates the answer in one step, so no final tally is ever needed.
+
+```rust
+// one vote bumps its candidate's count and updates the leader, nothing else
+pub fn vote(ctx: Context<Vote>) -> Result<()> {
+    let candidate = &mut ctx.accounts.candidate;
+    let election = &mut ctx.accounts.election;
+    candidate.votes += 1;
+    if candidate.votes > election.leader_votes {
+        election.leader = candidate.key();
+        election.leader_votes = candidate.votes;
+    }
+    Ok(())
+}
+```
