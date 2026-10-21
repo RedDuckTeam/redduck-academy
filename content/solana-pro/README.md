@@ -25,34 +25,40 @@ The course is written to the point. You won't read through formal, padded langua
 
 1. [Root of trust](trust-and-identity/root-of-trust.md)
 2. [Identity rejection](trust-and-identity/identity-rejection.md)
+3. [Find the root of trust](trust-and-identity/find-the-root-of-trust.md) — review task
 
 ### 3. Permissionless execution
 
 1. [Untrusted executor](permissionless-execution/untrusted-executor.md)
 2. [Role inversion](permissionless-execution/role-inversion.md)
+3. [Run it without the operator](permissionless-execution/run-it-without-the-operator.md) — review task
 
 ### 4. Cost distribution
 
 1. [Lazy loading](cost-distribution/lazy-loading.md)
 2. [Pay-as-you-act](cost-distribution/pay-as-you-act.md)
-3. [Trust and execution - Test](cost-distribution/trust-and-execution-test.md) — test
+3. [Rewards without a loop](cost-distribution/rewards-without-a-loop.md) — review task
+4. [Trust and execution - Test](cost-distribution/trust-and-execution-test.md) — test
 
 ### 5. State partitioning
 
 1. [Divide and conquer](state-partitioning/divide-and-conquer.md)
 2. [Complexity asymmetry](state-partitioning/complexity-asymmetry.md)
+3. [Orderbook with local checks](state-partitioning/orderbook-with-local-checks.md) — review task
 
 ### 6. Deferred execution
 
 1. [Commit-execution split](deferred-execution/commit-execution-split.md)
 2. [Action as data](deferred-execution/action-as-data.md)
 3. [Virtual execution](deferred-execution/virtual-execution.md)
+4. [Proposal that anyone can execute](deferred-execution/proposal-anyone-can-execute.md) — review task
 
 ### 7. Order and consent
 
 1. [One-way state](order-and-consent/one-way-state.md)
 2. [Boundary of consent](order-and-consent/boundary-of-consent.md)
-3. [State and time - Test](order-and-consent/state-and-time-test.md) — test
+3. [Claims in any order](order-and-consent/claims-in-any-order.md) — review task
+4. [State and time - Test](order-and-consent/state-and-time-test.md) — test
 
 ### 8. Outside Data
 
