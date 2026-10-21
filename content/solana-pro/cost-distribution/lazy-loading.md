@@ -1,4 +1,5 @@
 ---
+id: 1312774071
 title: Lazy loading
 type: lecture
 order: 10
