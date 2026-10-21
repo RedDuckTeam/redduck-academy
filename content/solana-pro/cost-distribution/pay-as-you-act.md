@@ -66,6 +66,8 @@ Most of the "at the end" steps can be embedded into intermediate in-process tran
 
 **Hxro's parimutuel (pool betting) markets.** A bet on "up" or "down" adds its amount to that side's total. When the round ends, the oracle names the winning side, and the losing pool goes to the winners. Each winner claims on their own: their share is their bet divided by the winning total. Bettors paid for the totals when they bet, and each winner pays for his own payout when he claims.
 
+**Realms (SPL Governance)** lets token holders vote on proposals. Each vote updates the proposal's totals right on the spot, and the cost of that update is paid in the voting transaction. When voting ends, the program checks the totals instead of counting all the votes.
+
 ## In code
 
 Each action updates the answer in one step, so no final tally is ever needed.
