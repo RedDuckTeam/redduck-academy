@@ -13,7 +13,7 @@ The lazy way (in a good sense): the result is not pushed to every account. Each 
 
 In a staking pool, the running total is the reward per staked token, kept in the pool account, and the marker is the value of that number at the staker's last claim:
 
-```
+```rust
 // what every staked token earned since this staker's last claim, times their stake
 owed = (pool.reward_per_token - staker.last_reward_per_token) * staker.stake
 ```

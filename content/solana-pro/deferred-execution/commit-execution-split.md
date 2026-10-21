@@ -50,3 +50,22 @@ In fact, because of it, you also can't let them have the authority of being the 
 **Switchboard VRF (coinflip)**. In the first transaction players pick a side, pay, and the program creates a request for a random number. Nobody knows the number yet, not the player, not the operator. In the second transaction the oracle (not the player!) writes the number into that request, and the program settles the bet the resolution of which is already locked. The player cannot start a new round until this one is settled, so there is no way to abandon a losing bet.
 
 The same pattern can be seen in other protocols too. In Parcl, orders collect over an interval and clear at one price, so nobody gains from being first. In Drift, before the pool fills an order, makers get a short window to bid for it.
+
+## In code
+
+The action is two instructions. The player signs the commit, and a different signer brings the result in the execute.
+
+```rust
+// transaction 1: the player commits and the stake is locked; the outcome does not exist yet
+pub fn commit(ctx: Context<Commit>, side: Side, stake: u64) -> Result<()> {
+    lock_stake(&ctx, stake)?;
+    ctx.accounts.round.side = side;
+    Ok(())
+}
+
+// transaction 2: the oracle, not the player, brings the result and settles the round
+pub fn execute(ctx: Context<Execute>, random: u64) -> Result<()> {
+    require!(ctx.accounts.signer.key() == ctx.accounts.round.oracle, Error::NotOracle);
+    settle(&ctx, random)
+}
+```

@@ -54,3 +54,25 @@ Action as Data is the pattern of storing the future action on-chain, without exe
 - A **Jupiter** limit order is an account with a price, DCA is an account with a schedule, and when the price or the time comes, anyone can fill it.
 
 The only trade-off in this pattern is that the rent for every pending action has to be paid, and the funds are locked until it runs. So every action needs a way to cancel or expire.
+
+## In code
+
+The action is stored as plain data, and a later transaction runs it with the PDA signing for the user.
+
+```rust
+#[account]
+pub struct PendingAction {
+    pub target_program: Pubkey,
+    pub accounts: Vec<StoredAccount>, // pubkey, is_signer, is_writable
+    pub data: Vec<u8>,
+    pub run_after: i64,
+}
+
+// anyone can run it once the condition holds; the PDA signs in place of the user
+pub fn execute(ctx: Context<Execute>) -> Result<()> {
+    let action = &ctx.accounts.pending;
+    require!(Clock::get()?.unix_timestamp >= action.run_after, Error::TooEarly);
+    invoke_signed(&action.to_instruction(), ctx.remaining_accounts, &[&[b"vault", &[ctx.bumps.vault]]])?;
+    Ok(())
+}
+```
