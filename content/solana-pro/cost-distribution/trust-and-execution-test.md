@@ -85,13 +85,13 @@ A staking pool's reward per staked token is 0.08. A staker with 200 tokens last 
 - [ ] 6 tokens are paid, and the staker's marker becomes 0.03  <!-- a:51dc5618c29d6e17ba577020 -->
 - [ ] 10 tokens are paid, and the staker's marker stays 0.05  <!-- a:c24c8a912014e59bc4dbc736 -->
 
-<!-- q -->
+<!-- q:e78906086024deda5352f83f -->
 In Fragmetric, when is a holder's reward balance updated?
 
-- [x] In the transfer hook, at the moment the token is transferred, because the program already runs on that account
-- [ ] Every hour, by a bot that walks through all holders
-- [ ] When the protocol's admin triggers a distribution
-- [ ] Never, the balance is computed off-chain
+- [x] In the transfer hook, at the moment the token is transferred, because the program already runs on that account  <!-- a:9ae0a7c132dad7f9c9cb0e8c -->
+- [ ] Every hour, by a bot that walks through all holders  <!-- a:48b44420ff6da683fa2f0402 -->
+- [ ] When the protocol's admin triggers a distribution  <!-- a:0ebb093a93dd3798eb70005c -->
+- [ ] Never, the balance is computed off-chain  <!-- a:185a2941da935ac08f865dfd -->
 
 <!-- q:435e43e49aebdd1864b82c3a -->
 Which of these can rely on lazy loading alone, with no paid executor? (Select all that apply.)
@@ -109,13 +109,13 @@ In Squads, the members of a multisig change. How many proposal accounts does the
 - [ ] Only the approved proposals  <!-- a:68b83ac78fee2aa522c8d35c -->
 - [ ] One per remaining member  <!-- a:3ffbd367964dbb25f9ddd4c9 -->
 
-<!-- q -->
+<!-- q:45add1b16e917fcb5fe3cafe -->
 Pay-as-you-act stores the answer instead of the inputs. Which of these can be that answer? (Select all that apply.)
 
-- [x] A count
-- [x] A total
-- [x] A maximum or a leader
-- [ ] The full list of votes, to be counted at the end
+- [x] A count  <!-- a:f95fe0e24b28f94b21828b5c -->
+- [x] A total  <!-- a:0b7229db13f08a55de06284e -->
+- [x] A maximum or a leader  <!-- a:42e43ed8a0446c28bc31304e -->
+- [ ] The full list of votes, to be counted at the end  <!-- a:6c547f074d53a755e5da1621 -->
 
 <!-- q:d43c98a710f4c2ba3bfdaf4a -->
 In Hxro's parimutuel market, what does a winner's payout depend on?
