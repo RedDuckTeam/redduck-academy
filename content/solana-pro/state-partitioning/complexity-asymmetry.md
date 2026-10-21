@@ -3,177 +3,39 @@ id: 1258489134
 title: Complexity asymmetry
 type: lecture
 order: 20
-faq:
-  - question: What is complexity asymmetry?
-    answer: >-
-      The gap between how much work an operation costs in total and how much of that work
-      runs on-chain. Inserting into a sorted list is O(n) in total, but it is O(1) on-chain
-      when the client finds the position and the program only checks it.
-  - question: Why are sorted linked lists so common in Solana programs?
-    answer: >-
-      Because inserting into one can cost O(1) on-chain. The client walks the list off-chain
-      and passes the order the new one goes after. The program checks only that the new
-      order fits between it and the next one.
-  - question: Why is an O(n) loop inside an instruction a security problem?
-    answer: >-
-      In most protocols anyone can add data. An attacker can grow the data until the loop
-      no longer fits in 1.4 million compute units, and then the instruction fails for every
-      caller. This is a denial-of-service attack, or DoS.
-  - question: How does Monaco stop its order book from growing too large?
-    answer: >-
-      The book is a fixed set of cells in one account, so nobody can add orders past what
-      fits.
-  - question: Where is the full Merkle tree of a compressed NFT collection stored?
-    answer: >-
-      Off-chain, with indexers. The on-chain account keeps the root and the canopy. Its size
-      is fixed when the tree is created, so it does not grow as NFTs are minted.
 ---
 
-> Engineers choose a data structure by its cost in time and memory. On Solana, you also weigh the part of the work that runs on-chain, which can be far smaller than the total. An operation can cost O(n) in total and O(1) on-chain, because the O(n) part runs on the client.
+To decide which algorithm is best to use, engineers consider the complexities in memory and computations, and based on the trade-offs between the two and the specific usage of operations (search, insert, etc.), they decide which algorithm is the most applicable for a specific problem.
 
-## One more variable
+Web3 and on-chain programs are not different, but they introduce one more variable for engineers to consider: **on-chain complexity**.
 
-On-chain programs add one more variable, the on-chain complexity. This is the work the program pays for. Compute costs compute units, with a limit per transaction, and memory costs rent for every account the program keeps. The rest runs on the client or on an indexer, a server that keeps a copy of chain data, and costs the program nothing. The gap between the total cost and the on-chain cost is called **complexity asymmetry**.
+On-chain complexity can be very different from the overall complexity. You can have O(1) search and insert operations on-chain, while the general O(N) complexity is shifted fully onto the off-chain layer.
 
-## Why O(n) on-chain is dangerous
-
-Remember from the [constraints lecture](/courses/solana-pro/welcome/constraints-behind-patterns) that anyone can call any instruction. In most protocols anyone can also add data, by opening an order, creating a position or minting an item.
-
-Now imagine an instruction that walks through all of that data. Every entry makes it more expensive, and an attacker can add entries cheaply. Once the walk needs more than the 1.4 million compute units a transaction allows, the instruction fails for every caller, and nobody can use that part of the program. This is a denial-of-service attack, or DoS.
-
-So the work inside an instruction should not grow with data anyone can add, or should grow very slowly. O(log n) is fine, since a billion entries need only about 30 steps. A loop over a fixed-size list is safe too, because nobody can make it longer. Anything heavier belongs off-chain.
-
-## The sorted linked list
-
-A sorted linked list is surprisingly common in Solana programs, though in general it is slow. Finding the position for a new element takes O(n), because you walk the list from the start. Linking it in is O(1) once you have the position.
-
-On-chain, the search disappears. The client walks the list off-chain and sends the position with the instruction. The program only checks the two neighbors of the new element, which takes the same time however long the list is. The client spends O(n) to find the position, and the program spends O(1) to check it.
-
-This holds only if the program reads just the elements it needs, as a zero-copy account allows. If it deserializes the whole account, it pays for every element on every call.
-
-## Monaco's order book
-
-You met Monaco's order book in the [role inversion lecture](/courses/solana-pro/permissionless-execution/role-inversion). Here is how it adds an order.
-
-The book is one account with a fixed set of cells. Orders are sorted from the highest price to the lowest, and each points to its neighbors by cell number. A new order takes any free cell, so cell numbers do not follow the price.
-
-The client works out where the new order goes and sends "after this order". The program checks three things. The order on the left is not cheaper than the new one. The order on the right is cheaper. Both cells hold open orders.
-
-Because the right neighbor must be strictly cheaper, a new order always goes after older orders at the same price, so those fill first.
-
-The cell numbers and prices in the diagram below are illustrative.
-
-<svg role="img" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Inserting into a sorted list on-chain</title><desc>A row of six orders sorted by price, from 2.40 down to 2.00, stored in cells with out-of-order numbers and linked to each other. Off-chain, the client walks the list to find the place for a new order at price 2.20, which costs O(n). It sends "after cell 5". On-chain, the program checks three things in O(1): the left neighbor, cell 5 at 2.20, is not cheaper, the right neighbor, cell 2 at 2.10, is cheaper, and both cells hold open orders.</desc>
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Complexity asymmetry</title><desc>A scale with two sides. The off-chain side holds a big block labeled search, O of n. The on-chain side holds a tiny block labeled check, O of 1. An arrow carries the found position from off-chain to on-chain.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Inserting into a sorted list on-chain</text>
-
-  <text x="252" y="88" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">off-chain, the client walks the list, O(n)</text>
-  <line x1="45" y1="100" x2="450" y2="100" stroke="#565653" stroke-width="1.5" stroke-dasharray="5 4"/>
-  <polygon points="449,95 449,105 459,100" fill="#565653"/>
-
-  <line x1="135" y1="140" x2="153" y2="140" stroke="#000000" stroke-width="2"/>
-  <line x1="243" y1="140" x2="261" y2="140" stroke="#000000" stroke-width="2"/>
-  <line x1="351" y1="140" x2="369" y2="140" stroke="#000000" stroke-width="2"/>
-  <line x1="459" y1="140" x2="477" y2="140" stroke="#565653" stroke-width="1" stroke-dasharray="2 2"/>
-  <line x1="567" y1="140" x2="585" y2="140" stroke="#000000" stroke-width="2"/>
-
-  <rect x="45" y="118" width="90" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="90" y="136" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">cell 3</text>
-  <text x="90" y="152" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.40</text>
-  <rect x="153" y="118" width="90" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="198" y="136" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">cell 7</text>
-  <text x="198" y="152" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.30</text>
-  <rect x="261" y="118" width="90" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="306" y="136" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">cell 0</text>
-  <text x="306" y="152" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.20</text>
-  <rect x="369" y="118" width="90" height="44" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="414" y="136" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">cell 5</text>
-  <text x="414" y="152" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.20</text>
-  <rect x="477" y="118" width="90" height="44" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="522" y="136" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">cell 2</text>
-  <text x="522" y="152" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.10</text>
-  <rect x="585" y="118" width="90" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="630" y="136" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">cell 6</text>
-  <text x="630" y="152" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.00</text>
-
-  <line x1="440" y1="205" x2="414" y2="163" stroke="#ed4937" stroke-width="1.5" stroke-dasharray="4 3"/>
-  <line x1="496" y1="205" x2="522" y2="163" stroke="#ed4937" stroke-width="1.5" stroke-dasharray="4 3"/>
-  <text x="404" y="190" text-anchor="end" font-family="monospace" font-size="9" fill="#ed4937">left</text>
-  <text x="532" y="190" font-family="monospace" font-size="9" fill="#ed4937">right</text>
-  <rect x="403" y="205" width="130" height="44" fill="#e0deda" stroke="#ed4937" stroke-width="2.5"/>
-  <text x="468" y="223" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">new order</text>
-  <text x="468" y="239" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">price 2.20</text>
-  <text x="468" y="270" text-anchor="middle" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">client sends "after cell 5"</text>
-
-  <rect x="130" y="290" width="460" height="86" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="130" y="290" width="460" height="26" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="308" text-anchor="middle" font-size="11" fill="#ffffff" font-weight="bold">on-chain, the program checks three things, O(1)</text>
-  <text x="150" y="335" font-family="monospace" font-size="10">1. left neighbor is not cheaper</text>
-  <text x="450" y="335" font-family="monospace" font-size="10" fill="#565653">2.20 &gt;= 2.20</text>
-  <text x="150" y="352" font-family="monospace" font-size="10">2. right neighbor is cheaper</text>
-  <text x="450" y="352" font-family="monospace" font-size="10" fill="#565653">2.10 &lt; 2.20</text>
-  <text x="150" y="369" font-family="monospace" font-size="10">3. both cells hold open orders</text>
-
-  <text x="360" y="406" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The client does the O(n) walk off-chain, and the program</text>
-  <text x="360" y="422" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">does an O(1) check, however long the book grows.</text>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Complexity asymmetry</text>
+  <text x="190" y="90" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">off-chain</text>
+  <text x="530" y="90" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">on-chain</text>
+  <rect x="90" y="105" width="200" height="110" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="190" y="150" text-anchor="middle" font-size="13" fill="#000000" font-family="monospace" font-weight="bold">search</text>
+  <text x="190" y="175" text-anchor="middle" font-size="14" fill="#000000" font-family="monospace" font-weight="bold">O(n)</text>
+  <line x1="295" y1="160" x2="434.0" y2="160.0" stroke="#ed4937" stroke-width="3"/>
+  <polygon points="434.0,154.0 434.0,166.0 445,160" fill="#ed4937"/>
+  <text x="370" y="150" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace">position</text>
+  <rect x="450" y="140" width="100" height="40" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="500" y="158" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">check</text>
+  <text x="500" y="172" text-anchor="middle" font-size="11" fill="#ed4937" font-family="monospace" font-weight="bold">O(1)</text>
+  <line x1="60" y1="225" x2="660" y2="225" stroke="#565653" stroke-width="1"/>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The client does the heavy part for free. The program only verifies, and its cost never grows.</text>
 </svg>
 
-A fixed number of cells means the book never outgrows its account, so walking the whole book on-chain would also fit in the compute budget. But then every new order would pay for every cell. The neighbor check makes it pay for two.
+## Examples
 
-The downside is a hard limit on open orders. An attacker could fill every free cell to block real traders, so each order locks some of its owner's funds to make that expensive.
+- **Sorted linked list**. That's a surprisingly frequently used data structure in web3, and the reason behind this is that even though the algorithm for finding & inserting an element into it is generally inefficient due to O(n) for both operations, it is possible to turn both operations into O(1) on-chain, while shifting the O(n) off-chain, making it extremely efficient for on-chain purposes.
+    - **Here's how:** let the client-side find the position of the element and send it in, and have your program only check it. That way, the client-side would spend O(n) computations to find the position, but your program would benefit from it by optimizing itself into O(1) complexity by just checking a few positions in a constant time.
+    - **Monaco Protocol's order book is this list**. The book is a fixed set of cells in one account, and each order points to its price neighbors by cell number. The client computes where the new order goes and sends "after this order". The program checks three things: the left neighbor is not cheaper, the right neighbor is cheaper, both are alive. That check costs the same at any depth, and the capacity is fixed, so nobody can inflate the book past what fits.
+- **Compressed NFTs (Bubblegum)** do it for memory optimization. A million NFTs are one account with one merkle root hash. The full merkle tree lives off-chain with an indexer. To change one NFT, the client brings the leaf and about twenty hashes along its path, and the program recomputes the root and compares. **On-chain memory is O(1)**, **the on-chain check is O(log n), and the O(n) part lives with the indexer**.
 
-## Bubblegum: memory moved off-chain
+**Merkle trees** such as in Bubblegum are the worst data structure you can imagine using for a normal traditional program. With web3 programs however, it is one of the most popular and frequently used ones.
 
-Bubblegum from the [divide and conquer lecture](/courses/solana-pro/state-partitioning/divide-and-conquer) uses the same asymmetry for memory. One account keeps the root of a Merkle tree covering a million NFTs, and indexers keep the full tree off-chain.
-
-To change one NFT, the client sends the leaf and the hashes on its path to the root, except the top levels the account already keeps in its canopy. The program rebuilds the root and compares it with the stored one.
-
-Count the costs. The account's size is fixed and does not grow as NFTs are minted, so on-chain memory is O(1). The check walks one path from leaf to root, so on-chain compute is O(log n). The O(n) part, every leaf, lives with the indexer.
-
-Why bother? A normal backend would never hash a million records into a Merkle tree. It puts them in a database and reads any one in a single step.
-
-On Solana, the usual way to store a million records is a million PDAs, each a separate account with its own rent deposit. A Merkle tree replaces all of them with one account holding one root. That saving makes the Merkle tree one of the most popular structures on Solana.
-
-<svg role="img" viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Where the work lives</title><desc>A table of three designs. A sorted list insert costs O(n) search in total, an O(1) check on-chain, and the client walks the list off-chain. A Bubblegum update costs O(n) memory in total, O(1) memory and an O(log n) check on-chain, and an indexer keeps the tree off-chain. A program that searches its own list pays the O(n) search on-chain on every call, the cost grows with every entry, and nothing is kept off-chain.</desc>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Where the work lives</text>
-
-  <rect x="40" y="70" width="640" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="50" y="89" font-size="11" fill="#ffffff" font-weight="bold">design</text>
-  <text x="220" y="89" font-size="11" fill="#ffffff" font-weight="bold">total cost</text>
-  <text x="340" y="89" font-size="11" fill="#ffffff" font-weight="bold">on-chain</text>
-  <text x="520" y="89" font-size="11" fill="#ffffff" font-weight="bold">off-chain</text>
-
-  <rect x="40" y="98" width="640" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="40" y="142" width="640" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <line x1="210" y1="70" x2="210" y2="230" stroke="#000000" stroke-width="1"/>
-  <line x1="330" y1="70" x2="330" y2="230" stroke="#000000" stroke-width="1"/>
-  <line x1="510" y1="70" x2="510" y2="230" stroke="#000000" stroke-width="1"/>
-  <rect x="40" y="186" width="640" height="44" fill="none" stroke="#ed4937" stroke-width="2"/>
-
-  <text x="50" y="124" font-family="monospace" font-size="10" font-weight="bold">sorted list insert</text>
-  <text x="220" y="124" font-family="monospace" font-size="10" fill="#565653">O(n) search</text>
-  <text x="340" y="124" font-family="monospace" font-size="10" font-weight="bold">O(1) check</text>
-  <text x="520" y="124" font-family="monospace" font-size="10">client walks the list</text>
-
-  <text x="50" y="168" font-family="monospace" font-size="10" font-weight="bold">Bubblegum update</text>
-  <text x="220" y="168" font-family="monospace" font-size="10" fill="#565653">O(n) memory</text>
-  <text x="340" y="161" font-family="monospace" font-size="10" font-weight="bold">O(1) memory,</text>
-  <text x="340" y="176" font-family="monospace" font-size="10" font-weight="bold">O(log n) check</text>
-  <text x="520" y="168" font-family="monospace" font-size="10">indexer keeps the tree</text>
-
-  <text x="50" y="212" font-family="monospace" font-size="10" font-weight="bold">program searches a list</text>
-  <text x="220" y="212" font-family="monospace" font-size="10" fill="#565653">O(n) search</text>
-  <text x="340" y="205" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">O(n) on every call,</text>
-  <text x="340" y="220" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">grows with every entry</text>
-  <text x="520" y="212" font-family="monospace" font-size="10">nothing</text>
-
-  <text x="360" y="258" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The first two designs keep the O(n) part off-chain. The third</text>
-  <text x="360" y="274" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">keeps it on-chain, where anyone can make it grow.</text>
-</svg>
-
-## Count the on-chain part
-
-When you choose a data structure, write down two complexities for every operation, the total and the on-chain part. Then ask how the on-chain part grows if someone adds a million entries on purpose. If it stays at O(1) or O(log n), the structure is safe. If it grows linearly, move the search to the client and leave the program only the check.
-
-A textbook would not recommend a sorted linked list or a Merkle tree. On-chain, they are often the right choice once their expensive part runs off-chain.
+**Important to remember:** the reason why we don't want any high complexity (higher than O(logN)) on-chain, is because it makes it easy to just spam the program with data and make it no longer fit the compute limit, after which nobody could use it. This is also frequently referred to as "DOS attack"

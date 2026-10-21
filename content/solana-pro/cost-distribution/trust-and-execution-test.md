@@ -85,13 +85,13 @@ A staking pool's reward per staked token is 0.08. A staker with 200 tokens last 
 - [ ] 6 tokens are paid, and the staker's marker becomes 0.03  <!-- a:51dc5618c29d6e17ba577020 -->
 - [ ] 10 tokens are paid, and the staker's marker stays 0.05  <!-- a:c24c8a912014e59bc4dbc736 -->
 
-<!-- q:921a52d7e88568b4949e7afd -->
-A staker deposits more tokens into a lazy loading pool. In what order should the program act?
+<!-- q -->
+In Fragmetric, when is a holder's reward balance updated?
 
-- [x] Settle the rewards owed on the old stake, move the marker, then add the deposit  <!-- a:848b635aa92cf3ab0016b841 -->
-- [ ] Add the deposit, then settle rewards on the new stake  <!-- a:4b23b5a3ca9665272ff52d60 -->
-- [ ] Add the deposit and move the marker without settling  <!-- a:f32328dfb8c045e712eb134e -->
-- [ ] Wait for the next reward to arrive, then settle  <!-- a:a5d5991e1cae5a3ba41aee5e -->
+- [x] In the transfer hook, at the moment the token is transferred, because the program already runs on that account
+- [ ] Every hour, by a bot that walks through all holders
+- [ ] When the protocol's admin triggers a distribution
+- [ ] Never, the balance is computed off-chain
 
 <!-- q:435e43e49aebdd1864b82c3a -->
 Which of these can rely on lazy loading alone, with no paid executor? (Select all that apply.)
@@ -109,13 +109,13 @@ In Squads, the members of a multisig change. How many proposal accounts does the
 - [ ] Only the approved proposals  <!-- a:68b83ac78fee2aa522c8d35c -->
 - [ ] One per remaining member  <!-- a:3ffbd367964dbb25f9ddd4c9 -->
 
-<!-- q:3181b712438098b69e2f6429 -->
-Which answers can one action move by a single step both when an input is added and when it is removed? (Select all that apply.)
+<!-- q -->
+Pay-as-you-act stores the answer instead of the inputs. Which of these can be that answer? (Select all that apply.)
 
-- [x] A total  <!-- a:9789bc925ade1ab1df8e2ef3 -->
-- [x] A count  <!-- a:0964a77d69eacdb28165b9ec -->
-- [x] An average stored as a sum and a count  <!-- a:1e802ad8f6749143d1c187ea -->
-- [ ] A maximum  <!-- a:4e98337608d208f574646a26 -->
+- [x] A count
+- [x] A total
+- [x] A maximum or a leader
+- [ ] The full list of votes, to be counted at the end
 
 <!-- q:d43c98a710f4c2ba3bfdaf4a -->
 In Hxro's parimutuel market, what does a winner's payout depend on?

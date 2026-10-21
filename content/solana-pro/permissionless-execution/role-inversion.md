@@ -40,25 +40,61 @@ faq:
       control.
 ---
 
-> Many roles in a design are inherited from whoever had the data first, and on Solana these roles are often the expensive ones. Role inversion moves such a job to the party that needs the result. The program only checks that the job was done correctly.
+> Many roles in system design are inherited, not chosen. But on Solana keeping the roles in the traditional order could make the transactions very expensive. Role inversion is a way to bypass this issue. The responsibility of actions shifts to the party that actually needs them, and the program only keeps the verification of the actions.
 
 ## Roles nobody chose
 
-Most roles in a design are never chosen. They follow from who has the data first. The oracle has the prices, so it writes them on-chain and pays for every update. The bridge has the message, so it calls the receiving program. The program stores a sorted list, so the program searches it.
+Most roles in a design are never chosen. Usually they are inherited from the principle of who has the data first. 
 
-On Solana, these default roles can be costly. Writing every price on-chain costs a fee each time, even if nobody reads that price. To call another program, the caller has to list every account that program will use, and often the caller cannot know them. Searching a long list on-chain costs compute units on every insert, while a transaction has a fixed compute budget.
+Some examples:
+
+* The oracle has the prices, so it writes them on-chain
+* The bridge has the message, so it calls the receiving program. * The program stores a sorted list, so the program searches it.
+
+On Solana, these three examples of default roles can be costly. Writing every price update on-chain costs the oracle fees each time, even if nobody is actually interested in reading that update. 
+
+To call another program, the caller has to list every account that the program would use, and sometimes the caller doesn't know what to specify. 
+
+Searching a long list on-chain costs compute units on every iteration, while a transaction has a fixed compute budget.
 
 ## Hand the role to whoever needs it
 
-Role inversion moves an expensive job from the party that does it by default to the party that needs the result. The program keeps only one job, which is checking that the work was done correctly. That is usually much cheaper, because checking a result costs less than producing it.
+Role inversion moves the job from the party that does it by default to the party that needs the result of the job. The program could keep the job of verifying the work, which is usually much cheaper that doing the work, because checking a result costs less than producing it.
 
-You have already seen a small version of this in the lecture on [constraints behind patterns](/courses/solana-pro/welcome/constraints-behind-patterns). The client already finds the right accounts, so the program can leave the search to the client. The client says "here is the position", and the program only agrees or disagrees. Role inversion applies the same idea to any role in a design.
+You have already seen a small version of this in the lecture on [constraints behind patterns](/courses/solana-pro/welcome/constraints-behind-patterns). The client already finds the right accounts, so the program doesn't search and only agrees or disagrees with the proposed accounts. Role inversion applies the same idea to any role in a design.
+
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Role inversion</title><desc>Left: the oracle pushes prices into the program, doing all the work. Right: the user who needs the price brings it, and the program only checks it. A curved arrow between the panels shows the roles flipped.</desc>
+  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Role inversion</text>
+  <text x="190" y="88" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">inherited role</text>
+  <text x="530" y="88" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">inverted role</text>
+  <rect x="60" y="120" width="110" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="115" y="150" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">oracle</text>
+  <line x1="170" y1="145" x2="249.0" y2="145.0" stroke="#000000" stroke-width="3"/>
+  <polygon points="249.0,139.0 249.0,151.0 260,145" fill="#000000"/>
+  <text x="215" y="135" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">does</text>
+  <rect x="260" y="120" width="110" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="315" y="150" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">program</text>
+  <circle cx="430" cy="136" r="8" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <path d="M 416 166 Q 430 144 444 166 Z" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="430" y="182" text-anchor="middle" font-size="9" fill="#565653" font-family="monospace">needs it</text>
+  <line x1="452" y1="145" x2="529.0" y2="145.0" stroke="#ed4937" stroke-width="3"/>
+  <polygon points="529.0,139.0 529.0,151.0 540,145" fill="#ed4937"/>
+  <text x="496" y="135" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace">brings</text>
+  <rect x="540" y="120" width="120" height="50" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="600" y="145" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">program</text>
+  <text x="600" y="160" text-anchor="middle" font-size="9" fill="#ed4937" font-family="monospace">only checks</text>
+  <path d="M 330 200 Q 400 240 470 200" fill="none" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="468" y1="201" x2="463.2" y2="204.6" stroke="#565653" stroke-width="2"/>
+  <polygon points="459.6,199.8 466.8,209.4 472,198" fill="#565653"/>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">The job moves to the party that needs its result. The program keeps only the verification.</text>
+</svg>
 
 ## Pyth: from writing prices to checking them
 
 Pyth is a price oracle. It used to work in the push model, where Pyth's data publishers sent every price update on-chain themselves and paid the fees. Each update of each feed, for example SOL/USD, was a transaction, whether or not anyone needed that price at that moment. A program read whatever value was stored in the price account, and that value was only as fresh as the last update.
 
-Now Pyth works in the pull model, where the user who needs the price brings it. A trader downloads the latest signed price from Pyth's off-chain service and puts it in the same transaction as their trade. The transaction first checks that the price really came from Pyth and saves it, and then the trade reads it. The trade uses a price that is only seconds old. The trader now pays for the update, but only for the price they use, at the moment they use it. Pyth no longer pays for updates that nobody reads, and its on-chain role turned from writing prices into checking them.
+Today Pyth works in the pull model, where the user who needs the price brings it. A trader downloads the latest signed price from Pyth's off-chain service and puts it in the same transaction as their trade. The transaction first checks that the price really came from Pyth and saves it, and then the trade reads it. The trade uses a price that is only seconds old. The trader now pays for the update, but only for the price they use, at the moment they use it. Pyth no longer pays for updates that nobody reads, and its on-chain role turned from writing prices into checking them.
 
 <svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pyth push versus pull price updates</title><desc>Two vertical flows side by side. On the left, push: Pyth publishers send a transaction for every update and pay for it, the price account stores it, and a trader's transaction reads it later, so the price is as old as the last push. On the right, pull: Pyth signs updates off-chain, the trader fetches one and puts it in a single transaction that first checks and saves the price and then runs the trade, so the price is seconds old at the trade.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -105,31 +141,42 @@ Now Pyth works in the pull model, where the user who needs the price brings it. 
 
 ## Wormhole: the receiver collects the message
 
-Wormhole is a cross-chain messaging bridge. The obvious design is for the bridge to call the receiving program when a message arrives. On Solana that is hard. To call a program, the bridge has to list every account that program needs, and every receiver needs different accounts.
+Wormhole is a cross-chain messaging bridge. The obvious design is for the bridge to call the receiving program when a message arrives. On Solana it would be pretty hard, as to call a program, the bridge has to list every account that program needs, and for every different receiver, different set of accounts is required.
 
-So Wormhole does not call the receiver. A relayer or the user submits the signed message to the Wormhole program, which checks the signatures and saves the message in an account. Later, someone sends a transaction to the receiving program with the receiver's own accounts and the saved message. The receiver checks that the Wormhole program owns that account, that the message came from the expected chain and sender, and that it has not processed this message before. The bridge never needs to know which accounts any receiver uses.
+So Wormhole does not call the receiver. Instead, a relayer or the user submits the signed message to the Wormhole program, which checks the signatures and saves the message in an account. Later, someone sends a transaction to the receiving program with the receiver's own accounts and the saved message. The receiver checks that the Wormhole program owns that account, that the message came from the expected chain and sender, and that it has not processed this message before. The bridge never needs to know which accounts any receiver uses.
 
 ## LayerZero: the receiver lists its own accounts
 
-LayerZero solves the same problem differently. Its delivery service, called the executor, does call the receiving program. To do that, it sends a transaction to your program, and that transaction has to list every account your program will read or write. The executor does not know your program, so it cannot know that list.
+LayerZero solves the same problem differently. Its delivery service, called **the executor**, does make a call to the receiving program. To do that, it sends a transaction to your program, and that transaction has to list every account your program would read or write. 
 
-So your program tells it. Your program has one extra instruction, `lz_receive_types`, that changes nothing and only returns the list of accounts it needs to receive a message. The executor simulates this instruction, meaning it runs it as a test without sending it to the network, and reads the list. Then it builds the real transaction with those accounts and sends it.
+The executor does not know your program, so it cannot know what accounts to list.
+
+So your program tells this information instead. Your program has one extra instruction, `lz_receive_types`, that changes nothing and only returns the list of accounts it needs to receive a message. The executor simulates this instruction, meaning it runs it as a test first without sending it to the network, and then reads the list. Using that list, it builds the real transaction with those accounts and sends it.
+
+Not exactly role inversion in the common sense - LayerZero still sends the transaction with the accounts and still performs the flow in a normal way. However it is a very interesting approach to note.
 
 ## Monaco: the client finds the place
 
-Monaco is a prediction market, and it keeps its order book sorted. A new order has to go into the right place. Finding that place on-chain means reading the book one order at a time, and the longer the book, the more compute units that costs.
+Monaco is a prediction market, and it keeps its order book sorted. A new order has to go into the right place. Finding that place on-chain means iterating through the book one order at a time, and the longer the book, the more compute units it costs to execute the transaction.
 
-So Monaco lets the client find the place. The client reads the order book off-chain, where reading is free, and tells the program "put my order after this one". The program checks only the order right before the new one and the order right after it. If the new order fits between them, the program accepts it. If the client pointed to the wrong place, or another order landed first and changed the neighbors, the check fails and the client retries with a fresh position. The check costs the same whether the book holds ten orders or ten thousand.
+So Monaco lets the client find the place. The client reads the order book off-chain, where reading is free, and tells the program "put my order after this one". The program checks only the two orders: the one right before the intended one, and the one right after it. If the new intended order fits between them, the program accepts it. If the client ended up pointing to an incorrect slot, or another order landed first and changed the neighbors already, the check would fail and the client would have to retry it with a fresh position. The checks cost the same whether the book holds ten orders or ten thousand, as it only checks two orders no matter the total amount of orders.
 
-## Not every flip works
+This is actually a pretty common pattern in blockchain programs. Even in our EVM module we have the same task of implementing on-chain sorted linked-list. Sorted linked-list fits on-chain surprisingly well because it allows for all operations to be of constant O(1) difficulty on-chain. What the difficulty is off-chain, doesn't matter. See the [off-chain computation, on-chain verification lecture](/courses/development-on-ethereum/defi-tasks-and-patterns/off-chain-computation-on-chain-verification) and the [voting on token price task](/courses/development-on-ethereum/defi-tasks-and-patterns/voting-on-token-price) in the Ethereum course.
 
-Symmetry runs index funds. An index fund holds several tokens in target shares, and when prices move, it has to trade to bring the shares back. This is called rebalancing.
+## However! Not every flip works well
 
-Normally the fund is a taker, which means it trades against prices that someone else offers. Symmetry V2 flipped this and made the fund a maker, a party that offers prices for others to trade against. The fund sent its prices to aggregators, the services that find the best price for a swap and route it there. The idea was that other people's trades would move the fund back toward its targets.
+Symmetry runs index funds, where an index fund holds several tokens in target shares, and when prices move, it has to perform trades to bring the shares back. This process is called rebalancing.
 
-It sounded smart. In practice, the rebalance happened only when someone else decided to trade. The protocol now depended on the aggregators, and it had to wait until an aggregator agreed to route trades to it.
+Normally the fund is a taker, which means it trades against the prices that someone else has already offered. Symmetry V2 flipped this model and made the fund a maker, a party that offers prices for others to trade against. The fund sends its prices to aggregators (the services that find the route for the best prices on swaps). The aggregators being the services that suggest the swapping routes to users, help people see that it's possible to perform the swap through Symmetry with optimal prices. The idea here was that other people's trades would move the fund back toward its targets.
 
-The difference between Symmetry V2 and Pyth comes down to one question. After the flip, does the party that needs the action still decide when it happens? For Pyth, yes. The trader needs the price, and the trader decides when to bring it. For Symmetry V2, no. The fund needed the rebalance, and other people decided when it happened. The table below asks the same question of every example.
+***It sounded smart.*** But in practice, the rebalance happened only when someone else decided to trade. The protocol began depending on the aggregators, and it had to wait until an aggregator agreed to route trades to it.
+
+In that case, it is rather an anti-pattern because using the ***role-inversion pattern*** entailed adding more dependencies and heavily relying upon them, which by itself is an antipattern.
+
+The difference between Symmetry V2 and Pyth is simple: 
+
+- For Pyth, the party that needed the action still decided when it happened.
+- For Symmetry V2, when the fund needed rebalance, others decided whether it would happen or not. SymmetryV2 wasn't in the control of its own protocol in these moments.
 
 <svg role="img" viewBox="0 0 720 350" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Five role inversions and who holds control</title><desc>A table of five protocols. Pyth moved from the oracle writing every price to the trader bringing it while the program checks it. Wormhole moved from the bridge calling the receiver to the bridge storing the message and the receiver reading it. LayerZero moved from the executor needing to know the accounts to the receiver listing them while the executor follows the list. Monaco moved from the program searching the book to the client searching and the program checking. In all four, the party that needs the action stays in control. Symmetry V2 moved from the fund trading to rebalance to other people's trades rebalancing the fund, and the fund lost control.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -180,4 +227,10 @@ The difference between Symmetry V2 and Pyth comes down to one question. After th
 
 ## Find the role you inherited
 
-Take a design you are working on and write down who does each job. For each one, ask why that party does it. If the only answer is "because it had the data first", and the job is expensive, try inverting it. Find who actually needs the action, and check whether the program's part can shrink to a single check. Before you choose this design, check one more thing. After the inversion, the party that needs the action must still decide when it happens. If it does, the party that benefits also pays, and your program stays small. If it does not, you removed a cost but now depend on someone you do not control.
+Take a design you are working on and write down who does each job. For each one, ask why that party does it. If the only answer is "because it had the data first" or because "it's the typical approach", try inverting it. It may become less expensive to execute the job, potentially. 
+
+To invert, find the party that actually needs the action to complete, and check whether the program's part can shrink to a narrower set of actions by delegating the other actions to the other party. 
+
+That's just a suggestion to experiment. Before you seriously choose this design, check one more thing: After the inversion, the party that needs the action must still decide when it happens, in other words, must be in full control of the flow. 
+
+If it is not, even if you optimized the cost, you now introduced an unnecessary and potentially toxic dependency in your protocol.

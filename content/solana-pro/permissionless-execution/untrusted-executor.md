@@ -41,13 +41,13 @@ faq:
 
 Remember the first constraint from the [constraints lecture](/courses/solana-pro/welcome/constraints-behind-patterns). Nothing happens by itself. A program cannot start running on its own. Paying rewards, settling trades, liquidating a loan and executing a proposal after a vote all need someone to build a transaction, sign it and pay its fee. That someone is the **executor**.
 
-The simplest approach is to be the executor yourself. You run a bot, also called a keeper, on your own server. It watches the protocol and sends the transactions when they are due. It works on day one, but now the protocol lives exactly as long as your server does. If the server goes down, the bot's key leaks, or its wallet runs out of SOL for fees, the job stops. If the team leaves, the protocol stops with it. That goes against the idea of decentralization, which is the reason to put the protocol on-chain in the first place.
+The simplest approach is to be the executor yourself. You run a bot, also called a keeper, on your own server. It watches the protocol and sends the transactions when they are due. It works on day one, but now the protocol lives exactly as long as your server does. If the server goes down, the bot's key leaks, or its wallet runs out of SOL for fees, the job stops. If the team leaves, the protocol stops with it. That goes against the idea of decentralization, which is the initial core idea behind on-chain protocols.
 
-## Make the job profitable
+## Just make the job profitable
 
-The better option is game theory. Suppose every call to the job pays the caller a small reward. Users will find out and write their own bots to call it. It's reasonable to assume users want to make extra money, so it's also reasonable to assume that many different users will run such bots, and the job will no longer depend on one server.
+A better option is to utilize game theory. Suppose every call to the job pays the executor of the call a small reward. Users will find it out and start writing their own bots to call it to earn rewards. It's pretty reasonable to assume that users want to make extra money, so it's also reasonable to assume that many different users would run such bots, and the job would no longer depend on a single executor.
 
-The reward can be small, as long as it covers what the bot owner spends on fees and on running a server. Bots race for the same reward, and the losers' transactions fail but usually still pay fees, so the reward has to be worth that risk too. Once it is, every bot is a backup for every other bot. If bot A goes offline, bot B sends the transaction instead, and nobody has to organize this.
+The reward could be small, as long as it covers what the bot owner spent on the transaction fees and hosting expenses. Bots race for the same reward, and the losers' transactions fail but usually still pay fees, so the reward has to take into calculation that risk too. If the reward is reasonable and considers all these points at minimum, the protocol will definitely get the independent executors. If bot A goes offline, bot B sends the transaction instead, and nobody has to organize this.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Your own bot versus a paid job</title><desc>Two boxes side by side. The left box shows a single team bot sending transactions to the protocol, which stops if the server goes down, the key leaks or the team leaves. The right box shows three independent bots competing to send the same transaction to a protocol that pays a reward, where the first valid transaction takes the reward and any bot can replace another that goes offline.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -92,21 +92,52 @@ The reward can be small, as long as it covers what the bot owner spends on fees 
   <text x="360" y="340" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A team bot runs the job while one server runs. A paid job runs while anyone wants the reward.</text>
 </svg>
 
+<svg role="img" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Untrusted executor</title><desc>A job box holding a reward coin. Three anonymous bots and a question mark all have arrows to the job. One arrow leads out of the job to the same result for every caller.</desc>
+  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Untrusted executor</text>
+  <rect x="50" y="82" width="70" height="26" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="85" y="99" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace">bot A</text>
+  <line x1="122" y1="95" x2="240.2" y2="155.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="242.9,149.7 237.5,160.4 250,160" fill="#000000"/>
+  <rect x="50" y="122" width="70" height="26" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="85" y="139" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace">bot B</text>
+  <line x1="122" y1="135" x2="239.2" y2="157.9" stroke="#000000" stroke-width="2"/>
+  <polygon points="240.4,152.0 238.1,163.8 250,160" fill="#000000"/>
+  <rect x="50" y="162" width="70" height="26" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="85" y="179" text-anchor="middle" font-size="10" fill="#000000" font-family="monospace">bot C</text>
+  <line x1="122" y1="175" x2="239.1" y2="161.3" stroke="#000000" stroke-width="2"/>
+  <polygon points="238.4,155.3 239.8,167.2 250,160" fill="#000000"/>
+  <rect x="50" y="202" width="70" height="26" rx="0" fill="#e0deda" stroke="#565653" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="85" y="219" text-anchor="middle" font-size="10" fill="#565653" font-family="monospace">anyone</text>
+  <line x1="122" y1="215" x2="239.9" y2="164.3" stroke="#000000" stroke-width="2"/>
+  <polygon points="237.5,158.8 242.3,169.9 250,160" fill="#000000"/>
+  <rect x="250" y="120" width="170" height="80" rx="0" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
+  <text x="335" y="150" text-anchor="middle" font-size="13" fill="#000000" font-family="monospace" font-weight="bold">job</text>
+  <circle cx="335" cy="175" r="9" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
+  <text x="335" y="179" text-anchor="middle" font-size="10" fill="#ed4937" font-family="monospace" font-weight="bold">$</text>
+  <text x="360" y="179" text-anchor="start" font-size="10" fill="#ed4937" font-family="monospace">reward</text>
+  <line x1="420" y1="160" x2="509.0" y2="160.0" stroke="#000000" stroke-width="2"/>
+  <polygon points="509.0,154.0 509.0,166.0 520,160" fill="#000000"/>
+  <rect x="520" y="135" width="150" height="50" rx="0" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="595" y="165" text-anchor="middle" font-size="11" fill="#000000" font-family="monospace" font-weight="bold">same result</text>
+  <text x="360" y="250" text-anchor="middle" font-size="11" fill="#565653" font-family="monospace" font-style="italic">Pay for the job and let anyone do it. The result does not depend on who sends it.</text>
+</svg>
+
 ## Nobody runs a liquidation service
 
 Liquidation is the best-known paid job on Solana. Drift, Marginfi and Kamino all rely on outside bots to liquidate positions. When a borrower's collateral no longer covers the loan with enough margin, someone has to close the position fast, or the protocol takes the loss. The liquidator gets a reward taken from the failed position, usually collateral at a discount. Because every liquidation pays, bots watch every position on these protocols, and the borrower whose position failed pays for the service.
 
 ## The result must not depend on the caller
 
-Paying strangers to run a job has one condition. Imagine a claim instruction that sends the reward to whoever signs the transaction. The first bot to notice would take every user's rewards. So the instruction has to send the result to the same place no matter who signs. The executor can trigger the job, and that is all it can do. This is why the pattern is called **untrusted executor**. The protocol does not care who the executor is, because the executor cannot change what the instruction does.
+Paying strangers to run a job has one condition. Imagine a rogue claim instruction that sends the reward to whoever signs the transaction. The first bot to notice would take every user's rewards. So the instruction has to send the reward to the intended user no matter who signs. The executor could trigger the job and do only that. This is why the pattern is called **untrusted executor**. It's because the protocol does not trust the executors, it only lets them do the part of the job where it does not matter who they are. That's only true if the executor cannot change what the instructions do.
 
-Helium, Monaco and governance programs don't pay the caller at all. They show the other half of the pattern, an instruction that anyone can safely call.
+**Interestingly:** Helium, Monaco and governance programs don't even pay the executors at all.
 
-Helium pays rewards to the owners of hotspots, the devices that provide its wireless network. A set of oracles signs the total reward each device has earned so far, and the device's account stores how much was already paid out. Say the oracles sign that a device has earned 100 tokens in total, and the account says 80 were already paid. The claim instruction pays the difference, 20 tokens, to the owner, and records that 100 were paid. Paying the owner makes the caller irrelevant, and recording the total stops the same claim from paying twice. Together they make the claim safe for anyone to call, so a stranger who claims for you only pays the fee for you.
+Helium pays rewards to the owners of hotspots (the devices that provide its wireless network). A set of oracles then signs the total reward each device has earned so far, and the device's account stores how much was already paid out. Let's say the oracles sign 100 tokens of rewards for a device in total, and the account says 80 tokens have already been paid. The claim instruction would pay the difference, 20 tokens, to the owner, and record that 100 were paid in total. Paying the owner **makes the caller irrelevant**, and recording the total amounts eliminates the possibility of getting paid twice. Together, they make the claim safe for anyone to call, so a stranger who claims for you only gives you a gift by paying the fee for you.
 
 Monaco, a prediction market, separates matching from paying out. Matching only marks the orders as filled. Paying out is a separate instruction that anyone can call later, and the money goes to the order owners. Governance works the same way. After a vote passes, anyone can send the transaction that executes the proposal. The vote decided what happens. The executor only decides when.
 
-The executor cannot change what the instruction does, but it still chooses when to send the transaction and which accounts to pass. Timing matters when the result depends on a price or a clock, so the instruction has to be correct at any moment it can be called. The accounts matter because the client brings every account, so the instruction checks each one exactly as it would for any other caller.
+The executor cannot change what the instruction does, but it still chooses when to send the transaction and which accounts to pass. Timing matters when the result depends on a price or a clock, so the instruction has to be correct at any moment it can be called. The accounts matter because the client brings every account, so the instruction checks each one exactly as it would for any other caller. More about callers passing the accounts themselves in the **[root of trust lecture](/courses/solana-pro/trust-and-identity/root-of-trust)**.
 
 ## Let bots compete on the reward
 
@@ -165,8 +196,8 @@ Helium's tuktuk turns this pattern into a general scheduler. A task is an accoun
 
 ## The same idea beyond background jobs
 
-Rewards work for protocol design in general. If some actions in your protocol pay more than others, users move toward those actions without being asked. A liquidation reward makes users watch positions, a Dutch auction makes bots compete on price, and a prepaid task makes bots run your schedule. If you need users to do something, make that action pay.
+Rewards are a nice protocol design hack in general. If some actions in your protocol pay more than the other ones, users move toward those actions without being asked. Simple game theory in action. A liquidation reward makes users watch positions, a Dutch auction makes bots compete on price, and a prepaid task makes bots run your schedule. If you need users to do something, make that action pay.
 
 ## Check every background job
 
-When you design a protocol, list every action that has to happen without a user asking for it, such as paying rewards, settling trades, liquidations, expiring orders and rebalancing. For each one, answer three questions. Who is paid to call it, and does the reward cover their costs? Does the result stay the same no matter who calls it? Which accounts does the caller choose, and does the program check each one? If all three answers hold up, the job no longer depends on your server. Your own bot can still run, as one executor among many, with no special permissions.
+When you design a protocol, list every action that has to happen without a user asking for it, such as paying rewards, settling trades, liquidations, expiring orders and rebalancing. For each one, answer three questions. Who is paid to call it, and can the reward cover the costs of the transaction? Could the result stay the same no matter who called the transaction? Based on these questions, you would figure whether the job could no longer depend on your server. Your own bot could still run, but just as one executor among many, with no special permissions.

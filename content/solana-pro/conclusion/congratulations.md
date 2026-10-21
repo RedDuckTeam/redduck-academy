@@ -8,10 +8,10 @@ order: 1
 You reached the end of Solana PRO. Now you know the patterns that the top Solana protocols share, the constraint behind each of them, and the point where each one stops working.
 
 Real protocols use several patterns in one feature. Helium, for example:
-* The oracles' keys are stored in the protocol's own account, and a reward update counts only if one of those keys signed it, which is the *root of trust*. 
-* Anyone can send the transaction that pays, which is the *untrusted executor*. 
-* The device's account stores how much was already paid, and the payout is the difference to the signed total, which is *lazy loading*. 
-* The paid amount only goes up. A repeated payout sends zero, and a total smaller than what was already paid is rejected, which is *one-way state*. 
+* The oracles' keys are stored in the protocol's own account, and a reward update counts only if one of those keys signed it, which is the **[root of trust](/courses/solana-pro/trust-and-identity/root-of-trust)**. 
+* Anyone can send the transaction that pays, which is the **[untrusted executor](/courses/solana-pro/permissionless-execution/untrusted-executor)**. 
+* The device's account stores how much was already paid, and the payout is the difference to the signed total, which is **[lazy loading](/courses/solana-pro/cost-distribution/lazy-loading)**. 
+* The paid amount only goes up. A repeated payout sends zero, and a total smaller than what was already paid is rejected, which is **[one-way state](/courses/solana-pro/order-and-consent/one-way-state)**. 
 
 The developers of such protocols are usually pretty smart, and all of these patterns were integrated in one feature not because they just wanted to do it, but because each pattern was the answer to a particular constraint.
 
