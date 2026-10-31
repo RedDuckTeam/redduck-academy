@@ -29,23 +29,23 @@ faq:
       their own to avoid trusting anyone else's reading of the rules.
 ---
 
-> Every lesson so far has referenced "nodes" doing things. Nodes hold copies of the chain. Nodes agree or disagree. Nodes vote in consensus. The word has appeared constantly without ever being defined. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like one sentence opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running anything at all.
+> Every lesson so far has referenced "nodes" doing things. Nodes hold copies of the chain, agree or disagree, vote in consensus. The word has appeared constantly without ever being defined. This lesson defines it. A node is a piece of software running the blockchain's protocol, and the network is the set of nodes all running the same software at the same time, talking to each other. What sounds like one sentence opens up into a surprisingly varied ecosystem of roles, communication patterns, and economic motivations for running anything at all.
 
 ## What a node is
 
-At the simplest level, a node is a program. It runs on a computer somewhere in the world. It connects to other instances of the same program running on other computers. Together, they form the network that maintains the blockchain.
+At the simplest level, a node is a program. It runs on a computer somewhere in the world. It connects to other instances of the same program, running on other computers. Together, they form the network that maintains the blockchain.
 
-A node does four things, all of the time.
+A node does four things:
 
 It **holds a copy** of the data the network has agreed on, which usually includes the whole history of the chain or some pruned version of it.
 
-It **listens for new data** from other nodes: new blocks proposed, new transactions broadcast, new connection requests from peers it hasn't met before.
+It **listens for new data** from other nodes: blocks proposed, transactions broadcast, connection requests from peers it hasn't met before.
 
 It **validates** everything it receives against the rules of the protocol. If something doesn't follow the rules, the node rejects it and refuses to relay it further.
 
 It **forwards** the things it accepts to other nodes it's connected to, so that valid information propagates across the whole network within seconds.
 
-That's the whole job. Hold the chain, listen, validate, forward. Every node on every blockchain in existence does some version of those four operations. The variations between blockchains are in what counts as "valid" and what the data looks like, but the role of the node is universal.
+To sum up, hold the chain, listen, validate, and forward. Every node on every blockchain does some version of those four operations. The variations between blockchains are in what counts as "valid" and what the data looks like, but the role of the node is universal.
 
 ## The main kinds of node
 
@@ -130,7 +130,7 @@ This is the same pattern peer-to-peer networks have used for decades. The bootst
 
 ## How nodes talk
 
-Once two nodes are connected, they communicate via a **gossip protocol**. The pattern is simple. When a node learns something new, a new transaction, a new block, it tells all the peers it's connected to. Each of those peers, if the information is new to them, tells all *their* peers. Within a few hops, almost every node in the network has heard the news. The cost to any individual node is small, but the total propagation is fast and reaches everyone.
+Once two nodes are connected, they communicate via a **gossip protocol**. When a node learns something new, a transaction or a block, it tells all the peers it's connected to. Each of those peers, if the information is new to them, tells all *their* peers. Within a few hops, almost every node in the network has heard the news. The cost to any individual node is small, but the total propagation is fast and reaches everyone.
 
 A small refinement matters in practice. Nodes don't blindly send full data to each peer because that would waste bandwidth. Instead, they send a short **announcement** ("I have a new block with this hash, do you want it?"). If the receiving node already has it, it ignores the announcement. If not, it asks for the full content. This two-step pattern keeps the network from drowning in duplicate traffic.
 
@@ -138,16 +138,16 @@ The gossip protocol is why a transaction broadcast to a single node reaches the 
 
 ## Why anyone runs a node
 
-The economic question matters. Running a full node costs real money: bandwidth, electricity, disk space, the maintenance time of a human operator. Why does anyone bother?
+Running a full node costs real money: bandwidth, electricity, disk space, the maintenance time of a human operator. Why does anyone bother?
 
 Three reasons cover most operators.
 
-**Block producers** run nodes because the chain pays them to. Whoever produces a valid block earns the block's rewards, which is the primary financial incentive in any blockchain. This is the reason the network has any block producers at all.
+**Block producers** run nodes because the chain pays them to. Whoever produces a valid block earns the block's rewards, which is the primary financial incentive in any blockchain. That's why the network has block producers at all.
 
-**Service operators** run nodes because they sell access to them. Wallet providers, block explorers, indexing services, and the infrastructure layer for most decentralised applications all need nodes to talk to. They run their own, or they pay specialised companies to run them and expose the data via an API.
+**Service operators** run nodes because they sell access to them. Wallet providers, block explorers, indexing services, and the infrastructure layer for most decentralised applications – all need nodes to talk to. They run their own, or they pay specialised companies to run them and expose the data via an API.
 
 **Trust-minimising users** run nodes because they want maximum certainty that the chain they're seeing is correct. A user who runs their own full node trusts nobody else's interpretation of the rules. This is a minority of users in absolute numbers, but it's the population that keeps the network honest in steady state. If anyone tried to push a rule change, the trust-minimising operators would notice and refuse to accept it.
 
 ## What you now know about nodes
 
-You now know what a node is, what kinds exist, how they find each other, and how they share information. Together with the cryptographic primitives, the blockchain's structure, and the consensus mechanism from earlier lessons, you now hold every component a blockchain runs on. What was an abstract word, "nodes," is now a concrete population of machines with distinct roles and real reasons to participate.
+Together with the cryptographic primitives, the blockchain's structure, and the consensus mechanism from earlier lessons, you now hold every component a blockchain runs on. What was an abstract word, "nodes," is now a concrete population of machines with distinct roles and real reasons to participate.
