@@ -7,7 +7,7 @@ order: 8
 
 ## Before you start:
 
-This test checks whether you actually understand the cryptography building blocks (hashes, encoding, encryption, key pairs) or just remember the words. Several questions deliberately offer plausible-sounding wrong answers, the kind a reader who skimmed the lessons would pick. Read each option carefully before answering.
+This test checks whether you understand the cryptography building blocks (hashes, encoding, encryption, key pairs) or just remember the words. Several questions deliberately offer plausible-sounding wrong answers, the kind of a readerm who skimmed the lessons, would pick. Read each option carefully before answering.
 
 <!-- q:6a0b8a94f4c0093cef270ff6 -->
 Which of the following are real cryptographic properties of hash functions like SHA-256? (Select all that apply.)
