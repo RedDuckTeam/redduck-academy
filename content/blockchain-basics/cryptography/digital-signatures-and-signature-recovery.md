@@ -28,9 +28,7 @@ faq:
       64 bytes, or 65 when it carries the recovery id byte.
 ---
 
-> Blockchain transactions travel across an open network with no return address, email header, or a session cookie, yet every node receiving it has to decide whether this transaction comes from someone authorised to spend these funds. The mechanism that answers that question, billions of times per day across every public chain, is the topic of this lesson. It's also the operational pay-off for everything you've learned so far about key pairs.
-
-## The problem
+## A problematic scenario
 
 You hold a private key and want to tell the network "move some value from my account to this other account." The network has never met you, neither can it ask for your password because there is no password and no one to receive it.
 
