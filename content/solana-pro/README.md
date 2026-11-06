@@ -51,7 +51,7 @@ The course is written to the point. You won't read through formal, padded langua
 1. [Commit-execution split](deferred-execution/commit-execution-split.md)
 2. [Action as data](deferred-execution/action-as-data.md)
 3. [Virtual execution](deferred-execution/virtual-execution.md)
-4. [Proposal that anyone can execute](deferred-execution/proposal-anyone-can-execute.md) — review task
+4. [Proposal that anyone can execute](deferred-execution/proposal-that-anyone-can-execute.md) — review task
 
 ### 7. Order and consent
 
