@@ -28,15 +28,15 @@ faq:
       anonymous strangers with no prior trust.
 ---
 
-> The previous lesson made a strong claim. A blockchain has no operator. Nobody runs it. Yet it somehow holds a consistent record across thousands of independent machines, all of whom can write to it. Forget the cryptography for a moment and just focus on the question. How is that possible at all? The mechanism that makes it possible is called consensus, and it is the single most subtle problem in distributed systems. This lesson explains why the problem is hard, why the obvious solutions don't work, and what the actual answer looks like at the level of "how it works" rather than "which exact algorithm."
+> The previous lesson made a strong claim: a blockchain has no operator, nobody runs it, yet somehow it holds a consistent record across thousands of independent machines, all of whom can write to it. Forget the cryptography for a moment and focus on the question – how is that possible? The mechanism that makes it possible is called consensus, and it is the single, most subtle problem in distributed systems. 
 
-## The problem, stated plainly
+## The problem
 
-Imagine a few thousand computers spread across the world. None of them trust any of the others. There is no shared boss, no central server, no court of appeal. New facts come in: new transactions, new blocks, and other new data. Every machine has to decide what to add to its copy of the record. And every machine has to end up with the same record as every other one.
+Imagine a few thousand computers spread across the world. None of them trust others: no shared boss, central server, or court of appeal. At the same time – new transactions, blocks, and other data come in. Every machine has to decide what to add to its record copy, and has to end up with the same record as every other one.
 
-Worse, some of those computers will lie. They'll propose blocks that don't follow the rules. They'll send different versions of "the truth" to different peers. They'll go offline at convenient moments. They'll team up to push fake history. The network has no way to identify the liars in advance, because anyone can join.
+Worse case scenario is some of those computers will lie. They'll propose blocks that don't follow the rules, send different versions of "the truth" to different peers, go offline at convenient moments, and team up to push fake history. The network has no way to identify the liars in advance, because anyone can join.
 
-The system has to produce one agreed-upon record anyway. Not most of the time. All of the time, forever, as long as the network exists. With strangers, in public, with hostile actors actively trying to break it.
+The system has to produce one agreed-upon record all the time, forever, as long as the network exists. With strangers and hostile actors actively trying to break it in public. 
 
 This is the consensus problem, and for most of the history of computer science, it was considered either impossible or only solvable inside small, trusted groups. Bitcoin's design in 2008 was the first time anyone showed it could be solved at internet scale, with anonymous participants, without any pre-existing trust between them.
 
@@ -84,33 +84,33 @@ The classic way to describe this problem comes from a 1982 thought experiment ab
 <text x="360" y="320" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">All generals exchange messages. Some are honest, some lie. They still have to agree on one plan.</text>
 </svg>
 
-The generals are stand-ins for nodes on a network. The messengers are network connections. The traitors are malicious or buggy participants. The "agree on attack or retreat" is "agree on which block comes next." Replace the army metaphor with database servers and you have the actual problem facing every blockchain on day one.
+The generals are stand-ins for nodes on a network, the messengers are network connections, and the traitors are malicious or buggy participants. The "agree on attack or retreat" is "agree on which block comes next". Replace the army metaphor with database servers and you have the actual problem facing every blockchain on day one.
 
-The hard part is not "tell honest from dishonest." The hard part is that the honest participants can't tell either, because they only see the messages they receive, and a clever traitor can send different messages to different recipients. Two honest generals can both be confident they've reached the right answer and still end up with opposite plans.
+The hard part is not "tell honest from dishonest"; it's that the honest participants can't tell either, because they only see the messages they receive, and a clever traitor can send different messages to different recipients. Two honest generals can both be confident they've reached the right answer and still end up with opposite plans.
 
 Any system that wants to make decisions without a trusted referee has to solve some version of this problem.
 
 ## Why the obvious solutions fail
 
-The first thing most developers reach for is **voting**. Each participant proposes their version of the next block. Everyone votes. Majority wins.
+The first thing most developers reach for is **voting**. Each participant proposes their version of the next block; everyone votes, majority wins.
 
-This breaks immediately on an open network, for one reason. There is no way to count "participants" when anyone can create a thousand fake identities for the price of cloud rental. A vote becomes meaningless the moment one party can show up as 51% of the voters by themselves. Creating unlimited fake identities to manipulate a vote is called a **Sybil attack**, and it's the reason every naive consensus scheme fails the moment it touches the open internet.
+This breaks immediately on an open network, for one reason. There is no way to count "participants" when anyone can create a thousand fake identities for the price of cloud rental. A vote becomes meaningless the moment one party can show up as 51% of the voters by themselves. Creating unlimited fake identities to manipulate a vote is called a **Sybil attack**, and it's the reason every naive consensus scheme fails the moment it touches the internet.
 
-The second instinct is **first writer wins**. Whoever submits a block first gets to write it. Done.
+The second instinct is **first writer wins**. Whoever submits a block first gets to write it. 
 
 This breaks because there is no shared clock. Two participants on opposite sides of the planet can each be the "first" from their own perspective, and the network has no way to decide between them. Worse, an attacker with a faster connection can systematically race honest participants and always win.
 
-The third instinct is **fall back to a trusted server**. Let one party be the tiebreaker, just for the cases where the network can't agree.
+The third instinct is **fall back to a trusted server**. Let one party be the tiebreaker, just for the case where the network can't agree.
 
 This works, and it's how most databases handle replication. It's also exactly what a blockchain is trying to avoid. The moment you have a trusted tiebreaker, the system has an operator again. Everything that made the structure interesting is gone.
 
-So voting fails because participants are fakeable. First-wins fails because there is no shared clock. Trusted-server fails because it defeats the purpose. The problem is genuinely hard.
+So, voting fails because participants are fakeable. First-wins fails because there is no shared clock. Trusted-server fails because it defeats the purpose. The problem is genuinely hard.
 
 ## The actual answer: make participation cost something
 
 The breakthrough is one sentence long. **If you want to vote, you have to spend something real, and you only get to vote once per unit of what you spent.**
 
-Now think about what that does. An attacker can still create a thousand fake voters, but each one has to actually pay the cost. If the cost is large enough, paying it a thousand times is more expensive than the attack is worth. Sybil attacks become economically infeasible rather than technically impossible. The system isn't preventing fake identities. It's making them too expensive to bother with.
+Now, think about what that does. An attacker can still create a thousand fake voters, but each one has to actually pay the cost. If the cost is large enough, paying it a thousand times is more expensive than the attack is worth. Sybil attacks become economically infeasible rather than technically impossible. The system isn't preventing fake identities. It's making them too expensive to bother with.
 
 What counts as "something real"? Two main answers have shown up in the past two decades. Both use the same general logic.
 
@@ -134,4 +134,4 @@ Those three properties, together, are what a blockchain is actually selling. Cry
 
 ## The agreement mechanism you now understand
 
-You now have the agreement mechanism that keeps a blockchain running: a way for mutually untrusted strangers to converge on one shared history by making dishonest participation cost more than it can earn. That is the piece that lets the tamper-evident structure from cryptography operate with no operator and no trusted referee.
+Now, you are familiar with the agreement mechanism that keeps a blockchain running: a way for mutually untrusted strangers to converge on one shared history by making dishonest participation cost more than it can earn. That is the piece that lets the tamper-evident structure from cryptography operate with no operator and no trusted referee.
