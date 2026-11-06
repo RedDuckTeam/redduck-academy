@@ -26,13 +26,13 @@ faq:
       Bitcoin uses SHA-256, and RIPEMD-160 in a few places. Ethereum uses Keccak-256.
 ---
 
-> The previous lesson ended with a promise: the next thing you'd learn is the cryptography that makes blockchains possible at all. In this lesson we'll examine hash functions.
+> The previous lesson ended with a promise – next thing you learn is cryptography that makes blockchains possible at all. To achieve that, let's examine hash functions.
 
 ## The one-sentence definition
 
-Hash functions take content of any input and type, and return an output of a fixed size, no matter the input size. Sometimes they're called 'digest' functions but the industry standard is to refer to them as hash functions. 
+Hash functions take content of any input and type, return an output of a fixed size, no matter the input size. Sometimes they're called 'digest' functions but the industry standard is to refer to them as hash functions. 
 
-Let's run one of the most popular hash functions SHA-256 on three different inputs:
+Let's run one of the most popular hash functions, SHA-256, on three different inputs:
 
 ```
 SHA-256("hello")
@@ -47,9 +47,9 @@ SHA-256("Lorem ipsum dolor sit amet, consectetur adipiscing elit...")
 
 As you can see, the output is always the same length, 256 bits, written as 64 hex characters, no matter the input size. 
 
-One added character (`hello` → `hello!`) produced a completely different output, and that's one more property of hash functions: they produce output that looks very random, even though the hash function itself works the same way every time you call it. So if you were to run a hash function on 'hello' multiple times, you'd get the same output - because the function is deterministic. The randomness in the outputs is what we call 'avalance effect'.
+One added character (`hello` → `hello!`) produced a completely different output, and that's one more property of hash functions: they produce output that looks very random, even though the hash function itself works the same way every time you call it. So if you were to run a hash function on 'hello' multiple times, you'd get the same output, because the function is deterministic. The randomness in the outputs is what we call 'avalance effect'.
 
-So far we can infer that the hash functions have the following properties:
+So far, we can infer that hash functions have the following properties:
 
 - **Deterministic computations:** hash function behaviour is the same on your laptop, on a Bitcoin node in Tokyo, and on a Solana validator in Frankfurt. If it were different, no blockchain could use them, as blockchains require the code to execute in the same way for all validators in order to reach an agreement.
 - **Avalanche effect:** Despite the hash function working the same way every time you run it, you still get random-looking results for different inputs. One bit flipped in your input and you now have a completely different output again.
@@ -58,9 +58,9 @@ But there are more properties that cryptographic hash functions follow:
 
 - **Pre-image resistance:** We can't extract the initial input from the output of a hash function. Many people tried, everyone failed so far.
 - **Collision resistance:** Finding another input that produces the same hash as some other input is computationally impossible.
-- **Fast to compute, slow to invert:** Computing the hash of a 1 MB file takes milliseconds. But finding an input that produces a given hash requires trying inputs one by one. For SHA-256, that's roughly 2²⁵⁶ attempts in the worst case, a number comparable to the count of atoms in the observable universe. The asymmetry is the whole point.
+- **Fast to compute, slow to invert:** Computing the hash of a 1 MB file takes milliseconds. But finding an input that produces a given hash requires trying inputs one by one. For SHA-256, that's roughly 2²⁵⁶ attempts in the worst case, a number comparable to the count of atoms in the observable universe. 
 
-The above properties are based on one simple constraint - we can't get any useful information from the output regarding the inputs that they were processed with, so the best we can do to find an input for a specific hash is bruteforcing them. That's 2^256 attempts, because of 256 bits in the output where each bit can have 2 possible values (1 or 0) gives us exactly that many attempts to try. This number is so big, that if we were to take all the computers that humanity ever produced and multiply that by a million of trillions, we would still not be able to bruteforce that in a trillion years. The gap is so huge that statement of trillion years is actually underselling it.
+The above properties are based on one simple constraint - we can't get any useful information from the output regarding the inputs that they were processed with, so the best we can do to find an input for a specific hash is bruteforcing them. That's 2^256 attempts, because of 256 bits in the output where each bit can have 2 possible values (1 or 0) gives us exactly that many attempts to try. This number is so big, that if we were to take all the computers that humanity ever produced and multiply that by a million of trillions, we would still not be able to bruteforce that in a trillion years. The gap is so huge that a statement of trillion years is actually underselling it.
 
 <svg role="img" viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>"hello" vs "hellp" hash outputs differing in about half their bits</title><desc>The diagram shows the hash of "hello" above the hash of "hellp", where only one letter changed. Roughly half the bits flip in the output, which is the avalanche effect.</desc>
   <text x="30" y="40" font-family="monospace" font-size="13" fill="#000000" font-weight="bold">"hello"</text>
@@ -87,7 +87,7 @@ The playground below has two inputs pre-filled with `hello` and `hello!`, each w
 
 ## Why blockchains can't exist without it
 
-**Integrity checking.** This one predates blockchain by decades. Software distributors publish a file alongside its hash. You download the file, hash it yourself, and compare. If your hash matches the published hash, the file wasn't modified in transit. If even one byte was changed, by a network error, a malicious mirror, anything, your hash will be completely different from the published one and you'll know. This is the simplest possible use of a hash function and it's the seed of every other security property in the rest of the course.
+**Integrity checking.** This one predates blockchain by decades. Software distributors publish a file alongside its hash. You download the file, hash it yourself, and compare. If your hash matches the published hash, the file wasn't modified in transit. If even one byte was changed, by a network error, a malicious mirror, anything – your hash will be completely different from the published one and you'll know. This is the simplest possible use of a hash function and it's the seed of every other security property in the rest of the course.
 
 **Block linking.** Every block in a blockchain contains the hash of the previous block as one of its fields. The diagram below shows what that looks like in practice.
 
@@ -118,4 +118,4 @@ The playground below has two inputs pre-filled with `hello` and `hello!`, each w
 <text x="360" y="180" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Each block carries the hash of the previous one.</text>
 </svg>
 
-Change anything in a historical block, even a single bit, and that block's hash changes. The next block's `prev_hash` field no longer matches, so it becomes invalid, and so does every block after it. Tampering with the past is detectable by anyone participating in the network. Each block takes only a single hash to verify. This is the property that turns a list of records into a tamper-evident chain and it's the core idea behind blockchains.
+Change anything in a historical block, even a single bit, and that block's hash changes. The next block's `prev_hash` field no longer matches, so it becomes invalid, and so does every block after it. Tampering with the past is detectable by anyone participating in the network. Each block takes only a single hash to verify. This is the property that turns a list of records into a tamper-evident chain and that is the core idea behind blockchains.
