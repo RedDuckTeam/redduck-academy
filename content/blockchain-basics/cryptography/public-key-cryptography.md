@@ -30,7 +30,7 @@ faq:
 
 > The previous lesson introduced the idea of a key pair without explaining how such a thing is possible. Two keys, mathematically linked, where knowing one tells you nothing useful about the other. This lesson is about what makes that work, what specific schemes blockchains use, and why this single mathematical trick is the foundation for almost everything cryptographic that the chain actually relies on.
 
-## The problem this solves
+## The problem a key pair solves
 
 You need a way to prove to anyone in the world that you are who you say you are, **without revealing the secret that makes you "you."**
 
@@ -40,7 +40,7 @@ That sentence packs in several separate requirements:
 - "Anyone in the world" means people you've never met, and people who will exist long after you stop being able to answer questions.
 - "Without revealing the secret" means the act of proving cannot leak the proof material itself. If proving costs you the secret, you can only prove once.
 
-A password doesn't work for this. Showing your password to a verifier means they now have your password. A traditional shared key doesn't work either. You'd need to share it with every party in advance.
+A password doesn't work for this. Once you show your password to a verifier – they immediately have your password. A traditional shared key doesn't work either as you'd need to share it with every party in advance.
 
 What you need is something asymmetric. A pair of values, mathematically linked, with these properties:
 
@@ -49,7 +49,7 @@ What you need is something asymmetric. A pair of values, mathematically linked, 
 3. The secret can be used to "sign" or "decrypt" things in a way only the holder of the secret could do.
 4. The public token can be used by anyone to verify the work without ever holding the secret.
 
-For most of cryptographic history, no such construction was known. In the 1970s a sequence of breakthroughs (Diffie-Hellman 1976, RSA 1977) showed that it could be done, using carefully chosen mathematical operations where the forward direction is fast and the reverse direction is astronomically slow. This is the entire foundation of modern cryptography on the internet, and it is the entire foundation of identity on a blockchain.
+For most of cryptographic history, no such construction was known. In the 1970s, a sequence of breakthroughs (Diffie-Hellman 1976, RSA 1977) showed that it could be done, using carefully chosen mathematical operations where the forward direction is fast and the reverse direction is astronomically slow. This is the entire foundation of modern cryptography on the internet, and it is the entire foundation of identity on a blockchain.
 
 ## One-way functions
 
@@ -77,9 +77,9 @@ A useful intuition: mixing paint. Given two paint colors, you can easily produce
 <text x="355" y="180" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">A one-way function. The forward arrow runs every time you use your wallet.</text>
 </svg>
 
-The forward operation in public-key cryptography is some mathematical computation that takes the private key as input and produces the public key as output. Doing it is fast: any device can compute it in microseconds. Reversing it requires an attacker to try enormous numbers of possibilities, and the schemes are designed so that even the largest computer clusters humanity has built would not finish reversing one in the lifetime of the universe.
+The forward operation in public-key cryptography is some mathematical computation that takes the private key as input and produces the public key as output. Doing it is fast: any device can compute it in microseconds. Reversing it requires an attacker to try enormous numbers of possibilities, and the schemes are designed so that even the largest human-made computer clusters would not finish reversing one in the lifetime of the universe.
 
-The strength of a key pair depends entirely on how steep that asymmetry is. A weak scheme might take a determined attacker a few years to reverse. A strong scheme would take longer than the heat death of the universe.
+The strength of a key pair depends entirely on how steep that asymmetry is. A weak scheme might take a determined attacker a few years to reverse; a strong scheme would take longer than the heat death of the universe.
 
 ## The schemes blockchains use
 
@@ -106,7 +106,7 @@ private_key = 32 random bytes from a secure entropy source
 public_key  = curve_multiply(private_key, generator_point)
 ```
 
-That's the entire key-generation process at the conceptual level. One call to a cryptographic random number generator. One curve operation, the "easy direction" of the one-way function. Done.
+That's the entire key-generation process at the conceptual level: one call to a cryptographic random number generator, one curve operation, the "easy direction" of the one-way function. Done.
 
 The reason this is so short is that all the difficulty lives in two places. First, in the curve mathematics that makes `curve_multiply` a true one-way function: the result is a point on the curve that anyone with the public key can verify is legitimate, but only computable by someone who knew the private key. Second, in the entropy source: a private key with predictable bytes is no private key at all. Most wallet compromises in history are not breaks of the curve. They are weak entropy.
 
@@ -124,4 +124,4 @@ Three different operations can be built on top of the private/public key pair, e
 
 **Identity.** Your address is derived from your public key. The chain doesn't know your name, your country, or your email. It knows the public key that goes with the private key you control. Possession of the private key is the entire definition of "you" from the chain's perspective. Lose it and there is no recovery. Steal it and there is no insurance.
 
-This is very different from systems with password resets and customer support. There is no customer support. The private key, and only the private key, is the identity. The next lesson covers exactly how that key gets generated, stored, and recovered.
+This is very different from systems with password resets and customer support. Private key, and only the private key, is the identity. The next lesson covers exactly how that key gets generated, stored, and recovered.
