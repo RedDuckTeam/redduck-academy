@@ -45,7 +45,7 @@ The diagram below shows the stack. Each layer depends on the one below it:
 </svg>
 
 ## Layer 1: DLT
-The DLT <i>(Distributed Ledger Technology)</i> itself is the core layer everything else depends on. Blockchains are one-of-many DLTs types, so even though it's the most frequently used one, it's still worth noting there are many other DLTs that aren't blockchains, such as <a href="https://hedera.com/"></a>. 
+The DLT <i>(Distributed Ledger Technology)</i> itself is the core layer everything else depends on. Blockchains are one-of-many DLTs types, so even though it's the most frequently used one, it's still worth noting there are many other DLTs that aren't blockchains, such as <a href="https://hedera.com/">Hedera</a>, which is built on a hashgraph instead of a chain of blocks.
 
 A DLT is a shared record of state, replicated across thousands of computers, agreed on by all of them. Because it's a decentralized technology, the ledger is modifiable only by following rules built into the system. The ledger part means that we're not storing the final data itself, we're storing the actions that led to the final data, namely **transactions**.
 
