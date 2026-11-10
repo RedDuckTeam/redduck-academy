@@ -29,8 +29,6 @@ faq:
       which consensus has already agreed on. A contract is only as trustworthy as its oracle.
 ---
 
-> Every node must compute the same result from the same input. That's the crucial constraint on every blockchain in existence, and it is easy to miss when you come from web2 development. The constraint dictates what kinds of programs can run on a blockchain and what kinds cannot, why on-chain code can't call an external API, why "give me a random number" on-chain is harder than it sounds, and a whole class of problems that the ecosystem solves with separate mechanisms layered on top. Let's dive in.
-
 ## Why determinism
 
 Step back and recall what every node on the network is doing. When a new block arrives, every node independently validates it, and every validation must reach the same answer. If half the nodes accept the block and half reject it, the network is split and consensus has failed. The whole system runs on the assumption that every honest node, given the same input, will produce the same answer.
