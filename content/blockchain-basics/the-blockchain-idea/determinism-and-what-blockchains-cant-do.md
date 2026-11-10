@@ -29,15 +29,13 @@ faq:
       which consensus has already agreed on. A contract is only as trustworthy as its oracle.
 ---
 
-> Every node must compute the same result from the same input. That one sentence is the deepest constraint on every blockchain in existence, and it is easy to miss when you come from web2 development, so it is worth stating plainly. The constraint dictates what kinds of programs can run on a blockchain and what kinds cannot. It dictates why on-chain code can't call an external API. It dictates why "give me a random number" on-chain is harder than it sounds. It dictates a whole class of problems that the ecosystem solves with separate mechanisms layered on top. This lesson is about why the constraint exists, what it rules out, and how blockchains work around it.
-
 ## Why determinism
 
-Step back and recall what every node on the network is doing. When a new block arrives, every node independently validates it. Every validation must reach the same answer. If half the nodes accept the block and half reject it, the network is split and consensus has failed. The whole system runs on the assumption that every honest node, given the same input, will produce the same answer.
+Step back and recall what every node on the network is doing. When a new block arrives, every node independently validates it, and every validation must reach the same answer. If half the nodes accept the block and half reject it, the network is split and consensus has failed. The whole system runs on the assumption that every honest node, given the same input, will produce the same answer.
 
-Now imagine the input includes a piece of code. A smart contract. A program that runs as part of processing the block. The contract reads some data, runs some logic, writes some result back. Every node executing the block must execute that contract and arrive at exactly the same result. Same final state of the contract, same return values, same effects on other parts of the chain. Any variation between nodes means the chain forks immediately, every time anyone calls a contract that varies.
+Now imagine the input includes a piece of code as a smart contract – a program that runs as part of processing the block. The contract reads some data, runs some logic, writes some result back. Every node executing the block must execute that contract and arrive at exactly the same result. Identical final state of the contract, return values, and the effects on other parts of the chain. Any variation between nodes means the chain forks immediately, every time anyone calls a contract that varies.
 
-So contracts on a blockchain have to be **deterministic**: same code, same inputs, same outputs, every time, on every node, forever. This is the single property that makes on-chain code possible at all.
+So, contracts on a blockchain have to be **deterministic**: same code, same inputs and outputs, every time, on every node, forever. This is the single property that makes on-chain code possible at all.
 
 <svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Same input and code run on node 1, 2, 3 give all equal outputs</title><desc>One input, the same on every node, flows into a single deterministic code block. That code runs separately on node 1, node 2, and node 3, and each produces an output. Arrows point from the code to all three outputs, labeled all equal.</desc>
   <defs>
@@ -80,13 +78,13 @@ So contracts on a blockchain have to be **deterministic**: same code, same input
   <text x="610" y="145" font-size="14" fill="#ed4937" font-weight="bold">equal</text>
 </svg>
 
-The picture is simple. Every node runs the same code on the same input. The outputs must all match. If they don't, something is wrong with the code, the input, or both. There is no fourth option.
+Every node runs the same code on the same input. The outputs must all match. If they don't, something is wrong with the code, the input, or both. There is no fourth option.
 
 ## What this rules out
 
 The determinism requirement immediately rules out an entire category of things developers normally take for granted.
 
-**External API calls.** A program running on the chain cannot call `fetch("https://api.example.com/price")`. The API might return a different price to a node in one city than to a node in another. The API might be down when one node calls it and up when another does. The API might rate-limit some nodes and not others. Any of these would cause nodes to disagree on the result of the contract call, and the chain would fork. Smart contract languages on every chain simply don't expose any network operations. There is no HTTP client. There is no DNS lookup. There is no socket library.
+**External API calls.** A program running on the chain cannot call `fetch("https://api.example.com/price")`. The API might return a different price to a node in one city than to a node in another, or it might be down when one node calls it and up when another does, or it might rate-limit some nodes and not others. Any of these would cause nodes to disagree on the result of the contract call, and the chain would fork. Smart contract languages on every chain simply don't expose any network operations like an HTTP client, DNS lookup, or the socket library.
 
 **Wall-clock time.** A program running on the chain cannot read the system clock. Different nodes have slightly different clocks. Even with NTP synchronisation, there's drift on the order of milliseconds, and a contract that asked for the current second would get different answers on different nodes. Smart contract languages don't expose `Date.now()` or its equivalent. They expose only the timestamp recorded in the current block, which is a value the consensus mechanism has already agreed on.
 
@@ -108,16 +106,12 @@ Three of the categories above have standard workarounds that you'll meet in ever
 
 **For external data, use oracles.** An **oracle** is an off-chain service that watches some real-world data source (the price of an asset, the result of a sporting event, the weather in a city, whatever the application needs) and submits transactions to the chain that write the data into a smart contract's state. Contracts that need the external data read from the oracle's on-chain contract instead of trying to fetch the data themselves. The data on the chain came from off-chain, but at the moment a contract reads it, it's already been agreed upon by consensus. Every node reads the same value.
 
-The oracle pattern is worth pausing on. It looks like a workaround, and it is, but it's a workaround that imports a different kind of trust into the system. The chain trusts the contract. The contract trusts the oracle. The oracle is operated by some party off the chain, with all the usual risks of off-chain parties. A blockchain application that depends on an oracle is only as trustworthy as its oracle, no matter how good the on-chain cryptography is. Picking the right oracle, or running your own, is an architectural decision that web2 development never required, and it is easy to overlook.
+The oracle pattern looks like a workaround, and it is, but it's a workaround that imports a different kind of trust into the system. The chain trusts the contract. The contract trusts the oracle. The oracle is operated by some party off the chain, with all the usual risks of off-chain parties. A blockchain application that depends on an oracle is only as trustworthy as its oracle, no matter how good the on-chain cryptography is. Picking the right oracle, or running your own, is an architectural decision that web2 development never required, and it is easy to overlook.
 
 ## What blockchains are really for
 
 A blockchain is not a general-purpose computer that happens to be decentralised. It is a very specific kind of computer that has traded a lot of capability for the ability to be verified by everyone, with no operator. Anything that depends on local conditions, like time, randomness, external data, or hardware, is either banned or pushed off-chain. What's left is pure computation over data that everyone can see.
 
-That's the deal. You get a programmable settlement layer that no one controls. Anyone can write code on it. Anyone can verify that code. It handles real value and produces results no one can fake. You give up the ability to call external services from inside that code, the ability to read the wall clock, and the ability to use true randomness. For the use cases blockchains are good for, the trade is enormously worth it. For use cases that need any of the capabilities the trade gives up, a blockchain is the wrong tool.
+You get a programmable settlement layer that no one controls. Anyone can write code on it and verify that code. It handles real value and produces results no one can fake. You give up the ability to call external services from inside that code, the ability to read the wall clock, and the ability to use true randomness. For the use cases blockchains are good for, the trade is worth it; for use cases that need any of the capabilities the trade gives up, a blockchain is the wrong tool.
 
 This is the constraint at the bottom of everything. Every smart contract you'll ever write, on any chain, lives inside this rule. Every weird design choice in smart contract languages, every reason "just call an API" doesn't work, every pattern you'll learn for handling external data, all of it traces back to one requirement. Every node must compute the same result from the same input. The chain can do nothing else, ever.
-
-## The complete picture you now hold
-
-You have a complete conceptual picture of how a blockchain operates: the structure, the comparison to traditional systems, the consensus mechanism, the nodes and the network, the operation loop that ties everything together, the way the network handles temporary and permanent disagreement, and the deepest constraint on what on-chain code can do. Every real chain is a specific set of choices layered on top of these same pieces, and you now have the vocabulary to take any of them apart.
