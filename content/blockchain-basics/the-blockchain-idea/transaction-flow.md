@@ -23,13 +23,11 @@ faq:
       invalid and every node downstream rejects it.
 ---
 
-> By now you have all the parts. Cryptographic primitives that let identities exist and signatures bind authorship to messages. A hash-linked block structure that makes the past tamper-evident. A consensus mechanism that lets strangers agree without an operator. A network of nodes that hold copies, validate everything, and gossip new information to each other within seconds. None of these pieces is a blockchain by itself. This lesson takes the pieces and shows them assembling, in real time, into one operation: a single change to the chain, from the moment a user clicks something in their wallet to the moment that change is part of the permanent record. Every term used in this lesson is something you already understand. The lesson is where they snap together.
+> By now, you have all the parts: cryptographic primitives that let identities exist and signatures bind authorship to messages; a hash-linked block structure that makes the past tamper-evident; a consensus mechanism that lets strangers agree without an operator; a network of nodes that hold copies, validate everything, and gossip new information to each other within seconds. None of these pieces is a part of blockchain. Below, you'll see how to takes the pieces and assemble them, in real time, into one operation: a single change to the chain, from the moment a user clicks something in their wallet to the moment that change is part of the permanent record. In this lesson, most of the terms that you already understand, finally snap together. Read on to see if you can link the dots. 
 
 ## The setup
 
-Imagine a specific event. A user wants to make a change to the chain. The exact nature of the change doesn't matter for this lesson, because the flow is the same regardless. It could be a value transfer, a deployment of new code, an interaction with code already on the chain, anything.
-
-The user has a wallet. The wallet holds the user's private key. The wallet also has access to one or more nodes on the network, either nodes the user is running themselves or nodes operated by a service provider. The chain is currently sitting at some height, with the most recent block being block N. The user is about to create the request that, eventually, will be included in block N+1 or later.
+Imagine the following event: a user wants to make a change to the chain (the exact nature of the change doesn't matter right now as the flow is the same. It can be a value transfer, a deployment of new code, an interaction with code already on the chain, anything). The user has a wallet. The wallet holds the user's private key and also the access to one or more nodes on the network, either nodes the user is running themselves or nodes operated by a service provider. The chain is currently sitting at some height, with the most recent block being block N. The user is about to create the request that, eventually, will be included in block N+1 or later.
 
 Here is what happens, in order.
 
@@ -110,15 +108,15 @@ Now walk through each step with the components you already know.
 
 ### Step 1: The user constructs the request
 
-In the user's wallet, they describe what they want to do. Send some value. Call some code. Whatever it is. The wallet builds a structured piece of data containing the user's identifier as the sender, the action being requested, a fee the user is offering to pay, and an anti-replay value that makes the request one-time-use. This structured data is the request, and at this point it exists only on the user's device.
+In the user's wallet, they describe what they want to do: send some value or call some code, whatever it is. The wallet builds a structured piece of data containing the user's identifier as the sender, the action being requested, a fee the user is offering to pay, and an anti-replay value that makes the request one-time-use. This structured data is the request, and, at this point, it exists only on the user's device.
 
-No cryptography has happened yet. No network communication has happened yet. The request is just a draft.
+No cryptography or network communication have happened yet. The request is just a draft.
 
 ### Step 2: The wallet signs the request
 
 The wallet computes a signature over the entire request, using the user's private key. This is the same signing operation from the cryptography lessons. The signature is appended to the request.
 
-Two things matter about this step. The signature mathematically proves the user approved the exact content of the request, and changing even one bit of the request after this point will invalidate the signature. From now on, the request is tamper-evident in the same sense the chain itself is, but at the level of a single message rather than a whole history.
+Two things matter about this step: 1) The signature mathematically proves the user approved the exact content of the request, and 2) changing even one bit of the request after this point will invalidate the signature. From now on, the request is tamper-evident in the same sense the chain itself is, but at the level of a single message rather than a whole history.
 
 ### Step 3: The wallet broadcasts the signed request
 
@@ -140,7 +138,7 @@ Periodically, one participant earns the right under the consensus rules to propo
 
 That participant looks at their local buffer of pending requests, picks a set of them, usually prioritising the ones offering the highest fees, and assembles them into a block. The block has the structure from earlier: a header containing the hash of the previous block plus a Merkle root summarising all the requests inside, then the requests themselves underneath.
 
-This is the turning point. Up to here, the user's request was waiting in mempools as a pending item. From here, if everything goes right, it's about to become part of the permanent record.
+Up to here, the user's request was waiting in mempools as a pending item. From here, if everything goes right, it's about to become part of the permanent record.
 
 ### Step 6: The producer broadcasts the new block
 
@@ -160,10 +158,6 @@ The user can now query any node and see that the change has happened. Technicall
 
 ## What just happened
 
-Eight steps, every one using a concept already in your head, ending with a permanent change to a shared record that no single party controls.
+Eight steps, each using a concept you're familiar with, end with a permanent change to a shared record that no single party controls. This is what a blockchain *does*. The flow above is the core. Every blockchain you'll ever meet runs some version of it.
 
-This is what a blockchain *does*. The rest of this course is about the variations between chains, the edge cases, the failure modes, and the application layer built on top. But the flow above is the core. Every blockchain you'll ever meet runs some version of it.
-
-## The flow you can now trace
-
-You can now trace a change to a blockchain from end to end: a user signs a request in their wallet, the network validates and gossips it, a block producer bundles it into a block, and every node independently checks and appends the result. That is the core loop every chain runs. Every chain you'll meet is a variation on one of these steps, running the same underlying loop.
+Next, you'll be introduced to the variations between chains, the edge cases, the failure modes, and the application layer built on top.
