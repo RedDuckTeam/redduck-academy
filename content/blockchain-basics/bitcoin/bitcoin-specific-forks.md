@@ -32,15 +32,11 @@ faq:
       four years after the ideas behind it were proposed.
 ---
 
-Bitcoin's rules can change, but the way they change is unusual. There's no CEO, no board, no committee that votes. The protocol moves when enough people running nodes voluntarily upgrade their software, and that's it. If consensus breaks, the network splits. This lesson walks through three real upgrade stories from Bitcoin's history to show what that looks like in practice.
-
 ## Soft fork, hard fork
 
-Two kinds of changes matter for what comes next.
+A **soft fork** is a backwards-compatible change. The new rules are stricter than the old ones, so anything that’s valid under the new rules is still valid under the old ones.
 
-A **soft fork** is a backwards-compatible change. The new rules are stricter than the old ones, so anything that's valid under the new rules is still valid under the old ones. Old nodes don't notice the upgrade. The network stays one chain.
-
-A **hard fork** is a change that the old rules don't accept. Blocks valid under the new rules look broken to old nodes. If both groups have miners, the chain splits into two.
+A **hard fork** is a change that the old rules don’t accept. Blocks valid under the new rules look broken to old nodes. If both groups have miners, the chain splits into two.
 
 The next three stories are: two successful soft forks, SegWit and Taproot, and one hard fork, Bitcoin Cash, that split the network in two.
 
@@ -74,25 +70,23 @@ The next three stories are: two successful soft forks, SegWit and Taproot, and o
 
 ## SegWit (2017): the upgrade that almost didn't happen
 
-By 2016, Bitcoin had a known bug. Anyone watching the network could grab a signed transaction and slightly rewrite the signature in a way that kept it valid but changed the transaction's ID. The coins still went to the right place, but downstream software that tracked transactions by ID got confused. The Lightning Network, which was being designed around the same time, depended on stable transaction IDs and couldn't work until this bug was fixed.
+By 2016, Bitcoin had a known bug. Anyone watching the network could grab a signed transaction and slightly rewrite the signature in a way that kept it valid but changed the transaction’s ID. The coins still went to the right place, but downstream software that tracked transactions by ID got confused. The Lightning Network, which was being designed around the same time, depended on stable transaction IDs and couldn’t work until this bug was fixed.
 
-The fix was an upgrade called **SegWit**. It restructured how signatures were stored so that they no longer affected the transaction ID. It also made room for more transactions per block as a side benefit. The change was technically a soft fork, meaning old nodes would keep working without trouble.
+The fix was an upgrade called SegWit. It restructured how signatures were stored so that they no longer affected the transaction ID. It also made room for more transactions per block as a side benefit. The change was technically a soft fork, meaning old nodes would keep working without trouble.
 
-There was just one problem. Some of the biggest mining operations didn't want SegWit to activate, for reasons that had more to do with politics than technology. The activation mechanism required a supermajority of miners to signal support, and they refused. For most of 2017, SegWit was ready to activate and miners blocked it.
+However, there was a problem: some of the biggest mining operations didn’t want SegWit to activate, for political reasons. The activation mechanism required a supermajority of miners to signal support, so for most of 2017, SegWit was ready but stuck.
 
-Then a movement of regular users acted on their own. They started running modified software that promised to reject any block that didn't signal support for SegWit, starting on a specific date. If miners kept blocking SegWit past that date, those miners' blocks would be ignored by a large part of the network, including most exchanges and big businesses. Their freshly mined bitcoin would be worth nothing to the people they wanted to sell to.
+Then a movement of regular users acted on their own. They started running modified software that promised to reject any block that didn’t signal support for SegWit, starting on a specific date. If miners kept blocking SegWit past that date, those miners’ blocks would be ignored by a large part of the network, including most exchanges and big businesses. Their freshly mined bitcoin wouldn’t matter to the people they wanted to sell to.
 
 Within weeks of the deadline being announced, miner signaling jumped from a fraction to nearly all of them, and SegWit activated in August 2017.
 
-Here is the lesson that matters most in this story. Miners produce blocks, but they don't decide what counts as a valid block. That's decided by the people running nodes, especially the ones connected to exchanges, custodians, and big merchants. When miners and nodes disagree, miners eventually have to give in, because they need someone to buy their bitcoin.
+Miners produce blocks, but they don’t decide what counts as a valid block. That’s decided by the people running nodes, especially the ones connected to exchanges, custodians, and big merchants. When miners and nodes disagree, miners eventually have to give in, because they need someone to buy their bitcoin.
 
 ## Bitcoin Cash (2017): when consensus breaks
 
 Not everyone wanted SegWit. A group of miners and developers thought Bitcoin should scale differently, by simply allowing bigger blocks. SegWit gave a modest capacity increase as a side effect. They wanted a much larger one as the main feature.
 
-That disagreement was deep enough that no compromise emerged. So on the same day SegWit's user-imposed deadline was scheduled, the group that disagreed launched their own version of Bitcoin with bigger blocks. They called it **Bitcoin Cash**.
-
-This is what a hard fork looks like in practice.
+That disagreement was deep enough that no compromise emerged. On the same day SegWit’s user-imposed deadline was scheduled, the group that disagreed launched their own version of Bitcoin with bigger blocks. They called it **Bitcoin Cash**.
 
 <svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Bitcoin hard fork splitting into Bitcoin (BTC) and Bitcoin Cash (BCH)</title><desc>A shared history box leads to a last shared point, which then splits into two paths: Bitcoin (BTC), where old rules continue, and Bitcoin Cash (BCH), a new chain with new rules. Notes explain that both chains share the same history up to the split and diverge forever after, and anyone holding 1 BTC at the split also held 1 BCH on the new chain.</desc>
 <defs>
@@ -130,26 +124,16 @@ This is what a hard fork looks like in practice.
 <text x="360" y="263" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Anyone holding 1 BTC at the split moment also held 1 BCH on the new chain.</text>
 </svg>
 
-The shared history is the key idea. Up to the split moment, both chains are literally the same chain. The same blocks, the same balances, the same transaction history. After the split, the two networks operate independently and never reconnect. Both still produce blocks today.
+After the split, the two networks operate independently and never reconnect. The same private key that controlled your BTC now also controls an equal amount of BCH. This is what “fork airdrops” are: an automatic consequence of a hard fork.
 
-A side effect worth knowing: when a hard fork creates a new chain, everyone who owned coins on the original chain at the split moment also owns coins on the new chain. The same private key that controlled your BTC now also controls an equal amount of BCH, because both chains inherited the same state. This is what "fork airdrops" actually are. They aren't gifts from anyone. They're the automatic consequence of two chains sharing history up to the split.
-
-Years later, Bitcoin's market value is roughly a hundred times bigger than Bitcoin Cash's. The market made its choice. But the BCH chain is still running and still has users, which is the point. In a decentralized system, you can't force people to agree. If they don't, they can leave with a copy.
+Years later, Bitcoin’s market value is roughly a hundred times bigger than Bitcoin Cash’s. The market made its choice, but the BCH chain is still running and still has users. In a decentralized system, you can’t force people to agree because if they don’t, they leave with a copy.
 
 ## Taproot (2021): a smooth upgrade
 
 After the SegWit fight, many people predicted Bitcoin would never be able to upgrade itself again without another community split. Taproot proved them wrong.
 
-Taproot is a technical upgrade that improved Bitcoin's privacy and made certain advanced spending conditions cheaper. The technical details aren't the interesting part. The interesting part is that the activation was almost boring. The community broadly agreed it was a good idea. Miners signaled support without a fight. It locked in within months of being proposed for activation. It went live in November 2021 with no drama.
+Taproot is a technical upgrade that improved Bitcoin’s privacy and made certain advanced spending conditions cheaper. The community broadly agreed it was a good idea, and miners signaled support without a fight. It locked in within months of being proposed for activation and went live in November 2021.
 
-What Taproot shows is that Bitcoin's upgrade process is slow, but it works. When a change is well-designed and the community broadly agrees, the protocol can still evolve. The slow pace doesn't mean Bitcoin is frozen, just that it doesn't change unless there's strong agreement.
+What Taproot shows is that Bitcoin’s upgrade process is slow, but it works: when a change is well-designed and the community broadly agrees, the protocol evolves.
 
-That slowness, though, is real. The ideas behind Taproot were proposed years before activation. From the first proposal to deployment took roughly four years. Other software platforms release comparable features in months. Bitcoin's slowness is a deliberate trade. The protocol settles hundreds of billions of dollars of value. If it could be changed quickly, it could be broken quickly too.
-
-## Three takeaways
-
-**Bitcoin upgrades through voluntary agreement.** No one is in charge. A change happens when enough miners, nodes, and users adopt it on their own. When that doesn't happen, the change fails or the network splits.
-
-**Nodes are the real backstop.** Miners build blocks, but nodes decide which blocks count as valid. When miners and nodes disagree, nodes eventually win, because miners need their work to be accepted by the people who buy bitcoin.
-
-**Soft forks are the safe path.** Most Bitcoin changes are soft forks because they don't risk a chain split. Hard forks are reserved for cases where backwards compatibility just isn't possible, and they only succeed if the community is unanimous. When it isn't unanimous, you get two chains.
+The cost is time. The ideas behind Taproot were first described years before activation, and from the original idea to deployment took roughly four years. Other software platforms release comparable features in months. This is a deliberate trade. The protocol settles hundreds of billions of dollars of value. If it could be changed quickly, it could be broken quickly too.
