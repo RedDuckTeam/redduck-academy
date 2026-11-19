@@ -24,21 +24,17 @@ faq:
       On every node at once. None of the copies is the original.
 ---
 
-> You now have the cryptographic primitives. Hashes that uniquely identify data, keys that prove identity, signatures that bind authorship to a message, Merkle trees that commit to large sets in 32 bytes. Standing alone, none of these is a blockchain. A blockchain is what happens when you arrange those primitives in a very specific way to solve a very specific problem. This lesson builds the structure up from scratch, using only the parts you already have.
+> You now have the cryptographic primitives: hashes, keys, signatures and Merkle trees. Standing alone, none of these is a blockchain. This lesson builds the structure up from scratch, using only the parts you already have.
 
-## The problem we're solving
+## Many parties need one list, and none of them trusts the others
 
-You want a shared record of facts. A list of "this happened, then this happened, then this happened." Many parties around the world need to agree on the contents of that list. None of them trusts any of the others. There is no central authority you can all defer to.
+You want a shared record of facts, a list of "this happened, then this happened, then this happened." Many parties around the world need to agree on the contents of that list. None of them trusts any of the others, and there is no central authority they can all defer to.
 
-That's the entire problem. Build a list of facts that everyone can read, anyone can append to, and nobody can secretly edit. With no central authority.
+So the task is to build a list of facts that everyone can read, anyone can append to, and nobody can secretly edit. A blockchain does this with a few simple structural choices, layered one on top of the next.
 
-It sounds impossible at first. If everyone has their own copy of the list, who's right when two copies disagree? If anyone can write to it, what stops a bad actor from rewriting history? If there's no central operator, how does the system decide which version of reality is the real one?
+## A plain list has no defence against edits
 
-The blockchain is the answer to all of those questions at once. It works because of a few simple structural choices, layered one on top of the next.
-
-## The structure, built up
-
-Step one. You need to record a list of items, in order. The word items is just a placeholder. We haven't said yet what they are. The list grows over time as new items are added.
+You need to record a list of items, in order. The word items is just a placeholder. We haven't said yet what they are. The list grows over time as new items are added.
 
 A naive list would look like this:
 
@@ -52,15 +48,17 @@ item 4
 
 This works for one person on one computer. The problem starts when the list is shared. If you mail me a copy and I quietly change item 2 to say something different, you have no way to tell from my copy that anything is wrong. The list has no built-in defence against tampering.
 
-Step two. Apply what you learned about hashing. Group items into batches called **blocks**, and each block carries the hash of the previous block. Tampering with any historical block changes its hash, which means the next block's "previous hash" field no longer matches, which means the chain breaks. Anyone holding the chain can detect this by recomputing one hash per block.
+## Each block carries the hash of the one before it
+
+Apply what you learned about hashing. Group items into batches called **blocks**, and let each block carry the hash of the previous block.
 
 ```
 [Block 1: items]  →  [Block 2: items, prev_hash]  →  [Block 3: items, prev_hash]  →  ...
 ```
 
-This gives you a tamper-evident sequence. Each block points back at the one before it via a hash. This is where the name comes from: blocks, linked into a chain.
+This is where the name comes from: blocks, linked into a chain. As the [hashing lesson](/courses/blockchain-basics/cryptography/hashing) showed, changing anything in an old block changes its hash, so the "previous hash" field of the next block no longer matches. Each hash covers the one before it, so the hash of the latest block depends on every block in the chain, and two people can check that their copies are identical by comparing that one hash.
 
-Step three. Apply what you learned about Merkle trees. Inside each block, the items don't have to be stored as a flat list. They can be summarised by a single Merkle root, also 32 bytes, that commits to every item in the block. The block's header contains just this root plus the previous-block hash plus a few small bits of metadata. The result is a block header that's only around 80 bytes even when the block contains thousands of items.
+Each block also carries a 32-byte [Merkle root](/courses/blockchain-basics/cryptography/merkle-trees) of its items, so a single item can later be checked against the block without downloading all of them. The block's header contains just this root plus the previous-block hash plus a few small bits of metadata such as a timestamp. In Bitcoin the header is 80 bytes even when the block contains thousands of items.
 
 <svg role="img" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Blocks N-1, N, and N+1 linked by prev_hash and merkle_root</title><desc>Three blocks in a row, each with a hash, prev_hash, merkle_root, timestamp, and a list of items. Arrows show each block's prev_hash pointing back to the previous block's hash, chaining them together.</desc>
 
@@ -168,7 +166,11 @@ Step three. Apply what you learned about Merkle trees. Inside each block, the it
 
 </svg>
 
-Step four. Make every party in the network hold a full copy of the chain. Instead of a few servers or a centralised database, thousands of independent computers each run the same software, each hold the same data, and each verify every new block against the same rules. The picture below shows the same chain replicated across many machines.
+## The chain needs other copies to compare with
+
+The hashes do not stop me from editing my own copy. I can change item 2 and then recompute the hash of that block and of every block after it. Hashing is fast, so this is easy, and afterwards my copy is consistent again and nothing inside it shows the edit. The edit shows only when my copy is compared with yours, because the hashes differ from the edited block onwards.
+
+So every party in the network holds a full copy of the chain. Instead of a few servers or a centralised database, thousands of independent computers each run the same software, each hold the same data, and each verify every new block against the same rules. Tampering with one copy doesn't change any other.
 
 <svg role="img" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Same blockchain copied across Node 1 to Node 5, and thousands more</title><desc>Five boxes labeled Node 1 through Node 5 each show the same chain of blocks, with a note for thousands more nodes. Every node holds its own copy of the same chain, so tampering with one copy doesn't change any other.</desc>
   <!-- Node 1 -->
@@ -244,20 +246,12 @@ Step four. Make every party in the network hold a full copy of the chain. Instea
 <text x="360" y="270" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Every node holds its own copy of the same chain. Tampering with one copy doesn't change any other.</text>
 </svg>
 
-This is the second word in "blockchain network." The chain is the data structure. The network is the set of machines that all hold the same copy of it.
+The chain is the data structure. The network is the set of machines, called nodes, that all hold the same copy of it.
 
-## What you've actually built
+## A blockchain is a hash-linked chain of blocks copied on every node
 
-Stack these four moves together and look at what falls out.
+A blockchain is a replicated, append-only, hash-linked sequence of blocks. Every node holds the same copy, and each block's hash binds it to all the blocks before it, so the structure is tamper-evident even though no central authority maintains it.
 
-A shared record exists, because every node holds it.
+Two things are still open. Comparing copies shows that they differ, but not which one to keep. And anyone running the software can produce a new block that points at the current tip of the chain, so two nodes can produce two different new blocks at roughly the same time. The mechanism that settles both is called **consensus**, and it gets its own lesson: [Why we need consensus](/courses/blockchain-basics/the-blockchain-idea/why-we-need-consensus).
 
-Tampering with the past is detectable, because each block's hash binds it to the one before, and any change to any historical block invalidates every block after it.
-
-Adding to the present is easy, because anyone running the software can produce a new block that points at the current tip of the chain.
-
-Disagreement can still happen, because two nodes can produce two different new blocks at roughly the same time. The mechanism that decides which one becomes canonical is called **consensus**, and it gets its own lesson later.
-
-That's a blockchain. A replicated, append-only, hash-linked sequence of blocks, where every node holds the same copy, every block proves the integrity of every previous block, and the structure as a whole is tamper-evident even though no central authority maintains it.
-
-Everything else you'll meet in the rest of this course, transactions, smart contracts, tokens, mining, staking, dApps, NFTs, DeFi, all of it, is what people put inside the items, or what they build on top of the chain once they trust its contents. The chain itself is just the structure described above. Once you see that, the mystery is gone.
+Everything else you'll meet in the rest of this course (transactions, smart contracts, tokens, mining, staking) is what people put inside the items, or what they build on top of the chain once they trust its contents.

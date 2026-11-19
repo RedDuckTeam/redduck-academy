@@ -28,21 +28,23 @@ faq:
       be zero first, and the owner signs.
 ---
 
-> Most of what makes Solana useful flows through one program: the SPL Token Program. USDC, USDT, every project's governance token, every meme coin, every staking receipt, every wrapped asset, every position token from every protocol. The same program manages all of them. You've already called it twice through CPI without seeing its formal shape. Its formal shape comes down to three things: the state that lives in its accounts, the instructions it accepts, and the authorities that gate each action. Once you have these pieces, working with tokens in your own programs becomes mechanical.
+> On Ethereum every ERC-20 token is its own contract with its own table of balances. On Solana one program, the SPL Token Program, manages every token, and each holder's balance of each token is a separate account. The first follows from programs holding no state, and the second from the limits on a single account.
 
-## The Token Program is just a program
+## One program serves every token, and a token is a Mint account
 
-The first thing to understand about the SPL Token Program is that there is nothing special about it. It is a Solana program, deployed at a fixed and well-known address (`TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`), with the same shape as any program you've written. It has accounts that store its state. It exposes a set of instructions. Anyone can call those instructions from a wallet or from another program via CPI. The runtime treats it like any other program.
+On Ethereum a new token means a new contract. Someone deploys code that implements the ERC-20 interface, and that contract keeps a mapping from address to balance in its own storage ([What is ERC-20](/courses/development-on-ethereum/token-security-and-evm-internals/what-is-erc-20)). A developer coming from there expects a Solana token to be a program too.
 
-What makes it foundational is that everyone agreed to use it. Rather than each token contract on Solana writing its own state machine for tracking balances and approving transfers, the entire ecosystem standardized on one program. The Token Program owns the accounts that store every token's supply and every wallet's holdings. Every program that touches tokens does so by CPI-ing into this one well-tested codebase.
+A Solana program holds no state, so nothing ties its code to one token. The SPL Token Program is a Solana program, deployed at a fixed and well-known address (`TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`), with the same shape as any program you've written, and its code is the same for every token. What makes one token different from another is data. A **Mint** account stores the rules for one specific token: its total supply, its decimal precision, the authority allowed to mint more, and the authority allowed to freeze holdings. Issuing a new token means creating a new Mint account, and no new code is deployed. Every program that touches tokens does so by CPI-ing into this one well-tested codebase. A second token program, Token-2022, runs beside it with the same Mint and TokenAccount model plus extensions, and the [Token-2022 lesson](/courses/development-on-solana/working-with-other-programs/token-2022-and-token-extensions) covers it.
 
-Two account types matter. A **Mint** account describes a token. A **TokenAccount** describes one holder's balance of a token. Almost every interaction with the Token Program boils down to those two account types and how a handful of instructions relate them.
+## Balances cannot live in the Mint, so each holder gets a token account
 
-## Mint and TokenAccount: the central split
+The next thing an ERC-20 developer would try is to keep all balances of a token in its Mint, the way the contract keeps them in one mapping. Two limits rule that out.
 
-Think of a Mint as a currency itself. The U.S. dollar has rules about who can print new ones, how many decimal places it uses, and what its total circulation is. A Mint account stores the equivalent rules for one specific token: its total supply, its decimal precision, the authority allowed to print more, and the authority allowed to freeze holdings.
+An account's data cannot exceed ten megabytes ([accounts](/courses/development-on-solana/the-solana-mental-model/accounts)). A holder's address alone takes 32 bytes, so one account has room for about 300,000 holders at most.
 
-A TokenAccount is one person's bank account holding that currency. It references the mint, names an owner, and tracks a balance. Alice's USDC account holds 100 USDC, Bob's USDC account holds 50 USDC, and a protocol's vault PDA holds 1,000 USDC. Three accounts, three balances, all denominated in the same Mint.
+Every transfer would also write the Mint. The runtime runs two transactions in parallel only if they write different accounts, so no two transfers of the same token could run at the same time ([why Solana was built differently](/courses/development-on-solana/the-solana-mental-model/why-solana-built-differently)).
+
+So each balance gets an account of its own. A **TokenAccount** references the mint, names an owner, and tracks a balance, and a holder needs one for each mint. Alice's USDC account holds 100 USDC, Bob's USDC account holds 50 USDC, and a protocol's vault PDA holds 1,000 USDC.
 
 <svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>USDC mint with Alice, Bob, and Vault PDA token accounts</title><desc>One USDC Mint holds the supply, decimals, and authorities for the currency. Three separate token accounts point to that same mint: Alice holds 100 USDC, Bob holds 50 USDC, and the Vault PDA holds 1,000 USDC, each stored as raw integer amounts.</desc>
   <defs>
@@ -94,21 +96,21 @@ A TokenAccount is one person's bank account holding that currency. It references
   <text x="360" y="520" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Mint is the currency. Token account is the bank account holding it.</text>
 </svg>
 
-The relationship is one-to-many. One mint, many token accounts referencing it. The mint is created once, by whoever issues the token. The token accounts are created on demand, one per wallet per mint, as users come to hold the token for the first time. Most wallets you'd recognize hold dozens of token accounts: one for each different token in the wallet.
+The mint is created once, by whoever issues the token. The token accounts are created on demand, as users come to hold the token for the first time.
 
-A common new-developer confusion is conflating these two layers. People will say "transfer 50 USDC from Alice to Bob" and assume Alice's wallet directly holds tokens. It doesn't. Alice's wallet owns a token account, and that token account holds the balance. To transfer, the Token Program updates two token accounts. The mint, and Alice's wallet, are unchanged. Keep this split clear from the start and the rest of the lesson will follow.
+## The recipient's token account has to exist before the transfer
 
-## Decimals: raw amounts versus display values
+The price of this design is that a balance has nowhere to go until its account exists. An ERC-20 transfer to a fresh address needs no setup, because in a mapping every address already has a balance of zero ([mappings](/courses/development-on-ethereum/solidity-basics/mappings)). On Solana the recipient needs a token account for that mint before the first transfer, and somebody has to create it and pay its rent deposit, about 0.002 SOL. The sender also has to find the address of that account, which is not the recipient's wallet address. [Associated Token Accounts](/courses/development-on-solana/working-with-other-programs/associated-token-accounts-atas), the next lesson, are the convention for both.
 
-A balance stored in a token account is not a display value. It's a raw integer scaled by ten to the power of the mint's decimal precision. USDC has 6 decimals, which means a stored balance of `100,000,000` represents `100.000000` USDC when displayed. To take a user-friendly input like "I want to send 100 USDC" and turn it into the right transfer amount, you multiply by `10^6` to get `100,000,000`. To display a balance from the chain, you divide by `10^6`.
+## A transfer writes two token accounts and nothing else
 
-The decimals are stored on the mint rather than on the token account. So to convert correctly between raw and display values, you need to know which mint a balance belongs to. SOL uses 9 decimals, so 1 SOL is 1,000,000,000 lamports in raw units. Most fungible tokens use 6 or 9. NFTs typically use 0 decimals, since you can't have half of one.
+Alice sends Bob 50 USDC. Her transaction carries one Transfer instruction with three accounts: Alice's USDC account as the source, Bob's USDC account as the destination, and Alice's wallet as the authority. The Token Program reads the owner field of the source account, confirms that it equals the authority, and confirms that the authority signed. Then it subtracts 50 USDC from Alice's account and adds 50 USDC to Bob's, which leaves Alice with 50 and Bob with 100. The mint and Alice's wallet are unchanged.
 
-This is the most common source of scale errors in early Solana programs. A new developer reads a balance, treats it as a display value, multiplies it by some factor in their handler, and ends up moving the wrong amount of tokens. The fix is discipline: every amount that touches the Token Program is a raw integer. Conversion to and from display values happens only at the edges, in your frontend or in your test setup, never inside program logic.
+The amounts in these accounts are raw integers scaled by ten to the power of the mint's decimals. USDC has 6 decimals, so the instruction carries `50,000,000`, and Alice's stored balance goes from `100,000,000` to `50,000,000`. Every amount that touches the Token Program is a raw integer. Conversion to and from display values happens only at the edges, in your frontend or in your test setup, never inside program logic.
 
-## The four instructions you'll use
+## Four instructions cover everyday work
 
-The Token Program has dozens of instructions, but for everyday work you'll reach for four of them constantly: Transfer, MintTo, Burn, and CloseAccount.
+The Token Program has dozens of instructions, but for everyday work you'll reach for four of them constantly.
 
 <svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transfer, MintTo, Burn, and CloseAccount: the four SPL Token instructions</title><desc>Four boxes show the SPL Token instructions Transfer, MintTo, Burn, and CloseAccount, each listing its accounts and which one must sign. A note below says every instruction needs one signer plus a few accounts, and Anchor's anchor_spl wraps each one.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -160,19 +162,16 @@ The Token Program has dozens of instructions, but for everyday work you'll reach
   <text x="360" y="540" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Every instruction is one signer plus a few accounts. Anchor's anchor_spl wraps each one.</text>
 </svg>
 
-`Transfer` is what you call to move tokens. Pass the source and destination token accounts, plus the authority that's allowed to spend from the source. The authority must sign. In simple cases the authority is the user's wallet, the same wallet that owns the source token account. In program-controlled cases the authority is a PDA, and your program signs for it using `invoke_signed`. The Token Program treats both the same way.
+- `Transfer` moves tokens from a source token account to a destination. The owner of the source signs: the user's wallet, or a PDA that your program signs for using `invoke_signed`.
+- `MintTo` creates new tokens in a destination token account and increases the mint's `supply` field. The mint authority signs. A protocol that issues its own token uses MintTo, gated by a PDA mint authority, to distribute initial supply or ongoing rewards.
+- `Burn` decreases a token account's balance and the mint's supply by the same amount, permanently. The owner of the account signs.
+- `CloseAccount` closes a token account that has a zero balance and refunds the rent deposit to a destination. The owner of the account signs.
 
-`MintTo` creates new tokens. Pass the mint, the destination token account that will receive them, and the mint authority. The mint authority must sign. The mint's `supply` field increases. This is how new tokens enter circulation. A protocol that issues its own token uses MintTo, gated by a PDA mint authority, to distribute initial supply or ongoing rewards.
+`InitializeMint` creates a new mint with chosen decimals and authorities, and `InitializeAccount` creates a new token account for a specific mint and owner. In Anchor programs, both are usually wrapped by the `init` constraint plus the right type, so you rarely call them directly.
 
-`Burn` is the inverse. Pass a token account, the mint, and the authority that owns the account. The authority must sign. The token account's balance decreases, and the mint's supply decreases by the same amount. Burning is permanent. Users burn tokens to redeem them for something else in a wrapped-asset protocol, to remove voting power, or to retire stale receipts.
+## Two authorities sit on the mint, and neither can move a holder's balance
 
-`CloseAccount` closes a token account that has a zero balance and refunds the rent deposit to a destination. The owner of the account must sign. This matters because every token account costs about 0.002 SOL in rent. Users who've accumulated many dust accounts can reclaim that rent by closing each empty one. Protocols often close their own PDAs' token accounts when they're no longer needed, to keep the chain tidy and reclaim rent.
-
-There are initialization instructions too. `InitializeMint` creates a new mint with chosen decimals and authorities. `InitializeAccount` creates a new token account for a specific mint and owner. In Anchor programs, both are usually wrapped by the `init` constraint plus the right type, so you rarely call them directly.
-
-## Three authorities, three different jobs
-
-Tokens involve three distinct authority concepts, and developers who blur them tend to write incorrect access control. Each one gates a different action, lives on a different account, and has a different scope.
+Three authorities have power over a token. For each one, the question is what it can do to somebody else's balance.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three SPL token authorities: mint, freeze, and account owner</title><desc>Three columns compare mint authority, freeze authority, and token account owner, showing where each is stored, what it controls, and its scope. Two authorities live on the mint, one per currency, while the token account owner is set separately on each token account.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -236,21 +235,20 @@ Tokens involve three distinct authority concepts, and developers who blur them t
   <text x="360" y="510" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Two authorities live on the mint (one per currency). One lives on each token account.</text>
 </svg>
 
-The **mint authority** lives on a Mint account and controls one thing: who can call MintTo against that mint. Set it to a wallet, that wallet can mint new tokens. Set it to a PDA your program controls, your program can mint via `invoke_signed`. Set it to `None`, and the supply is permanently fixed. The supply-frozen case is one-way. Once mint authority is None, you cannot reinstate it. The supply you have is the supply you'll always have.
+The **mint authority** lives on a Mint account and controls one thing: who can call MintTo against that mint. Set it to a wallet, that wallet can mint new tokens. Set it to a PDA your program controls, your program can mint via `invoke_signed`. Set it to `None`, and the supply is permanently fixed, because once mint authority is None, you cannot reinstate it.
 
-The **freeze authority** also lives on a Mint and controls FreezeAccount, an instruction that locks a specific token account from doing transfers. Most tokens you'll work with have no freeze authority, since most token issuers don't want the ability to seize holdings. Regulated tokens like real-world-asset representations often do. If a mint has a freeze authority, every holder is taking on the implicit risk that their balance could be frozen.
+The **freeze authority** also lives on a Mint and controls FreezeAccount, an instruction that locks a specific token account from doing transfers. Most tokens you'll work with have no freeze authority, since most token issuers don't want the ability to seize holdings. Regulated tokens like real-world-asset representations often do, and the USDC mint in the first diagram has one. If a mint has a freeze authority, every holder is taking on the risk that their balance could be frozen.
 
-The **token account owner** lives on each individual TokenAccount and controls what can be done with that account's balance: Transfer, Burn, and CloseAccount all require the owner to sign. This is the authority your program will interact with most often, because every time you move tokens, somebody is signing as the source account's owner. Most of your CPIs to the Token Program are about getting the right owner to sign for the right token account.
+The **token account owner** lives on each individual TokenAccount and controls what can be done with that account's balance: Transfer, Burn, and CloseAccount all require the owner to sign. This is the authority your program will interact with most often, because every time you move tokens, somebody is signing as the source account's owner.
 
-The split between mint authorities and token account owners is what people miss. Holding the mint authority doesn't give you the ability to move other people's tokens, only to create new ones. Holding ownership of a token account doesn't give you the ability to mint new tokens, only to spend that one balance. They're independent powers.
+Of the three, only the freeze authority reaches into another holder's account. Holding the mint authority doesn't give you the ability to move other people's tokens, only to create new ones. Holding ownership of a token account doesn't give you the ability to mint new tokens, only to spend that one balance.
 
-## Working with tokens in Anchor
+## In Anchor, each token constraint rules out one substitution
 
-The `anchor_spl` crate gives you typed Rust bindings for everything above. The Mint type, the TokenAccount type, and CPI helpers for each instruction. You add it to your `Cargo.toml`, import the pieces you need, and you can declare token accounts in your Accounts struct alongside your own program's accounts.
+The `anchor_spl` crate gives you the `Mint` and `TokenAccount` types and CPI helpers for each instruction, so you can declare token accounts in your Accounts struct alongside your own program's accounts.
 
 ```rust
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use anchor_spl::associated_token::AssociatedToken;
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
@@ -273,8 +271,10 @@ pub struct Deposit<'info> {
 }
 ```
 
-Notice the `token::mint = ...` and `token::authority = ...` constraints. These are Anchor checks that the token account in question is for the right mint and owned by the right authority. Adding them means a malicious caller cannot substitute a token account for the wrong token or one they do not own. The Token Program would eventually catch most such mistakes, but Anchor catches them earlier with cleaner error messages.
+The `token::mint = ...` and `token::authority = ...` constraints are Anchor checks that the token account is for the right mint and owned by the right authority. Each one rules out a substitution that the Token Program itself would carry out without complaint.
 
-A final note on Token-2022. There's a newer version of the Token Program with the same conceptual model but extra features: transfer fees, transfer hooks, interest-bearing accounts, metadata pointers, and more. Adoption is growing but classic SPL Token still dominates by a wide margin, and most ecosystem tooling assumes it. The conceptual split into Mints and TokenAccounts, and the four core instructions, work identically in both. Token-2022 is its own topic worth its own treatment when you get there.
+`token::authority = vault_pda` on `vault_account` proves that the destination belongs to your vault PDA, and the seeds on `vault_pda` mean the caller could not choose that address. Without the constraint, a depositor can pass a second token account of their own as `vault_account`. The owner of the source signed, so the Token Program moves the tokens there, and your handler continues as if the vault had received them.
 
-Everything above is foundational. When you write a program that holds funds, you're writing accounts of types you've now seen. When you check whether a withdrawal is authorized, you're checking the token account's owner. When you mint protocol rewards, you're calling MintTo with a mint authority your program controls. The patterns repeat. Internalize this once and you'll recognize the shape of every token-touching protocol on Solana.
+`token::mint = mint` proves that both token accounts hold the token whose Mint is in the `mint` slot. Without it, a depositor can pass accounts of a token they minted themselves, and the handler records a deposit of `mint` although a different token moved. The caller chose the `mint` account too, so a vault that accepts one specific token also has to pin that mint's address ([root of trust](/courses/solana-pro/trust-and-identity/root-of-trust)).
+
+For every token account your instruction receives, say which mint it must hold, who must own it, and which constraint stops the caller from passing a different one.

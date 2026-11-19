@@ -18,10 +18,27 @@ faq:
       against a different account model and execution environment.
 ---
 
-You started this course not knowing what a hash was. Now you can explain what makes SHA-256 a cryptographic hash function and why blockchains need that property. You can describe how a Merkle tree commits to thousands of items in 32 bytes. You can walk through how a signature works, how a wallet derives keys from a seed phrase, and what gets exposed when a phrase leaks. You understand consensus as the problem of agreeing on transaction ordering across a network of mutually untrusted nodes. You understand why naive voting can't solve it. You know what Bitcoin actually does, why its design choices were made the way they were, and what it gave up in exchange for what it gained. You can place any chain you encounter on the trilemma and read its design as a set of tradeoffs.
+You reached the end of Blockchain basics. Now you know the parts a blockchain is built from, the constraint behind each of them, and what each one costs.
 
-That's not a small thing. Most of what circulates about blockchains lives as disconnected fragments, phrases like "blockchains are immutable," "Bitcoin uses proof of work," or "smart contracts," passed around without the mechanics underneath. You now have the underlying machine in your head, and from here you can read any whitepaper, evaluate any new protocol's claims, and recognize when someone is making things up.
+One Bitcoin payment uses all of them. Say Alice pays Bob 0.3 BTC:
 
-## What's next
+- Alice's wallet derived her private key from a seed phrase. She signs the transaction with that key, and every node checks the signature with her public key, without needing the private one. Those are **[mnemonic phrases](/courses/blockchain-basics/cryptography/mnemonic-phrases-and-how-a-wallet-gets-created)** and **[digital signatures](/courses/blockchain-basics/cryptography/digital-signatures-and-signature-recovery)**.
+- The transaction destroys her 1.0 BTC coin and creates two new ones, 0.3 BTC for Bob and the change for Alice. No balance is stored anywhere, which is the **[UTXO model](/courses/blockchain-basics/bitcoin/the-utxo-model)**.
+- A miner puts the transaction into a block. The block header holds a **[Merkle root](/courses/blockchain-basics/cryptography/merkle-trees)** that commits to every transaction in the block, and the **[hash](/courses/blockchain-basics/cryptography/hashing)** of the previous block, so changing the payment later would break every block after it.
+- To add the block, the miner has to find a nonce that puts the header's hash below the target. That work costs electricity no matter how many identities an attacker creates, which is how strangers reach **[consensus](/courses/blockchain-basics/the-blockchain-idea/why-we-need-consensus)** through **[proof of work](/courses/blockchain-basics/bitcoin/mining)**.
+- Bob waits about ten minutes for the block, and about an hour if the amount is large. The ten minutes are part of **[what Bitcoin gave up](/courses/blockchain-basics/bitcoin/what-bitcoin-gave-up-and-what-it-gained)** so that each block reaches the whole network and anyone can verify the chain on consumer hardware. The hour is there because every extra block makes the payment more expensive to reverse.
 
-The basics are done. From here, the path branches. The Solidity track teaches you to write the contracts that run on Ethereum and the chains that copied its design. The Solana track teaches you to write programs in Rust against a different account model and execution environment. You can take either, both, or neither, and use what you learned here to follow the field on your own. The foundation you built does not expire.
+None of these parts is there for its own sake. Each one answers a constraint that appears once there is no operator to trust.
+
+## What to do with it
+
+Pick a chain this course only mentioned or did not cover, for example Bitcoin Cash from the [forks lesson](/courses/blockchain-basics/bitcoin/bitcoin-specific-forks), and answer four questions about it:
+
+- Who is allowed to run a node and add blocks?
+- What does taking part in consensus cost: work, stake, or an operator's permission?
+- What limits its throughput, and can a hobbyist run a full node on a laptop?
+- What did its designers give up, and what did they get for it?
+
+The lessons on [public and private chains](/courses/blockchain-basics/beyond-bitcoin/public-and-private-chains) and [the trilemma](/courses/blockchain-basics/beyond-bitcoin/the-blockchain-trilemma) show how these questions are answered for the chains you already know.
+
+After that, there are two tracks to continue with. The [Solidity track](/courses/development-on-ethereum/welcome-to-ethereum/what-ethereum-course-is-about) teaches you to write the contracts that run on Ethereum and the chains that copied its design. The [Solana track](/courses/development-on-solana/welcome-to-solana/what-the-solana-course-is-about) teaches you to write programs in Rust against a different account model and execution environment. You can take either, both, or neither, and use what you learned here to follow the field on your own.

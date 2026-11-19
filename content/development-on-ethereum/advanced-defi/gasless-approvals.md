@@ -27,13 +27,13 @@ faq:
 
 > Approving an ERC-20 has always cost a transaction. The owner has to call `approve(spender, amount)` on the token contract, which means they need ETH for gas. If someone receives USDC and has no ETH, they can't authorize anyone to spend it. **ERC-2612** fixes this by letting the owner sign a message off-chain that says "I authorize this spender for this amount."
 
-## The problem permit solves
+## An approval costs the owner a transaction
 
-The classic approval flow is two transactions. The owner calls `approve` to set an allowance. The spender then calls `transferFrom` to move tokens. Both transactions cost gas. The owner pays for the first, the spender pays for the second.
+The classic approval flow is two transactions. The owner calls `approve` to set an allowance. The spender then calls `transferFrom` to move tokens. The owner pays gas for the first, the spender pays for the second.
 
-This works fine when the owner already holds ETH. It breaks when they don't. Someone receiving stablecoins for the first time might have zero ETH in their wallet. To use the tokens, they first have to acquire ETH somehow just to pay for the approval. From the user's perspective, holding a valuable token they can't spend without paying for it in a different token feels broken.
+This works fine when the owner already holds ETH. Someone receiving stablecoins for the first time might have zero ETH in their wallet, and then they have to acquire ETH somehow just to pay for the approval.
 
-It also makes dApp UX worse. A DEX swap on Uniswap, for example, requires the user to sign two transactions in a row: one approving the router to spend their input token, then the swap itself. Two wallet pop-ups, two waits for confirmations, two gas fees, for what feels like a single action.
+It also makes dApp UX worse. A DEX swap on Uniswap, for example, requires the user to sign two transactions in a row: one approving the router to spend their input token, then the swap itself.
 
 <svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Classic approve+transferFrom vs permit+transferFrom transaction flow</title><desc>Two side-by-side panels compare token approval methods: the classic flow needs two transactions, approve then transferFrom, and the owner must hold ETH to pay gas for the first one. The permit flow replaces that with an off-chain signature, so the owner pays nothing and anyone, such as a spender or relayer, can pay gas for the single on-chain transaction. A panel below lists three practical benefits: first-time users without ETH can spend tokens, DEX swaps drop from two wallet pop-ups to one signature, and gasless dApps let a relayer cover gas costs.</desc>
   <defs>
@@ -74,22 +74,19 @@ It also makes dApp UX worse. A DEX swap on Uniswap, for example, requires the us
   <text x="60" y="479" font-family="monospace" font-size="10">A relayer service pays gas on behalf of users, recouping cost via fees or sponsorship.</text>
 </svg>
 
-The core idea: separate the authorization (who agrees) from the execution (who submits the transaction). The owner signs a message saying "I authorize Bob to spend 100 USDC of mine." This signature can be produced offline at zero cost. Then anyone, the spender themselves or a relayer service or even a different user, can submit that signature on chain. The token contract verifies the signature and updates the allowance as if the owner had called `approve` directly.
+Permit separates the authorization (who agrees) from the execution (who submits the transaction). The owner signs a message saying "I authorize Bob to spend 100 USDC of mine." This signature can be produced offline at zero cost. Then anyone can submit that signature on chain. The token contract verifies the signature and updates the allowance as if the owner had called `approve` directly. It is the split from the [off-chain computation lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/off-chain-computation-on-chain-verification): the consent is produced off-chain, and the contract only checks it.
 
-## EIP-712: signing structured data
+## A signature over a bare hash proves too little
 
-To make this work, the owner has to sign something. A naive approach: sign `keccak256("approve Bob 100")` as raw bytes. There are two problems with that.
+To make this work, the owner has to sign something. The naive approach is to sign `keccak256("approve Bob 100")` as raw bytes. There are three problems with that.
 
-First, **the wallet has no idea what the user is signing.** All it sees is an opaque hash. The display reads "Sign message: 0x9a73f2c8..." and the user has no way to verify what that hash means. Malicious dApps have exploited this by tricking users into signing hashes that secretly authorize transfers to attacker-controlled addresses. The user thinks they're signing a login token. They're actually approving an unlimited token allowance.
+First, **the wallet has no idea what the user is signing.** All it sees is an opaque hash. The display reads "Sign message: 0x9a73f2c8..." and the user has no way to verify what that hash means. Malicious dApps have exploited this by tricking users into signing hashes that secretly authorize transfers to attacker-controlled addresses: the user thinks they're signing a login token and is approving an unlimited token allowance. The [Bybit hack lesson](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack) shows the same failure on hardware wallets, where signers approved a hash they could not read and about 1.46 billion dollars was stolen.
 
-Second, **signatures are cross-application by default.** A signature for "approve Bob 100" on the USDC contract on Ethereum mainnet would also be valid on a clone of USDC on Polygon, or on a different token contract with the same logic, or replayed in a different chain entirely. There's nothing in the bare signature that ties it to a specific contract, chain, or even application.
+Second, **signatures are cross-application by default.** A signature for "approve Bob 100" on the USDC contract on Ethereum mainnet would also be valid on a clone of USDC on Polygon, or on a different token contract with the same logic. There's nothing in the bare signature that ties it to a specific contract or chain.
 
-[**EIP-712**](https://eips.ethereum.org/EIPS/eip-712) was the standard introduced in 2017 to fix both problems. It defines a way to sign typed structured data so that:
+Third, **the signature can be submitted again, and it never expires.** Nothing in "approve Bob 100" says how many times it may be used or until when. After Bob has spent the 100, anyone who holds the signature can submit it again and restore the allowance, a minute later or a year later.
 
-1. Wallets know the structure of what's being signed and can display it in a human-readable form.
-2. The signature is bound to a specific domain, preventing cross-app and cross-chain replay.
-
-The structure has two layers: a **domain** and a **message**.
+[**EIP-712**](https://eips.ethereum.org/EIPS/eip-712), the standard introduced in 2017, fixes the first two. It defines a way to sign typed structured data in two layers: a **domain** and a **message**.
 
 <svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EIP-712 signing: domain and Permit message hashed into a final digest</title><desc>The diagram shows a Domain box (name, version, chainId, verifyingContract) and a Permit message box (owner, spender, value, nonce, deadline) both feeding into a Final digest computed as keccak256("\x19\x01" || domainHash || messageHash), which is signed with the owner's key to produce (v, r, s). Below, it shows what the wallet displays to the user, such as "Approve 0xBob... to spend 100 USDC", instead of an opaque hex blob.</desc>
   <defs>
@@ -142,21 +139,19 @@ The structure has two layers: a **domain** and a **message**.
 
 The **domain** identifies what application and what context this signature belongs to. It contains the protocol name, version, chain ID, and the verifying contract address. A signature from USDC mainnet won't validate against USDC on a testnet, because the chain IDs differ. A signature meant for one token won't validate against another, because the verifying contract addresses differ.
 
-The **message** carries the actual content: who's authorizing whom for how much, plus a nonce and a deadline.
+The **message** carries the actual content as named, typed fields, so the wallet can display it in a human-readable form: who's authorizing whom for how much, plus a nonce and a deadline.
 
-The final digest that gets signed combines both layers. The exact construction:
+The final digest that gets signed combines both layers:
 
 ```
 digest = keccak256(0x1901 || domainSeparator || messageHash)
 ```
 
-The `0x1901` prefix is a magic byte sequence defined in the standard. It guarantees this digest can't collide with the digest of a regular Ethereum transaction, which uses a different prefix. The signer doesn't have to know any of this, their wallet builds the digest from the typed data and signs it.
+`domainSeparator` is the hash of the domain fields, and `messageHash` is the hash of the message fields. The `0x1901` prefix guarantees this digest can't collide with the digest of a regular Ethereum transaction, which uses a different prefix. The signer doesn't have to know any of this, their wallet builds the digest from the typed data and signs it.
 
-## ERC-2612 specifics
+## ERC-2612 adds a nonce and a deadline
 
-[**ERC-2612**](https://eips.ethereum.org/EIPS/eip-2612) is the standard that applies EIP-712 to ERC-20 approvals. It defines exactly what the message structure looks like and exactly what function signature the token must expose to accept it.
-
-The permit message has these fields:
+[**ERC-2612**](https://eips.ethereum.org/EIPS/eip-2612) is the standard that applies EIP-712 to ERC-20 approvals. The permit message has these fields:
 
 ```
 Permit(
@@ -168,7 +163,11 @@ Permit(
 )
 ```
 
-And the function the token has to add:
+The last two fields answer the third problem. The token keeps a counter `nonces[owner]`, and a permit is valid only if it was signed with the current value of that counter. Every successful permit increments the counter, which is how the contract prevents a signature from being submitted twice. The frontend reads the next valid nonce from `nonces(owner)` before signing. The `deadline` is the time after which the token rejects the signature.
+
+## In code
+
+The implementation of `permit` does four things in sequence: check the deadline, rebuild the digest the owner signed, recover the signer's address from the signature, and verify the recovered signer is the claimed owner. If all four pass, the contract calls `_approve`, the internal function that OpenZeppelin's `ERC20` also uses for `approve`. The function below belongs to a token contract that inherits OpenZeppelin's `ERC20` and `EIP712` and keeps a `nonces` mapping from owner to counter:
 
 ```solidity
 function permit(
@@ -179,79 +178,30 @@ function permit(
     uint8 v,
     bytes32 r,
     bytes32 s
-) external;
-```
+) external {
+    if (block.timestamp > deadline) revert PermitExpired();
 
-The token also has to expose two helpers required by the standard:
-
-```solidity
-function nonces(address owner) external view returns (uint256);
-function DOMAIN_SEPARATOR() external view returns (bytes32);
-```
-
-`nonces(owner)` returns the next valid nonce for that owner. Every successful permit increments this counter, which is how the contract prevents a signature from being submitted twice. `DOMAIN_SEPARATOR()` returns the precomputed hash of the domain (the token's name, version, chain ID, and contract address) so off-chain code can build the correct digest directly.
-
-## How the on-chain side works
-
-The implementation of `permit` does four things in sequence: check the deadline, rebuild the digest the owner signed, recover the signer's address from the signature, and verify the recovered signer is the claimed owner. If all four pass, the contract calls its own internal approval logic.
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
-
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-
-contract MyTokenPermit is ERC20, EIP712 {
-    mapping(address => uint256) public nonces;
-
-    bytes32 private constant PERMIT_TYPEHASH = keccak256(
-        "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+    bytes32 structHash = keccak256(
+        abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline)
     );
+    bytes32 digest = _hashTypedDataV4(structHash);
 
-    error PermitExpired();
-    error InvalidSigner();
+    address signer = ECDSA.recover(digest, v, r, s);
+    if (signer != owner) revert InvalidSigner();
 
-    constructor(string memory name_)
-        ERC20(name_, "MTP")
-        EIP712(name_, "1")
-    {}
-
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        if (block.timestamp > deadline) revert PermitExpired();
-
-        bytes32 structHash = keccak256(
-            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline)
-        );
-        bytes32 digest = _hashTypedDataV4(structHash);
-
-        address signer = ECDSA.recover(digest, v, r, s);
-        if (signer != owner) revert InvalidSigner();
-
-        _approve(owner, spender, value);
-    }
+    _approve(owner, spender, value);
 }
 ```
 
-The `PERMIT_TYPEHASH` is a precomputed hash of the message type definition. It encodes "this is a Permit struct with these field types." The exact string must match character for character, with no spaces between fields. This is part of the EIP-712 spec.
+`PERMIT_TYPEHASH` is a precomputed hash of the `Permit` type definition, and `structHash` is the `messageHash` of the formula above. `_hashTypedDataV4(structHash)` is a helper of OpenZeppelin's `EIP712` base contract, which receives the domain's name and version in the constructor. It combines the struct hash with the contract's domain separator according to that formula. `v`, `r` and `s` are the three parts of the owner's signature.
 
-`nonces[owner]++` is doing two things in one expression: returning the current nonce and incrementing it for next time. Reading and incrementing in a single expression prevents a class of bugs where an incorrect nonce is included in the digest.
+`nonces[owner]++` returns the current nonce and increments it for next time in one expression. If the same signature is submitted again, the digest is rebuilt with the new nonce and the signer check fails.
 
-`_hashTypedDataV4(structHash)` is OpenZeppelin's helper that combines the struct hash with the contract's domain separator according to the `\x19\x01 || ...` formula. The `EIP712` base contract handles caching the domain separator at deployment time so this stays cheap on repeated reads.
+`ECDSA.recover` returns the address that signed the digest. The built-in `ecrecover` does this too, but `ECDSA.recover` from OpenZeppelin adds malleability protection, rejecting non-canonical s values that would let an attacker generate two valid signatures from one.
 
-`ECDSA.recover` is signature verification. Given a digest and the signature components (v, r, s), it returns the address that signed the digest. If the recovered address matches the claimed owner, the signature is valid. The standard `ecrecover` opcode does this, but `ECDSA.recover` from OpenZeppelin adds malleability protection, rejecting non-canonical s values that would let an attacker generate two valid signatures from one.
+## The owner signs, and whoever has ETH submits
 
-If all checks pass, the function calls `_approve(owner, spender, value)`, which is the same internal helper that the regular `approve` function calls. From the rest of the contract's perspective, this is now an authorized allowance, indistinguishable from one set by a direct `approve` call.
-
-## The full lifecycle
+On the frontend, sign with the wallet library's typed-data method, such as viem's `signTypedData`, which builds the `0x1901` prefix and the domain separator for you. If you hash the data yourself and call a generic `sign` method, the wallet shows the user a bare hash again. Every field of the domain must match what the contract uses, byte for byte. A wrong name, wrong version, or wrong chain ID will produce a signature that the contract rejects with `InvalidSigner`, with no indication of which field was wrong. Mismatches here are a common cause of permit failures.
 
 <svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EIP-712 permit flow: owner signs off-chain, relayer submits and transfers on-chain</title><desc>Five steps show the owner building and signing an EIP-712 message off-chain, then sending it to a relayer. On-chain, the relayer submits one transaction that calls permit to verify the signature and set the allowance, then calls transferFrom to move the tokens, so the owner pays zero gas.</desc>
 
@@ -361,68 +311,16 @@ If all checks pass, the function calls `_approve(owner, spender, value)`, which 
 
 </svg>
 
-The owner's wallet builds the EIP-712 typed data structure with the domain (read from the token's `DOMAIN_SEPARATOR()`) and the message fields. The wallet shows the user a human-readable preview. The user clicks approve. The wallet returns a signature, broken into the three components `v`, `r`, and `s`.
+The owner sends the message and signature to a relayer. The relayer might be the spender themselves, a dApp, a dedicated meta-transaction service, or any third party with both an interest in the transfer happening and ETH to pay for gas. Almost always, the relayer follows `permit` in the same transaction with a `transferFrom` call that actually moves the tokens. The relayer pays the gas and either recoups it through a fee or sponsors the user.
 
-The owner sends the message and signature to a relayer. The relayer might be the spender themselves, a dApp, a dedicated meta-transaction service, or any third party with both an interest in the transfer happening and ETH to pay for gas. The communication channel is arbitrary: HTTP, WebSocket, even a QR code if the owner is fully offline.
+## Limits and risks of permit
 
-The relayer submits a transaction that calls `permit(owner, spender, value, deadline, v, r, s)`. The token contract performs the four checks: deadline, rebuild digest, recover signer, signer matches owner, and updates the allowance. Almost always, the relayer follows this in the same transaction with a `transferFrom` call that actually moves the tokens. Two function calls, one transaction.
+**The token has to implement it.** The token contract itself verifies the signature, so a token deployed without a `permit` function cannot accept one, and its holders still need the `approve` transaction.
 
-From the owner's perspective, they signed one message in their wallet and never paid gas. From the chain's perspective, an allowance was set and consumed, equivalent to having received a normal `approve` followed by `transferFrom`.
+**Keep the deadline short.** A user who signed a permit a year ago for some forgotten dApp shouldn't be vulnerable when that dApp resurfaces and submits the old signature. For a swap, 30 minutes is enough.
 
-## Signing from the frontend
+**Permit signatures can be front-run.** Since the signature is just bytes, anyone who sees it can submit it themselves. They can't change who the allowance goes to, but they can submit the permit before the user's intended transaction, which then fails because the nonce has already been consumed. The allowance is set for the spender the owner signed for, but the `transferFrom` that was supposed to follow in the same transaction did not happen. Production code should handle this case, usually by checking if the allowance already matches before submitting permit.
 
-In a viem-based frontend, building and signing the typed data looks like this:
+**Approval scams predate permit but are amplified by it.** The infinite approval from the [ERC-20 lesson](/courses/development-on-ethereum/token-security-and-evm-internals/what-is-erc-20), here a permit signed for `type(uint256).max` so subsequent operations don't need new permits, is convenient but means any vulnerability in the spender drains all the user's tokens of that type. Many real-world wallet drainer attacks have used social engineering to trick users into signing permits for max value to malicious contracts. EIP-712's readable preview helps, but doesn't help if users approve without reading.
 
-```typescript
-const domain = {
-    name: "My Token",
-    version: "1",
-    chainId: 1,
-    verifyingContract: tokenAddress,
-} as const;
-
-const types = {
-    Permit: [
-        { name: "owner",    type: "address" },
-        { name: "spender",  type: "address" },
-        { name: "value",    type: "uint256" },
-        { name: "nonce",    type: "uint256" },
-        { name: "deadline", type: "uint256" },
-    ],
-} as const;
-
-const message = {
-    owner: ownerAddress,
-    spender: spenderAddress,
-    value: 100n * 10n ** 18n,
-    nonce: await tokenContract.read.nonces([ownerAddress]),
-    deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
-} as const;
-
-const signature = await walletClient.signTypedData({
-    account: ownerAddress,
-    domain,
-    types,
-    primaryType: "Permit",
-    message,
-});
-
-// Split into v, r, s for the contract call
-const r = `0x${signature.slice(2, 66)}` as `0x${string}`;
-const s = `0x${signature.slice(66, 130)}` as `0x${string}`;
-const v = parseInt(signature.slice(130, 132), 16);
-```
-
-Every field in `domain` must match exactly what the contract uses, byte for byte. A wrong name, wrong version, or wrong chain ID will produce a signature that the contract will reject as invalid, with no helpful error message about what went wrong. Mismatches here are a common cause of permit failures, and the contract gives no indication of which field was wrong.
-
-Viem's `signTypedData`, and equivalents in other wallet libraries, takes the typed data structure and produces the signature. Don't try to hash the data manually and call a generic `sign` method. The helper handles the `\x19\x01` prefixing, the canonical JSON encoding, and the domain separator calculation correctly.
-
-## Security considerations
-
-**The deadline matters.** Without it, a signature lasts forever. A user who signed a permit a year ago for some forgotten dApp shouldn't suddenly be vulnerable when that dApp resurfaces and submits the old signature. Set deadlines short by default. A swap should give itself 30 minutes, not 30 days.
-
-**Permit signatures can be front-run.** Since the signature is just bytes, anyone who sees it can submit it themselves. They can't change who the allowance goes to but they can submit the permit before the user's intended transaction, which then fails because the nonce has already been consumed. The result: the user's approval went through but their intended follow-up did not. They're now exposed to anyone with that allowance until the spender uses or revokes it. Production code should handle this case, usually by checking if the allowance already matches before submitting permit.
-
-**The nonce prevents replay within one contract** but does not prevent the same logical permit from being signed twice with different nonces. If a user signs permit-with-nonce-3, the dApp submits it, and the user later signs another permit-with-nonce-4 for the same spender and amount, the second one is also valid. Wallets that batch operations need to track nonces carefully to avoid signing conflicting permits.
-
-**Approval scams predate permit but are amplified by it.** The "infinite approval" pattern (signing permit for `type(uint256).max` so subsequent operations don't need new permits) is convenient but means any vulnerability in the spender drains all the user's tokens of that type. Many real-world wallet drainer attacks have used social engineering to trick users into signing permits for max value to malicious contracts. EIP-712's readable preview helps, but doesn't help if users approve without reading.
+When you design a signed message of your own, check it against the same three problems. It has to name who may act and what they may do, the contract and chain it is for, the time it stops being valid, and a value that makes it usable only once.

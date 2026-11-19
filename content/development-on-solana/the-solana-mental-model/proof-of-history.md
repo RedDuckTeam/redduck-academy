@@ -28,15 +28,17 @@ faq:
       Solana's block.
 ---
 
-> Most blockchains spend a lot of their throughput on the question "what time is it?" Validators have to agree on the order of events, and figuring that out usually means a lot of back-and-forth voting before any real work can begin. Solana's answer is a clock that everyone can verify after the fact, without trusting anyone in particular. That clock is called Proof of History. Understanding what it is and what it is not is the last conceptual piece before code.
+> Validators have to agree on the order of events, and figuring that out usually means a lot of back-and-forth voting before any real work can begin. Solana's answer is a clock that everyone can verify after the fact, without trusting anyone in particular. That clock is called Proof of History.
 
-## A tamper-proof stopwatch
+## Validators' own clocks cannot settle the order of events
 
-Picture a notary in a small room with a stopwatch and a stack of paper. Every few seconds, the notary writes down a number, stamps it, and posts it on the wall. Each number is derived from the previous one in a specific way that takes a known amount of effort. Anyone who walks past the wall later can read down the list and verify two things: the numbers were produced in that exact order, and the gaps between them represent real elapsed time.
+Different nodes have slightly different clocks, as the [determinism lesson](/courses/blockchain-basics/the-blockchain-idea/determinism-and-what-blockchains-cant-do) explained. Validator A might say 12:00:00.100 and validator B might say 12:00:00.150, with no way to tell which one is right. So validators cannot decide that one transaction came before another by looking at their clocks.
 
-Proof of History is the digital version of that. There is no actual notary, only a hash function applied to its own output, over and over. Each output becomes the input to the next. The result is a long chain of hashes where every link can only have come after the link before it. The chain encodes time by representing the work that had to happen between one moment and the next, rather than by reading a clock.
+The usual fix is a timestamp that the block producer writes into the block. The other validators can check it only against their own clocks, which differ, so the producer has some freedom in choosing it and the network accepts it by exchanging messages. It also measures time no finer than one block. On Ethereum a new block is expected once per 12-second slot, as described in [consensus on Ethereum](/courses/development-on-ethereum/how-ethereum-works/consensus-on-ethereum). Instead of taking the producer's word for the time, Solana uses a clock whose readings anyone can recompute.
 
-This is what people mean when they call PoH a "cryptographic clock." The chain is the clock. Producing it costs measurable effort. Verifying that the effort happened costs almost nothing.
+## A hash chain measures elapsed time
+
+Proof of History is a hash function applied to its own output, over and over. Each output becomes the input to the next. The hash function used is SHA-256, the same one Bitcoin uses for mining. It has no known shortcut, so given an input, there is no way to compute the result faster than running the function.
 
 <svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Proof of History hash chain from a seed through tick 0 to tick 3</title><desc>A row of boxes labeled tick 0 through tick 3 are linked by arrows labeled hash, showing a chain that starts from a seed where each tick's hash output feeds into the next tick. A box below titled 'Why this is a clock' explains that each tick is one SHA-256 of the previous tick, a single CPU can do about 10,000 per millisecond, and reaching tick N requires computing every step from 0 to N in order.</desc>
   <defs>
@@ -86,17 +88,13 @@ This is what people mean when they call PoH a "cryptographic clock." The chain i
   <text x="360" y="400" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">If you see tick N, you know the work between tick 0 and tick N actually happened.</text>
 </svg>
 
-The hash function used is SHA-256, the same one Bitcoin uses for mining. The key property is that it has no known shortcut. Given an input, there is no way to compute the result faster than just running the function. And given a result, there is no way to compute an input that would produce it without trying inputs one at a time. To produce the chain, you must do the work. To reach tick a thousand from tick zero, you must compute every tick between them in order.
-
-That property is what makes the chain a clock. A single computer running this loop will produce tick N after a measurable amount of time, and nobody, however well-funded, can skip ahead to tick N+1 without doing every step first.
+To reach tick a thousand from tick zero, you must compute every tick between them in order. A single computer running this loop will produce tick N after a measurable amount of time, so the chain encodes time by the work that had to happen between one moment and the next, rather than by reading a clock.
 
 ## Slow to produce, fast to verify
 
-The trick that makes Proof of History useful, rather than just expensive, is the asymmetry between producing the chain and verifying it.
+Producing the chain is strictly sequential. The leader who is responsible for advancing the clock has to compute each tick from the previous one, on a single CPU core, one at a time. More cores cannot help, and a faster machine cannot help much, so the chain advances at roughly the speed a single core can hash.
 
-Producing the chain is strictly sequential. The leader who is responsible for advancing the clock has to compute each tick from the previous one, on a single CPU core, one at a time. The next tick cannot start until the current tick is finished. This is the source of the "time" guarantee, since the only way to reach tick N is to spend the work between zero and N. Cores cannot help. Faster machines cannot help much either. The chain advances at roughly the speed a single core can hash.
-
-Verifying the chain is the opposite. To check that the chain is valid, you just need to confirm that each tick really is the hash of the previous one. That check is independent for every link. You can give a thousand different cores a different section of the chain, and they can all verify their slices at the same time. The whole chain gets verified in the time it takes the slowest core to finish its slice.
+Verifying the chain is the opposite. To check that the chain is valid, you confirm that each tick really is the hash of the previous one, and that check is independent for every link. You can give a thousand different cores a different section of the chain, and they can all verify their slices at the same time.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Leader produces the hash chain sequentially; validators verify it in parallel</title><desc>The top box shows the leader producing the chain as a repeating sequence of hashes on one CPU core, one tick at a time, which cannot be parallelized since each tick depends on the previous one. The bottom box shows validators A and B checking different tick ranges on separate cores at the same time, so a large network of validators can verify the whole chain far faster than one CPU produced it.</desc>
   <defs>
@@ -130,13 +128,17 @@ Verifying the chain is the opposite. To check that the chain is valid, you just 
   <text x="360" y="430" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">This is the asymmetry the network depends on. One CPU labors. Thousands verify cheaply.</text>
 </svg>
 
-This is the whole engineering bet behind Solana's throughput. The leader doing the hard work of running the clock is a single machine. The rest of the network, hundreds or thousands of validators, can keep up with that machine because their job is cheaper than the leader's by orders of magnitude. The chain advances fast, the network verifies faster, and nobody has to vote on "what time is it" before any real work can happen.
+The leader running the clock is a single machine, and the rest of the network, hundreds or thousands of validators, can keep up with it because they verify in parallel. Nobody has to vote on what time it is.
 
-## Where transactions enter the picture
+The clock is paid for in hardware. The leader keeps one core hashing all the time, and every validator recomputes every hash, which is fast only when the work is spread over many cores. [What Solana traded for what](/courses/development-on-solana/architecture-details/what-solana-traded-for-what) lists what a validator machine needs.
 
-The clock by itself is just a sequence of hashes. To turn it into something useful, transactions get mixed into the chain as it advances. When a transaction arrives at the leader, the leader hashes the transaction's contents into the next tick along with the previous hash. Now the resulting tick depends on both the chain's history and that specific transaction. The transaction has a verifiable position on the clock: "this happened at tick N, between tick N-1 and tick N+1, no earlier and no later."
+## Transactions are hashed into the chain
 
-This is what the `recent_blockhash` field on every transaction refers to. The blockhash is a snapshot of a recent point on the PoH chain. Including it in the transaction proves the transaction was built after that point, which is what keeps old transactions from being replayed indefinitely. Once enough time has passed and the blockhash falls outside the validity window of about 150 slots, roughly a minute, the network rejects any transaction still referencing it.
+When a transaction arrives at the leader, the leader hashes the transaction's contents into the next tick along with the previous hash. Now the resulting tick depends on both the chain's history and that specific transaction.
+
+Say the transaction goes into tick 2. Tick 3 is the hash of tick 2, so it depends on the transaction too, and moving the transaction to another place would change tick 2 and every tick after it. The transaction has a verifiable position on the clock: it happened at tick 2, no earlier and no later.
+
+The `recent_blockhash` field you met in [instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions) is a snapshot of a recent point on the PoH chain. Including it in the transaction proves the transaction was built after that point, which is what keeps old transactions from being replayed indefinitely. Once the blockhash falls outside the validity window of about 150 slots, roughly a minute, the network rejects any transaction still referencing it.
 
 <svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Four steps from PoH ticks to slots to validator consensus in Solana block production</title><desc>A vertical flow of four boxes connected by arrows, titled "Where PoH sits in Solana's block production." It shows the leader's hash chain ticking roughly every 6.25 microseconds, transactions getting stamped into ticks, ticks grouping into slots every 64 ticks (about 400 ms), and finally Tower BFT validators voting to finalize slots into the canonical chain.</desc>
   <defs>
@@ -167,14 +169,12 @@ This is what the `recent_blockhash` field on every transaction refers to. The bl
   <text x="60" y="433" font-family="monospace" font-size="10" fill="#565653">PoH is the timestamps. Consensus is the agreement on which sequence of slots is the real one.</text>
 </svg>
 
-Every 64 ticks, the leader bundles up everything that happened in that window and produces a slot. A slot is what Solana calls a block. At roughly 400 milliseconds per slot, this is the production rate that gives Solana its reputation for fast block times. The blocks come fast because the clock advances fast, and the clock advances fast because verifying it is cheap.
+The leader bundles up everything that happened in a window of roughly 400 milliseconds into a block. That window is called a slot, and a slot can pass without a block, as the [leader schedule lesson](/courses/development-on-solana/architecture-details/the-leader-schedule-and-block-production) shows later.
 
 ## What PoH is and is not
 
-A common confusion is to call PoH "Solana's consensus mechanism." It is not. PoH is a clock. Consensus is the process by which validators agree on which version of history is the canonical one when multiple are possible. Those are different jobs.
+PoH is a clock, and it is not Solana's consensus mechanism. Consensus is the process by which validators agree on which version of history is the canonical one when multiple are possible. Solana's consensus mechanism is called Tower BFT. It runs on top of PoH and uses the timestamps PoH provides, so the votes do not have to settle when each event happened. Validators see the same PoH chain everyone else sees, vote on which slots they believe are valid, and the network converges on a single canonical sequence.
 
-Solana's consensus mechanism is called Tower BFT. It runs on top of PoH and uses the timestamps PoH provides to coordinate voting without the back-and-forth that other chains require. Validators see the same PoH chain everyone else sees, vote on which slots they believe are valid, and the network converges on a single canonical sequence. PoH speeds up consensus by removing one of the hardest parts of the problem, but it does not replace it.
+PoH is also not what makes Solana secure. It does not protect against double-spends, censorship, or invalid state transitions. Those protections come from the consensus layer and the runtime's validation rules. PoH only protects against rewriting the order of past events, since rewriting would require redoing all the hash work between the rewritten point and the present.
 
-A second confusion is to think PoH is what makes Solana secure. It does not. PoH does not protect against double-spends, censorship, or invalid state transitions. Those protections come from the consensus layer and the runtime's validation rules. PoH only protects against rewriting the order of past events, since rewriting would require redoing all the hash work between the rewritten point and the present.
-
-In practice, almost nothing about your day-to-day Solana development depends on the internals of PoH. You include a `recent_blockhash` in every transaction. You see slots arrive at roughly 400ms intervals. You read confirmations from validators voting on those slots. The clock is in the background, doing its job, while you write programs that operate on accounts.
+In practice, almost nothing about your day-to-day Solana development depends on the internals of PoH. You include a `recent_blockhash` in every transaction, you see slots arrive at roughly 400ms intervals, and you read confirmations from validators voting on those slots.

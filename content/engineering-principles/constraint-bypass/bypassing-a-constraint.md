@@ -28,25 +28,35 @@ faq:
       No. Some constraints are real properties of the outcome you need.
 ---
 
-> Every hard problem seems to contain a wall, a constraint that fixes the shape of every solution. The common response is to push against the wall and do better work inside it. The rarer and stronger response is to make the wall irrelevant, so that nothing in the solution has to account for it. That second move is the most dependable source of real architectural breakthroughs, and it is closer to a method than to a talent.
+> Every hard problem seems to contain a wall, a constraint that fixes the shape of every solution. The common response is to do better work inside the constraint. The rarer response is a **constraint bypass**, which means building so that the constraint no longer applies and nothing in the solution has to account for it. It is closer to a method than to a talent.
 
-## A wall that stood for most of cryptography's history
+## Stopping overwrites does not require a lock
 
-For a long time, cryptography lived with one constraint that seemed absolute: you cannot prove you know a secret without revealing the secret. To convince someone you hold a password, you show the password. Proof and disclosure looked like the same act.
+Databases long treated locking as the only way to stop two people from overwriting each other's edits. With a lock, one person edits a record and everyone else waits until the lock is released, so every design built on locks pays in waiting.
 
-Everything built on top of that constraint accepted it. If proving a secret means exposing it, the work becomes exposing it as rarely and as carefully as possible. So cryptography got stronger encryption to protect secrets in transit, shorter key lifespans so an exposed secret was worth less, and tighter access control so fewer parties ever saw it. Every one of these is good engineering. Every one of them also takes the wall as given and works within it. The effort goes into guarding the moment of disclosure.
+Optimistic concurrency bypasses that constraint by dropping the lock. Everyone edits freely, and the system checks for a conflict only at the moment a write is saved. Locking was a property of one method, while the goal itself, safe concurrent editing, never required it.
 
-## The proof that reveals nothing
+Dropping the lock has its own cost. When the check finds a conflict, the later write is not saved, and its author has to redo the edit.
 
-A zero-knowledge proof does not accept the wall. It lets a prover convince a verifier that they know a value while disclosing nothing about the value itself. The verifier finishes certain that the prover holds the secret, and still could not repeat it or recognize it later. Knowledge is demonstrated and the secret stays hidden.
+## Two parties can agree on a secret over a public channel
 
-Set that against the old constraint. The rule was that proof requires disclosure. A zero-knowledge proof produces the proof and skips the disclosure. The constraint left the problem completely. There was no smaller version of it left to pay. For that design, the sentence "you cannot prove you know a secret without revealing it" is simply no longer true, and no part of it has to plan around the wall.
+Two people who want to exchange secret messages need a shared secret key first. But to agree on that key, they seem to need a private channel they already trust, and if they had such a channel they would not need the key.
 
-## Working within a wall, or making it disappear
+The old responses accept this constraint: send the key by a trusted courier, seal it in an envelope, or hand over a codebook in person, in advance. All of them assume that at some point the two parties need a channel an eavesdropper cannot read.
 
-That is the pattern, and it is worth naming: **constraint bypass**. You take a constraint that every existing solution treats as fixed, and instead of paying it a little more efficiently, you build so that the constraint no longer applies.
+Diffie-Hellman key exchange, published in 1976, bypasses the constraint. The two parties exchange ordinary messages over a public channel, one an eavesdropper reads in full, and at the end they share a secret the eavesdropper does not have. Each side combines what it received with a private value it never sent, and the two arrive at the same result. An observer who saw every message still cannot compute that result in any practical amount of time, because doing so means solving a problem believed to be computationally infeasible. The private channel was a property of the method where the key travels between the parties.
 
-The distinguishing mark is precise. When you work within a constraint, the constraint survives in your solution as a tradeoff. Stronger encryption costs computation. The wall is still there, and you can point to where your design pays it. When you bypass a constraint, the constraint survives nowhere. There is no line in the design where you paid it, because it stopped being part of the problem. Ask of any solution, "where does this pay the constraint?" If the answer is "here," you worked within it. If the answer is "nowhere," you bypassed it.
+The exchange removes the need for a secret channel. An attacker who can alter the messages rather than only read them is a different threat, which the exchange alone does not address.
+
+## A secret can be proved without being revealed
+
+For a long time, cryptography lived with one constraint that seemed absolute: you cannot prove you know a secret without revealing the secret. To convince someone you hold a password, you show the password. If proving a secret means exposing it, the work becomes exposing it as rarely and as carefully as possible, with stronger encryption to protect secrets in transit, shorter key lifespans so an exposed secret is worth less, and tighter access control so fewer parties ever see it.
+
+A zero-knowledge proof bypasses the constraint. It lets a prover convince a verifier that they know a value while disclosing nothing about the value itself. The verifier finishes certain that the prover holds the secret, and still could not repeat it or recognize it later. Disclosure was intrinsic only to the method where you hand the secret over.
+
+## Working within a constraint, or bypassing it
+
+When you work within a constraint, the constraint survives in your solution as a tradeoff, and you can point to where your design pays it. A lock pays it in waiting, and stronger encryption pays it in computation. When you bypass a constraint, there is no line in the design where you paid it, because it stopped being part of the problem. Ask of any solution, "where does this pay the constraint?" If the answer is "here," you worked within it. If the answer is "nowhere," you bypassed it.
 
 <svg role="img" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Working within a constraint versus bypassing it</title><desc>Two boxes side by side responding to the same constraint. The left box works within it, guarding the secret more carefully while the wall stays as a cost in the design. The right box bypasses it, proving knowledge while revealing nothing, so the wall no longer applies.</desc>
 <text x="360" y="32" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Two responses to the same wall</text>
@@ -74,30 +84,16 @@ The distinguishing mark is precise. When you work within a constraint, the const
 <text x="360" y="272" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Within the wall you can point to the cost. Bypassed, there is no cost to point to.</text>
 </svg>
 
-## Agreeing on a secret in the open
-
-Cryptography had a second wall, and this one you can feel in daily life. Two people who want to exchange secret messages need a shared secret key first. But to agree on that key, they seem to need a private channel they already trust, and if they had such a channel they would not need the key. Agreement on a secret appeared to require a secret channel to agree over.
-
-The responses that accept this wall are old and familiar. Send the key by a trusted courier. Seal it in an envelope. Hand over a codebook in person, in advance, and keep it safe. All of them assume the same thing: at some point the two parties need a channel an eavesdropper cannot read.
-
-Diffie-Hellman key exchange, published in 1976, bypasses the wall. The two parties exchange ordinary messages over a completely public channel, one an eavesdropper reads in full, and at the end they share a secret the eavesdropper does not have. Each side combines what it received with a private value it never sent, and the two arrive at the same result. An observer who saw every message still cannot compute that result in any practical amount of time, because doing so means solving a problem believed to be computationally infeasible. The wall said agreement needs a secret channel. Diffie-Hellman reaches agreement over a channel with no secrecy at all, and the wall is irrelevant.
+The cost that disappears is the cost of the old constraint. The new method can have costs of its own, such as the redone edit under optimistic concurrency, so after you find a bypass, ask what it pays instead.
 
 ## The question that finds the bypass
 
-Both breakthroughs came from the same move, and the move is methodical. Anyone can reach it by asking one question of the wall in front of them: is this constraint intrinsic to the outcome I need, or only to one way of reaching it?
+When a design feels constrained by something you have been treating as a law, put the constraint into words and ask one question: is this constraint intrinsic to the outcome I need, or only to one way of reaching it? Many constraints in engineering are properties of the first solution everyone reached for, mistaken for properties of the problem itself. If yours belongs to the method, look for a different method that never meets it.
 
-"Proving a secret requires revealing it" felt intrinsic to proof. It was only intrinsic to the method where you hand the secret over. "Agreeing on a key requires a private channel" was the same, a property of the method where the key travels between the parties. Neither outcome ever required what the wall demanded. The requirement belonged to the familiar method, and a different method left it behind.
-
-This is why the pattern is so dependable. Most walls in engineering are properties of the first solution everyone reached for, mistaken for properties of the problem itself. The bypass is there whenever the constraint you are fighting turns out to guard a method rather than a goal.
-
-The same move appears far outside cryptography. Databases long treated locking as the only way to stop two people from overwriting each other's edits. Then optimistic concurrency dropped the lock: everyone edits freely, and the system checks for a conflict only at the moment a write is saved. The locking guarded the method, while the goal itself, safe concurrent editing, never required it.
-
-## Test the wall before you accept it
-
-When a design feels constrained by something you have been treating as a law, put the constraint into words. Then ask whether it truly belongs to the result you need, or only to the way you happen to be pursuing it. Most of the time it belongs to the method, and you can look for a different method that never meets the wall. You will not find a bypass every time, because some constraints are real properties of the goal. But each one you do find is worth more than any amount of skillful work spent inside the wall.
+You will not find a bypass every time, because some constraints are real properties of the goal. A bank ledger has to remember how much each customer holds, because the record of who owns what is the ledger itself, and no other way of keeping a ledger avoids that. [Account-generic design](/courses/engineering-principles/relevance-and-genericity/account-generic-design) comes back to this example.
 
 ## Blockchain application
 
-Skip this section if you only want the principle.
+A hardware wallet signs transactions on a small, isolated device, and it faces a constraint: the device cannot decode arbitrary transaction data into something a person can read. The response that accepts the constraint is to teach the device more formats, larger whitelists of known contracts, more decoders for more interfaces, more registries to maintain. The device forever chases transactions it does not yet recognize. The ERC-8009 approach bypasses the constraint. Instead of decoding the transaction, it shows the user the balance changes the transaction must produce, and the chain enforces those changes or the whole transaction reverts. The user approves what will happen to their holdings, and the device never has to decode the target contract's data. The design is covered in [ERC-8009: sign the outcome](/courses/development-on-ethereum/clear-signing/erc-8009-sign-the-outcome).
 
-A hardware wallet signs transactions on a small, isolated device, and it faces a wall: the device cannot decode arbitrary transaction data into something a person can read. The response that accepts the wall is to teach the device more formats, larger whitelists of known contracts, more decoders for more interfaces, more registries to maintain. The device forever chases transactions it does not yet recognize. The ERC8009 approach bypasses the wall instead. Rather than decode the transaction, it shows the user the balance changes the transaction must produce, and the chain enforces those exact changes or the whole transaction reverts. The user approves what will actually happen to their holdings, and decoding is never required, so the wall that demanded it is irrelevant. The full design is examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).
+The bypass pays in coverage. ERC-8009 constrains only native ETH and ERC-20 balances, so the screen says nothing about an NFT or a lending position that the same transaction changes, as [The core and its routers](/courses/development-on-ethereum/clear-signing/the-core-and-its-routers) explains.

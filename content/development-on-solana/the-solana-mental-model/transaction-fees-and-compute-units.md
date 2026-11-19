@@ -31,15 +31,17 @@ faq:
       error and still charges you.
 ---
 
-> A Solana transaction pays for two separate things. It pays a small fixed amount for the right to land in a block at all, and an optional extra amount for the leader to schedule it ahead of competing transactions. The first is the base fee. The second is the priority fee. Understanding which one is which, and why both exist, is what makes the rest of the cost story stop feeling random.
+> A Solana transaction pays for two separate things. It pays a small fixed amount for the right to land in a block at all, and an optional extra amount for the leader to schedule it ahead of competing transactions. The first is the base fee, the second is the priority fee.
 
-## Two parts of the bill
-
-Every transaction on Solana has the same fee structure. The base fee is fixed, mandatory, and tiny. The priority fee is variable, optional, and tied to how much computation your transaction will use.
+## A fixed fee cannot tell transactions apart
 
 The **base fee** is five thousand lamports per signature. A transaction with one signer pays five thousand lamports total in base fees. A transaction with two signers, say a multisig, pays ten thousand. The amount doesn't change with the size or complexity of what the transaction does. It exists to cover the cost of signature verification, which every validator has to perform, and to put a floor under spam. Half of the base fee gets burned, removed from circulation permanently. The other half goes to the validator that produced the block.
 
-The **priority fee** is on top of that and is yours to set. It is the way a transaction tells the leader "schedule me ahead of the others." When the network is busy and more transactions arrive than fit in a block, the leader's scheduler sorts the incoming traffic by how much priority fee each transaction is paying per unit of computation, and works through them from highest to lowest. Pay more priority fee, get included sooner. The priority fee goes entirely to the validator, none of it is burned.
+Before priority fees existed, this was the only fee, and the leader had no way to tell transactions apart. At five thousand lamports each, flooding the network was cheap, and in September 2021 bots chasing a token launch flooded it until block production stopped for seventeen hours, as told in [Where Solana came from](/courses/development-on-solana/welcome-to-solana/where-solana-came-from). Important transactions had no way to bid for inclusion ahead of the bot traffic. Adding the priority fee gave users a tool to express urgency and gave validators a signal for which transactions to favor.
+
+## The priority fee is a bid for earlier scheduling
+
+The **priority fee** is on top of the base fee and is yours to set. It is the way a transaction tells the leader "schedule me ahead of the others." When the network is busy and more transactions arrive than fit in a block, the leader's scheduler sorts the incoming traffic by how much priority fee each transaction is paying per unit of computation, and works through them from highest to lowest. The priority fee goes entirely to the validator, none of it is burned.
 
 <svg role="img" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Solana transaction fee split into base fee and priority fee</title><desc>Two side-by-side panels compare the base fee (5,000 lamports per signature, always paid, 50% burned and 50% to the validator) with the priority fee (CU price times CU limit, optional, 100% to the validator, example totaling 200,000 lamports). Below them, total fee equals base fee plus priority fee, charged whether the transaction succeeds or fails.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -84,19 +86,17 @@ The **priority fee** is on top of that and is yours to set. It is the way a tran
   <text x="360" y="430" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">Charged whether the transaction succeeds or fails. The leader did the work either way.</text>
 </svg>
 
-Both fees are paid up front, before the transaction runs. If the transaction succeeds, the network keeps the fees and the state changes commit. If the transaction fails, the network still keeps the fees and the state changes roll back. The validator did the work to try, and you pay for the attempt regardless of outcome.
+Both fees are paid up front, before the transaction runs. If the transaction fails, the network still keeps the fees and the state changes roll back.
 
-## Compute units
+## The priority fee is charged on the compute unit limit
 
 The value that determines the size of the priority fee is the compute unit, abbreviated CU. Every operation a Solana program performs costs a fixed number of compute units. Adding two integers, reading a byte from an account, calling another program, hashing some data, each one has a CU cost set by the runtime. The total CU consumption of your transaction is the sum across every operation it executes.
-
-Two CU numbers matter, and they are different things.
 
 The **CU limit** is the cap your transaction declares for itself. It is the maximum number of compute units the runtime is allowed to spend on you before reverting the transaction with a "compute budget exceeded" error. Each transaction gets a default CU limit if you don't set one explicitly: 200,000 CU per instruction for programs you write (native Solana programs use a separate budget), up to a hard ceiling of 1,400,000 CU for the entire transaction.
 
 The **CU price** is how many micro-lamports you are willing to pay per compute unit of that budget. A micro-lamport is one millionth of a lamport, so the formula divides by a million to turn it back into whole lamports: `priority_fee = CU_price × CU_limit / 1,000,000`.
 
-The priority fee is computed from the CU **limit**, the cap you reserved, rather than from the CU **usage**, what the program actually spent. If you reserve 200,000 CU and your program only uses 60,000, you still pay priority fee on all 200,000. The leader treats the cap as the resource you locked up, since they had to plan for it being used.
+The priority fee is computed from the CU **limit**, the cap you reserved, rather than from the CU **usage**, what the program actually spent. If you reserve 200,000 CU and your program only uses 60,000, you still pay priority fee on all 200,000. The leader treats the cap as the resource you locked up, since they had to plan for it being used. On Ethereum the gas you reserve and do not use is refunded, as the [contracts and gas](/courses/development-on-ethereum/how-ethereum-works/contracts-and-gas) lesson describes.
 
 <svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Compute units: budget vs actual, priority fee charged on the 200,000 CU cap</title><desc>The diagram compares a 200,000 CU compute budget with the 60,000 CU the program actually used, leaving 140,000 CU unused but still reserved. It shows the priority fee is charged on the full 200,000 CU cap, with an example: at 1,000 microlamports per CU, the fee is 200,000 lamports.</desc>
   <defs>
@@ -130,15 +130,11 @@ The priority fee is computed from the CU **limit**, the cap you reserved, rather
   <text x="360" y="465" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Pick a limit that fits your program's actual usage with a small margin. Default is 200,000 per instruction.</text>
 </svg>
 
-This shapes how production code talks to the network. Set the CU limit too high and every transaction pays priority fee on compute units it never touches, which adds up across thousands of transactions and, worse, dilutes your effective bid per CU so the leader treats you as a lower priority than you thought. Set it too low and the transaction reverts mid-execution with a compute budget error, and you still pay the fee with no result. The right move is to simulate your transaction first, see how many CUs it actually consumes, add a margin of ten or twenty percent, and set the limit to that.
+## The leader fills the block from the highest bid down
 
-The Compute Budget program is what you use to set both values. It is a built-in Solana program with two instructions worth knowing: `SetComputeUnitLimit` to set the CU cap, and `SetComputeUnitPrice` to set the per-CU rate. You include them in your transaction alongside your real work, and the runtime reads them before execution to size your budget.
+Picture three transactions arriving at the same leader in the same block. Alice's transaction is paying 5,000 micro-lamports per CU, Bob's is paying 100, and Carol's is paying zero. All three have the default 200,000 CU limit.
 
-## The priority fee market in action
-
-Picture three transactions arriving at the same leader in the same block. Alice's transaction is paying 5,000 micro-lamports per CU. Bob's is paying 100. Carol's is paying zero. All three have the default 200,000 CU limit.
-
-Alice's priority fee comes out to 1,000 lamports. Bob's is twenty lamports. Carol's is zero. The leader's scheduler sorts incoming transactions by priority fee per CU, fills the block from the top of the sorted list, and stops when the block is full. Alice lands first, Bob second if there is room, Carol last or not at all depending on how much demand the leader is seeing.
+Alice's priority fee comes out to 5,000 × 200,000 / 1,000,000 = 1,000 lamports, Bob's to twenty lamports, and Carol's to zero. The leader's scheduler sorts incoming transactions by priority fee per CU, fills the block from the top of the sorted list, and stops when the block is full. Alice lands first, Bob second if there is room, Carol last or not at all depending on how much demand the leader is seeing.
 
 <svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Priority fee market: Alice, Bob, and Carol ranked by fee per CU</title><desc>Three sample transactions from Alice, Bob, and Carol show different priority fees per compute unit, from highest to zero. The leader's scheduler sorts them by fee per CU and fills the block from the top, so Alice lands first, Bob lands second if there is room, and Carol lands last or not at all.</desc>
   <defs>
@@ -205,12 +201,12 @@ Alice's priority fee comes out to 1,000 lamports. Bob's is twenty lamports. Caro
   <text x="360" y="500" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">When the network is quiet, even 0 µL/CU lands quickly. When it's congested, the fee market wakes up.</text>
 </svg>
 
-A major congestion event in September 2021 forced the network to fix this. Before priority fees existed, the leader had no way to tell transactions apart. Every one was treated equally. When the network got flooded with low-value bot traffic, important transactions had no way to bid for inclusion ahead of the noise. Adding the priority fee market gave users a tool to express urgency and gave validators a signal for which transactions to favor. It is now the central mechanism the network uses to stay responsive during congestion.
+Two transactions whose writable accounts do not overlap can run side by side, as the [instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions) lesson showed, but transactions that write to the same account run one after another. If thousands of transactions want to write to the same account, for example the pool of a token that just launched, they form a queue for that account, and the priority fee per CU decides the order in it. A transfer between two unrelated wallets writes to different accounts and does not wait in that queue. On Ethereum every transaction in a block pays the same base fee per unit of gas, and the protocol raises it when blocks are more than half full, so one busy contract raises the fee for unrelated transactions too.
 
 ## Budget compute on every transaction
 
-When you build a transaction client-side, you add two compute-budget instructions at the start: one to set the CU limit, one to set the CU price. The limit comes from simulating your transaction and adding a safety margin. The price comes from looking at what the network is currently paying for prompt inclusion, which you fetch from your RPC provider or estimate from recent blocks.
+The Compute Budget program is what you use to set the CU limit and the CU price. It is a built-in Solana program with two instructions you will use: `SetComputeUnitLimit` to set the CU cap, and `SetComputeUnitPrice` to set the per-CU rate. You include them in your transaction alongside your real work, and the runtime reads them before execution to size your budget.
 
-When you write a program, you make its CU consumption a number you care about. Cheap programs cost less in priority fees per execution, which matters when users run them millions of times. The cost of a single arithmetic operation is a few CU. The cost of a hash is a few thousand. The cost of a cross-program call is in the tens of thousands. Allocating an account is more. These numbers add up, and the difference between a tight program and a loose one shows up in user fees.
+Set the CU limit too high and every transaction pays priority fee on compute units it never touches, which adds up across thousands of transactions and, worse, dilutes your effective bid per CU so the leader treats you as a lower priority than you thought. Set it too low and the transaction reverts mid-execution with a compute budget error, and you still pay the fee with no result. The right move is to simulate your transaction first, see how many CUs it actually consumes, add a margin of ten or twenty percent, and set the limit to that. Programs change as you develop them, and a margin that was right last month may be wrong this month. The price comes from looking at what the network is currently paying for prompt inclusion, which you fetch from your RPC provider or estimate from recent blocks.
 
-When you simulate a transaction before sending it, the simulator returns the actual CU consumption alongside the result. Use that number rather than a guess. Programs change as you develop them, and a margin that was right last month may be wrong this month.
+When you write a program, you make its CU consumption a number you care about. Cheap programs cost less in priority fees per execution, which matters when users run them millions of times.

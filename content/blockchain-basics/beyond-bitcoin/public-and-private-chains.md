@@ -27,21 +27,53 @@ faq:
       contracts.
 ---
 
-> Bitcoin is one specific blockchain. There are many others. They differ in dozens of ways, but two questions capture the differences that matter most and let you place any chain you meet. First: who is allowed to run a node, validate transactions, and submit data to the chain? Second: what is the chain designed to do? This lesson walks through those two questions and where the major chains land on each.
+> Bitcoin is one blockchain among many. They differ in dozens of ways, but two questions capture the differences that matter most and let you place any chain you meet. First: who is allowed to run a node, validate transactions, and submit data to the chain? Second: what is the chain designed to do?
 
 ## The first question: who can participate?
 
 Every blockchain has rules about who is allowed to take part. Those rules sort chains into two broad camps.
 
-A **public** blockchain lets anyone participate without permission. You can download the node software, run it on any computer, and start validating blocks. You can submit transactions without registering an identity. There is no operator who can ban you or revoke your access. Bitcoin is public. Ethereum is public. Most of the chains you'll encounter as a web3 developer are public.
+A **public** blockchain lets anyone participate without permission. You can download the node software, run it on any computer, and start validating blocks. You can submit transactions without registering an identity. There is no operator who can ban you or revoke your access. Bitcoin and Ethereum are public, and so are most of the chains you'll encounter as a web3 developer.
 
-A **private** blockchain restricts participation. Some operator controls who is allowed to run a node, who can validate, and who can submit transactions. The operator might be a company, a government, or a consortium. If you want in, you ask the operator. If they don't approve, you don't get in. Private chains are used inside companies and industry groups for shared record-keeping where the participants are known to each other but want the data structure of a blockchain.
+A **private** blockchain, also called a **permissioned** one, restricts participation. Some operator controls who is allowed to run a node, who can validate, and who can submit transactions. The operator might be a company, a government, or a consortium. If you want in, you ask the operator, and the operator can refuse. Private chains are used inside companies and industry groups for shared record-keeping where the participants are known to each other but want the data structure of a blockchain.
 
-The reason this distinction matters is bigger than it sounds. Almost everything that makes blockchains interesting comes from being public. Private chains keep the data structure of a blockchain but give up most of the guarantees that come from open participation. They are essentially shared databases with cryptographic auditing, run by a small group that trusts each other.
+## An operator removes Bitcoin's costs together with its guarantees
 
-A subtype worth knowing exists in the middle: **consortium** or **permissioned** chains. These are private chains where the operator is a group rather than a single company. Banks running a shared settlement network, for instance, or a group of supply-chain participants tracking shipments together. The mechanics are the same as private chains. The governance is shared.
+Bitcoin's design started from five constraints, and all five came from having no operator, as [The Bitcoin design philosophy](/courses/blockchain-basics/bitcoin/the-bitcoin-design-philosophy) showed. A private chain has an operator, so each constraint changes.
 
-Two private-chain platforms are worth knowing by name because you'll encounter them in industry contexts. **Hyperledger Fabric** is a modular framework for building permissioned chains where participants run validating nodes and a separate ordering service decides transaction order. It was originally contributed by IBM and is now hosted by the Linux Foundation. It's used in supply chains, food traceability, and a number of inter-bank pilots. **R3 Corda** is built specifically for financial institutions and works a bit differently from most blockchains: instead of every node holding the full chain, each transaction is shared only between the parties involved and the regulators who need to see it. Both are mature, both have real production deployments, and both live in a world that almost never overlaps with the public chains the rest of this course teaches. If you end up at a bank or a large enterprise doing "blockchain," it'll usually be one of these.
+| Bitcoin's constraint | Without an operator | With an operator |
+| --- | --- | --- |
+| Sybil resistance without identity | Adding a block costs proof of work, so fake participants cost real money | The operator admits only known members, so fake participants can't join and proof of work isn't needed |
+| Public verifiability | All data is public, so any node can check it | The operator decides who sees the data, and it can stay closed to outsiders |
+| Convergence despite network delay | Blocks are ten minutes apart, so each one reaches the whole network | Blocks only have to reach a few known nodes, so the chain doesn't need a ten-minute margin |
+| Censorship resistance | No single party can keep a participant or a transaction out | The operator can refuse a participant or a transaction |
+| Permanence | Rewriting history means redoing the proof of work | Nothing makes rewriting expensive, so the validating members can do it if they agree |
+
+The first three rows are what a private chain gets: no energy bill, data closed to outsiders, and no need for a ten-minute gap between blocks. The last two rows are what it pays. Its members have to trust the operator not to shut them out and not to rewrite the record, and Bitcoin was designed so that nobody has to be trusted with that.
+
+This makes private chains essentially shared databases with cryptographic auditing, run by a small group that trusts each other. What they keep over an [ordinary database](/courses/blockchain-basics/the-blockchain-idea/blockchain-vs-database) is the hash-linked record. Members hold their own copies, so an edit to past records shows up as a mismatch between copies.
+
+When the operator is a group rather than a single company, the chain is called a **consortium** chain. Examples are banks running a shared settlement network, or a group of supply-chain participants tracking shipments together. The mechanics are the same as in any private chain, and the governance is shared.
+
+You'll encounter two private-chain platforms in industry contexts. In **Hyperledger Fabric** approved participants run the validating nodes, and a separate ordering service decides transaction order in place of mining. It's used in supply chains, food traceability, and a number of inter-bank pilots. **R3 Corda** is built for financial institutions and goes further in closing the data: instead of every node holding the full chain, each transaction is shared only between the parties involved and the regulators who need to see it. If you end up at a bank or a large enterprise doing "blockchain," it'll usually be one of these.
+
+## The second question: what is the chain for?
+
+Among public chains, there's a second distinction that matters more for developers than the first.
+
+A **coin chain** is designed to track money. The transactions on it move value from one address to another. The chain's protocol cares about preventing double-spending, enforcing a supply schedule, and verifying signatures. Bitcoin is the canonical coin chain. Everything Bitcoin's protocol enforces is in service of "is this spend allowed, yes or no."
+
+A **smart contract** is a program that lives at its own address on the chain, has its own storage, and can hold funds. You'll see the term constantly from here on. Anyone can call it by submitting a transaction that points at its address. When called, it runs whatever code its creator deployed and updates its own state accordingly. The chain enforces the contract's rules: whatever the code says happens, happens, and nobody can override that. Tokens, NFTs, decentralised exchanges, and lending markets are all smart contracts, or collections of them working together. These are the familiar things you've heard about on smart-contract chains. 
+
+A **smart-contract chain** is designed to run these programs. Transactions on a smart-contract chain can do more than move money. They can invoke contracts that read shared state, perform computations, conditionally move money, and write new state back. The chain's protocol cares about all the same things a coin chain cares about, plus a whole layer of execution: which contracts get called, what they're allowed to do, how much computation costs, and how the resulting state changes get committed. Ethereum is the canonical smart-contract chain, and Solana is another. Most of the public chains active today fall on this side.
+
+The distinction matters because it determines what's possible on the chain. On Bitcoin you can build payment systems and little else, because the locking conditions on UTXOs are deliberately limited.
+
+Take a lending market, where many people deposit coins into one pool and others borrow from the pool against collateral. Say Alice leaves 150 dollars' worth of one token as collateral and borrows 100 dollars' worth of another. The market has to remember both numbers, and when Alice repays the 100, it has to find her record, check the amount, and release her collateral. A Bitcoin locking condition has nowhere to keep such a record. It belongs to one coin, it is checked once, when that coin is spent, and it answers one question, whether this spend is allowed. A smart contract has its own storage and holds the funds itself. It can keep a record for every depositor and borrower, update it on each deposit, loan and repayment, and pay out by its own rules.
+
+Exchanges, prediction markets, in-game economies and ownership records need the same thing, a program that keeps its own state, so they are built on smart-contract chains.
+
+## Both questions on one map
 
 <svg role="img" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Public vs private chains: coin, smart-contract, and enterprise uses</title><desc>A 2x2 grid splits public chains, where anyone can join, from private chains, where an operator decides who joins. Public chains cover coin chains like Bitcoin and smart-contract chains like Ethereum and Solana, while private chains cover industry settlement (Hyperledger, Corda) and internal record-keeping for company enterprise deployments.</desc>
   <text x="360" y="25" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Public and private chains, and what they're for</text>
@@ -75,28 +107,4 @@ Two private-chain platforms are worth knowing by name because you'll encounter t
   <text x="540" y="280" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653">enterprise deployments</text>
 </svg>
 
-The rest of this course assumes public chains. The chain-specific tracks that follow teach development on public chains. If you end up working in enterprise blockchain (banks, logistics companies, government tracking systems), the patterns transfer but the deployment model is different.
-
-## The second question: what is the chain for?
-
-Within the public side of the map, there's a second distinction that matters more for developers than the first.
-
-A **coin chain** is designed to track money. The transactions on it move value from one address to another. The chain's protocol cares about preventing double-spending, enforcing a supply schedule, and verifying signatures. It doesn't care about anything else, because there isn't anything else. Bitcoin is the canonical coin chain. Everything Bitcoin's protocol enforces is in service of "is this spend allowed, yes or no."
-
-A **smart-contract chain** is designed to run programs. Transactions on a smart-contract chain can do more than move money. They can invoke contracts that read shared state, perform computations, conditionally move money, and write new state back. The chain's protocol cares about all the same things a coin chain cares about, plus a whole layer of execution: which contracts get called, what they're allowed to do, how much computation costs, and how the resulting state changes get committed. Ethereum is the canonical smart-contract chain. Solana is another. Most of the public chains active today fall on this side.
-
-A **smart contract** is a program that lives at its own address on the chain, has its own storage, and can hold funds. You'll see the term constantly from here on. Anyone can call it by submitting a transaction that points at its address. When called, it runs whatever code its creator deployed and updates its own state accordingly. The chain enforces the contract's rules: whatever the code says happens, happens, and nobody can override that. Tokens, NFTs, decentralised exchanges, and lending markets are all smart contracts, or collections of them working together. These are the familiar things you've heard about on smart-contract chains. 
-
-The distinction matters because it determines what's possible on the chain. On Bitcoin you can build payment systems. That's it. The locking conditions on UTXOs are deliberately limited. They can express payment rules and little else. On a smart-contract chain you can build payment systems. You can also build lending markets, exchanges, identity systems, prediction markets, in-game economies, ownership records, and arbitrary applications that combine those. The range of what you can build is far larger.
-
-It also matters because it determines what kind of developer you'll be. Bitcoin development is a specialty focused on payment infrastructure and protocols built on top of Bitcoin. Smart-contract development is general-purpose application development on shared state, and it's where the bulk of web3 jobs are. The Solidity track this course leads into is smart-contract development on Ethereum. The Solana track is smart-contract development on Solana.
-
-## Where to put any chain you meet
-
-Whenever you come across a new chain, you now have the vocabulary to ask the first two questions about it.
-
-**Is it public or private?** If public, it's part of the open web3 ecosystem and the patterns you've learned apply. If private, treat it as enterprise software with a blockchain data structure underneath.
-
-**If public, is it a coin chain or a smart-contract chain?** Coin chains are payment-focused and intentionally limited. Smart-contract chains are general-purpose and run programs.
-
-Those two questions categorize 95% of what you'll encounter. There are more axes but they sit underneath these two. The next lesson takes the smart-contract chain side of this map and asks a harder question: if smart-contract chains can do so much more than coin chains, why are they slower, more expensive, and harder to scale? That question has a name. It's called the blockchain trilemma.
+Every public chain on this map runs into the same limit when it tries to be fast, secure and open to everyone at once. The next lesson is about that limit, which is called the blockchain trilemma.

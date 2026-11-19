@@ -31,42 +31,31 @@ faq:
       rejecting outliers.
 ---
 
-> Solana programs are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. That makes the oracle a trust problem: your protocol acts on numbers it did not produce and cannot recompute. Pyth's first-party publisher architecture is built to make those numbers trustworthy, which is what lets you consume a feed safely from a Solana program.
+> A Solana program cannot fetch a price. Someone has to bring it on chain, and the program has to decide how much to believe it. On Solana there is one more question, because the account that holds the price is also passed in by the caller: is this the feed I meant to read?
 
-## The oracle problem
+## A price is a claim made by someone else
 
-The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement rules out anything that could return different values to different validators: HTTP requests, random number generators, file system reads, system clocks beyond the Clock sysvar. None of these are available inside a Solana program, and no compiler flag will give them to you.
+Every validator has to execute a transaction and arrive at the same result, so a program [cannot make an HTTP request](/courses/blockchain-basics/the-blockchain-idea/determinism-and-what-blockchains-cant-do) or read anything outside the chain. A lending protocol still needs to know what its collateral is worth in dollars. The only way that number gets on chain is that someone outside sends a transaction that writes it into an account. That someone is an oracle.
 
-This is a problem because most interesting financial applications depend on real-world data. A lending protocol needs to know what its collateral is worth, in dollars, right now, so it can liquidate undercollateralized loans. A stablecoin needs to know what the dollar is doing to maintain its peg. A derivatives platform needs to know the price of whatever asset its contracts settle against. An insurance program needs to know whether a flight was delayed, whether a hurricane hit, whether a parametric trigger condition was met.
+Reading an oracle is an ordinary account read. The design question is who you trust to do the writing. If the writer publishes a fake price, your program cannot tell. If the writer goes offline, your program reads an old value. Production oracle systems exist to reduce how much you have to trust any single party.
 
-None of this data exists on chain natively. The only way to get it there is for someone outside to write a transaction that puts it there. That someone is an oracle.
+## Why one source is not enough
 
-## What "an oracle" actually is
+The simplest oracle is one operator who queries one data source and writes the result on chain. Three failure modes break it:
 
-The word makes oracles sound mysterious. They are not. An oracle, mechanically, is two things:
+1. **The source is wrong.** Even reputable exchanges have brief glitches. An API returns the price of a different asset for a few seconds, or volume thins out and the last trade is far from fair value. An oracle that pulls from one place inherits every glitch from that place.
+2. **The operator is malicious.** A single party that can push any number on chain has an incentive to do so when the payoff is large enough.
+3. **The operator goes offline.** The oracle stops updating and your program keeps operating on an increasingly stale price. By the time anyone notices, positions that should have been liquidated have moved against the protocol.
 
-1. A program on chain that owns accounts holding some data.
-2. An off-chain operator who sends transactions that update that data.
+## How Pyth produces a price
 
-Your program reads the oracle's account the same way you read any other account, by deserializing it through an SDK or directly. The interesting question is not how the read works, since it's just an account read. The interesting question is who you trust to do the writing.
+In Pyth the data sources themselves are the publishers. Jane Street, Wintermute, Binance, OKX, Cboe Global Markets, and dozens of others run publisher software that posts their own internal prices directly to Pyth, so there are no third-party nodes scraping a public API.
 
-That trust question is the entire field. If the operator decides to publish a fake price, your program has no way to tell. If the operator's infrastructure goes down, your program reads a stale value. If the operator is compromised, your protocol is compromised. The whole engineering effort around production oracle systems is about reducing how much you have to trust any single party.
+The aggregation happens on **Pythnet**, a Solana-fork appchain dedicated to oracle data. Each publisher writes its price observation as a transaction on Pythnet. Pythnet validators aggregate the observations into a single price plus a confidence interval, after deduplication, outlier rejection, and confidence-weighted averaging across many publishers. Without Pythnet every publisher would have to write its own price to Solana mainnet and pay fees for it, and the aggregation would run on chain at a large compute cost.
 
-## Why single-source oracles are dangerous
+## Who brings the price to Solana: from push to pull
 
-The simplest possible oracle is one program, one operator. The operator queries one data source, signs a transaction with the result, and writes it on chain. This works fine for a hobby project. It is unacceptable for anything holding real funds.
-
-Three failure modes break a single-source oracle:
-
-1. **The source is wrong.** Even reputable exchanges have brief glitches. An API returns the price of a different asset for a few seconds. Volume thins out and the last trade is far from fair value. If your oracle pulls from one place, you inherit every glitch from that place.
-2. **The operator is malicious.** A single party with the ability to push any number on chain has every incentive to do so when the payoff is large enough. The history of DeFi exploits includes cases where compromised oracle keys were used to drain protocols of tens of millions of dollars in single transactions.
-3. **The operator goes offline.** The oracle stops updating. Your program continues to operate using an increasingly stale price. By the time anyone notices, positions that should have been liquidated have moved against the protocol.
-
-Any one of these is enough to lose the entire treasury. Real protocols cannot use a single-source oracle and expect to survive a market move.
-
-## How Pyth solves it
-
-Pyth uses a different architecture from most oracles. Where Chainlink and similar systems use third-party nodes that pull data from public APIs, Pyth has the data sources themselves as publishers. Jane Street, Wintermute, Binance, OKX, Cboe Global Markets, and dozens of others run publisher software that posts their internal prices directly to Pyth. These are first-party publishers posting their own prices to the oracle, rather than third-party nodes scraping a public API.
+The obvious design is for the oracle to write every new price into an account on Solana, and for programs to read that account. This is the push model, and Pyth used to work this way. It has two costs. The oracle pays for a transaction on every update of every feed, whether or not anyone reads that price. And a program reads whatever was written last, so the price is only as fresh as the last update that landed.
 
 <svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pyth data flow: publishers to Pythnet to Solana price account to consumer</title><desc>The diagram shows first-party publishers like Jane Street, Wintermute, Binance, OKX, and Cboe (80+ for major feeds) sending prices off chain to Pythnet, which aggregates them every 400ms slot into a price and confidence value written to a Pyth price account on Solana, which a consumer program then reads via SDK. Below, a box lists three layers of decentralization that protect against bad data: many publishers per feed, outlier-rejecting aggregation on Pythnet, and one paid update per slot on Solana.</desc>
   <defs>
@@ -123,120 +112,15 @@ Pyth uses a different architecture from most oracles. Where Chainlink and simila
   <text x="60" y="464" font-family="monospace" font-size="10" fill="#565653">No single publisher, single source, or single Pythnet validator can corrupt the price.</text>
 </svg>
 
-The aggregation happens on **Pythnet**, a Solana-fork appchain dedicated to oracle data. Each publisher writes their price observation as a transaction on Pythnet. Pythnet validators aggregate the observations into a single price plus a confidence interval, and the aggregate is propagated to Solana mainnet every slot. By the time your program reads a Pyth price account, the data has been through deduplication, outlier rejection, and confidence-weighted averaging across many publishers.
+Today Pyth works in the pull model, where the user who needs the price brings it. The client downloads the latest signed price update from Pyth's off-chain service, Hermes, and puts it in the same transaction as the action that needs it. The transaction first posts the update to an account, where Pyth's program verifies the signatures, and then your instruction reads it. The price is seconds old at the moment it is used, and nobody pays for updates that nobody reads. In exchange, the user pays for the update, and the client has to fetch it before it can build the transaction. Solana PRO covers this move as an example of [role inversion](/courses/solana-pro/permissionless-execution/role-inversion).
 
-The Pythnet layer serves the same cost-saving purpose as Chainlink's Off-Chain Reporting protocol. Without it, every publisher would have to write their own price to Solana mainnet, paying fees, and the aggregation would happen on-chain at enormous compute cost. Pythnet lets the publishers do their work on a separate chain and lets only the final aggregate touch Solana.
+So the price your program reads can sit in two kinds of accounts. A price update account is temporary: anyone can create one for a transaction and close it afterwards. A price feed account has a fixed address and holds a sequence of prices for one feed that only moves forward in time; the Pyth Data Association keeps a set of commonly used feeds updated this way and pays for those updates, as in the push model. Both look the same to your program, and in both cases the caller chooses which account to pass.
 
-The on-chain side on Solana is a set of accounts owned by the Pyth program. Each price feed has its own account at a stable address. Your program reads from that account just like any other Anchor account read.
+## Three checks before you use the price
 
-## Reading a feed
+**Is this the feed I meant?** On Ethereum the contract itself holds the address of the price feed, fixed at deployment. On Solana the caller passes the account. Typing it as `Account<'info, PriceUpdateV2>` proves that the account is owned by Pyth's program, and so that Pyth's program accepted the price it holds, for some feed at some point in time. The program also accepts updates with only part of the signatures checked and records the verification level in the account, and `get_price_no_older_than` refuses an update that is not fully verified. Neither the owner nor the verification level says which feed, and a caller could pass a real, verified update for a different asset. The feed id has to come from your program, as a constant or a field in your own config account, and the read has to fail if the update is for another feed.
 
-Consuming a Pyth price feed is one account read and a deserialize call. Add `pyth-sdk-solana` to your `Cargo.toml`, and the consumer looks like this:
-
-```rust
-use anchor_lang::prelude::*;
-use pyth_sdk_solana::load_price_feed_from_account_info;
-
-declare_id!("...");
-
-#[program]
-pub mod price_consumer {
-    use super::*;
-
-    pub fn read_price(ctx: Context<ReadPrice>) -> Result<()> {
-        let price_account_info = &ctx.accounts.price_feed;
-
-        let price_feed = load_price_feed_from_account_info(price_account_info)
-            .map_err(|_| OracleError::InvalidPriceFeed)?;
-
-        // Get the current price, rejecting it if older than 60 seconds
-        let current = price_feed
-            .get_price_no_older_than(&Clock::get()?, 60)
-            .ok_or(OracleError::StalePrice)?;
-
-        msg!(
-            "price: {} (conf {}) x 10^{}",
-            current.price,
-            current.conf,
-            current.expo
-        );
-
-        Ok(())
-    }
-}
-
-#[derive(Accounts)]
-pub struct ReadPrice<'info> {
-    /// CHECK: validated by the Pyth SDK loader
-    pub price_feed: AccountInfo<'info>,
-}
-
-#[error_code]
-pub enum OracleError {
-    InvalidPriceFeed,
-    StalePrice,
-}
-```
-
-The `load_price_feed_from_account_info` call deserializes the account, verifies it is owned by the Pyth program, and returns a `PriceFeed` struct. `get_price_no_older_than` returns the current price if `publish_time` is within the threshold, or `None` if not. Combining both checks into one call is the recommended pattern, since it handles validity and staleness together.
-
-The result has four fields you care about:
-
-- `price`: the price as a signed integer (`i64`)
-- `conf`: the confidence interval, also `u64`, expressed in the same scale as the price
-- `expo`: the exponent, almost always negative, so the actual price is `price * 10^expo`
-- `publish_time`: when the price was last updated, as a unix timestamp
-
-The price comes back as `i64`. Pyth uses signed integers because some feeds report values that can legitimately be negative, like interest rate differentials. For ETH/USD, the value will always be positive, but the type accommodates the full range.
-
-## Decimals via the exponent
-
-Pyth feeds use an exponent rather than a fixed decimals count. Each feed has its own `expo` value, accessible on the price struct.
-
-For ETH/USD, the exponent is typically `-8`. If the feed returns `price = 350000000000`, the actual price is `350000000000 * 10^-8 = 3500.00000000` USD. To use this in computation alongside an SPL Token amount, whose decimals live on the mint, you need to align the exponents:
-
-```rust
-let raw_price = current.price;
-require!(raw_price > 0, OracleError::NegativePrice);
-let price_u64 = raw_price as u64;
-
-// Scale to 18 decimal places for downstream math
-// If expo = -8, we multiply by 10^(18 - 8) = 10^10
-let adjustment = (18 + current.expo) as u32;
-let price_18_dec = price_u64
-    .checked_mul(10u64.pow(adjustment))
-    .ok_or(OracleError::Overflow)?;
-```
-
-The `require!(raw_price > 0)` check guards against the edge case of a misconfigured feed returning zero or negative. For a USD-quoted equity or crypto feed, the price should never reach zero. Doing this once at the read site is much cheaper than verifying everywhere downstream.
-
-If you call the feed's metadata once at initialization and cache the exponent on your config account, you save the read on every consumption. The exponent does not change for a given feed.
-
-## Confidence intervals
-
-Pyth reports more than just a price. It reports a price AND a confidence interval, expressed in the same units as the price. A return value of `price = 350000000000, conf = 10000000` at `expo = -8` means "ETH/USD is approximately 3500.00, with a one-sigma confidence of about 0.10."
-
-This is unique among major oracles and matters more than it sounds. The confidence interval reflects how much publishers disagree. In a calm market with deep liquidity across exchanges, publishers converge on nearly the same price and confidence is tight. During a market dislocation, like a flash crash, a major exchange going offline, or a publisher's price feed lagging, publishers diverge and confidence widens.
-
-A wide confidence interval is a signal that the price you're reading may not reflect a single coherent market reality. A risk-conscious protocol can refuse to act on data with confidence wider than some threshold:
-
-```rust
-let price = current.price as u64;
-let conf = current.conf;
-
-// Reject if confidence is wider than 1% of the price
-// conf * 100 <= price  is equivalent to  conf / price <= 0.01
-require!(
-    conf.checked_mul(100).ok_or(OracleError::Overflow)? <= price,
-    OracleError::ConfidenceTooWide
-);
-```
-
-Setting the threshold is application-specific. A lending protocol with conservative liquidation parameters might require confidence within 0.5%. A perpetual exchange willing to take a wider price band might accept 2%. What matters is that the check exists. A price without a confidence check assumes the oracle is always trustworthy, which is exactly the assumption Pyth's architecture was designed to avoid.
-
-## Staleness checks
-
-A Pyth feed publishes continuously. Every Solana slot, the aggregator on Pythnet emits a new price, and the updated value lands on Solana mainnet shortly after. The on-chain price tracks the real-world price within a few hundred milliseconds under normal conditions.
+**Is it recent enough?** A verified update does not expire, and the caller chooses which one to pass, so without an age check the caller can pass an old price that suits them. A price feed account can also fall behind, because Solana congestion can delay updates and publishers can lag during market stress. Nothing forces a minimum update frequency on readers, so your program is responsible for checking the age of the price. `get_price_no_older_than` accepts the price only if its `publish_time` is within the window you pass. A window of 60 seconds is appropriate for most active DeFi use cases on Solana. Setting it tighter, say 10 seconds, gives you fresher data at the cost of more false rejections during brief network delays. Setting it looser, say 300 seconds, lets your protocol act on data that may no longer reflect reality. A liquidation engine needs a tight window, while a program that settles once a day can accept far older data.
 
 <svg role="img" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pyth staleness check vs confidence check, with fresh/stale and tight/wide examples</title><desc>The left panel shows the staleness check: publish_time versus the current time, with a fresh example (20 sec gap under the 60 sec threshold) and a stale example (70 sec gap over it), guarding against network outages, publisher dropout, and Solana congestion. The right panel shows the confidence check: price versus conf, with a tight example (0.003% ratio under the 1% threshold) and a wide example (1.20% ratio over it), guarding against flash crashes, exchange outages, and publisher disagreement.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -281,14 +165,42 @@ A Pyth feed publishes continuously. Every Solana slot, the aggregator on Pythnet
   <text x="525" y="377" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">publisher disagreement</text>
 </svg>
 
-That said, updates can stop. Solana network congestion can delay them. Publishers can lag during market stress. The Pyth program itself does not enforce a minimum update frequency on its readers. The price account just sits at whatever value was last written. Your program is responsible for checking the data is recent enough.
+**Do the publishers agree?** Pyth reports a price and a confidence interval in the same units. A value of `price = 350000000000, conf = 10000000` with exponent `-8` means that ETH/USD is about 3500.00, give or take 0.10. The interval reflects how much publishers disagree. In a calm market they converge on nearly the same price and the interval is tight. During a flash crash, an exchange outage, or a lagging publisher, they diverge and the interval widens. A program can refuse to act when the interval is wider than a threshold. The threshold depends on the application: a lending protocol with conservative liquidation parameters might require confidence within 0.5%, and a perpetual exchange willing to take a wider price band might accept 2%. A program that skips this check treats every price as equally reliable.
 
-This is what `get_price_no_older_than(&Clock::get()?, 60)` in the consumer code does. It accepts the price if `publish_time` is within the last 60 seconds, and returns `None` if not. A threshold of 60 seconds is appropriate for most active DeFi use cases on Solana, since updates are sub-second under normal conditions. Setting it tighter, say 10 seconds, gives you fresher data at the cost of more frequent false rejections during brief network delays. Setting it looser, say 300 seconds, lets your protocol act on data that may no longer reflect reality.
+The price itself is an integer with an exponent, and the real value is `price * 10^exponent`. Check that it is positive before you cast it to an unsigned type: for a USD-quoted asset it should never be zero or negative, and a misconfigured feed is cheaper to reject here than everywhere downstream.
 
-The exact threshold depends on your protocol's tolerance. A liquidation engine running every block needs tight freshness. A daily settlement program that runs once a day can accept far older data.
+## In code
 
-## A note on the pull oracle model
+The handler below reads BTC/USD and does all three checks. `get_price_no_older_than` fails if the update is older than 60 seconds, belongs to a different feed, or is not fully verified, and the last `require!` rejects a confidence interval wider than 1% of the price.
 
-Everything above describes Pyth's continuous-push model on Solana. Pyth's infrastructure continuously updates the price account, and your program just reads it. This is the path most Solana programs use today, and it is the simpler mental model.
+```rust
+use pyth_solana_receiver_sdk::price_update::{get_feed_id_from_hex, PriceUpdateV2};
 
-Pyth also offers a pull oracle model where the price update message itself is included in the user's transaction. The user fetches a signed price update off-chain from Pyth's Hermes service, attaches it to their transaction, and your program posts the update to the price account before reading. The pull model uses the `pyth-solana-receiver-sdk` crate and a slightly different consumer pattern. It is useful when you want the freshest possible data at the exact moment of a transaction, or when you want to atomically tie a price observation to a specific user action. For most consumer use cases, the push model is simpler and sufficient.
+const BTC_USD_FEED_ID: &str =
+    "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
+
+#[derive(Accounts)]
+pub struct ReadPrice<'info> {
+    pub price_update: Account<'info, PriceUpdateV2>,
+}
+
+pub fn read_price(ctx: Context<ReadPrice>) -> Result<()> {
+    let feed_id = get_feed_id_from_hex(BTC_USD_FEED_ID)?;
+    let current = ctx
+        .accounts
+        .price_update
+        .get_price_no_older_than(&Clock::get()?, 60, &feed_id)?;
+
+    require!(current.price > 0, OracleError::NegativePrice);
+    let price = current.price as u64;
+    require!(
+        current.conf.checked_mul(100).ok_or(OracleError::Overflow)? <= price,
+        OracleError::ConfidenceTooWide
+    );
+    Ok(())
+}
+```
+
+## What to decide for every price you read
+
+For each price your program uses, answer three questions before writing the handler. Where does the feed id come from, and can the caller influence it? How old can the price be before the action it triggers becomes unsafe? How wide can the confidence interval be? Then decide what the program does when a check fails, because refusing to act is also an outcome the protocol has to be designed for. Solana PRO's [fail-fast](/courses/solana-pro/outside-data/fail-fast) lesson shows how Drift and Kamino set different thresholds for different actions.

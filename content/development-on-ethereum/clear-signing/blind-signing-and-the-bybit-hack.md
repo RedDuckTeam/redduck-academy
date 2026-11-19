@@ -29,19 +29,19 @@ faq:
       the same way.
 ---
 
-> A hardware wallet is supposed to be the one screen an attacker cannot reach. Your key stays on the device, and you approve each transaction by looking at what the device shows you. That protection only works if the screen can tell you what you are approving. When the device cannot decode a transaction, it falls back to showing raw bytes, and you sign something you cannot read. This is blind signing, and in February 2025 it cost one exchange about 1.46 billion dollars.
+> A hardware wallet protects you only if its screen can tell you what you are approving. When the device cannot decode a transaction, it falls back to showing raw bytes, and you sign something you cannot read. This is blind signing, and in February 2025 it cost one exchange about 1.46 billion dollars.
 
 ## The one screen an attacker cannot reach
 
 A hardware wallet exists to keep your private key off your computer. The key is generated on the device and never leaves it. When you want to send a transaction, your computer builds it and passes it to the device, the device signs it internally, and only the signature comes back. Malware on your machine never touches the key.
 
-That moves the whole security question onto one thing: **the device's own screen**. Your browser can be compromised. A website can show you one thing and send your wallet another. What malware cannot do is change the pixels on the device or press its physical confirm button. So the screen is the last place you can catch a bad transaction before it is signed. The entire model rests on one assumption: what the device shows you is what you are signing.
+That moves the security question onto **the device's own screen**. Your browser can be compromised, and a website can show you one thing and send your wallet another. What malware cannot do is change the pixels on the device or press its physical confirm button. So the screen is the last place you can catch a bad transaction before it is signed, and the model rests on the assumption that what the device shows you is what you are signing.
 
-## When the screen goes blank
+## For an unknown contract the screen shows only bytes and a hash
 
 The device can only describe a transaction it can decode. For a plain ETH transfer it shows the amount and the destination, which is all a transfer is. For a call to a contract it has been taught to recognize, it can show the function and the arguments.
 
-For a call to a contract it does not recognize, it has nothing to show. Remember the 4-byte function selector from the low-level calls lesson, the first four bytes that pick which function runs. To turn the bytes after it into readable arguments, the device needs the target contract's interface, and for a new or unknown contract it does not have one. So it shows what it has: the raw calldata and a hash of what you are signing. This is **blind signing**. You are approving bytes you cannot read.
+For a call to a contract it does not recognize, it has nothing to show. Remember the 4-byte function selector from [the loops and hashing lesson](/courses/development-on-ethereum/solidity-basics/loops-and-hashing), the first four bytes that pick which function runs. To turn the bytes after it into readable arguments, the device needs the target contract's interface, and for a new or unknown contract it does not have one. So it shows what it has: the raw calldata and a hash of what you are signing. This is **blind signing**. You are approving bytes you cannot read.
 
 <svg role="img" viewBox="0 0 720 410" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What a hardware wallet shows when it cannot decode a transaction</title><desc>The device screen shows the call target, the function name execTransaction, a long block of raw hexadecimal calldata, a signing hash, and a value of 0 ETH. A warning line states the signer is approving bytes the device cannot explain. This is blind signing: the exact screen the Bybit signers approved.</desc>
 
@@ -88,7 +88,7 @@ On February 21, 2025, attackers stole about 1.46 billion dollars from the exchan
 
 Bybit kept the funds in a Safe multisig wallet. Several people had to approve each transaction, and each approved on a Ledger hardware wallet. The attackers compromised the Safe website and served malicious JavaScript aimed only at Bybit, so every other Safe user saw nothing wrong. On screen, the Safe interface showed a routine transfer to a hot wallet, an address kept online for everyday transfers. The transaction that actually reached the Ledgers was a different one, and the Ledgers could not decode it. Each signer saw a hash and confirmed it.
 
-What those bytes actually did connects to two things you have already seen. Remember from the low-level calls lesson that a `delegatecall` runs another contract's code against your own storage, and that **storage slot 0** is just the first slot, whatever happens to sit there. Remember from the upgradeable contracts lesson that a proxy keeps its implementation address, the code it runs for every call, in storage. A Safe is a proxy, and it keeps that address in slot 0.
+What those bytes actually did connects to two things you have already seen. Remember from [the low-level calls lesson](/courses/development-on-ethereum/token-security-and-evm-internals/low-level-calls) that a `delegatecall` runs another contract's code against your own storage, and that **storage slot 0** is just the first slot, whatever happens to sit there. Remember from [the upgradeable contracts lesson](/courses/development-on-ethereum/token-security-and-evm-internals/upgradeable-contracts-and-proxies) that a proxy keeps its implementation address, the code it runs for every call, in storage. A Safe is a proxy, and it keeps that address in slot 0.
 
 The malicious call was `execTransaction` with its operation flag set to `1`, which means **delegatecall**. It targeted an attacker contract with a `transfer` function that ignored tokens entirely. Instead, it wrote a new address into slot 0. That single delegatecall repointed the Safe's implementation to attacker-controlled code, and it moved zero ETH.
 
@@ -127,19 +127,15 @@ Now the wallet ran the attacker's code. The attackers called it again and swept 
   <text x="360" y="352" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">wallet's code while moving no ETH. The distance from the first panel to the third is the whole attack.</text>
 </svg>
 
-The same shape had already played out twice. In October 2024, Radiant Capital lost about 50 million dollars. A compromised machine showed its signers a harmless transaction while they blind-signed a malicious one on their hardware wallets. In July 2024, WazirX lost about 235 million dollars to another Safe implementation swap that its signers approved without being able to read it. Different victims, one root cause: a person approving bytes whose real effect they could not see.
+Two earlier thefts worked the same way. In October 2024, Radiant Capital lost about 50 million dollars. A compromised machine showed its signers a harmless transaction while they blind-signed a malicious one on their hardware wallets. In July 2024, WazirX lost about 235 million dollars to another Safe implementation swap that its signers approved without being able to read it. In all three cases a person approved bytes whose real effect they could not see.
 
 ## Why decoding the calldata cannot save you
 
-The obvious response is to teach the device to decode more. Ledger's clear-signing effort does exactly that, registering known contracts and their function signatures so the device can show "transfer 100 USDC to 0xabc" instead of hex. For a contract on the list, this works and it helps.
+The obvious response is to teach the device to decode more. Ledger's clear-signing effort does that, registering known contracts and their function signatures so the device can show "transfer 100 USDC to 0xabc" instead of hex. For a contract on the list, this works and it helps, but it has two limits.
 
-It fails for the case that matters, for two reasons.
-
-**It only verifies which function is named.** The Bybit payload called `execTransaction`, a legitimate and well-known Safe function, and the delegatecall was hidden inside its parameters. A decoder would have shown a valid-looking `execTransaction` and said nothing about the storage overwrite it carried.
+**It only verifies which function is named.** The Bybit payload called `execTransaction`, a legitimate and well-known Safe function, and the delegatecall was hidden inside its parameters. A decoder would have shown a valid-looking `execTransaction` and said nothing about the storage overwrite it carried, because the calldata names the call and not what the code at the target will do with it.
 
 **It does not scale.** New contracts deploy every day, and a device can only decode what someone registered ahead of time. The moment you touch something new, you are blind signing again.
-
-Decoding tells you what a transaction claims to be. It cannot tell you what it will do.
 
 ## What to bring to every signature
 

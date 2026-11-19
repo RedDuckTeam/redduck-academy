@@ -29,11 +29,11 @@ faq:
 
 ## What's wrong with V2
 
-A V2 pool prices trades along the hyperbola `x * y = k`. The curve covers every possible price from zero to infinity. As price moves up or down, reserves shift along the curve. The math is simple and the system works.
+A V2 pool prices trades along the hyperbola `x * y = k`. The curve covers every possible price from zero to infinity.
 
-The trouble is that LPs end up providing depth at prices that will never trade. If the current ETH price is $3,500 and you deposit $10,000 into a V2 ETH/USDC pool, a tiny fraction of your $10,000 is providing liquidity at prices near $3,500 (where trades actually happen). The rest of your capital is reserved for hypothetical trades at $1, at $100,000, at $1,000,000. Trades there will never happen, but your dollars are pinned to those price points anyway. They sit idle, earning no fees.
+The trouble is that LPs end up providing depth at prices that will never trade. If the current ETH price is $3,500 and you deposit $10,000 into a V2 ETH/USDC pool, a small fraction of your $10,000 is providing liquidity at prices near $3,500, where trades happen. The rest is reserved for trades at $1, at $100,000, at $1,000,000, and earns no fees.
 
-Empirically, in a V2 ETH/USDC pool, an LP's capital that's "active" within any reasonable trading band is often less than 5% of their deposit. The other 95% is dead weight. They earn fees proportional to their share of total liquidity, but most of that liquidity isn't doing anything useful.
+You can count the fraction. With price `P` in USDC per ETH, the rule `x * y = k` makes the ETH reserve `√(k / P)` and the USDC reserve `√(k * P)`, as the [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm) showed when it counted impermanent loss. If price rises from $3,500 to $4,000, the ETH reserve shrinks by a factor of `√(3,500 / 4,000) ≈ 0.935`, so the pool sells 6.5% of its ETH. If price falls from $3,500 to $3,000, the USDC reserve shrinks by `√(3,000 / 3,500) ≈ 0.926`, so the pool spends 7.4% of its USDC. Half of your deposit is ETH and half is USDC, so while price stays between $3,000 and $4,000 the pool uses about 7% of it, roughly $700. For a band of 10% either side of the current price it uses under 5%.
 
 ## V3's idea: concentrated liquidity
 
@@ -100,23 +100,27 @@ V3 lets an LP say: "I think ETH will trade between $3,000 and $4,000. Concentrat
   <text x="60" y="516" font-family="monospace" font-size="10">If price leaves your range, your position earns zero fees until it re-enters or you reposition.</text>
 </svg>
 
-The same $10,000 deposit in V3 with a range of `[$3,000, $4,000]` provides depth comparable to roughly $100,000+ of V2 liquidity, since none of the capital is wasted at unreachable prices. The exact multiplier depends on how narrow the range is. Narrower range = more concentration = more fees per dollar when active, but a higher risk that price leaves the range and the position earns nothing.
+A V3 position holds only the tokens the pool uses inside the range. In the example that was about $700 of every $10,000, so $10,000 in the range `[$3,000, $4,000]` gives the same depth as a V2 deposit about 14 times larger, well over $100,000. For a range of 10% either side of the current price the multiplier is about 20. Traders get a pool that is deeper near the current price, so the same trade moves the price less.
 
-V3 isn't strictly better than V2. It's a tradeoff: capital efficiency in exchange for active management. An LP who picks a tight range gets great returns when price stays inside, but loses fee income whenever price exits. V2's passive LPs earn less per dollar but never go "out of range." Which is better depends on the LP's willingness to monitor and adjust.
+A narrower range earns more fees per dollar while price is inside it, but price leaves it sooner, and then the LP has to move the position. V2's passive LPs earn less per dollar but never go out of range. So V3 isn't strictly better than V2: it trades capital efficiency for active management.
 
-## Ticks: discrete price levels
+## Range boundaries sit on a grid of ticks
 
-Now the implementation question. V3 lets you pick a range `[Pl, Pu]`. But V3 doesn't allow arbitrary prices for the boundaries. Ranges must start and end at specific discrete price levels called **ticks**.
+The obvious design lets each LP pick any two prices as boundaries, and it breaks in the swap. Call a position's depth its liquidity: twice the liquidity trades twice as many tokens for the same price move, and where ranges overlap their liquidity adds up. To price a trade, the pool needs the total liquidity in range at the current price, and that total changes every time price crosses a boundary of some position. A pool can hold thousands of positions, and a swap that looped over them would cost more gas with every position opened.
 
-A tick is just a price level on a predefined grid. The formula is:
+So a swap never looks at positions. The pool keeps one number, the liquidity in range at the current price, and for each boundary a record of how much liquidity starts or stops counting when price crosses it. Opening a position updates the two records at its boundaries. A swap trades against the current liquidity until price reaches the next boundary, applies the change recorded there, and continues. Its cost depends on the number of boundaries it crosses, not on the number of positions.
+
+This only helps if positions share boundaries. If a boundary could be any price, every position would add two records of its own and a swap would stop at each. So V3 restricts boundaries to a fixed grid of price levels called **ticks**, and positions that share a boundary share its record.
+
+The grid is geometric:
 
 ```
 price(tick) = 1.0001 ^ tick
 ```
 
-Moving from one tick to the next multiplies the price by 1.0001, a change of 0.01% (one basis point). Tick 0 corresponds to price 1.0. Tick 1 corresponds to price 1.0001. Tick -1 to price 0.9999. And so on.
+Moving from one tick to the next multiplies the price by 1.0001, a change of 0.01% (one basis point). Tick 0 corresponds to price 1.0, tick 1 to price 1.0001, tick -1 to price 0.9999. A fixed step in dollars would not fit every pair: one cent is too coarse for a token worth two cents and needlessly fine for one worth $3,500. A percentage step fits both. The number 1.0001 was chosen because it makes the per-tick step equal to a clean basis point, the unit traders already use for price changes.
 
-For an ETH/USDC pool with ETH around $3,500, the corresponding tick is around 81,800. The integer is large because the price ratio is far from 1, but the math handles it cleanly. Frontends and SDKs convert between tick numbers and human-readable prices for you. You almost never compute ticks by hand.
+Ticks around 81,800 correspond to prices around 3,566. A pool has a `token0` and a `token1`, and its price is `token1` per `token0`, so if you swap the order, ticks flip sign. Frontends and SDKs convert between tick numbers and human-readable prices for you.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Uniswap V3 ticks 81797-81806 mapped to ETH/USDC prices, formula, and fee-tier spacing</title><desc>A number line shows ticks 81797 to 81806, each 0.01% apart, next to the matching ETH/USDC prices from 3565.07 to 3568.28. Below it, the formula price(tick) = 1.0001^tick appears, along with a table of fee tiers (0.01% to 1.00%) and their tick spacing (1, 10, 60, 200).</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -175,32 +179,21 @@ For an ETH/USDC pool with ETH around $3,500, the corresponding tick is around 81
   <text x="60" y="430" font-family="monospace" font-size="10">  1.00% fee  →  tick spacing 200   (exotic pairs, wide ranges)</text>
 </svg>
 
-The number 1.0001 was chosen because it makes the per-tick step equal to a clean basis point. The whole tick range V3 supports runs from roughly -887,272 to +887,272, which corresponds to a price range from about `1e-38` to `1e38`. More than enough to cover every conceivable asset pair.
+## Every crossed boundary costs gas, so pools space their ticks
 
-A few practical things to internalize about ticks:
+Each boundary a swap crosses costs gas, because the pool reads the record stored there and updates its liquidity. So a pool does not allow a boundary on every tick. A pool with **tick spacing** 60 only allows positions whose endpoints are multiples of 60. With a coarser spacing a swap crosses fewer boundaries, and LPs pick their ranges from a coarser ladder.
 
-Tick boundaries are integer-valued. You can't say "my range starts at price $3,517.23." You say "my range starts at tick 81,802," which the SDK will round to from your input price.
+V2 had one fee, 0.30%. V3 has four fee tiers, from 0.01% to 1.00%, and each tier is a separate pool with its own tick spacing. The 0.01% tier is for pairs that should trade at almost identical prices, like two stablecoins. Such a price stays within a few ticks, and this tier has spacing 1. The 1.00% tier is for exotic pairs with high volatility, where one swap can move price across many ticks, and it has spacing 200. Liquidity is split across these tiers, which is a real downside: thin markets fragment further. The Uniswap router handles this by routing trades through whichever pool gives the best execution.
 
-The same range can be expressed by different tick pairs depending on token order. V3 pools have a notion of `token0` and `token1`. Price is conventionally `token1 per token0`. If you swap the order, ticks flip sign. ETH/USDC at $3,500 has positive ticks, USDC/ETH at 1/3,500 has the same magnitude with negative ticks.
+## Fees are shared without visiting positions
 
-Tick spacing controls granularity. A pool with tick spacing 60 only allows positions whose endpoints are multiples of 60. So instead of using every possible tick from 81,797 to 81,806, you'd be picking from a coarser ladder.
+Fees raise the same problem. In V2 the fee stays in the reserves and every LP token becomes worth a little more, so the pool tracks nothing per LP (see the [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm)). In V3 a swap's fee belongs only to the positions in range at that price, in proportion to their liquidity, and the swap cannot visit them.
 
-## Fee tiers
+The pool uses the technique from the [TWAP lesson](/courses/development-on-ethereum/oracles/twap-oracles), where one running total replaced a stored history of prices. Here the running total is the fee collected per unit of liquidity. A swap divides its fee by the liquidity in range and adds the result to the total. Each position stores a marker, the value the total had when the position was last updated. When the LP adds liquidity, removes it, or collects, the position is owed the growth of the total since then, counted only while price was inside its range, times the position's liquidity.
 
-V2 had one fee: 0.30%. V3 has four, each with its own pool and tick spacing:
+## The range decides which tokens you deposit
 
-- **0.01%**: for pairs that should trade at almost identical prices, like two stablecoins. Tick spacing 1 (most granular).
-- **0.05%**: for correlated assets that move closely together, like ETH and a liquid staked ETH derivative. Tick spacing 10.
-- **0.30%**: the V2 standard, used for typical volatile pairs like ETH/USDC. Tick spacing 60.
-- **1.00%**: for exotic pairs with high volatility. Tick spacing 200.
-
-Each fee tier is a separate pool. So when you talk about "the ETH/USDC pool" on V3, you actually have to specify which one of three or four pools you mean. Liquidity is split across these tiers, which is a real downside: thin markets fragment further. The Uniswap router handles this by routing trades through whichever pool gives the best execution.
-
-LPs choose a fee tier based on the volatility they expect. Higher volatility means higher fee income but also more risk of price moving out of range. The coarser tick spacing for higher fee tiers reflects that fine-grained ranges are less useful for assets that move a lot.
-
-## Three position types: where single-sided liquidity comes from
-
-In V2, you always deposit both tokens, in the ratio set by the current pool price. There's no other option. In V3, the ratio depends on where your chosen range sits relative to the current price. Sometimes you deposit both tokens. Sometimes only one. And it's not up to you which case applies. The range you pick forces the composition.
+In V2, you always deposit both tokens, in the ratio set by the current pool price. In V3, the ratio depends on where your chosen range sits relative to the current price, and it's not up to you: the range you pick forces the composition.
 
 <svg role="img" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Three Uniswap V3 position types by price range: below, straddling, above</title><desc>Shows three Uniswap V3 price ranges compared to a current price of $3,500. A range below current price needs only USDC, a range straddling it needs both USDC and ETH, and a range above it needs only ETH, because the chosen range forces the deposit ratio.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -254,78 +247,40 @@ In V2, you always deposit both tokens, in the ratio set by the current pool pric
   <text x="360" y="680" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#ed4937">The deposit ratio is forced by the range, not by you.</text>
 </svg>
 
-## Why this works: think in trade flows
+To see why, look at what the pool does when price moves. When price rises, someone is buying ETH: they send USDC into the pool, the pool sends ETH out. When price falls, someone is selling ETH: they send ETH into the pool, the pool sends USDC out. So the pool needs ETH to sell while price rises and USDC to buy while price falls.
 
-The single-sided deposit rule seems strange at first. To make sense of it, watch what the pool actually does when price moves.
+Take a range entirely above the current price, `[$4,500, $5,500]` with ETH at $3,500. For price to reach this range it has to rise to $4,500, then keep rising to cross it. The pool is selling ETH the whole way, so you deposit only ETH. As price rises through your range, your ETH gradually gets sold off in exchange for USDC. By the time price reaches $5,500, all your ETH is gone, replaced by USDC.
 
-**When price rises**, someone is buying ETH. They send USDC into the pool, the pool sends ETH out. The pool gains USDC and loses ETH. From the pool's perspective, it just "sold ETH for USDC."
+A range entirely below the current price, such as `[$2,000, $3,000]`, is the mirror image: you deposit only USDC, and the pool spends it buying ETH as price falls through the range.
 
-**When price falls**, someone is selling ETH. They send ETH into the pool, the pool sends USDC out. The pool gains ETH and loses USDC. From the pool's perspective, it just "bought ETH with USDC."
+A range that straddles the current price can be crossed in either direction, so it needs both tokens. The $10,000 position in `[$3,000, $4,000]` at $3,500 holds about $4,650 of ETH to sell on the way up to $4,000 and about $5,350 of USDC to spend on the way down to $3,000. In every case a position holds only ETH at its lower boundary `Pl` and only USDC at its upper boundary `Pu`.
 
-So a pool acts as a market maker that's always taking the other side of trades. To sell ETH (when price rises) it needs ETH inventory. To buy ETH (when price falls) it needs USDC inventory.
+## A narrow range works like a limit order
 
-Now apply this to a V3 position with range `[Pl, Pu]`:
+Suppose ETH is at $3,500 and you want to sell at $4,000. In V2, you'd have to monitor the price and execute a swap when it hits your target. In V3, you create a tight position with range `[$4,000, $4,005]`. The position is entirely above current price, so you deposit only ETH. If price never reaches $4,000, the position sits idle. If price moves through $4,000 to $4,005, your ETH gets swapped for USDC inside the range, and by the time price exits at the top, your position holds 100% USDC at an average price near $4,000. A limit buy is the same with a tight range below current.
 
-**Range entirely above current price** (current price < Pl). For price to ever reach this range, it has to rise from where it is to Pl, then potentially keep rising up to Pu. The entire trip through the range is a rising-price trip. The pool is selling ETH the whole way. Your position needs ETH on hand to participate, so you deposit only ETH. As price rises through your range, your ETH gradually gets sold off in exchange for USDC. By the time price reaches Pu, all your ETH is gone, replaced by USDC at the highest prices in your range.
+Unlike a true limit order, the position earns fees while it fills, and the fill is not final. If price comes back down through the range, the pool buys ETH back with your USDC, and the position is all ETH again. To keep the USDC, you have to withdraw the position after price has crossed it.
 
-**Range entirely below current price** (current price > Pu). For price to enter this range, it has to fall from where it is to Pu, then potentially keep falling to Pl. The entire trip is a falling-price trip. The pool is buying ETH the whole way. Your position needs USDC ready to spend, so you deposit only USDC. As price falls through your range, your USDC gradually gets converted to ETH at the falling prices. By the time price reaches Pl, all your USDC is gone, replaced by ETH at the lowest prices in your range.
+## Positions are not interchangeable, so each one is an NFT
 
-**Range straddling current** (Pl < current < Pu). The price can move either direction from the current spot. The pool might need ETH inventory (for upward moves) or USDC inventory (for downward moves). Your position needs both, in a ratio that depends on where current sits within the range.
+V2 LP positions were ERC-20 tokens. Every LP in a V2 pool had the same kind of claim, just for different amounts, so fungibility worked. V3 positions are not interchangeable. An LP with range `[$3,000, $4,000]` and an LP with range `[$3,500, $5,000]` have different exposures. Even two positions with the same range and the same liquidity each carry their own fee marker, because they were opened and collected at different times.
 
-The rule of thumb to remember: at the lower boundary `Pl`, a position holds 100% of token X (ETH in this example). At the upper boundary `Pu`, it holds 100% of token Y (USDC). In between, the position is a mix. Where the current price sits relative to these boundaries dictates the deposit composition.
+V3 uses ERC-721 NFTs instead. Each position is a non-fungible token whose metadata includes the pool, the range (`tickLower`, `tickUpper`), the liquidity amount, and accumulated fees. The `NonfungiblePositionManager` contract is the standard entry point: LPs mint NFTs through it, manage liquidity through it, collect fees through it. Position NFTs are transferable like any ERC-721, so you can sell your position on a secondary market or use it as collateral. Every LP integration has to handle individual positions rather than treating LP shares as fungible balances, which makes building on V3 more complex than building on V2.
 
-## Range orders: limit orders in disguise
+## The pool stores its own price history
 
-The single-sided behavior turns V3 into something the previous AMMs couldn't be: a venue for limit orders.
+In V2 the pool keeps one running total of price, and each consumer has to store its own earlier reading to compute an average (see the [TWAP lesson](/courses/development-on-ethereum/oracles/twap-oracles)). V3 changes two things about this.
 
-Suppose ETH is at $3,500 and you want to sell at $4,000. In V2, you'd have to actively monitor the price and execute a swap when it hits your target. In V3, you create a tight position with range `[$4,000, $4,005]`. The position is entirely above current price, so you deposit only ETH. If price never reaches $4,000, the position sits idle. If price moves through $4,000 to $4,005, your ETH gets swapped for USDC inside the range, and by the time price exits at the top, your position holds 100% USDC at an average price near $4,000.
+First, the pool stores the readings itself. Each V3 pool keeps an **observations array**, a circular buffer of past `(timestamp, tick cumulative)` entries. The slots get filled on every state-changing interaction (swap, mint, burn). A consumer reading a TWAP for the last 30 minutes asks the pool to find observations bracketing the start and end of the window, and computes the average from those two readings. Pools default to 1 slot, and a pool whose array has been extended covers hours or days of history.
 
-You've effectively placed a sell order that fills around $4,000. Same logic in reverse for limit buys with a tight range below current.
-
-The fill price isn't exactly the target. There's some spread between Pl and Pu, so the actual execution price is an average within the range. Tighter ranges mean closer-to-exact fills but smaller fee earnings while filling. This is the difference between a true limit order and a V3 range order: the V3 version still earns fees during the fill, in exchange for some slippage.
-
-This was a real user-facing feature when V3 launched. It led several limit-order protocols to build on top of V3 positions.
-
-## NFT positions
-
-V2 LP positions were ERC-20 tokens. Every LP in a V2 pool had the same kind of claim, just for different amounts, so fungibility worked. You could send your LP tokens to anyone, stake them in another protocol, swap them, anything ERC-20s do.
-
-V3 positions can't be ERC-20s because they're not interchangeable. Two LPs in the same pool with different ranges have completely different exposures. If Alice has range `[$3,000, $4,000]` and Bob has range `[$3,500, $5,000]`, their positions aren't comparable. You can't have a fungible "ETH/USDC V3 LP token" because there's no single representative position.
-
-V3 uses ERC-721 NFTs instead. Each position is a non-fungible token whose metadata includes the pool, the range (`tickLower`, `tickUpper`), the liquidity amount, and accumulated fees. The `NonfungiblePositionManager` contract is the standard entry point: LPs mint NFTs through it, manage liquidity through it, collect fees through it. Position NFTs are transferable like any ERC-721, so you can sell your position on a secondary market or use it as collateral.
-
-This is one of the things that makes building on V3 more complex than V2. Every LP integration has to handle individual positions rather than treating LP shares as fungible balances.
-
-## A better TWAP
-
-V2 oracles use a single cumulative price counter, sampled at whatever times consumers care about. V3 introduces a more refined version.
-
-Each V3 pool keeps an **observations array**, a circular buffer of past `(timestamp, tick cumulative)` entries. Pools default to 1 slot but can be extended up to 65,535 slots. The slots get filled on every state-changing interaction (swap, mint, burn). A consumer reading a TWAP for the last 30 minutes asks the pool to find observations bracketing the start and end of the window, and computes the average from those two readings.
-
-The advantages over V2's design:
-
-- Consumers don't need to take their own observation. The pool's observations are already there, indexed by time.
-- Multiple consumers reading the same window share the cost.
-- Pools with extended observation arrays cover hours or days of history.
-
-V3 uses the geometric mean of prices (computed by averaging ticks, which are log-scale price values) rather than the arithmetic mean of raw prices. This matters when prices can swing in large ratios. The geometric mean of $100 and $400 is $200. The arithmetic mean is $250. The geometric version is symmetric around the true price, which is more useful for risk-bearing applications.
+Second, the running total is of the tick, not of the price. Ticks are log-scale price values, so the average tick converts back to the geometric mean of the price, where V2 gives the arithmetic mean. The two react differently to a one-block spike. Take a price of $100 for 99 blocks and $10,000 for one block: the arithmetic mean is $199, and the geometric mean is about $105. With the one block at $1 instead, they are $99 and about $95. So a 100x move for one block moves the price read from the average tick by about 5% in either direction, while the arithmetic mean almost doubles on the move up and barely notices the move down.
 
 The [V3 oracle documentation](https://docs.uniswap.org/concepts/protocol/oracle) covers the specifics of how to read observations and compute windows.
 
-## When V3 vs V2
+## What concentration costs the LP
 
-V3's strengths:
+Concentration multiplies the LP's loss along with the fees. Inside its range the $10,000 position behaves like a V2 position 14 times larger, so its [impermanent loss](/courses/development-on-ethereum/defi-tasks-and-patterns/amm) in dollars is 14 times larger too. If ETH goes from $3,500 to $4,000, a $10,000 V2 deposit ends about $24 behind holding the two tokens, and the V3 position ends about $340 behind. Once price leaves the range, the position holds only the token that lost value against the other: only USDC after ETH rose above $4,000, because the pool sold all of the position's ETH on the way up, and only ETH after it fell below $3,000. It stays that way and earns nothing until price returns or the LP moves it.
 
-- Capital efficiency for LPs willing to manage positions
-- Limit-order-like behavior via range orders
-- Lower slippage for traders, since concentrated liquidity makes pools effectively deeper near current prices
-- Stronger oracle for downstream protocols
+V2's design is still a reasonable choice for assets with extreme volatility where any chosen range becomes irrelevant quickly, for passive LPs who can't or won't monitor positions, and for simple integrations where V2's fungible LP tokens make the rest of the contract design cleaner.
 
-V3's weaknesses:
-
-- LPs have to manage active positions, or accept that price will eventually move out of range
-- Multiple fee tiers fragment liquidity across pools
-- Tick math, NFT positions, and per-position fee accounting make the codebase and integrations more complex
-- Less suitable for pairs where price has no natural "center" the LP can target
-
-V2's design is still a reasonable choice for some applications: assets with extreme volatility where any chosen range becomes irrelevant quickly, passive LPs who can't or won't monitor positions, simple integrations where V2's fungible LP tokens make the rest of the contract design cleaner. V2 isn't deprecated. It coexists with V3 because the tradeoffs go different ways for different use cases.
+Before you choose V3 for a pair, ask whether its price has a center that an LP is willing to hold a range around, and who will move the range when price leaves it. If nobody will, V2 serves that pair better.

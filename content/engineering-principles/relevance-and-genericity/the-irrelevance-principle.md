@@ -37,7 +37,7 @@ Think about a sorting routine. You hand it a sequence of values and a way to com
 
 At no point does it look at what the values mean. They could be prices, timestamps, or temperatures. To the sort they are just things with an order, and the comparison function is the only thing it needs. One routine handles all three domains without a single line that mentions any of them.
 
-Now suppose someone decided the sort should accept only prices. You would add a check that rejects anything that is not a price, and then reason about what should happen when that check fails. The routine grows. It is also no more correct than before, because it already sorted timestamps and temperatures perfectly. The domain of the data never affected the result, so constraining it added work and fixed nothing.
+Now suppose someone decided the sort should accept only prices. You would add a check that rejects anything that is not a price, and then reason about what should happen when that check fails. The routine grows, and it is no more correct than before, because it already sorted timestamps and temperatures perfectly. The domain of the data never affected the result, so constraining it added work and fixed nothing.
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>One sort routine applied to three different kinds of value</title><desc>Three input boxes, prices, timestamps, and temperatures, each with example values. Arrows lead from all three down into a single red box, the sort routine, which compares pairs and never reads what the values mean. Arrows lead back out to three output boxes holding the same values in order. The domain of the values never reaches the sort.</desc>
   <defs>
@@ -91,24 +91,20 @@ Now suppose someone decided the sort should accept only prices. You would add a 
 
 ## Why a generic function behaves the same for everything
 
-There is a reason the generic sort can be trusted, and it is worth stating precisely.
-
-A function written to work for any type, without reading what the values mean, is forced to behave the same way for every type. It cannot special-case prices over timestamps, because it has no way to tell one from the other. That uniform behavior is a guarantee you get for free, and you get it exactly because the function knows nothing about the type it is handed.
+A function written to work for any type, without reading what the values mean, is forced to behave the same way for every type. It cannot special-case prices over timestamps, because it has no way to tell one from the other. That uniform behavior is a guarantee, and you get it because the function knows nothing about the type it is handed. The price is that a function that cannot tell prices from timestamps also cannot use any property that only prices have.
 
 In type theory this property has a name, parametricity. In everyday programming the same idea goes by genericity, or parametric polymorphism. For this course the useful name is the **Irrelevance Principle**: only constrain what you actually care about.
 
 ## The same principle one layer down
 
-The idea is not special to sorting. TCP, the transport protocol under much of the traffic on the internet, delivers a stream of bytes reliably and in order. It does not read the bytes. Whether they carry a web page, a video call, or a database query makes no difference to delivering them safely.
+TCP, the transport protocol under much of the traffic on the internet, delivers a stream of bytes reliably and in order. It does not read the bytes. Whether they carry a web page, a video call, or a database query makes no difference to delivering them safely.
 
-That indifference is the whole reason one transport protocol can sit under every application built on top of it. The content of the payload is irrelevant to reliable delivery, so TCP does not inspect it. A network that did inspect payloads and restricted certain kinds would be harder to build on, and no better at the one job of delivery, because delivery was never in question.
+That indifference is why one transport protocol can sit under every application built on top of it. The content of the payload is irrelevant to reliable delivery, so TCP does not inspect it. A network that did inspect payloads and restricted certain kinds would be harder to build on, and no better at the one job of delivery.
 
 ## Find the check that buys nothing
 
-Whenever a system starts inspecting a property its outcome does not depend on, treat that as a signal to stop and ask one question. Does the correctness of the result depend on this check? Run the system in your head with the check removed. If the outcome is still correct for every input you care about, the check was guarding nothing, and you can take it out. A constraint earns its place by changing what counts as a correct result. One that does not is pure cost.
+Whenever a system starts inspecting a property its outcome does not depend on, treat that as a signal to stop and ask one question. Does the correctness of the result depend on this check? Run the system in your head with the check removed. If the outcome is still correct for every input you care about, the check was guarding nothing, and you can take it out.
 
 ## Blockchain application
-
-Skip this section if you only want the principle.
 
 A balance check can accept any target address. Whether the address belongs to a company treasury, a retail user, or an automated bot has no bearing on reading a balance, so a good design does not constrain it. Uniswap v2's core enforces its invariant for any caller at all, with no special permissions for anyone. Both are the Irrelevance Principle written into a contract. The identity of who is asking is irrelevant to the check, so the check ignores it.

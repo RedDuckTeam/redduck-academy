@@ -31,19 +31,13 @@ faq:
 
 > Move money between two accounts and you do it in two steps: subtract from one, add to the other. If the system dies in the gap between them, the money has left one account and reached nowhere. Databases fixed this with a guarantee that the two steps form one unit, completing fully or leaving no trace. That same guarantee can replace trust between strangers.
 
-## The gap between two steps
+## Two steps treated as one unit
 
-Picture a bank moving 100 dollars from account A to account B. The computer does two things in order. First it lowers A's balance by 100. Then it raises B's balance by 100. In between those two writes there is an instant where A has already lost the money and B has not yet gained it.
+Picture a bank moving 100 dollars from account A to account B. The computer does two things in order. First it lowers A's balance by 100, then it raises B's balance by 100. In between those two writes there is an instant where A has already lost the money and B has not yet gained it.
 
-Nothing is wrong as long as both writes happen. But a machine can lose power, a process can be killed, or a network link can drop. Any of these can happen at any moment, including that instant. If it stops there, 100 dollars has disappeared from the records. No one stole it. No one meant for it to happen. The system is simply resting in a state nobody designed, because the design let two steps be separated in the first place.
+A machine can lose power, a process can be killed, or a network link can drop at any moment, including that instant. If the system stops there, 100 dollars has disappeared from the records, although no one stole it. Any time an operation is really several steps, some failure in the middle can leave the system in a state its authors never intended.
 
-That is the shape of the problem. Any time an operation is really several steps, some failure in the middle can leave the system in a state its authors never intended.
-
-## The database answer: one unit or none
-
-The solution is old and has a name. A database transaction wraps several operations so the system treats them as a single indivisible action. Both writes land, or neither does. There is no outcome where only the first happened, because "only the first happened" is not a resting state the transaction allows. If anything fails partway, the database rolls back to exactly the state before the transaction began, as if it had never started.
-
-This all-or-nothing property is called **atomicity**. It is the A in ACID, the set of guarantees relational databases have offered for decades. Naming that lineage matters, because atomicity is an old and well-understood idea from database engineering, and it is easy to mistake for something newer than it is.
+A database transaction wraps several operations so the system treats them as a single indivisible action. Both writes land, or neither does. If anything fails partway, the database rolls back to the state before the transaction began, as if it had never started. This all-or-nothing property is called **atomicity**. It is the A in ACID, the set of guarantees relational databases have offered for decades.
 
 <svg role="img" viewBox="0 0 720 305" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two separated steps versus one atomic unit</title><desc>Two boxes side by side. The left box runs a transfer as two separate steps: subtract from A, then a gap where power can be lost, then add to B, which is skipped, leaving 100 vanished. The right box runs both writes as one atomic unit, so both writes land or neither does and no half-done state can exist.</desc>
   <text x="360" y="32" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Where can the money vanish?</text>
@@ -72,26 +66,26 @@ This all-or-nothing property is called **atomicity**. It is the A in ACID, the s
 
 ## Where the guarantee replaces a middleman
 
-Atomicity is usually taught as a correctness feature, a way to keep data consistent. It is also a way to remove trust.
+Take two strangers who want to trade, one holding goods and the other holding payment. Normally one of them has to move first, and whoever moves first is exposed. Send the goods and the buyer might never pay. Send the payment and the seller might never ship. The standard fix is an escrow agent, a trusted third party who holds one side's value until the other side delivers, then releases it. The escrow agent exists to cover the risk that one step happens and the other does not.
 
-Take two strangers who want to trade, one holding goods and the other holding payment. Normally one of them has to move first, and whoever moves first is exposed. Send the goods and the buyer might never pay. Send the payment and the seller might never ship. The standard fix is an escrow agent, a trusted third party who holds one side's value until the other side delivers, then releases it. The escrow agent exists purely to cover the risk that one step happens and the other does not.
+Now suppose a single platform holds both the goods and the payment and can move them as one atomic unit. The handover of goods to the buyer and the handover of payment to the seller become a single action that completes for both sides or for neither. Nobody moves first, so the exposed moment is gone. It was the gap between two separated steps, and the steps are no longer separated.
 
-Now suppose a single platform holds both the goods and the payment and can move them as one atomic unit. The handover of goods to the buyer and the handover of payment to the seller become a single action that completes for both sides or for neither. There is no ordering. Nobody moves first. The exposed moment is gone, because it was only ever the gap between two separated steps, and there are no longer two separated steps.
-
-Notice what happened to the constraint. In [**constraint bypass**](/courses/engineering-principles/constraint-bypass/bypassing-a-constraint), the move was to make a limiting rule irrelevant instead of fighting it. Here the rule "someone must move first" looked unavoidable. Wrapping both transfers into one unit does not satisfy that rule or soften its consequences. It makes the rule irrelevant, because with no first move there is no first mover left to be exposed.
+In the terms of [**constraint bypass**](/courses/engineering-principles/constraint-bypass/bypassing-a-constraint), the rule "someone must move first" was a property of trading in two separate steps, and it stops applying when there is one step.
 
 ## Trusting the platform instead of the person
 
-State the principle plainly. When the platform guarantees all-or-nothing execution, a designer can swap "trust the counterparty" for "trust the platform". The strangers stop relying on each other's honesty. They rely on the execution guarantee, one thing they can inspect and reason about, identical for every trade.
+When the platform guarantees all-or-nothing execution, a designer can swap "trust the counterparty" for "trust the platform". The strangers stop relying on each other's honesty and rely on the execution guarantee, one thing they can inspect and reason about, identical for every trade.
 
-This reframes a lot of familiar machinery. Deposits, escrow agents, and permission checks are all ways to manage the risk that an operation completes only partway. A deposit covers the loss if the other side stops halfway through. An escrow agent stands in so neither side has to move first. A permission check gates an action because a half-finished version of it would be dangerous. Where partial completion is impossible by construction, that whole category of risk is simply gone, and the machinery built to manage it has nothing left to do.
+Deposits and escrow agents are both ways to manage the risk that an operation completes only partway. A deposit covers the loss if the other side stops halfway through. An escrow agent stands in so neither side has to move first. Where partial completion is impossible by construction, neither is needed. That is why atomicity earns the label of a security primitive, beyond its role in keeping data correct. It removes the condition the risk depended on.
 
-That is why atomicity earns the label of a security primitive, beyond its role in keeping data correct. It removes the condition the risk depended on, so there is no longer a risky exchange to make safer.
+The guarantee covers that one risk and no other. It does not decide who is allowed to start the operation, and it does not check that the goods are the ones the buyer was promised. The price is that the trust that was spread across counterparties now rests on the platform, which makes the platform a [singleton](/courses/engineering-principles/singleton-and-factory/the-singleton-pattern), a single component where a bug reaches every trade at once.
 
-## Look for the all-or-nothing seam
+## Check whether both actions fit in one unit
 
-When you design an exchange between parties who do not trust each other, look first for whether both sides' actions can sit inside one all-or-nothing unit. If they can, most of the guarding falls away. The deposits, the go-first rules, the "are you allowed to do this" gates all existed only to survive a partial failure. If they cannot, that answer is worth having too. It means the actions live on systems that cannot be joined into one unit, and the trust you were trying to remove is exactly the trust you will keep paying for. Either way, you learn something real before you build.
+When you design an exchange between parties who do not trust each other, look first for whether both sides' actions can sit inside one all-or-nothing unit. If they can, the deposits and the go-first rules are no longer needed, because they existed only to survive a partial failure. If they cannot, the actions live on systems that cannot be joined into one unit, and the trust you were trying to remove is the trust you will keep paying for.
 
 ## Blockchain application
 
-Skip this section if you only want the principle. Ethereum transactions are atomic in exactly the sense above. Every operation inside one transaction succeeds together, or the whole transaction reverts to its starting state. DeFi built a lending primitive directly on that guarantee, the flash loan. A contract lends a large sum with no collateral, because the loan and its repayment are placed inside the same transaction. If the borrower has not returned the funds by the end of that transaction, the entire transaction reverts, and the loan is erased along with everything the borrower did with the money. The lender checks no identity and holds no deposit. It relies on the all-or-nothing guarantee, so a loan that goes unrepaid within the same transaction simply never happened. Aave turned this into a general-purpose primitive in 2020, and Uniswap v2 released the equivalent as flash swaps.
+Ethereum transactions are atomic in the sense above. Every operation inside one transaction succeeds together, or the whole transaction reverts to its starting state. DeFi built a lending primitive directly on that guarantee, the flash loan. A contract lends a large sum with no collateral, because the loan and its repayment are placed inside the same transaction. If the borrower has not returned the funds by the end of that transaction, the entire transaction reverts, and the loan is erased along with everything the borrower did with the money. The lender checks no identity and holds no deposit. It relies on the all-or-nothing guarantee, so a loan that goes unrepaid within the same transaction never happened. Aave turned this into a general-purpose primitive in 2020, and Uniswap v2 released the equivalent as flash swaps.
+
+The guarantee protects only the lender. With a flash loan, an attacker who wants to distort the price in an exchange pool that another protocol reads needs no capital of their own, only gas and the loan fee. [Flash loans](/courses/development-on-ethereum/oracles/flash-loans) walks through that attack.

@@ -28,58 +28,11 @@ faq:
       outer index first. Declaring uint256[5][10] gives you 10 rows of 5.
 ---
 
-> Three composite types that handle discrete states, indexed sequences, and raw byte data. You'll touch all three in nearly every non-trivial contract. They share a single unifying idea: all three are positional. Enums map names to integer indices. Arrays are accessed by integer index. Byte arrays are sequences of bytes accessed by index. That positional nature is what makes them feel related, and it's why their operations all look similar.
+> Unlike a mapping, an array keeps its length, so you can count it, loop over it, and clear it. Every element a loop touches costs gas, and that limits how long an array in a contract can safely get.
 
-The contrast with the previous lesson is worth holding in mind. Mappings are accessed by key, with no notion of a "first" or "last" element. The types in this lesson are accessed by position, with length, ordering, and iteration as natural operations. Storage cost scales with the number of positions used. Iteration is possible for all three.
+## An array stores its length
 
-## How `enum` works
-
-An enum declares a finite set of named values. Solidity stores them internally as small integers, but in your code you reference them by name.
-
-```solidity
-// Solidity 0.8.24, Ethereum mainnet
-contract Order {
-    enum Status { Pending, Paid, Shipped, Delivered }
-
-    Status public currentStatus;
-
-    function pay() external {
-        currentStatus = Status.Paid;
-    }
-
-    function ship() external {
-        currentStatus = Status.Shipped;
-    }
-}
-```
-
-Three things to notice. First, you declare an enum at the contract level, the same way you'd declare a state variable. Second, you reference values with dot syntax: `Status.Paid`, never just `Paid`. Third, when you read `currentStatus` from the public getter, you get back a small integer because that's how the value is actually stored. The first declared name gets 0, the second gets 1, and so on.
-
-The default value of an enum variable is always the first declared value. In the example above, a freshly declared `Status` variable equals `Status.Pending` because `Pending` is index 0. This matters. Order your enum values so that the most natural starting state comes first. Putting `Delivered` first by accident would mean every newly created order starts as delivered, which is exactly the kind of bug that reaches production.
-
-You can convert between enum values and their underlying integer with an explicit cast:
-
-```solidity
-uint8 statusIndex = uint8(currentStatus);  // explicit downcast to integer
-Status reconstructed = Status(2);          // build a Status from an integer
-```
-
-The cast in the second line will revert if the integer is out of range for the enum. So `Status(7)` on a four-value enum reverts at runtime. You don't get an undefined value the way you might in C.
-
-The storage cost is small. Solidity stores enum values in a `uint8`, the smallest unsigned integer type. An enum can have at most 256 members, so one `uint8` always holds the value. This makes enums much cheaper than the string-typed status fields you'd use in a database schema.
-
-Enums also make excellent mapping keys. The previous lesson's mapping pattern composes naturally:
-
-```solidity
-mapping(Status => uint256) public ordersInState;
-ordersInState[Status.Pending] += 1;
-```
-
-When should you use an enum? Whenever you have a small, fixed set of mutually exclusive states. Order lifecycles, governance proposal states, vault modes, escrow phases. If you ever find yourself comparing strings to magic constants like `"pending"` or `"paid"`, an enum is the right answer.
-
-## Fixed-length arrays
-
-Arrays come in two flavors. The fixed-length version specifies its size at declaration, and that size never changes:
+The [mappings lesson](/courses/development-on-ethereum/solidity-basics/mappings) showed that a mapping has no length, because the EVM does not record which slots were written. An array does have a length. The fixed-length version specifies its size at declaration, and that size never changes:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -89,30 +42,10 @@ contract FixedArray {
     function setScore(uint256 index, uint256 value) external {
         scores[index] = value;     // index >= 10 reverts
     }
-
-    function getScore(uint256 index) external view returns (uint256) {
-        return scores[index];
-    }
 }
 ```
 
-The size goes inside the brackets after the element type. Indexing is zero-based, the same as most mainstream languages. Reading or writing an index that's out of bounds reverts the transaction. This is a runtime check the EVM performs automatically.
-
-The unfilled slots have the zero value of the element type. So in the example above, every position from 0 to 9 reads as 0 immediately after deployment, until you write to it. This is consistent with how all storage works in Solidity, but it's worth saying out loud because some languages return `null` or undefined for unset array slots.
-
-Solidity arrays are homogeneous. Every element has to be the same type. There's no `[uint256, address, bool]` triple of mixed types. That's what structs are for.
-
-You can initialize a fixed array with literal values, but the syntax is finicky:
-
-```solidity
-uint256[3] memory firstThree = [uint256(1), 2, 3];
-```
-
-The cast on the first element forces the literal type. Without it, the compiler infers `uint8` for the literal `1` and then refuses to assign a `uint8[3]` to a `uint256[3]`. This is one of those small Solidity annoyances that seems unfair until you understand the type inference rules. For state-variable declarations it usually doesn't come up. You'll hit it in memory arrays.
-
-## Dynamic arrays
-
-The other flavor has no fixed size and grows or shrinks at runtime:
+A dynamic array has no fixed size. It keeps its current length in a storage slot (the [storage layout lesson](/courses/development-on-ethereum/token-security-and-evm-internals/storage-layout) shows where) and grows or shrinks at runtime:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -133,17 +66,49 @@ contract DynamicArray {
 }
 ```
 
-Three operations to know. `push(value)` appends to the end of the array, growing it by one. `pop()` removes the last element and shrinks the array by one. `length` returns the current number of elements. Index access works the same as for fixed arrays, with the same runtime bounds check.
+Reading or writing an index that's out of bounds reverts the transaction, for fixed and dynamic arrays alike. Solidity adds this runtime check automatically. Positions that were never written hold the zero value of the element type, like the rest of storage.
 
-Note that `push` and `pop` do not exist on fixed-length arrays. Trying `scores.push(1)` on the `uint256[10]` from earlier is a compile error. The reasoning is in the name: a fixed array's length is fixed.
+`push` and `pop` do not exist on fixed-length arrays. Trying `scores.push(1)` on the `uint256[10]` above is a compile error.
 
-`delete` works on dynamic arrays in two ways. `delete arr[i]` sets the element at index `i` to the zero value of the element type, without changing the array's length. `delete arr` clears the entire array, setting its length to zero. The latter is the bulk-clear operation that mappings don't have.
+`delete` works on dynamic arrays in two ways. `delete arr[i]` sets the element at index `i` to the zero value of the element type, without changing the array's length. `delete arr` clears the entire array, setting its length to zero. Mappings have no such bulk clear, because nothing records which of their slots were written, while an array's length says how many elements there are to reset.
 
-Dynamic arrays in storage are gas-friendly for appends and individual reads, but expensive for operations that touch the whole array. Iterating over a thousand-element dynamic array inside a function can easily exceed the block gas limit. The general guidance: if you might iterate, keep the array small, or keep iteration off-chain.
+## A loop pays for every element
 
-## Nested arrays and the right-to-left reading rule
+Appending one element or reading one element costs the same however long the array is. An operation that touches the whole array pays for every element. Reading a storage slot for the first time in a transaction costs 2,100 gas ([contracts and gas lesson](/courses/development-on-ethereum/how-ethereum-works/contracts-and-gas)), and each `uint256` element of `items` takes one slot. A loop over 1,000 elements pays 2.1 million gas for the reads alone. A loop over 15,000 elements pays 31.5 million, and a block holds around 30 million gas, so that transaction can never succeed.
 
-Solidity supports nested arrays, but the dimension order is the opposite of what most languages use. This is genuinely confusing the first time you see it:
+In `DynamicArray` anyone can call `add`, so anyone can make `items` that long. For that reason a transaction must not loop over an array that users can grow. If you might iterate, keep the array small, or keep iteration off-chain. The [loops and hashing lesson](/courses/development-on-ethereum/solidity-basics/loops-and-hashing) shows a contract that stops working this way and the patterns that avoid it. The [reentrancy and denial-of-service lesson](/courses/development-on-ethereum/token-security-and-evm-internals/reentrancy-and-denial-of-service) shows how one element added by a user can block such a loop.
+
+## Memory arrays cannot grow
+
+Local arrays inside a function live in memory and are allocated with `new`:
+
+```solidity
+// Solidity 0.8.24, Ethereum mainnet
+contract MemoryArrays {
+    function buildArray() external pure returns (uint256[] memory) {
+        uint256[] memory temp = new uint256[](10);  // size required at allocation
+        temp[0] = 100;
+        temp[1] = 200;
+        return temp;
+    }
+}
+```
+
+Memory is one contiguous buffer that lives for a single call, as [the EVM lesson](/courses/development-on-ethereum/how-ethereum-works/the-evm) describes. A memory array is a block of that buffer whose size is given at allocation, and its length is fixed from then on. There's no equivalent of `push()` for memory arrays. To grow one, you allocate a new array of the larger size and copy.
+
+The size argument can be a variable rather than only a constant. In a function that takes a `uint256 count` argument, `new uint256[](count)` allocates an array whose length is decided when the function runs.
+
+Returning a memory array from a function uses the type `T[] memory`, and the caller receives a copy. This is how you produce dynamic-sized result data, for example a list of token IDs owned by an address.
+
+You can initialize a fixed-size memory array with literal values:
+
+```solidity
+uint256[3] memory firstThree = [uint256(1), 2, 3];
+```
+
+The cast on the first element forces the literal type. Without it, the compiler infers `uint8` for the literal `1` and then refuses to assign a `uint8[3]` to a `uint256[3]`.
+
+## Nested array types read right to left
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -158,39 +123,56 @@ contract Matrix {
 }
 ```
 
-The trick is that `uint256[3][2]` should be read right-to-left as "an array of length 2, where each element is `uint256[3]`." So the outer index is the second number in the type, and the inner index is the first.
+The dimension order is the opposite of what most languages use. `uint256[3][2]` reads right to left as an array of length 2, where each element is a `uint256[3]`. The access expression reads left to right, with the outer index first and the inner second. Declaring `uint256[5][10]` gives you 10 rows of 5 columns, not 5 rows of 10.
 
-The brackets in the access expression go in the opposite order from the type declaration. Declaring `[3][2]` and then accessing `grid[outer][inner]` looks contradictory until you remember that the access reads left-to-right, with the outer index first and the inner second, while the type reads right-to-left, with the innermost type first.
+## An enum's first value is its default
 
-The same right-to-left logic applies to higher dimensions. Until you are used to it, double-check every nested array declaration. Real bugs have reached production because someone declared `uint256[5][10]` thinking they were getting 5 rows of 10 columns when they actually got 10 rows of 5 columns.
-
-## Memory arrays
-
-Local arrays inside a function live in memory, the same way local strings do. The declaration syntax for a memory array is different from storage:
+An enum declares a finite set of named values. Solidity stores them internally as small integers, but in your code you reference them by name.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
-contract MemoryArrays {
-    function buildArray() external pure returns (uint256[] memory) {
-        uint256[] memory temp = new uint256[](10);  // size required at allocation
-        temp[0] = 100;
-        temp[1] = 200;
-        return temp;
+contract Order {
+    enum Status { Pending, Paid, Shipped, Delivered }
+
+    Status public currentStatus;
+
+    function pay() external {
+        currentStatus = Status.Paid;
+    }
+
+    function ship() external {
+        currentStatus = Status.Shipped;
     }
 }
 ```
 
-Two things to flag. First, the `new T[](size)` syntax is mandatory for memory arrays, and the size must be specified at allocation. There's no equivalent of `push()` for memory arrays. Their length is fixed once they're allocated. If you need to "grow" a memory array, you allocate a new one of the larger size and copy.
+The first declared name gets 0, the second gets 1, and so on. Reading `currentStatus` from the public getter returns that integer.
 
-Second, the size argument can be a variable rather than only a constant. So `new uint256[](msg.value / 100)` is valid and will allocate an array sized at runtime based on the incoming ETH. This is one of the few places in Solidity where you allocate memory whose size depends on runtime inputs.
+The default value of an enum variable is always the first declared value. A freshly declared `Status` variable equals `Status.Pending` because `Pending` is index 0. Order your enum values so that the most natural starting state comes first. Putting `Delivered` first by accident would mean every newly created order starts as delivered.
 
-Returning a memory array from a function uses the type `T[] memory`, as shown in the example. The function caller receives a copy. This is how you produce dynamic-sized result data, for example a list of token IDs owned by an address.
+You can convert between enum values and their underlying integer with an explicit cast:
 
-## Byte arrays
+```solidity
+uint8 statusIndex = uint8(currentStatus);  // explicit downcast to integer
+Status reconstructed = Status(2);          // build a Status from an integer
+```
 
-Byte arrays come in two forms. Fixed-width sizes are `bytes1`, `bytes2`, and so on up to `bytes32`. The dynamic version is just `bytes`.
+The cast in the second line will revert if the integer is out of range for the enum. So `Status(7)` on a four-value enum reverts at runtime. You don't get an undefined value the way you might in C.
 
-The fixed-width forms are exactly what they sound like. `bytes1` is one byte. `bytes32` is 32 bytes, which is exactly the size of an EVM word and the natural size for storing a hash. The reason to use a smaller width is when packing several into one slot together with other small types.
+Solidity stores enum values in a `uint8`, the smallest unsigned integer type. An enum can have at most 256 members, so one `uint8` always holds the value. This makes enums much cheaper to store than the string-typed status fields you'd use in a database schema.
+
+An enum also works as a mapping key:
+
+```solidity
+mapping(Status => uint256) public ordersInState;
+ordersInState[Status.Pending] += 1;
+```
+
+## Byte arrays are fixed-width or dynamic
+
+Fixed-width sizes are `bytes1`, `bytes2`, and so on up to `bytes32`. The dynamic version is `bytes`.
+
+`bytes1` is one byte, and `bytes32` is 32 bytes, which is the size of an EVM word and the natural size for storing a hash. A smaller width is useful when packing several values into one slot together with other small types.
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -205,44 +187,12 @@ contract ByteArrays {
 }
 ```
 
-Dynamic `bytes` is essentially `bytes1[]` but with a more efficient storage layout. It supports `push`, `pop`, `length`, and index access in storage. It's the right type whenever you're handling arbitrary-length raw byte data: hashed pre-images, ABI-encoded payloads, signatures, and similar.
+Dynamic `bytes` is essentially `bytes1[]` but with a more efficient storage layout. It supports `push`, `pop`, `length`, and index access in storage, and indexing returns a single `bytes1`. It's the right type whenever you're handling arbitrary-length raw byte data: hashed pre-images, ABI-encoded payloads, signatures, and similar.
 
-A note on `bytes` versus `string`: they have the same underlying storage layout. The difference is purely semantic. `string` carries the convention that the bytes are valid UTF-8 text. `bytes` carries no such convention. Use `string` when the data is meant to be displayed as text, `bytes` for everything else.
+`bytes` and `string` have the same underlying storage layout. `string` carries the convention that the bytes are valid UTF-8 text, and `bytes` carries no such convention. Use `string` when the data is meant to be displayed as text, `bytes` for everything else.
 
-## Why bytes look like a fix for string length, but aren't
+Casting a string to `bytes` and reading `length` gives the number of bytes, not characters, as the [strings lesson](/courses/development-on-ethereum/solidity-basics/strings-and-addresses) explains. `bytes(unicode"привіт").length` is 12 for 6 Cyrillic letters, because each takes 2 bytes in UTF-8. The `unicode""` literal is required when the string contains non-ASCII characters. Plain `"..."` literals reject them at compile time.
 
-The previous lesson noted that you can cast a string to bytes to get its byte count. The natural follow-up question is whether that byte count is the same as the character count. For ASCII it is. For anything else, it isn't.
+## Check every array you store
 
-```solidity
-// Solidity 0.8.24, Ethereum mainnet
-contract StringLength {
-    function asciiLength() external pure returns (uint256) {
-        bytes memory b = bytes("hello");
-        return b.length;  // returns 5
-    }
-
-    function unicodeLength() external pure returns (uint256) {
-        bytes memory b = bytes(unicode"привіт");  // 6 Cyrillic letters
-        return b.length;  // returns 12, not 6
-    }
-}
-```
-
-The Cyrillic example has 6 visible characters but takes 12 bytes because each Cyrillic letter is 2 bytes in UTF-8. An emoji can take 4 bytes. A flag emoji can take 8.
-
-The takeaway: `bytes(s).length` is the byte count rather than the character count. Use it knowingly. If you need character counts on internationalized text, the answer is to do that work off-chain.
-
-The `unicode""` literal in the example is required when the string contains non-ASCII characters. Plain `"..."` literals reject them at compile time. This is Solidity's way of making you opt into the encoding question.
-
-## Reading individual bytes
-
-You can index into a byte array to pull out a single byte:
-
-```solidity
-function firstByte(bytes memory b) external pure returns (bytes1) {
-    require(b.length > 0, "empty");
-    return b[0];
-}
-```
-
-The return type is `bytes1`, a single byte. You can compare it, convert it to a small integer, or use it in switch-style logic. This is how you'd parse a custom binary format on-chain, though if you find yourself doing that frequently it's usually a sign the format should be redesigned.
+For every array and every `bytes` variable in storage, ask who can make it longer and who pays for a loop over it. If any user can make it longer and some transaction has to loop over all of it, that transaction stops working once the array is long enough.

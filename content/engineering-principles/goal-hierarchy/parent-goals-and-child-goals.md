@@ -32,7 +32,7 @@ faq:
 
 > You already met the **parent goal** and the **child goal** in [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not). Here that pair becomes a method. Trace any design choice up the chain of goals it serves, keep it while it serves the parent, and drop it the moment it serves only a child that has stopped serving the parent.
 
-## Goals stack, and the stack is the point
+## Goals stack several levels deep
 
 Every goal you pursue sits under a bigger one. In a chess game the stack runs from the top down.
 
@@ -41,7 +41,7 @@ Every goal you pursue sits under a bigger one. In a chess game the stack runs fr
 - Build strength on the board.
 - Capture the other player's pieces.
 
-Each lower goal is a child of the one above it. Capturing pieces is worth doing because it usually builds strength, strength usually leads to a winning position, and a winning position wins the game. The goal at the very top, winning, is the only one that matters on its own. Every goal beneath it is a means, and a means is only as good as the end it still serves.
+Each lower goal is a child of the one above it. Capturing pieces is worth doing because it usually builds strength, strength usually leads to a winning position, and a winning position wins the game. The goal at the very top, winning, is the only one that matters on its own. Each link below it holds most of the time, not always. A capture that weakens your own position serves the bottom goal and none of the goals above it.
 
 <svg role="img" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Goals stacked from the parent goal down to a child goal</title><desc>Four goals stacked. Win the game is the parent goal at the top. Below it, reach a winning position, then build strength on the board, then capture pieces, the smallest child goal. Each lower goal points up to the goal it serves. A child goal is worth keeping only while it still serves the parent above it.</desc>
 <defs>
@@ -77,30 +77,30 @@ Each lower goal is a child of the one above it. Capturing pieces is worth doing 
 <text x="360" y="428" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">Trace a child goal up the stack, and keep it only while it still serves the parent.</text>
 </svg>
 
-## When the child goal eats the parent
+## A team enforced commit labels while the main function kept crashing
 
-A team once set out to raise the quality of its code by adopting a commit naming convention. Every saved change had to be labeled by type, a fix, a feature, or a chore. Effort went into agreeing the rule, writing it down, and enforcing it on every change. Meanwhile the same codebase held a piece of fault-intolerant code that crashed the product's main function whenever one optional external API call failed. A call the product did not even need to succeed could take down the part every user depended on.
+A team once set out to raise the quality of its code by adopting a commit naming convention. Every saved change had to be labeled by type, a fix, a feature, or a chore. Effort went into agreeing the rule, writing it down, and enforcing it on every change. Meanwhile the same codebase held a piece of fault-intolerant code that crashed the product's main function whenever one optional external API call failed.
 
-Line the two up. A tidy commit label is a child goal. It serves readable history, which serves a maintainable codebase, which serves a product that keeps working. Fault tolerance, the main function staying up when an optional call fails, sits much closer to that same parent, a product that works. The team spent its effort on the child while the real weakness sat untouched. Optimizing a child goal while the parent goes unserved is the mistake in its plainest form, and it is common because the child goal is the visible, satisfying one to work on.
+A tidy commit label is a child goal. It serves readable history, which serves a maintainable codebase, which serves a product that keeps working. Fault tolerance, the main function staying up when an optional call fails, sits much closer to that same parent, a product that works. The team spent its effort on the child while the real weakness sat untouched. The mistake is common because the child goal is the visible, satisfying one to work on.
 
 ## Trace the chain before you commit
 
-Before you commit to a design choice, name the chain of goals it serves, from the choice itself up to the parent. Then ask two questions. Does this choice serve the parent goal directly? If it does, you are finished. If it does not, it serves some child goal, so ask the second question: does that child goal actually serve the parent, here and now? A child goal that once served the parent can quietly stop, while the choice that serves the child keeps looking productive long after it has stopped mattering.
+Before you commit to a design choice, name the chain of goals it serves, from the choice itself up to the parent, and ask two questions. Does this choice serve the parent goal directly? If it does, you are finished. If it does not, it serves some child goal, so ask the second question: does that child goal serve the parent, here and now? A child goal that once served the parent can quietly stop, while the choice that serves the child keeps looking productive long after it has stopped mattering.
 
 ## Measure the number that decides the outcome
 
-The same trap hides in numbers. You react to a number because it is easy to see, when a different number is the one that decides the result. Someone once argued that a screen had to load its data in small pages, because a single response held twelve thousand items. Twelve thousand sounds like far too much to send at once. But for loading the data, the count was never what mattered. The weight was. Those twelve thousand items came to about 125 kilobytes, a small fraction of one photo already on the same screen, and small enough to arrive in one go with nobody noticing. The loud number was the count. The count was a child of the real question, how fast the data loads. And it was not even the number that answered that question. Before you optimize against a number, check that it is the number that decides the outcome.
+Someone once argued that a screen had to load its data in small pages, because a single response held twelve thousand items. Twelve thousand sounds like far too much to send at once. But how fast the data loads depends on its weight, not on the count. Those twelve thousand items came to about 125 kilobytes, a small fraction of one photo already on the same screen, and small enough to arrive in one go with nobody noticing. The count was a child of the real question, how fast the data loads, and it was not the number that answered that question. Before you optimize against a number, check that it is the number that decides the outcome.
 
 ## Sometimes you give up the child for the parent
 
-Sometimes serving the parent goal means removing something that serves only a child goal. A team keeps an internal dashboard feature that one department uses for a single edge case. The feature is not free to keep. Its presence adds complexity that slows every release of the product's main function, the thing all users depend on. The edge case is a child goal. A fast, reliable main function sits much closer to the parent. Removing the dashboard feature is the hierarchy applied. You give up the child to serve the parent.
+Sometimes serving the parent goal means removing something that serves only a child goal. Suppose a team keeps an internal dashboard feature that one department uses for a single edge case. Keeping it adds complexity that slows every release of the product's main function, the thing all users depend on. The edge case is a child goal, and a fast, reliable main function sits much closer to the parent, so removing the feature is right even though someone relies on it. Cutting a working feature feels like a loss, which is why you trace the chain instead of trusting the feeling.
 
-This is the direction that feels wrong. Cutting a working feature that someone relies on feels like a loss, so the instinct is to keep it and protect the child goal. That instinct is exactly why the check has to be spoken aloud. State the rule plainly. A choice that optimizes a child goal at the cost of the parent is always wrong. The reverse, giving up a child goal to serve the parent, is often right. It often feels wrong, which is why you trace the chain out loud instead of trusting the feeling.
+## Tracing settles an argument only under an agreed parent
 
-## Name the parent out loud
+A stuck design argument is usually two people each holding a different child goal, performance against elegance, coverage against speed, and neither one naming the parent both goals are supposed to serve. Trace both goals up until the chains meet. If they meet at a parent both sides accept, the choices usually sort themselves by how well they serve it.
 
-When you are about to defend a design choice, stop and name the parent goal it is meant to serve, then trace the chain between the two. Most stuck design arguments are two people each holding a different child goal, performance against elegance, coverage against speed, and neither one naming the parent both goals are supposed to serve. Put the parent back on the table, and the choices usually sort themselves by how well they serve it.
+If the chains do not meet, the two sides disagree about what the product is for, and tracing cannot settle that. The method ranks choices under a parent that is already agreed. It does not say which goal should be the parent.
 
 ## Blockchain application
 
-Skip this section if you only want the principle. In a design for signing safety, the parent goal is plain: the person signing a transaction can verify what it will do before they sign. Several features can serve that goal. Showing the balance change a transaction will cause serves it for every transaction. Decoding a known contract's interface serves it only when the contract is one the tool already recognizes. Parsing the raw call data serves it only for the simple cases a human can read. The balance-change display won out, because it serves the parent goal no matter which contract is being called. A rarely-used feature that served only an edge case was removed, because keeping it added complexity to the simple path that serves everyone. That is a real case of giving up a child goal to protect the parent. This design is examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).
+In a design for signing safety, the parent goal is that the person signing a transaction can verify what it will do before they sign. Several features can serve that goal. Showing the balance change a transaction will cause serves it for every transaction. Decoding a known contract's interface serves it only when the contract is one the tool already recognizes. Parsing the raw call data serves it only for the simple cases a human can read. The balance-change display won out, because it serves the parent goal no matter which contract is being called. A rarely-used feature that served only an edge case was removed, because keeping it added complexity to the simple path that serves everyone. That is a real case of giving up a child goal to protect the parent. This design is examined in depth in [ERC-8009: sign the outcome](/courses/development-on-ethereum/clear-signing/erc-8009-sign-the-outcome).

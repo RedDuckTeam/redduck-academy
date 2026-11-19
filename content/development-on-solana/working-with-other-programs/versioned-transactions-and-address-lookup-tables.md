@@ -39,17 +39,11 @@ faq:
 
 A Solana transaction has to fit in a single UDP packet. The maximum packet size is 1,232 bytes, derived from the IPv6 minimum MTU minus protocol headers. That cap covers the entire transaction: signatures, header, account list, recent blockhash, and instruction data combined.
 
-For simple transactions this is plenty. A wallet sending SOL touches three accounts and uses well under 200 bytes. A token transfer with an ATA touches five and uses around 300. But composing DeFi protocols stacks accounts quickly. A single DEX swap easily reaches ten accounts. Routing through three pools brings you to 25. Adding an oracle, a fee account, and a few sysvars puts you near 30, and each account costs 32 bytes.
+A wallet sending SOL touches three accounts and uses about 200 bytes. A token transfer with an ATA touches five and uses around 300. Composed transactions need far more: the [previous lesson](/courses/development-on-solana/working-with-other-programs/composing-programs-in-practice) counted ten accounts for one swap through one pool and 27 for a route split across two DEXes, and each account costs 32 bytes. A multi-hop route can reference 40 or 50 accounts. Add the standard headers, signatures, blockhash, and instruction data, and you run out of room before the route is complete. Before versioned transactions existed, the workaround was to split the route across multiple transactions, which breaks atomicity and adds latency.
 
-Aggregators that route through multiple venues reach this limit quickly. A multi-hop route can reference 40 or 50 accounts. Add the standard headers, signatures, blockhash, and instruction data, and you run out of room before the route is complete. Before versioned transactions existed, the workaround was to split the route across multiple transactions, which breaks atomicity and adds latency.
+## A v0 transaction names an account by an index into a table
 
-## What v0 changed
-
-The wire format gained a version prefix. A specific high-bit byte at the start signals "version 0," and everything after follows the v0 layout. Legacy transactions remain valid forever and follow the older layout without a prefix. The runtime distinguishes them by checking the first byte.
-
-The new layout splits the account list into two parts. The static list contains signers, writable accounts that need to be in the message directly, and the program IDs being called. The second part is a set of references to Address Lookup Tables. Each reference identifies an ALT and lists indices into it, marking some as writable and others as readonly.
-
-At execution time, the runtime resolves the references. It reads each referenced ALT, looks up the pubkeys at the specified indices, and assembles the full account list. Your program sees the same `AccountInfo` array it would have seen in a legacy transaction. The compression is invisible to the on-chain code. It is purely a wire-format optimization.
+The v0 format exists alongside the original one, now called legacy, and splits the account list into two parts. The static list contains signers, writable accounts that need to be in the message directly, and the program IDs being called. The second part is a set of references to Address Lookup Tables (ALTs). Each reference identifies an ALT and lists indices into it, marking some as writable and others as readonly. At execution time, the runtime reads each referenced ALT, looks up the pubkeys at the specified indices, and assembles the full account list. Your program sees the same `AccountInfo` array it would have seen in a legacy transaction.
 
 <svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Byte budget for a 30-account transaction: legacy vs v0 with one ALT</title><desc>Two side-by-side breakdowns compare a legacy transaction listing 30 full pubkeys (about 1,110 bytes, 90% of the 1,232-byte limit) with a v0 transaction using one address lookup table, 5 static pubkeys, and 25 indices (about 370 bytes, 30% of the limit). Both encode the same 30 accounts; the v0 version replaces 25 pubkey copies with 25 one-byte indices, leaving room for hundreds more accounts.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -116,16 +110,14 @@ A single transaction can reference up to four ALTs. Aggregators commonly pull fr
 
 Signed accounts cannot come from an ALT. Signers always live in the static account list, because the runtime has to verify signatures before any account resolution happens.
 
-## What changes for you
-
-For program authors, nothing changes. You write the same handlers, the same Accounts structs, the same CPIs. The runtime resolves ALT references before your handler runs, so by the time your code looks at `ctx.accounts.foo`, the resolution is already done.
-
-For client authors, the change is meaningful. You build a `VersionedTransaction` instead of a `Transaction`, and you supply the list of ALTs you're referencing along with the instruction data. The `@solana/web3.js` SDK handles the encoding once you provide the right inputs. The harder part is deciding which accounts go into the static list versus which can be pulled from an ALT, and whether to create your own ALT or rely on someone else's.
-
 ## When to reach for a lookup table
+
+For program authors, nothing changes. You write the same handlers, the same Accounts structs, the same CPIs.
+
+On the client, you build a `VersionedTransaction` instead of a `Transaction`, and you supply the list of ALTs you're referencing along with the instruction data. The `@solana/web3.js` SDK handles the encoding once you provide the right inputs. The harder part is deciding which accounts go into the static list versus which can be pulled from an ALT, and whether to create your own ALT or rely on someone else's.
 
 Most transactions you build don't need ALTs. They fit in a legacy transaction with room to spare. When you hit the size limit, the first response is to look at the account list and identify items that show up in every transaction your protocol issues: program IDs, common mints, shared authority PDAs, oracle accounts. Those are the right candidates for a protocol-specific ALT.
 
-If you're building a protocol that other clients will compose with, publishing an ALT of your protocol's static addresses is a small investment that saves every integrator some bytes. Production Solana protocols often publish an ALT alongside their deployment for exactly this reason.
+If you're building a protocol that other clients will compose with, publishing an ALT of your protocol's static addresses is a small investment that saves every integrator some bytes. Production Solana protocols often publish an ALT alongside their deployment for this reason.
 
-The mental model is short. A legacy transaction is a list of pubkeys. A v0 transaction is a list of pubkey references, some inline and some by ALT index. The runtime resolves the references before execution, and your program doesn't notice the difference.
+A table shortens only the addresses that are in it. Signers and every address outside a table still take 32 bytes each in the integrator's transaction, so the number of accounts your instruction requires remains a cost for everyone who composes with it, as the previous lesson showed.

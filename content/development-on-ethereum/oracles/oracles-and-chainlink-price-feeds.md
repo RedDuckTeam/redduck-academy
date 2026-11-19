@@ -25,42 +25,36 @@ faq:
       operator goes offline.
 ---
 
-> Smart contracts are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle. This lecture covers what oracles actually are, why they matter for any serious DeFi protocol, how Chainlink's price feed architecture solves the trust problem, and how to consume a feed safely.
+> Smart contracts are sandboxed. They cannot fetch a stock price, call a REST API, or read a database. Anything that comes from outside the chain has to be put on chain by something, and that something is called an oracle.
 
 ## The oracle problem
 
 The EVM is a deterministic state machine. Every node must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement rules out anything that could return different values to different nodes: HTTP requests, random number generators, file system reads, system clocks beyond `block.timestamp`. None of these are available inside Solidity, and no compiler flag will give them to you.
 
-This is a problem because most interesting financial applications depend on real-world data. A lending protocol needs to know what its collateral is worth, in dollars, right now, so it can liquidate undercollateralized loans. A stablecoin needs to know what the dollar is doing to maintain its peg. A derivatives platform needs to know the price of whatever asset its contracts settle against. An insurance contract needs to know whether a flight was delayed, whether a hurricane hit, whether a parametric trigger condition was met.
+This is a problem because most interesting financial applications depend on real-world data. A lending protocol needs to know what its collateral is worth, in dollars, right now, so it can liquidate undercollateralized loans.
 
-None of this data exists on chain natively. The only way to get it there is for someone outside to write a transaction that puts it there. That someone is an oracle.
+This data does not exist on chain natively. The only way to get it there is for someone outside to write a transaction that puts it there. That someone is an oracle.
 
-## What "an oracle" actually is
+## An oracle is a contract and an operator who writes to it
 
-The word makes oracles sound mysterious. They are not. An oracle, mechanically, is two things:
+An oracle is two things:
 
 1. A contract on chain that holds some data in storage.
 2. An off-chain operator who sends transactions that update that storage.
 
-Your contract reads from the oracle contract the same way you read from any other contract: a normal `view` call. The interesting question is not how the read works (it's just a function call), but who you trust to do the writing.
+Your contract reads from the oracle contract the same way you read from any other contract: a normal `view` call. The read is an ordinary function call, so the question that matters is who you trust to do the writing.
 
-That trust question is the entire field. If the operator decides to publish a fake price, your contract has no way to tell. If the operator's infrastructure goes down, your contract reads a stale value. If the operator is compromised, your protocol is compromised. The whole engineering effort around production oracle systems is about reducing how much you have to trust any single party.
+The simplest possible oracle is one contract, one operator. The operator queries one data source, signs a transaction with the result, and writes it on chain. Your contract has no way to check the number it reads, so this oracle fails in three ways:
 
-## Why single-source oracles are dangerous
-
-The simplest possible oracle is one contract, one operator. The operator queries one data source, signs a transaction with the result, and writes it on chain. This works fine for a hobby project. It is unacceptable for anything holding real funds.
-
-Three failure modes break a single-source oracle:
-
-1. **The source is wrong.** Even reputable exchanges have brief glitches. An API returns the price of a different asset for a few seconds. Volume thins out and the last trade is far from fair value. If your oracle pulls from one place, you inherit every glitch from that place.
+1. **The source is wrong.** Even reputable exchanges have brief glitches. An API returns the price of a different asset for a few seconds. Volume thins out and the last trade is far from fair value. If your oracle pulls from one place, you inherit every glitch from that place. A single source can also be moved on purpose. In 2020 Harvest Finance lost $24M because its contracts took the price from a single on-chain market, and an attacker moved that price with borrowed money, as the [flash loans lesson](/courses/development-on-ethereum/oracles/flash-loans) describes.
 2. **The operator is malicious.** A single party with the ability to push any number on chain has every incentive to do so when the payoff is large enough. The history of DeFi exploits includes cases where compromised oracle keys were used to drain protocols of tens of millions of dollars in single transactions.
 3. **The operator goes offline.** The oracle stops updating. Your contract continues to operate using an increasingly stale price. By the time anyone notices, positions that should have been liquidated have moved against the protocol.
 
-Any one of these is enough to lose the entire treasury. Real protocols cannot use a single-source oracle and expect to survive a market move.
+The engineering effort around production oracle systems is about reducing how much you have to trust any single party.
 
-## How Chainlink solves it
+## How Chainlink answers each failure
 
-Chainlink price feeds attack the problem at three independent levels.
+A Chainlink price feed replaces the single source with many exchanges and the single operator with many independent nodes.
 
 <svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Chainlink price feed: data sources, oracle nodes, aggregator, consumer contract</title><desc>Exchanges like Binance, Coinbase, Kraken, and Bitstamp send prices to many independent oracle nodes, which aggregate them off-chain via OCR. The aggregator contract then stores the median price and round metadata on-chain, and the consumer contract reads it through an interface.</desc>
   <defs>
@@ -120,74 +114,27 @@ Chainlink price feeds attack the problem at three independent levels.
   <text x="60" y="454" font-family="monospace" font-size="10" fill="#565653">Gas cost: paid once per update, regardless of how many nodes contributed.</text>
 </svg>
 
+**The source is wrong.** Each node pulls the price from many exchanges, so one exchange that glitches or goes down does not decide the answer.
+
+**The operator is malicious.** Many independent nodes report in parallel, and the feed stores the median of their answers, which is the middle value after sorting. If four nodes report 3,499, 3,500, 3,500 and 3,501 and a fifth reports 1,000,000, the average is 202,800 and the median is still 3,500. As long as fewer than half of the answers are false, the median stays inside the range of the honest ones.
+
+**The operator goes offline.** There is no single operator: many nodes report, and one of them writes the agreed answer. If the feed stops updating anyway, your contract can notice, because every answer carries the time it was written.
+
 The OCR step (Off-Chain Reporting) is the part that matters for cost. Without it, every node would have to write its own answer on chain, paying gas, and your contract would have to read all of them and compute the median itself. OCR lets the nodes do the median calculation off chain via a peer-to-peer protocol, agree on a single answer, and have one of them write that answer to the aggregator in one transaction. The on-chain footprint is a single write per update, regardless of how many nodes participated.
 
-The on-chain side is split into two contracts: an **aggregator** that does the actual storage and verification, and a **proxy** that consumers point at. The proxy address never changes. The aggregator behind it can be swapped out for upgrades. This is why production code always reads from the proxy address rather than the aggregator directly. The full list of proxy addresses per network is on the [supported networks page](https://docs.chain.link/data-feeds/price-feeds/addresses).
+The on-chain side is split into two contracts: an **aggregator** that does the actual storage and verification, and a **proxy** that consumers point at. The proxy address never changes, and the aggregator behind it can be swapped out for upgrades, so production code always reads from the proxy address rather than the aggregator directly. The full list of proxy addresses per network is on the [supported networks page](https://docs.chain.link/data-feeds/price-feeds/addresses).
 
 ## Reading a feed
 
-Consuming a price feed is one interface and one function call. Import the interface from the Chainlink contracts package:
+Consuming a price feed is one interface and one function call. Your contract wraps the feed's proxy address in Chainlink's `AggregatorV3Interface` and calls [`latestRoundData()`](https://docs.chain.link/data-feeds/api-reference). The function returns five values, and most consumers need two of them: `answer`, the price itself, and `updatedAt`, the time the answer was last updated.
 
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+The price comes back as `int256`, not `uint256`, because the interface also serves feeds whose values can legitimately be negative (interest rate differentials, for example). Price feeds for assets like ETH/USD will never return a negative number, but the type allows one, so require `answer > 0` once at the read site. The check makes converting to `uint256` safe, and it catches the edge case where a misconfigured feed reports zero or negative.
 
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+The `answer` returned is an integer, with the decimal point implicit. Each feed has a `decimals()` function that tells you how many digits to interpret as decimals. For ETH/USD, the convention is 8 decimals. If the feed returns `answer = 350000000000`, the actual price is `3500.00000000` USD. To use this in computation alongside an 18-decimal token amount, you have to either scale the price up or scale the token amount down. The typical approach is to multiply the price by `10^10` to bring it to 18-decimal precision. Decimals do not change for a given feed, so if you call `decimals()` once at construction and store it, you avoid one external call on every price read.
 
-contract PriceConsumer {
-    AggregatorV3Interface internal immutable priceFeed;
+## The on-chain price can be stale
 
-    // Sepolia ETH/USD proxy
-    constructor() {
-        priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
-    }
-
-    function getLatestPrice() public view returns (int256) {
-        (
-            /* uint80 roundId */,
-            int256 answer,
-            /* uint256 startedAt */,
-            uint256 updatedAt,
-            /* uint80 answeredInRound */
-        ) = priceFeed.latestRoundData();
-        return answer;
-    }
-}
-```
-
-The [`latestRoundData()`](https://docs.chain.link/data-feeds/api-reference) function returns five values:
-
-- `roundId`: identifier for this round of data
-- `answer`: the price itself, as a signed integer
-- `startedAt`: when the round was first reported
-- `updatedAt`: when the round was last updated
-- `answeredInRound`: deprecated, ignore it
-
-Most consumers only need `answer` and `updatedAt`. The example above ignores everything else for clarity, but production code should always read `updatedAt` (see the staleness section below).
-
-The price comes back as `int256`, not `uint256`. The signed type exists because some feeds report values that can legitimately be negative (interest rate differentials, for example). Price feeds for assets like ETH/USD will never return a negative number, but the interface uses the signed type so it can also serve feeds whose values can be negative.
-
-## Decimals normalization
-
-The `answer` returned is an integer, with the decimal point implicit. Each feed has a `decimals()` function that tells you how many digits to interpret as decimals.
-
-For ETH/USD, the convention is 8 decimals. If the feed returns `answer = 350000000000`, the actual price is `3500.00000000` USD. To use this in computation alongside an 18-decimal token amount, you have to either scale the price up or scale the token amount down. The typical approach is to multiply the price by `10^10` to bring it to 18-decimal precision:
-
-```solidity
-function getEthPriceIn18Decimals() public view returns (uint256) {
-    (, int256 answer, , , ) = priceFeed.latestRoundData();
-    require(answer > 0, "negative or zero price");
-    return uint256(answer) * 1e10;
-}
-```
-
-The `require(answer > 0)` check serves two purposes: it guarantees the value is positive so converting to `uint256` is safe, and it catches the edge case where a misconfigured feed reports zero or negative (which for a USD price feed should never happen). Doing this once at the read site is much cheaper than verifying everywhere downstream.
-
-If you call `decimals()` once at construction and store it, you avoid one external call on every price read. Decimals do not change for a given feed.
-
-## Staleness checks
-
-A feed updates when either the price moves enough or enough time has passed. It does not need both.
+Every update is a transaction that costs gas, so a feed does not write a new price in every block. It updates when either the price moves enough or enough time has passed. It does not need both.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ETH/USD feed update triggers: 0.5% deviation or 1-hour heartbeat</title><desc>A chart plots ETH price against time, comparing the real-world price line to the on-chain feed, which updates in steps. Two boxes explain the triggers: a deviation threshold (price moves more than 0.5% for ETH/USD on mainnet) and a heartbeat interval (maximum 1 hour between updates), and the feed publishes when either one fires first.</desc>
   <defs>
@@ -232,17 +179,25 @@ A feed updates when either the price moves enough or enough time has passed. It 
   <text x="400" y="431" font-family="monospace" font-size="9" fill="#565653">ETH/USD on mainnet: 1 hour</text>
 </svg>
 
-The implication is that the on-chain price can lag the real price for up to a heartbeat interval if the price hasn't moved enough to trigger an update. For ETH/USD on mainnet, that's at most one hour. For less active feeds, heartbeats can be 24 hours or longer.
+For ETH/USD on mainnet the deviation threshold is 0.5% and the heartbeat is one hour. So in normal operation the on-chain price can sit almost 0.5% away from the real price without triggering an update, and it can be up to an hour old if the price hasn't moved enough. For less active feeds, heartbeats can be 24 hours or longer.
 
-This means stale data is a real possibility, even under normal operation. Your contract must validate that the data is recent enough for its purposes:
+This means stale data is a real possibility, even under normal operation. Your contract must validate that the data is recent enough for its purposes. In the code below, `priceFeed` is the feed's proxy typed as `AggregatorV3Interface`, which you import from `@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol`:
 
 ```solidity
 function getValidatedPrice() public view returns (uint256) {
     (, int256 answer, , uint256 updatedAt, ) = priceFeed.latestRoundData();
     require(answer > 0, "invalid price");
-    require(block.timestamp - updatedAt < 3600, "stale price");
+    require(block.timestamp - updatedAt < 1 hours + 10 minutes, "stale price");
     return uint256(answer);
 }
 ```
 
-The exact staleness threshold depends on the feed's heartbeat and your protocol's tolerance. A lending protocol that liquidates on small price moves needs fresher data than a settlement contract that runs once a day. The constant `3600` (one hour) equals the ETH/USD heartbeat. Because an update can arrive slightly after the heartbeat under normal operation, production code usually sets the threshold a little above the heartbeat so a late-but-healthy update is not rejected as stale. Setting it too low causes false reverts during normal operation. Setting it too high lets your protocol act on data that may no longer reflect reality.
+The staleness threshold depends on the feed's heartbeat and your protocol's tolerance. A lending protocol that liquidates on small price moves needs fresher data than a settlement contract that runs once a day. Here the threshold is the one-hour ETH/USD heartbeat plus ten minutes. Because an update can arrive slightly after the heartbeat under normal operation, production code usually sets the threshold a little above the heartbeat so a late-but-healthy update is not rejected as stale. Setting it too low causes false reverts during normal operation. Setting it too high lets your protocol act on data that may no longer reflect reality.
+
+## What you still trust
+
+Chainlink reduces how much you trust any single party, but your contract still trusts the feed as a whole. It trusts that most of the nodes report honestly. It also trusts whoever can swap the aggregator behind the proxy, because a new aggregator can report any number to every contract that reads the proxy.
+
+Chainlink also doesn't have a feed for every asset. For a token without one, the [TWAP lesson](/courses/development-on-ethereum/oracles/twap-oracles) builds a price from an AMM pool.
+
+Before you ship a contract that reads a feed, answer two questions about it. What does the contract do if the price stops updating for longer than the heartbeat? Can it lose money when the real price is a deviation threshold away from the price it read?

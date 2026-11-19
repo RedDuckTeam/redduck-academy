@@ -20,29 +20,11 @@ faq:
       such as arithmetic or OpenZeppelin's ERC-20 transferring correctly.
 ---
 
-> Once a contract is on chain, you can't patch it. The bug that gets through to production is the bug that costs real money. Testing is how working engineers catch bugs before that happens. This lesson teaches you how to write tests for Solidity contracts and, more importantly, how to think about what to test. The voting task that comes next requires you to do this for real.
+> Once a contract is on chain, you can't patch it unless it was built to be [upgradeable](/courses/development-on-ethereum/token-security-and-evm-internals/upgradeable-contracts-and-proxies). The bug that gets through to production is the bug that costs real money.
 
-## The stack we're using and why it doesn't really matter
+## The list of tests comes from the contract's code
 
-This lesson uses **Hardhat 3** with the **viem** library and the **Node.js test runner** (`node:test`). That's one specific stack. There are others. Foundry is Solidity-native and very popular in security audits. Hardhat with ethers.js is the older mainstream JavaScript stack. Truffle still appears in legacy projects. New frameworks will keep appearing. If you join a team they'll have picked one and you'll use what they picked.
-
-What you should take from this lesson is not "how to use Hardhat 3." It's the mental model of testing smart contracts: how to think about what to test, how to structure tests so they're readable, how to set up state, how to assert outcomes, how to manipulate the test environment. That mental model is identical across every framework. The syntax differs but the moves are the same:
-
-- Deploy a contract in test setup
-- Call its functions with controlled inputs
-- Assert that state changed correctly, that the call reverted, or that an event was emitted
-- Reset between tests so failures are isolated
-- Manipulate time and accounts to cover edge cases
-
-Once you internalize these moves with one tool, picking up another is a few hours of reading docs. We picked Hardhat 3 + viem because it's modern, type-safe, and a reasonable default in 2026. Don't memorize the syntax. Internalize the moves.
-
-## Project layout
-
-A Hardhat project has a `contracts/` directory for your Solidity files, a `test/` directory for your test files, and a `hardhat.config.ts` for plugin and compiler configuration. Tests are TypeScript files ending in `.ts`, conventionally named to match the contract they test: `Counter.sol` is tested in `test/Counter.ts`.
-
-## A first test
-
-Let's say `contracts/Counter.sol` is the standard Hardhat sample:
+Take a small contract:
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -66,248 +48,33 @@ contract Counter {
 }
 ```
 
-Here's a test that deploys this contract, calls `inc()`, and asserts the counter went up:
+The obvious first test deploys the contract, calls `inc()`, and checks that `x` is 1. That leaves `incBy`, its `require`, and both `emit` statements unchecked. To get the full list, read the code and write down a test for everything it does.
 
-```typescript
-// test/Counter.ts
-import { describe, it } from "node:test";
-import { network } from "hardhat";
+- **Every state change.** `inc()` adds 1 to `x` and `incBy(by)` adds `by`. Each needs a test that calls the function and reads `x` afterwards. If your contract has a `withdraw` function with three different paths, write three tests.
+- **Every `require` and `revert`.** `incBy(0)` has to revert with `incBy: must be positive`. Without this test, a regression where the `require` check is accidentally removed will pass every other test.
+- **Every event.** Events are part of a contract's observable behavior. `inc()` has to emit `Increment(1)` and `incBy(by)` has to emit `Increment(by)`.
+- **Both sides of every condition.** `by > 0` splits the inputs at zero, so call `incBy(0)`, which must revert, and `incBy(1)`, which must pass. For a deadline, test the call one second before it and the call exactly at it.
+- **Access control.** Every function with `onlyOwner` or a similar guard needs a test confirming non-owners are rejected.
+- **Edge cases.** Zero amounts, maximum values, empty arrays, self-transfers.
+- **The interaction between your contract and others.** If you call into an external token, test that you handle its return value correctly. If you use checks-effects-interactions, test that reentrancy doesn't succeed.
 
-const { viem, networkHelpers } = await network.connect();
+Counter has no access control and no external calls, and zero is the only input its code treats differently, so the first four rules give its whole list.
 
-describe("Counter", function () {
-  it("increments x when inc() is called", async function () {
-    const counter = await viem.deployContract("Counter");
+The list covers your own logic and leaves out code that is not yours. You don't need to test that `1 + 1 == 2`, that Solidity's `uint256` rejects negative numbers, or that OpenZeppelin's ERC-20 implementation handles transfers correctly. That code has been tested by OpenZeppelin and audited extensively.
 
-    await counter.write.inc();
+## The moves are the same in every framework
 
-    const value = await counter.read.x();
-    assert.equal(value, 1n);
-  });
-});
-```
+This lesson uses **Hardhat 3** with the **viem** library and the **Node.js test runner** (`node:test`). Foundry is Solidity-native and very popular in security audits, and Hardhat with ethers.js is the older mainstream JavaScript stack. If you join a team they'll have picked one and you'll use what they picked. The syntax differs but the moves are the same:
 
-A lot is happening here. Walking through it line by line:
+- Deploy a contract in test setup
+- Call its functions with controlled inputs
+- Assert that state changed correctly, that the call reverted, or that an event was emitted
+- Reset between tests so failures are isolated
+- Manipulate time and accounts to cover edge cases
 
-`import { describe, it } from "node:test"` brings in Node's built-in test runner. No external libraries needed for the test structure itself. `describe` groups related tests. `it` defines a single test case. The same `describe`/`it` pattern exists in Mocha, Vitest, Jest, and many other test runners. The names are universal.
+Once you know these moves with one tool, picking up another is a few hours of reading docs.
 
-`import { network } from "hardhat"` brings in Hardhat's network manager. `network.connect()` spins up a fresh simulated Ethereum chain for this test file. The returned object has `viem` for contract interactions and `networkHelpers` for chain manipulation utilities like time travel. The connection happens at file load, outside any `describe` block.
-
-Inside the test, `viem.deployContract("Counter")` deploys a new instance of the Counter contract by name. Hardhat finds the artifact based on the contract name and handles the deployment. The returned `counter` object has typed methods generated from your contract's ABI.
-
-`counter.write.inc()` sends a transaction calling `inc()`. The `.write` namespace is for state-changing functions. It returns a promise that resolves when the transaction is mined.
-
-`counter.read.x()` reads the value of the public state variable `x`. The `.read` namespace is for view/pure functions and public state variable getters. It returns the value directly without sending a transaction.
-
-`assert.equal(value, 1n)` checks that `value` equals `1n`. The `n` suffix makes it a BigInt, which is how viem represents all uint256 values. Arithmetic that mixes a BigInt and a number throws an error, and a strict comparison between them is never equal (`1n === 1` is false), so always compare BigInt to BigInt.
-
-To use `assert.equal` you need one more import: `import assert from "node:assert/strict"`. The `strict` variant uses strict equality with no type coercion, which is what you want.
-
-## describe and it
-
-Both `describe` and `it` take a string description and a callback function.
-
-```typescript
-describe("Counter", function () {
-  describe("inc()", function () {
-    it("increments x by 1", async function () { /* ... */ });
-    it("emits an Increment event with value 1", async function () { /* ... */ });
-  });
-
-  describe("incBy()", function () {
-    it("increments x by the given amount", async function () { /* ... */ });
-    it("reverts when amount is 0", async function () { /* ... */ });
-  });
-});
-```
-
-The test output mirrors this structure as indented headings, which makes failures easier to scan. A good convention: each `it` block tests exactly one behavior. If you find yourself writing "and" in the description like "increments x and emits an event," split it into two tests. Smaller tests fail more informatively.
-
-`describe`/`it` is universal. Foundry uses `setUp()` functions and `test_` prefixed methods in Solidity. Ethers.js with Mocha uses the same `describe`/`it`. Vitest, Jest, Cypress all use it. The structure is portable.
-
-## Read versus write
-
-Viem splits contract interactions into two namespaces: `read` for calls that don't change state, `write` for calls that do.
-
-```typescript
-// Read: no transaction, returns the value directly
-const balance = await token.read.balanceOf([alice.account.address]);
-
-// Write: sends a transaction, returns a transaction hash
-const txHash = await token.write.transfer([bob.account.address, amount]);
-```
-
-This mirrors the Solidity distinction between `view`/`pure` functions and state-changing functions. Public state variables also have automatic getters that go through `.read`. The split is a viem-specific design choice. Ethers.js doesn't split this way and lets you call any function with the same syntax. Both approaches work. Viem's split makes the intent visible at the call site, which catches mistakes earlier.
-
-The `[args]` array syntax for arguments is also viem-specific. Function arguments go in an array, even for single-argument calls: `token.read.balanceOf([alice.account.address])`. This is because viem needs to distinguish positional arguments from the optional options object that comes second.
-
-## Working with multiple accounts
-
-Hardhat's simulated network gives you 20 pre-funded accounts. You access them through wallet clients:
-
-```typescript
-const [deployer, alice, bob] = await viem.getWalletClients();
-```
-
-Each wallet client is associated with an address and has a private key Hardhat uses to sign transactions. The first account (`deployer`) is the default sender for any transaction that doesn't specify otherwise. To send a transaction from a different account, pass it as an option:
-
-```typescript
-await counter.write.inc({ account: alice.account });
-```
-
-This pattern lets you test access control, multi-party flows, and any scenario where the identity of the caller matters. In Foundry the equivalent is `vm.prank(alice)`. In ethers.js it's `contract.connect(alice).inc()`. Same move, different syntax.
-
-## Asserting reverts
-
-A function that's supposed to revert under specific conditions needs a test that confirms it actually reverts. Without this test, a regression where the require check is accidentally removed will pass every other test.
-
-The `viem.assertions` plugin provides revert checkers:
-
-```typescript
-import { describe, it } from "node:test";
-import { network } from "hardhat";
-
-const { viem } = await network.connect();
-
-describe("Counter", function () {
-  it("reverts when incBy is called with 0", async function () {
-    const counter = await viem.deployContract("Counter");
-
-    await viem.assertions.revertWith(
-      counter.write.incBy([0n]),
-      "incBy: must be positive"
-    );
-  });
-});
-```
-
-`revertWith` takes a promise that should reject and asserts both that it rejects AND that the revert reason matches the given string. If the function doesn't revert at all, the test fails. If it reverts with a different message, the test fails. Only the exact match passes.
-
-For custom errors, which your ERC-20 uses, there's `revertWithCustomError`:
-
-```typescript
-await viem.assertions.revertWithCustomError(
-  token.write.transfer([bob.account.address, parseEther("999999")]),
-  token,
-  "InsufficientBalance"
-);
-```
-
-The second argument is the contract whose ABI defines the error. The third is the error name. If the error has arguments, `revertWithCustomErrorArgs` lets you assert those too.
-
-Foundry uses `vm.expectRevert(bytes4 selector)` for the same purpose. Ethers.js uses `await expect(promise).to.be.revertedWithCustomError(contract, "Name")`. Same move.
-
-## Checking events
-
-Events are part of a contract's observable behavior. If your contract is supposed to emit a `Transfer` event when tokens move, the test should verify it does. The assertion plugin handles this:
-
-```typescript
-it("emits Increment with value 1 when inc() is called", async function () {
-  const counter = await viem.deployContract("Counter");
-
-  await viem.assertions.emitWithArgs(
-    counter.write.inc(),
-    counter,
-    "Increment",
-    [1n]
-  );
-});
-```
-
-`emitWithArgs` takes the promise, the contract whose ABI knows the event, the event name, and the expected arguments. If the event isn't emitted, or the args don't match, the test fails.
-
-If you only care that an event was emitted regardless of args, there's `emit`. If you want to check that an event was NOT emitted, there's `notEmit`. For most cases, asserting the exact arguments catches more bugs.
-
-When the assertion plugin isn't expressive enough, you can drop down to the raw events API on the public client:
-
-```typescript
-const publicClient = await viem.getPublicClient();
-const fromBlock = await publicClient.getBlockNumber();
-await counter.write.inc();
-const events = await publicClient.getContractEvents({
-  address: counter.address,
-  abi: counter.abi,
-  eventName: "Increment",
-  fromBlock,
-  strict: true,
-});
-```
-
-This gives you the raw event log objects to inspect however you want. The `fromBlock` filter is important: without it you'll get every Increment event ever emitted by every Counter the test has deployed.
-
-## Manipulating time
-
-Smart contracts often depend on time: voting deadlines, vesting cliffs, lock periods, deadlines for actions. Your tests need to be able to advance the simulated chain's clock to test these behaviors. Without time manipulation, you'd need actual wall-clock time to pass, which is absurd for unit tests.
-
-The `networkHelpers` module has a `time` submodule for this:
-
-```typescript
-const { networkHelpers } = await network.connect();
-
-// Get the current block timestamp
-const now = await networkHelpers.time.latest();
-
-// Mine a block at a specific future timestamp
-await networkHelpers.time.increaseTo(now + 3600); // one hour later
-
-// Mine a block N seconds after the latest block
-await networkHelpers.time.increase(3600);
-```
-
-A complete example testing a time-locked function. Suppose Counter has been extended with a `lockedInc()` that only works after a deadline:
-
-```solidity
-contract Counter {
-    uint256 public x;
-    uint256 public unlockTime;
-
-    constructor(uint256 _unlockTime) {
-        unlockTime = _unlockTime;
-    }
-
-    function lockedInc() external {
-        require(block.timestamp >= unlockTime, "still locked");
-        x++;
-    }
-}
-```
-
-The test for this:
-
-```typescript
-describe("Counter lockedInc", function () {
-  it("reverts before unlockTime", async function () {
-    const future = (await networkHelpers.time.latest()) + 3600;
-    const counter = await viem.deployContract("Counter", [BigInt(future)]);
-
-    await viem.assertions.revertWith(
-      counter.write.lockedInc(),
-      "still locked"
-    );
-  });
-
-  it("succeeds at or after unlockTime", async function () {
-    const future = (await networkHelpers.time.latest()) + 3600;
-    const counter = await viem.deployContract("Counter", [BigInt(future)]);
-
-    await networkHelpers.time.increaseTo(future);
-    await counter.write.lockedInc();
-
-    const value = await counter.read.x();
-    assert.equal(value, 1n);
-  });
-});
-```
-
-The first test confirms the contract correctly rejects calls before the deadline. The second confirms it accepts calls after. Together they prove the time check works in both directions, which is what you'd want to verify before deploying any time-locked contract.
-
-Foundry has `vm.warp(timestamp)` for the same purpose. Ethers.js with `hardhat-network-helpers` has the same `time.increaseTo` since that helper is shared between the JS frameworks.
-
-## Fixtures
-
-Every test so far starts with `const counter = await viem.deployContract("Counter")`. That's a few seconds of setup time multiplied by every test you write. Across a real test suite this adds up to minutes of waiting. There's also a subtler problem: if the setup logic is repeated in every test, eventually some tests drift and their setups disagree. The wrong setup is a common source of false test failures and false test passes.
-
-Fixtures solve both problems. A fixture is a function that sets up the chain to a known state. The first time you call it, it runs. Subsequent calls don't re-run the function. Instead they snapshot-restore the chain to the state after the first run, which is much faster and guaranteed identical.
+## A test deploys the contract, calls it, and asserts on the result
 
 ```typescript
 import { describe, it } from "node:test";
@@ -345,9 +112,33 @@ describe("Counter", function () {
 });
 ```
 
-Three tests, one shared setup. The fixture deploys Counter once. Each test gets a fresh snapshot-restored version, so changes in one test don't bleed into another. This is the pattern you'll see in every production test suite.
+`network.connect()` spins up a fresh simulated Ethereum chain for this test file. The returned object has `viem` for contract interactions and `networkHelpers` for chain manipulation utilities like time travel. `viem.deployContract("Counter")` deploys a new instance of the contract by name, and the returned `counter` object has typed methods generated from your contract's ABI.
 
-Fixtures can do anything: deploy multiple contracts, set up initial balances, advance time, configure permissions. Whatever state every test in a describe block needs, put it in the fixture.
+`counter.write.inc()` sends a transaction calling `inc()`. The `.write` namespace is for state-changing functions, and it returns a promise of the transaction hash. The simulated network mines each transaction as soon as it is sent, so by the time the promise resolves the transaction is already in a block. `counter.read.x()` reads the public state variable `x`. The `.read` namespace is for view/pure functions and public state variable getters, and it returns the value directly without sending a transaction. Function arguments go in an array, even for single-argument calls like `counter.write.incBy([5n])`, because viem needs to distinguish positional arguments from the optional options object that comes second.
+
+In `assert.equal(await counter.read.x(), 1n)` the `n` suffix makes the expected value a BigInt, which is how viem represents all uint256 values. Arithmetic that mixes a BigInt and a number throws an error, and a strict comparison between them is never equal (`1n === 1` is false), so always compare BigInt to BigInt. The `strict` variant of `node:assert` uses strict equality with no type coercion.
+
+`emitWithArgs` takes the promise, the contract whose ABI knows the event, the event name, and the expected arguments. If the event isn't emitted, or the args don't match, the test fails. If you only care that an event was emitted regardless of args, there's `emit`. For most cases, asserting the exact arguments catches more bugs.
+
+`deployCounter` is a fixture, a function that sets up the chain to a known state. The first time you call `loadFixture(deployCounter)`, it runs. Subsequent calls don't re-run the function. Instead they restore the chain to a snapshot taken after the first run, which is much faster and guaranteed identical, so changes in one test don't bleed into another. Without a fixture, every test would start with its own `viem.deployContract("Counter")`. On the simulated network a deployment takes milliseconds, so for Counter the saving is small, and it grows with setups that deploy several contracts and send transactions. There's also a subtler problem: if the setup logic is repeated in every test, eventually some tests drift and their setups disagree, and a wrong setup produces false test failures and false test passes. The shorter listings below deploy the contract inside the test to stay self-contained; in a real suite they would load the fixture.
+
+Each `it` block tests one behavior. If you find yourself writing "and" in the description, like "increments x and emits an event", split it into two tests, because smaller tests fail more informatively. Inside a test, follow the Arrange-Act-Assert pattern. Arrange the state by deploying contracts, transferring tokens, advancing time. Act on the system by calling the function being tested. Assert the result by checking state, checking events, or checking reverts. Tests that mix multiple actions in one block are harder to debug when they fail.
+
+## A second account tests who is allowed to call
+
+Hardhat's simulated network gives you 20 pre-funded accounts. You access them through wallet clients:
+
+```typescript
+const [deployer, alice, bob] = await viem.getWalletClients();
+```
+
+The first account (`deployer`) is the default sender for any transaction that doesn't specify otherwise. To send a transaction from a different account, pass it as an option:
+
+```typescript
+await counter.write.inc({ account: alice.account });
+```
+
+This lets you test access control, multi-party flows, and any scenario where the identity of the caller matters. When every test needs the same accounts and balances, set them up in the fixture:
 
 ```typescript
 async function deployWithVoters() {
@@ -362,34 +153,123 @@ async function deployWithVoters() {
 }
 ```
 
-Then each test that needs voters loads this fixture and receives the accounts and the deployed token it needs. Foundry has the equivalent in `setUp()` functions on test contracts. The concept is universal.
+Each test that needs voters loads this fixture and receives the accounts and the deployed token. A fixture can also advance time or configure permissions. Whatever state every test in a `describe` block needs, put it in the fixture.
 
-## What to test and what not to test
+## A revert test asserts on the failure and on its reason
 
-A common mistake is testing the wrong things. You don't need to test that `1 + 1 == 2`. You don't need to test that Solidity's `uint256` rejects negative numbers. You don't need to test that OpenZeppelin's ERC-20 implementation handles transfers correctly. That code has been tested by OpenZeppelin and audited extensively.
+```typescript
+  it("reverts when incBy is called with 0", async function () {
+    const counter = await viem.deployContract("Counter");
 
-What you DO need to test:
+    await viem.assertions.revertWith(
+      counter.write.incBy([0n]),
+      "incBy: must be positive"
+    );
+  });
+```
 
-- **Your own contract's logic.** Every branch, every revert condition, every state change. If your contract has a `withdraw` function with three different paths, write three tests.
-- **The interaction between your contract and others.** If you call into an external token, test that you handle its return value correctly. If you use checks-effects-interactions, test that reentrancy doesn't succeed.
-- **Edge cases.** Zero amounts. Maximum values. Empty arrays. Self-transfers. The bug you don't write a test for is the one that reaches production.
-- **Access control.** Every function with `onlyOwner` or a similar guard needs a test confirming non-owners are rejected.
-- **Time-dependent behavior.** Both sides of every deadline. The lock before, the lock after.
-- **Failure modes.** Every `revert` and `require` in your contract is a behavior that needs verification.
+`revertWith` takes a promise that should reject and asserts both that it rejects and that the revert reason matches the given string. If the function doesn't revert at all, or reverts with a different message, the test fails.
 
-A reasonable guideline: every line in your contract should be reachable by at least one test, and every conditional branch should be covered by tests for both outcomes. There's a tool for this called code coverage that we'll come back to in a later lesson.
+For custom errors, which your ERC-20 uses, there's `revertWithCustomError`:
 
-The Arrange-Act-Assert pattern is a useful shape for each test. Arrange the state by deploying contracts, transferring tokens, advancing time. Act on the system by calling the function being tested. Assert the result by checking state, checking events, or checking reverts. One clear arrangement, one clear action, one clear assertion. Tests that mix multiple actions in one block are harder to debug when they fail.
+```typescript
+await viem.assertions.revertWithCustomError(
+  token.write.transfer([bob.account.address, parseEther("999999")]),
+  token,
+  "InsufficientBalance"
+);
+```
 
-## What we're not covering yet
+The second argument is the contract whose ABI defines the error. The third is the error name. If the error has arguments, `revertWithCustomErrorWithArgs` lets you assert those too.
 
-Real test suites include patterns we won't touch in this lesson. Some are worth naming briefly so you recognize the words when you encounter them:
+## A deadline is tested from both sides by moving the clock
 
-- **Fuzz testing** runs your test with random inputs to find edge cases you didn't write tests for. Foundry calls it `testFuzz_`. Viem-based projects can use the same pattern.
-- **Invariant testing** asserts properties that should hold across any sequence of operations rather than just specific test scenarios.
-- **Coverage analysis** measures which lines and branches of your contract are exercised by your tests. The output tells you where the gaps are.
-- **Gas profiling and snapshots** track how much gas each function uses across changes to your contract, so optimizations can be measured and regressions caught.
-- **Mocking** replaces external dependencies with stub contracts that return controlled values, useful when testing integrations with oracles or other protocols.
-- **Mainnet forking** runs your tests against a snapshot of mainnet state, so you can test interactions with real deployed contracts like Uniswap or Aave.
+Smart contracts often depend on time: voting deadlines, vesting cliffs, lock periods. A test cannot wait for wall-clock time to pass, so the `time` submodule of `networkHelpers` moves the simulated chain's clock. `time.latest()` returns the current block timestamp, `time.increaseTo(t)` mines a block at timestamp `t`, and `time.increase(n)` mines a block `n` seconds after the latest block. `time.setNextBlockTimestamp(t)` sets the timestamp of the next block without mining it, so the next transaction runs at exactly `t`.
 
-Each of these has its own depth to reach for when a project calls for it. For now, you have enough to write thorough tests for any contract in this course.
+Suppose Counter has been extended with a `lockedInc()` that only works after a deadline:
+
+```solidity
+contract Counter {
+    uint256 public x;
+    uint256 public unlockTime;
+
+    constructor(uint256 _unlockTime) {
+        unlockTime = _unlockTime;
+    }
+
+    function lockedInc() external {
+        require(block.timestamp >= unlockTime, "still locked");
+        x++;
+    }
+}
+```
+
+Its two tests run one second apart, one second before the deadline and exactly at it:
+
+```typescript
+describe("Counter lockedInc", function () {
+  it("reverts one second before unlockTime", async function () {
+    const future = (await networkHelpers.time.latest()) + 3600;
+    const counter = await viem.deployContract("Counter", [BigInt(future)]);
+
+    await networkHelpers.time.setNextBlockTimestamp(future - 1);
+    await viem.assertions.revertWith(
+      counter.write.lockedInc(),
+      "still locked"
+    );
+  });
+
+  it("succeeds exactly at unlockTime", async function () {
+    const future = (await networkHelpers.time.latest()) + 3600;
+    const counter = await viem.deployContract("Counter", [BigInt(future)]);
+
+    await networkHelpers.time.setNextBlockTimestamp(future);
+    await counter.write.lockedInc();
+
+    const value = await counter.read.x();
+    assert.equal(value, 1n);
+  });
+});
+```
+
+The second test sets the next block's timestamp instead of calling `increaseTo(future)`. `increaseTo` mines its own block at `future`, so `lockedInc` would run in the block after it, at least one second late. That version of the test also passes when the `require` uses `>` by mistake, and this one fails.
+
+## Foundry and ethers.js spell the same moves differently
+
+| Move | Hardhat 3 + viem | Foundry | Hardhat + ethers.js |
+| --- | --- | --- | --- |
+| Structure and shared setup | `describe`/`it`, `loadFixture` | `test_` prefixed methods, `setUp()` | `describe`/`it` with Mocha |
+| Call from another account | `{ account: alice.account }` | `vm.prank(alice)` | `contract.connect(alice).inc()` |
+| Expect a revert | `revertWith`, `revertWithCustomError` | `vm.expectRevert(bytes4 selector)` | `expect(promise).to.be.revertedWithCustomError(contract, "Name")` |
+| Move the clock | `time.increaseTo`, `time.setNextBlockTimestamp` | `vm.warp(timestamp)` | the same `time` helpers |
+
+## A unit test checks only the cases you thought of
+
+Suppose a refactor turns `x += by` in `incBy` into `x = by`:
+
+```solidity
+function incBy(uint256 by) external {
+    require(by > 0, "incBy: must be positive");
+    x = by;
+    emit Increment(by);
+}
+```
+
+A test that deploys a fresh Counter, calls `incBy(5)` and expects 5 passes on both versions, because `x` started at zero. That is the test the first rule asks for. This test calls `inc()` first:
+
+```typescript
+  it("adds to a non-zero x", async function () {
+    const counter = await viem.deployContract("Counter");
+    await counter.write.inc();
+    await counter.write.incBy([5n]);
+    assert.equal(await counter.read.x(), 6n);
+  });
+```
+
+It passes on the original Counter and fails on the broken one, where `x` ends at 5 instead of 6. The suite catches this bug only if someone thought to start from a non-zero `x`.
+
+Two techniques look for the cases you did not think of. **Fuzz testing** runs your test with random inputs to find edge cases you didn't write tests for. **Invariant testing** asserts properties that should hold across any sequence of operations rather than just specific test scenarios. Here an invariant such as "`x` equals the sum of all increments so far" fails on the broken version as soon as `incBy` runs on a non-zero `x`, while random values of `by` on a fresh Counter still pass. This lesson does not cover them, and the unit tests above are enough for the contracts in this course.
+
+## Check the suite against the contract
+
+Before you call a suite done, go back to the contract. Every line should be reachable by at least one test, and every conditional branch should be covered by tests for both outcomes. A code coverage tool measures which lines and branches of your contract are exercised by your tests and shows where the gaps are. In the [voting task](/courses/development-on-ethereum/defi-tasks-and-patterns/voting-on-token-price) that comes next you write the tests yourself.

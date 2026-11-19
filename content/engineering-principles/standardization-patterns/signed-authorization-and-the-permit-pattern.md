@@ -34,13 +34,15 @@ faq:
 
 ## The permission you cannot give in person
 
-You want a print shop to fetch one photo from your private cloud storage and print it. Normally you would sign in to the storage provider and grant the shop access from inside your account. But the shop's kiosk has no way to open your account, and you are not standing there to log in for it. The permission is yours to give. The one place it has to take effect, your storage account, is a place you cannot act from at the moment the shop needs it.
+You want a print shop to fetch one photo from your private cloud storage and print it. Normally you would sign in to the storage provider and grant the shop access from inside your account. But the shop's kiosk has no way to open your account, and you are not standing there to log in for it.
+
+The obvious way out is to give the shop your password. A password opens the whole account, not the one photo, and it keeps working until you change it.
 
 ## Consent can travel as a message
 
-The move is to separate the consent from the act of using it. You do not have to be the one who performs the action on the target system. What the system needs is proof that you agreed, and that proof can be a message you sign with your private key. The signature is something only you could produce, and anyone can check it against your public key.
+The move is to separate the consent from the act of using it. What the system needs is proof that you agreed, and that proof can be a message you sign with your private key. The signature is something only you could produce, and anyone can check it against your public key.
 
-So you sign the authorization offline, at no cost, and hand the signed message to whoever will act. That party carries it to the target system and presents it together with the action it permits. The system verifies the signature and, in one step, treats the action as authorized and carries it out. You were never online at that moment. Your agreement arrived ahead of you, inside a message.
+So you sign the authorization offline, at no cost, and hand the signed message to whoever will act. That party carries it to the target system and presents it together with the action it permits. The system verifies the signature and, in one step, treats the action as authorized and carries it out. You do not have to be online when that happens.
 
 <svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Consent authored offline by the signer, then carried by anyone and checked at the target system</title><desc>A left-to-right flow. The signer creates a signed authorization offline at no cost. The authorization is a message binding who is authorized, the exact action, the target system, an expiry, and a one-time anti-replay value. Anyone carries that message to the target system, which verifies the signature and executes the action. The signer is absent when the check and the action happen.</desc>
 <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Consent is authored once, then carried and checked later</text>
@@ -79,32 +81,34 @@ So you sign the authorization offline, at no cost, and hand the signed message t
 <text x="360" y="298" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The signer is offline and absent when the system checks the signature and runs the action.</text>
 </svg>
 
-## A pre-signed URL is exactly this
+## A pre-signed URL carries the consent inside the link
 
-Go back to the photo. Instead of granting the shop access to your whole account, you generate a pre-signed URL for that one image, a link to the single object with a signature attached, valid for a limited time. File storage services such as Amazon S3 provide this directly. You hand the link to the shop. The kiosk opens it, and the signature carried in the link is what the storage service checks before releasing the image. The shop never needed an account, and you never needed to be online when the kiosk fetched the file. The authorization was made in advance and traveled inside the URL.
-
-## The signed cheque, as an illustration
-
-An everyday version, offered only to fix the shape in mind, is a signed cheque. You write it and sign it at home. The person you give it to presents it at the bank days later. The bank does not need you standing there. It verifies your signature on the paper, and that signature is what authorizes the payment. The signer and the moment of use are in different places and different times, joined only by the signed instrument.
+For the photo, instead of granting the shop access to your whole account, you generate a pre-signed URL for that one image, a link to the single object with a signature attached, valid for a limited time. File storage services such as Amazon S3 provide this directly. You hand the link to the shop. The kiosk opens it, and the signature carried in the link is what the storage service checks before releasing the image. The shop never needed an account, because the authorization was made in advance and traveled inside the URL.
 
 ## What a signed authorization has to pin down
 
 A signature by itself only proves who signed. It says nothing about what they meant to allow, and a signature attached to too little can be presented in situations the signer never had in mind. A sound **signed authorization** binds four things and guards against a fifth problem:
 
 - Who is authorized. The specific party allowed to act, so a message meant for one cannot be used by another.
-- What exactly is authorized. The precise action and its limits, so a permission to do one small thing cannot be stretched into a larger one.
+- What is authorized. The precise action and its limits, so a permission to do one small thing cannot be stretched into a larger one.
 - On which system. The exact target, so an authorization for one system cannot be presented on a different one that happens to read the same format.
 - Until when. An expiry, so a grant does not stay live forever waiting to be misused.
 - Not more than once. A guard against replay, usually a one-time value, so the same signed message cannot be presented again to repeat the action.
 
 Leave one of these out and the gap is concrete. With no expiry, an old authorization still works years later. With no target named, a signature meant for a test system can be replayed against the real one. With no replay guard, a single approval can be spent again and again.
 
+## The pre-signed URL pins down three of the five
+
+The pre-signed URL names the action and the system, because the link points at one image in one storage service, and it has an expiry. It does not name who may act, so whoever holds the link can open it, and it carries no one-time value, so the link works again until it expires. The kiosk gets in with no account, and the cost is that until the expiry anyone the link leaks to can fetch the photo.
+
 ## Sign more than your name
 
-When you build or use a signed authorization, treat the signature as the easy part. The work is in what it commits to. Before you sign, make sure the message names who may act, the exact action, the system it is for, and the time it stops being valid. Make sure it can also be used only once. A signature over all of that is a permission you can hand to a stranger and let them carry across time, without it turning into a permission you never meant to give.
+Once you hand a signed message over, it works without you until it expires or its one use is spent, so the limits have to be written into it before you sign. Make sure the message names who may act, the exact action, the system it is for, and the time it stops being valid, and that it can be used only once.
 
 ## Blockchain application
 
-Skip this section if you only want the principle. On many blockchains, letting another party spend your tokens through the standard ERC-20 approval flow takes two transactions: one approve call to grant the allowance, then a transferFrom that spends it. The first has to be sent by the token holder, and sending it requires already holding the chain's native currency to pay for the transaction. EIP-2612, the permit extension, applies signed authorization to remove that burden. The holder signs an approval message offline, and anyone can submit it together with the spend in a single transaction.
+On many blockchains, letting another party spend your tokens through the standard ERC-20 approval flow takes two transactions: one approve call to grant the allowance, then a transferFrom that spends it. The first has to be sent by the token holder, and sending it requires already holding the chain's native currency to pay for the transaction. EIP-2612, the permit extension, applies signed authorization to remove that burden. The holder signs an approval message offline, and anyone can submit it together with the spend in a single transaction.
 
-EIP-712 gives that message its binding structure, so the approval is human-readable and tied to a specific token contract and chain. That covers the who, what, and where from the list above. Only a token that implements EIP-2612 supports this flow, because the token contract itself has to verify the signature. ERC8009's permit router, examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack), builds on this same mechanism.
+EIP-712 gives that message its binding structure, so the approval is human-readable and tied to a specific token contract and chain. That covers the who, what, and where from the list above. The message also carries a deadline and a nonce, which cover the until when and the not more than once. Only a token that implements EIP-2612 supports this flow, because the token contract itself has to verify the signature. ERC-8009's permit router, described in [The core and its routers](/courses/development-on-ethereum/clear-signing/the-core-and-its-routers), builds on this same mechanism.
+
+The signer still has to read what the message commits to. Many wallet drainer attacks have tricked users into signing permits for the maximum value to malicious contracts, as [Gasless approvals](/courses/development-on-ethereum/advanced-defi/gasless-approvals) describes.

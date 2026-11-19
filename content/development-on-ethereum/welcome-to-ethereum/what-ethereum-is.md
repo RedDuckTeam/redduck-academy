@@ -19,59 +19,26 @@ faq:
       No. Every state change it made is undone and the block producer keeps what you spent.
 ---
 
-> Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. Think of Ethereum as a single computer that the entire world shares. Every program written for it runs forever, and no single party can switch the network off.
+> Bitcoin is a network for moving one specific asset. Ethereum is a network for running arbitrary programs that touch any asset. Accounts, gas, and the Ethereum Virtual Machine all follow from that one decision.
 
-## The shape of the thing
+## Ethereum made the opposite trade
 
-You already know what a blockchain is. A network of nodes that hold the same data, agree on what gets added next, and chain blocks together with hashes so nothing can be quietly changed. Bitcoin is one chain built on that idea, optimised for one job: moving its native coin around securely.
+Bitcoin keeps its scripting minimal so the protocol stays small, the security argument stays simple, and the surface area for bugs stays narrow. A Bitcoin script has no loops and no state of its own, and it only decides whether a coin may be spent. The lesson on [what Bitcoin gave up](/courses/blockchain-basics/bitcoin/what-bitcoin-gave-up-and-what-it-gained) covered this choice.
 
-Ethereum starts from the same architecture and asks for more: arbitrary state, and arbitrary programs that touch that state. Same gossip network, same consensus mechanism conceptually, same hash-linked blocks. The protocol just makes room for a lot more to live on the chain.
+On Ethereum anyone can deploy a program, called a **smart contract**, to an address on the chain. The program keeps its own data between calls, can hold funds, can call other contracts, and runs whenever a transaction calls it. Once deployed, the code stays at that address for as long as the chain runs, and no one else can change it or take it down. The one historical exception is selfdestruct: for years a contract could erase its own code with that operation, though a later change to the protocol has since removed almost all of its effect.
 
-The way to picture this: imagine a single global computer. It has memory, storage, and a CPU. Anyone can read its state. Anyone can submit a request to change its state, as long as they pay for the work. The computer runs the request, updates its state, and the change is permanent. There is no operator, no admin, no off-switch. The whole computer is replicated across thousands of machines worldwide that all agree on what the state currently is.
+A token is the simplest example. It is a contract that stores a table of balances and changes two entries on every transfer. A Uniswap V2 pool, covered in the [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm), is a contract that holds two tokens and lets anyone swap one for the other at a price set by a formula.
 
-That picture is what people mean when they call Ethereum the "world computer." It's a useful shorthand, even if it leaves out a lot of detail.
+## What arbitrary programs force on the protocol
 
-## What lives on it
+As on any blockchain, every node executes every transaction, and all nodes have to end up with the same state. Arbitrary programs raise three problems for such a network, and each one is solved by a mechanism that has its own lesson in the next module.
 
-Two kinds of things have addresses on Ethereum and can hold state.
+**A program's data needs a place to live between calls.** Bitcoin's state is a set of unspent coins, and a set of coins has nowhere to put a program's table of balances. So Ethereum's state is a set of accounts. A user account is controlled by a private key. A contract account is controlled by its code and has storage of its own. More in [the account model](/courses/development-on-ethereum/how-ethereum-works/the-account-model).
 
-The first is a regular user account, called an **externally owned account** or EOA. It's controlled by a private key, exactly like a Bitcoin address. You sign transactions with the key to spend your ETH or call a smart contract (the second account type, described next). EOAs hold a balance of ETH and a counter called a nonce. Nothing else.
+**A program with loops may never stop.** A node cannot tell in advance whether it will. So every operation costs some amount of a unit called **gas**, and the sender pays for gas in ETH, Ethereum's native coin. A transaction brings a limited amount of gas, and when the gas runs out, execution stops and every change the transaction made is undone. More in [contracts and gas](/courses/development-on-ethereum/how-ethereum-works/contracts-and-gas).
 
-The second is a **smart contract** account. It's controlled by code rather than a private key. When a contract is created, its code gets deployed to a new address on the chain. That code stays at that address for as long as the chain runs, and no one else can change it or take it down. The one historical exception is selfdestruct: for years a contract could erase its own code with that operation, though a later change to the protocol has since removed almost all of its effect. Anyone can send a transaction to a contract's address. When they do, the contract's code runs. It can read and write its own storage, send ETH around, and call other contracts. The result of the code's execution becomes part of the global state.
+**Every node has to compute the same result.** So contracts run on the **Ethereum Virtual Machine**, or EVM. The EVM exists only as a specification that every node implements, and the same code with the same input gives the same result on every node. Dozens of other chains adopted the same specification and are called EVM-compatible, so what you learn in this course carries over to them with small variations. More in [the EVM lesson](/courses/development-on-ethereum/how-ethereum-works/the-evm).
 
-The state of Ethereum at any moment is the combined state of every account, EOA and contract, that has ever existed on the chain. Balances, nonces, contract code, contract storage. Every node holds this state, updates it as new blocks arrive, and rejects any block whose transactions don't transition the state correctly.
+## The price is a larger protocol and more room for bugs
 
-## What you pay for and why
-
-Running code on a global shared computer is not free. Every operation a contract performs costs something. Adding two numbers is cheap. Writing to storage is expensive. Reading from storage is somewhere in the middle.
-
-The unit of cost is called **gas**. Every transaction declares a maximum amount of gas it's willing to consume, and a price it's willing to pay per unit. The fee paid is gas-used × gas-price, denominated in ETH. The fee goes to whoever produces the block that includes the transaction, with a portion burned out of circulation since 2021.
-
-Gas exists for two reasons. First, computation on every full node has to be paid for or the network gets spammed. Second, gas bounds execution. A transaction cannot run forever because it cannot consume more gas than it brought with it. When the gas runs out, the transaction is reverted, the state changes it made are undone, and the gas spent so far is kept by the producer as the cost of the attempt.
-
-ETH is also what most values on Ethereum are denominated in. New ETH enters circulation as block rewards to validators. Combined with the fee burn mentioned above, this means the total supply can rise or fall rather than only growing.
-
-## What you can do that you couldn't do with Bitcoin
-
-The point of the smart-contract layer is that you can put logic on the chain that anyone can interact with and that runs by its own rules forever.
-
-Some examples of what's been built:
-
-- Tokens that aren't ETH, with their own balances and rules
-- Stablecoins pegged to fiat
-- Decentralised exchanges where users swap tokens without an exchange company holding their funds
-- Lending markets where deposits earn yield and borrows post collateral
-- Governance systems where token holders vote on parameter changes that the chain applies automatically
-- Identity records, ownership records, on-chain games, prediction markets
-
-The common thread: anything that can be expressed as a program whose rules are public and whose execution cannot be censored.
-
-None of this is possible on Bitcoin's protocol, by design. Bitcoin keeps its scripting minimal so the protocol stays small, the security argument stays simple, and the surface area for bugs stays narrow. Ethereum made the opposite trade. It accepted a much larger protocol and a much bigger bug surface in exchange for being able to host programs that look like real applications. You will see the cost of this trade as you learn what can go wrong in smart contracts, but you will also see what it unlocks.
-
-## Where this fits
-
-Ethereum is one specific design for a smart-contract chain among many. Solana, Aptos, Sui, Sei, Avalanche, BNB Chain, and many others are also smart-contract chains, each with different choices about account models, consensus, gas pricing, throughput, and developer experience.
-
-Ethereum matters disproportionately for two reasons. It got there first as a general-purpose smart-contract chain, which is why the design vocabulary the whole industry uses is mostly Ethereum's. And it's where the most valuable applications live by a wide margin: at the time of writing, hundreds of billions of dollars sit in contracts on Ethereum or on chains that copied Ethereum's execution model. Those copies are what people mean when they say "EVM-compatible." When you learn Ethereum, you learn a model that runs on dozens of other chains too, with small variations.
-
-The chain you'll actually write code for in this course is Ethereum. The patterns you learn will transfer, with some adjustment, to the rest of the EVM world. The deeper differences with non-EVM chains like Solana belong to a separate track.
+In exchange for hosting programs that look like real applications, Ethereum accepted a much larger protocol and a much bigger bug surface. A bug in a contract is a bug in a program that holds funds, that anyone can call, and whose code cannot be changed. In 2016 an attacker used a bug in one contract, The DAO, to move about 3.6 million ETH out of it. The [next lesson](/courses/development-on-ethereum/welcome-to-ethereum/where-ethereum-came-from) shows what the network did about it.

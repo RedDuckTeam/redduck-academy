@@ -33,13 +33,21 @@ faq:
       type-length-value tail, so several extensions can sit on one account.
 ---
 
-> The classic SPL Token Program covers about ninety-five percent of what most projects need. The remaining five percent led to a second token program, deployed alongside the original, that supports the same conceptual model with optional behaviors layered on top. Token-2022 lets a mint opt into features like transfer fees, transfer hooks, frozen-by-default accounts, interest-bearing balances, and on-mint metadata. The base model is unchanged. The new capabilities sit in a tagged area on each mint and each token account, activated only when the mint creator chooses them. The real work is knowing which extensions exist, when to reach for them, and what they cost in ecosystem compatibility.
+> Token-2022 is a second token program, deployed alongside the original, in which a mint can switch on optional behaviors called extensions. For a program that accepts a token it did not issue, an extension can change what a transfer of that token does.
+
+## A token on Solana has no contract of its own
+
+On Ethereum every token is its own contract, and the issuer writes what a transfer does. A token that inherits OpenZeppelin's `ERC20` can override one internal function to add pausing, blacklisting, or a fee on every transfer ([ERC-20 lesson](/courses/development-on-ethereum/token-security-and-evm-internals/what-is-erc-20)).
+
+On Solana a token is a Mint account owned by the Token Program, and the same program moves the balances of every token ([SPL Token lesson](/courses/development-on-solana/working-with-other-programs/the-spl-token-program-in-practice)). An issuer who wants a fee on every transfer has no code of their own in that path. The behavior has to be built into the shared program, as an option that each mint switches on or leaves off.
+
+Token-2022 is built this way. For logic it does not have built in, one extension, the transfer hook, makes it call a program of the issuer's choice during every transfer.
 
 ## Token-2022 is the same model with an extensions slot
 
 Token-2022 is a separate program from classic SPL Token. It has its own program ID (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`), its own on-chain accounts, and its own deployed bytecode. It does not supersede classic SPL Token. Both programs run side by side on mainnet. Each new mint is created under one program or the other, and the choice is permanent.
 
-What makes Token-2022 worth understanding is the relationship between the two programs. The Mint and TokenAccount struct shapes are the same. The four core instructions, Transfer, MintTo, Burn, and CloseAccount, work identically. The three authority concepts, mint authority, freeze authority, and token account owner, mean the same thing. If you perform a routine token operation against a Token-2022 mint, the code looks almost identical to the same operation against a classic SPL mint.
+The Mint and TokenAccount struct shapes are the same, and the four core instructions and the three authorities from the SPL Token lesson work the same way.
 
 The difference shows up in two places. Token-2022 mints and token accounts can carry a tail of extension data after the standard fields, in a format called TLV, short for type-length-value, that lets several extensions coexist on one account. And Token-2022 exposes extension-specific instructions on top of the standard ones, for things like setting transfer fee rates or withdrawing accumulated fees.
 
@@ -95,11 +103,11 @@ The difference shows up in two places. Token-2022 mints and token accounts can c
   <text x="360" y="555" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Same Mint/TokenAccount shape, same instructions, same authorities. Extensions are appended.</text>
 </svg>
 
-You can think of Token-2022 as the same library with optional feature flags. The base case is identical to classic SPL. The flags add capabilities, each one a small piece of behavior built into the mint at creation time. Once a flag is set, it's set for the life of the mint. There's no upgrade path that adds extensions to an existing classic SPL mint. You have to mint under Token-2022 from the start to have any extensions at all.
+An extension is switched on when the mint is created, and it stays for the life of the mint. There's no upgrade path that adds extensions to an existing classic SPL mint. Extensions can stack, so a single mint can carry a transfer fee, an interest-bearing rate, and metadata, all at once. Most extensions are immutable once set. Others let the issuer change parameters later through a configured authority.
 
-## Five extensions worth knowing
+## An extension can change what your program can assume about a transfer
 
-Token-2022 has more than a dozen extensions, and new ones land in the program over time. Five of them cover most of the cases real protocols reach for.
+Token-2022 has more than a dozen extensions, and new ones land in the program over time. The issuer picks them, and your program meets them when a user deposits the token. The diagram shows five of them the way the issuer sees them.
 
 <svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Five Token-2022 extensions: Transfer Fee, Transfer Hook, Interest-Bearing, Default Account State, Metadata</title><desc>Four boxes arranged in a 2x2 grid describe the Transfer Fee, Transfer Hook, Interest-Bearing, and Default Account State extensions, each with what it does, who controls it, and a use case. A fifth box below covers on-mint Metadata, and a footer note says extensions are chosen at mint creation and can be immutable or controlled by an authority.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -154,67 +162,23 @@ Token-2022 has more than a dozen extensions, and new ones land in the program ov
   <text x="360" y="600" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Extensions are chosen at mint creation. Some are immutable once set, others have a configured authority.</text>
 </svg>
 
-The **transfer fee** extension takes a percentage cut on every transfer, specified in basis points where one basis point equals 0.01%, and routes it into a hidden balance on each token account. The mint's withdraw-withheld authority can periodically harvest the accumulated fees from many accounts at once and consolidate them into a single destination. This is the on-chain equivalent of a sales tax: it applies to every transfer regardless of which dApp or wallet initiated it, with no way for senders or receivers to avoid it. Royalty tokens and protocol-fee tokens are the obvious uses. Less obviously, projects that wanted to fund a treasury automatically without trusting any single dApp to remit fees now have a way to do it at the token layer.
+The **transfer fee** extension takes a percentage cut on every transfer, specified in basis points where one basis point equals 0.01%, and withholds it in a hidden balance on the destination token account. The mint's withdraw-withheld authority collects the withheld fees later. The fee applies to every transfer regardless of which dApp or wallet initiated it, with no way for senders or receivers to avoid it.
 
-The **transfer hook** extension is the most powerful and the most disruptive. When a transfer happens, the Token-2022 program performs a CPI into a program of the mint creator's choice, passing details about the transfer. The hook program can run arbitrary validation logic before the transfer is allowed to complete. This enables compliance gates, such as allowing transfers only between accounts on an approved list. It enables custom royalty enforcement, like requiring a royalty payment alongside any NFT-like transfer. It enables audit trails, where every transfer is logged to an on-chain analytics PDA. The problem is that every protocol downstream of the token needs to know how to invoke the hook with the right accounts, which makes transfer-hooked tokens incompatible with most existing infrastructure.
+So less arrives than was sent. Take a mint with a 2% fee, which is 200 basis points. A user deposits 100 tokens into your vault. The vault's balance grows by 98, and the other 2 are withheld for the withdraw-withheld authority. If the handler credits the user with the 100 it passed to the transfer, the vault owes 100 and holds 98. After a second deposit of 100 it owes 200 and holds 196. The first user's withdrawal takes 100 out of the vault, and the second user, who is also owed 100, finds 96 left. A program that accepts such a mint has to credit what arrived, which is the change in the vault's balance, and not the amount it asked to transfer.
 
-The **interest-bearing** extension changes how balances are displayed, while keeping the underlying account data static. The raw `amount` field in a token account never changes due to interest. But when a client or program calls the program's `amount_to_ui_amount` instruction, the result includes accrued interest at a configurable rate stored on the mint. The clean way to think about this: the mint exposes a function from raw amount and current time to display amount, and clients are expected to use that function. A yield-bearing stablecoin can be implemented without ever actually moving balances around. Holders see their displayed balance increase, and the mint's supply function computes the implied total.
+The **transfer hook** extension makes the Token-2022 program perform a CPI into a program of the mint creator's choice on every transfer, passing details about the transfer. The hook program can run arbitrary validation logic before the transfer is allowed to complete. An issuer can use it to allow transfers only between accounts on an approved list, to require a royalty payment alongside a transfer, or to keep its own records current, the way Fragmetric's hook updates the holder's reward balance at the moment of the transfer ([lazy loading](/courses/solana-pro/cost-distribution/lazy-loading)).
 
-The **default account state** extension makes new token accounts start in the frozen state automatically. Anyone can call `InitializeAccount` to create the token account, but the resulting account can't send or receive tokens until the freeze authority explicitly unfreezes it. This gives token issuers a built-in onboarding gate. Real-world-asset tokens often need to verify KYC before letting a wallet hold the asset. Without this extension, you'd have to track approval off-chain and rely on every distribution path to check it. With the extension, the chain enforces the gate.
+For your program a hook means two things. A program you did not write runs in the middle of every transfer your program makes, and it can reject the transfer. The hook program also needs accounts of its own. Every account a transaction touches has to be declared up front ([instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions)), so the client that calls your program has to bring the hook's extra accounts, and your program has to pass them on in the transfer CPI. Most existing infrastructure does not do this, and many production protocols refuse hooked tokens to keep their integration surface small.
 
-The **metadata** extension lets a mint carry name, symbol, and URI directly, removing the need for a separate account in the Metaplex Token Metadata program. The shape is simpler, the lookup is faster, and the cost is lower. For new projects starting on Token-2022, this is usually preferable to setting up a metadata account in another program. For existing tokens already using Metaplex, the cost of migration usually outweighs the simplification.
+The **default account state** extension makes new token accounts start in the frozen state automatically. Anyone can call `InitializeAccount` to create the token account, but the resulting account can't send or receive tokens until the freeze authority explicitly unfreezes it. Real-world-asset tokens often need to verify KYC before letting a wallet hold the asset, and with this extension the chain enforces that gate. The vault token account your program creates for such a mint starts frozen too, so deposits into it fail until the issuer's freeze authority unfreezes it.
 
-Extensions can stack. A single mint can carry a transfer fee, an interest-bearing rate, and metadata, all at once. The decision is per-extension at mint creation. Most extensions are immutable once set. Others let you change parameters later through a configured authority.
+The other two extensions in the diagram do not change how tokens move. The **interest-bearing** extension keeps the raw `amount` field in a token account static and changes only the display value: the program's `amount_to_ui_amount` instruction returns the amount with interest accrued at a configurable rate stored on the mint. A program that keeps all its accounting in raw amounts is unaffected, and code that compares raw amounts with display amounts gets wrong results. The **metadata** extension lets a mint carry name, symbol, and URI directly, removing the need for a separate account in the Metaplex Token Metadata program.
 
-## Choosing between classic SPL and Token-2022
+## Extensions cost compatibility
 
-The decision rule is simpler than the menu of options suggests.
+Classic SPL Token has been the standard for years, and wallets, DEXes, aggregators, and indexers assume it. Token-2022 has been growing in support since 2023, but the picture is uneven. Most tools handle the base case: a Token-2022 mint with no extensions behaves like a classic SPL mint, and most software gets that right. Extensions are where the breakage happens, because each behavior in the previous section is a case that software written for classic SPL does not handle.
 
-<svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Choosing classic SPL Token vs Token-2022 for your mint</title><desc>A flowchart asks if your mint needs extensions like transfer fees, transfer hooks, interest-bearing balances, default-frozen accounts, or on-mint metadata. A yes answer points to Token-2022, a no answer points to classic SPL Token, and a checklist below reminds you to test DEX, wallet, indexer, and transfer hook support before shipping a Token-2022 mint.</desc>
-  <defs>
-    <marker id="arrS45cR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
-    </marker>
-  </defs>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Which program should your mint use?</text>
-  <rect x="160" y="85" width="400" height="80" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="108" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Do you need one of these behaviors?</text>
-  <text x="360" y="128" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">transfer fees, transfer hooks, interest-bearing,</text>
-  <text x="360" y="142" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">default-frozen accounts, on-mint metadata</text>
-  <line x1="220" y1="167" x2="220" y2="200" stroke="#ed4937" stroke-width="2" marker-end="url(#arrS45cR)"/>
-  <text x="180" y="190" font-family="monospace" font-size="10" font-weight="bold" fill="#ed4937">yes</text>
-  <line x1="500" y1="167" x2="500" y2="200" stroke="#ed4937" stroke-width="2" marker-end="url(#arrS45cR)"/>
-  <text x="510" y="190" font-family="monospace" font-size="10" font-weight="bold" fill="#ed4937">no</text>
-  <rect x="40" y="205" width="350" height="100" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <rect x="40" y="205" width="350" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="215" y="224" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Token-2022 is your only option</text>
-  <text x="55" y="252" font-family="monospace" font-size="10" fill="#565653">enable just the extensions you need</text>
-  <text x="55" y="268" font-family="monospace" font-size="10" fill="#565653">at mint creation. base behavior is</text>
-  <text x="55" y="284" font-family="monospace" font-size="10" fill="#565653">identical to classic SPL.</text>
-  <rect x="410" y="205" width="270" height="100" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="410" y="205" width="270" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="545" y="224" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">Use classic SPL Token</text>
-  <text x="425" y="252" font-family="monospace" font-size="10" fill="#565653">simpler, universally supported,</text>
-  <text x="425" y="268" font-family="monospace" font-size="10" fill="#565653">battle-tested. the default for</text>
-  <text x="425" y="284" font-family="monospace" font-size="10" fill="#565653">almost every new token.</text>
-  <rect x="40" y="345" width="640" height="170" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <rect x="40" y="345" width="640" height="28" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="364" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffffff" font-weight="bold">before shipping a Token-2022 mint, check this</text>
-  <text x="60" y="392" font-family="monospace" font-size="10">→ does the major DEX you're targeting handle the extensions you picked?</text>
-  <text x="60" y="412" font-family="monospace" font-size="10">→ does the wallet your users will use display Token-2022 balances correctly?</text>
-  <text x="60" y="432" font-family="monospace" font-size="10">→ does your indexer or analytics pipeline decode Token-2022 accounts?</text>
-  <text x="60" y="452" font-family="monospace" font-size="10">→ if you use transfer hooks, are downstream protocols ready to call them?</text>
-  <text x="60" y="482" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">transfer fees and transfer hooks break naive integrations the most.</text>
-  <text x="60" y="500" font-family="monospace" font-size="10" fill="#ed4937" font-weight="bold">test against every system your token will touch.</text>
-  <text x="360" y="555" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Pick Token-2022 for capability. Pick classic SPL for compatibility. Most projects pick the latter.</text>
-</svg>
-
-The ecosystem-support caveat deserves a paragraph of its own. Classic SPL Token has been the standard for years. Every wallet, every DEX, every aggregator, every indexer, every analytics dashboard assumes it. Token-2022 has been growing in support since 2023, but the picture is uneven. Most tools handle the base case: a Token-2022 mint with no extensions behaves identically to classic SPL, and most software gets that right. Extensions are where the breakage happens.
-
-Transfer fees are the most common source of integration bugs because a transfer that withholds a fee changes the amount that lands at the destination. Naive code that says "send 100 USDC and assume 100 USDC arrives" breaks. Transfer hooks are the most disruptive because every program downstream of a hooked token needs to know how to invoke the hook with the right extra accounts, and many production protocols simply refuse hooked tokens to keep their integration surface small. Default-frozen accounts cause initialization flows to fail at the unfreeze step if the dApp doesn't know to wait. Interest-bearing balances confuse code that compares raw amounts versus display amounts inconsistently.
-
-The solution is the same in all cases: test against every system your token is going to touch. If you're issuing a Token-2022 mint, verify the major wallets show it correctly, verify the DEXes you're targeting will list it, verify your own indexers decode the right fields. The capabilities are real and valuable. The compatibility cost is also real.
+So if you issue a mint yourself, classic SPL remains the right default. If you need a specific extension, Token-2022 is the only option, and you have to test against every system your token is going to touch: the major wallets, the DEXes you're targeting, and your own indexers.
 
 ## `token_interface`: writing programs that handle both
 
@@ -230,21 +194,46 @@ pub struct Deposit<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
+    #[account(mint::token_program = token_program)]
     pub mint: InterfaceAccount<'info, Mint>,
 
-    #[account(mut, token::mint = mint, token::authority = user)]
+    #[account(
+        mut,
+        token::mint = mint,
+        token::authority = user,
+        token::token_program = token_program,
+    )]
     pub user_ata: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }
 ```
 
-The `Interface<'info, TokenInterface>` accepts either the classic SPL Token Program or the Token-2022 program. The runtime resolves which one the mint belongs to and routes the CPI accordingly. Your handler doesn't need to branch.
+The `Interface<'info, TokenInterface>` accepts either the classic SPL Token Program or the Token-2022 program, and the client decides which one goes in the slot. A `transfer_checked` CPI goes to whatever program is in `token_program`, and if that program does not own the mint, the CPI fails inside it. The constraints `mint::token_program = token_program` and `token::token_program = token_program` check during validation that the mint and the token account are owned by the program in the slot, so a client that pairs a classic mint with Token-2022 fails with `ConstraintMintTokenProgram` before the handler runs. With those checks in place, your handler doesn't need to branch on the token program.
 
-A meaningful change in the API is that `token_interface` exposes `transfer_checked` rather than `transfer`. The "checked" version requires you to pass the mint and the expected decimals as part of the call, and the Token Program verifies the values match. This protects against bugs where the wrong mint or wrong decimals got plumbed through, and it's the recommended pattern for any new code regardless of which token program you're targeting. Classic SPL also has `transfer_checked`. The reason older code tends to use plain `transfer` is just historical inertia.
+In `token_interface` the plain `transfer` is deprecated in favor of `transfer_checked`. The "checked" version requires you to pass the mint and the expected decimals as part of the call, and the Token Program verifies the values match. This protects against bugs where the wrong mint or wrong decimals got plumbed through, and it's the recommended pattern for any new code regardless of which token program you're targeting. Classic SPL also has `transfer_checked`. The reason older code tends to use plain `transfer` is historical inertia.
 
-For a program author choosing between `token` and `token_interface`: pick `token_interface` for any new program that might encounter Token-2022 mints, which is most new programs. Pick `token` only if you're certain you'll never need to work with Token-2022, which usually means you're targeting a specific known mint that's classic SPL.
+Choosing between `token` and `token_interface` decides which mints can reach your handler. A program built on `anchor_spl::token` accepts only classic SPL mints, so it never meets an extension. A program built on `token_interface` accepts Token-2022 mints as well, and with them transfer fees, hooks, and accounts that start frozen. Pick `token_interface` for any new program that might encounter Token-2022 mints, which is most new programs. Pick `token` only if you're certain you'll never need to work with Token-2022, which usually means you're targeting a specific known mint that's classic SPL.
 
-## Which token program to build on
+A program built on `token_interface` can still refuse the extensions it was not written for. The mint lists its extensions in its TLV tail, and the handler can read their types with the Token-2022 crate and fail on any type that is not on its own list. Here the list holds only the two metadata extensions:
 
-Token-2022 is the same program with a feature-flag layer for behaviors classic SPL can't express. The conceptual model from your earlier work with classic SPL carries over directly. The new things are the extensions, the slightly different program ID, and the unified `token_interface` shim for writing programs that handle both. For most projects most of the time, classic SPL remains the right default. For projects that need a specific extension, Token-2022 is the only option, and the right next step is checking that the ecosystem support is sufficient before committing. Once you have deployed a mint under either program, the day-to-day operations of moving tokens around, signing as PDAs, creating ATAs, and burning supply, all work the same way.
+```rust
+use anchor_spl::token_2022::spl_token_2022::{
+    extension::{BaseStateWithExtensions, ExtensionType, StateWithExtensions},
+    state::Mint as MintState,
+};
+const ALLOWED: [ExtensionType; 2] = [ExtensionType::MetadataPointer, ExtensionType::TokenMetadata];
+
+let mint_info = ctx.accounts.mint.to_account_info();
+let mint_data = mint_info.try_borrow_data()?;
+let mint = StateWithExtensions::<MintState>::unpack(&mint_data)?;
+for ext in mint.get_extension_types()? {
+    require!(ALLOWED.contains(&ext), VaultError::UnsupportedMint);
+}
+```
+
+A classic SPL mint has no TLV tail, so it passes with an empty list. A mint with a transfer fee, a transfer hook, or the default account state extension fails, and so does a mint with an extension added to Token-2022 after the program was written.
+
+## Three questions before your program accepts Token-2022 mints
+
+What does the program record when 100 tokens are sent and 98 arrive? Who brings the hook program's accounts, and what happens to your users when the hook rejects a transfer? What happens when the token account your program creates starts frozen? Until the program has an answer to each of them, build it on `anchor_spl::token`, which accepts only classic SPL mints, or refuse those extensions with a check like the one above.

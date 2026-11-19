@@ -32,44 +32,33 @@ faq:
       right hook reverts on purpose, so tokens do not get trapped.
 ---
 
-> You just deployed an ERC-20. The fungible model fits a lot of things: stablecoins, governance tokens, points systems, anything where one unit of a token is interchangeable with any other. But it doesn't fit unique items. There's no way for a single ERC-20 contract to say "Alice owns this specific token and Bob owns that one." For that you need a different shape. This lesson covers the two standards that fill the gap: ERC-721 for unique tokens, and ERC-1155 for many token types in one contract. It walks through how each one stores ownership, what they're good at, and how to pick between them.
+> An ERC-20 contract stores a balance per address, so it has no way to say "Alice owns this specific token and Bob owns that one." ERC-721 stores an owner per token id. ERC-1155 stores a balance per id and holder, and the other two are special cases of it.
 
-## The shape problem ERC-20 doesn't fit
+## ERC-20 stores how many, not which one
 
-ERC-20's storage model is one mapping: address to balance. That's enough to represent fungible value, where every unit of the token is interchangeable. If Alice has 500 USDC and sends 100 to Bob, her balance goes to 400 and Bob's goes up by 100. The contract doesn't need to know which 100 units moved because they're identical.
+ERC-20's storage model is one mapping, `mapping(address => uint256)`: address to balance. That's enough to represent fungible value, where every unit of the token is interchangeable. If Alice has 500 USDC and sends 100 to Bob, her balance goes to 400 and Bob's goes up by 100. The contract doesn't need to know which 100 units moved because they're identical.
 
-This breaks the moment you want tokens to be individually addressable. A digital painting. A specific land parcel in a virtual world. A loan position with a specific collateral lockup. Each of these has its own identity. You can't represent them as balance amounts because the question isn't "how many" but "which one."
+This breaks the moment you want tokens to be individually addressable. A Uniswap V3 liquidity position is one example. Each position has its own price range, so two positions in the same pool are not interchangeable, and V3 issues every position as an ERC-721 token (the [Uniswap V3 lesson](/courses/development-on-ethereum/advanced-defi/uniswap-v3) covers them). A digital painting or a land parcel in a virtual world is another. You can't represent them as balance amounts because the question isn't "how many" but "which one."
 
 ## ERC-721: one id, one owner
 
-The core idea of ERC-721 is that each token has a unique 256-bit ID, and the contract tracks which address owns each ID at any given moment. The mapping is the inverse of ERC-20's. Instead of address to balance, it's id to address.
+ERC-721 inverts the mapping. Each token has a unique 256-bit ID, and the contract stores `mapping(uint256 => address)`, the address that owns each ID.
 
-When Alice mints token 42, the contract sets `ownerOf(42) = alice`. When she transfers it to Bob, the contract sets `ownerOf(42) = bob`. There's never a question of "how much of token 42" because there's exactly one of token 42 by construction. The supply is one.
+When Alice mints token 42, the contract sets `ownerOf(42) = alice`. When she transfers it to Bob, the contract sets `ownerOf(42) = bob`. There's never a question of "how much of token 42" because there's exactly one of token 42 by construction.
 
-A contract usually represents one collection of related tokens.
-
-The standard's interface in code:
+The core of the standard's interface:
 
 ```solidity
-// Solidity 0.8.24, Ethereum mainnet
 interface IERC721 {
     function balanceOf(address owner) external view returns (uint256);
     function ownerOf(uint256 tokenId) external view returns (address);
     function safeTransferFrom(address from, address to, uint256 tokenId) external;
-    function transferFrom(address from, address to, uint256 tokenId) external;
     function approve(address to, uint256 tokenId) external;
     function setApprovalForAll(address operator, bool approved) external;
-    function getApproved(uint256 tokenId) external view returns (address);
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
-    function tokenURI(uint256 tokenId) external view returns (string memory);
-
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 }
 ```
 
-A few things to notice. `balanceOf` exists, but it returns a count of how many tokens this address owns rather than the IDs themselves. There's no built-in way to ask "what tokens does Alice own?" The optional `ERC721Enumerable` extension adds that, but it costs storage gas on every mint and transfer to maintain the index.
+The mapping goes from id to owner, so the contract can answer "who owns token 42" but not "what tokens does Alice own?" `balanceOf` exists, but it returns a count of how many tokens this address owns rather than the IDs themselves. The optional `ERC721Enumerable` extension adds the list, but it costs storage gas on every mint and transfer to maintain the index.
 
 `tokenURI(tokenId)` returns a URI pointing at the token's metadata. The metadata is typically a JSON document at that URI, hosted off-chain or on IPFS. ERC-721's convention is one URI per token. That gives you per-token flexibility but means most production contracts implement a base URI plus a tokenId suffix to avoid storing thousands of strings on chain.
 
@@ -77,43 +66,30 @@ A few things to notice. `balanceOf` exists, but it returns a count of how many t
 
 ## ERC-1155: many ids, balances per holder
 
-ERC-1155 generalizes the model. Each tokenId has its own balance mapping, and one contract can hold many tokenIds. The storage layout looks like a two-dimensional table: id by holder, with the cell value being how many of that id this holder owns.
+Take a game with gold pieces, swords, and potions. Gold is fungible, so it needs an ERC-20 contract. A unique sword needs an ERC-721 contract. A potion that exists in 50 identical units is awkward in both. As an ERC-721 it becomes 50 separate ids for 50 interchangeable items, and as an ERC-20 every potion type needs a contract of its own. Moving a player's inventory to another address then takes a separate transaction for each of those contracts and for each unique item.
 
-When you mint 1,000,000 of token 1 to Alice, the contract sets `balances[1][alice] = 1000000`. When you mint 1 of token 42 to her, it sets `balances[42][alice] = 1`. Both ids live in the same contract. Both follow the same storage shape.
+ERC-1155 keeps both dimensions in one mapping, `mapping(uint256 => mapping(address => uint256))`. Each tokenId has its own balance mapping, and one contract can hold many tokenIds. The storage layout looks like a two-dimensional table: id by holder, with the cell value being how many of that id this holder owns.
 
-This unlocks two things. First, a single contract can represent many different token types simultaneously. A game with gold pieces, swords, and potions doesn't need three contracts. Second, the standard was designed from the start with batch operations in mind. You can mint a hundred different ids in one transaction. You can transfer twenty ids worth of inventory from one address to another in one transaction. The fixed gas cost of a transaction gets amortized across all of them.
+When you mint 1,000,000 of token 1 to Alice, the contract sets `balances[1][alice] = 1000000`. When you mint 1 of token 42 to her, it sets `balances[42][alice] = 1`. Both ids live in the same contract and follow the same storage shape, so the game doesn't need three contracts. The standard was also designed from the start with batch operations in mind: you can transfer twenty ids worth of inventory from one address to another in one transaction.
 
-The interface:
+The core of its interface:
 
 ```solidity
-// Solidity 0.8.24, Ethereum mainnet
 interface IERC1155 {
     function balanceOf(address account, uint256 id) external view returns (uint256);
-    function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory);
     function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
     function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;
     function setApprovalForAll(address operator, bool approved) external;
-    function isApprovedForAll(address account, address operator) external view returns (bool);
-    function uri(uint256 id) external view returns (string memory);
-
-    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
-    event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values);
-    event ApprovalForAll(address indexed account, address indexed operator, bool approved);
-    event URI(string value, uint256 indexed id);
 }
 ```
 
-Three differences from ERC-721 worth highlighting.
+`balanceOf` takes both an account and an id. It returns the holder's balance of that specific id. As with ERC-721, there's no method that returns a list of all ids the holder has. The standard expects clients to discover ids off-chain through the `TransferSingle` and `TransferBatch` event logs.
 
-`balanceOf` takes both an account and an id. It returns the holder's balance of that specific id. As with ERC-721, there's no method that returns a list of all ids the holder has. The standard expects clients to discover ids off-chain through event logs.
+The `uri(id)` function returns a URI for the token's metadata, similar to ERC-721's `tokenURI`. The returned string can contain the literal substring `{id}`, which wallets, marketplaces, and indexers replace with the token id in lowercase hex, padded to 64 characters, before fetching, so a metadata server of your own has to accept ids in that form. This lets one URI template serve all ids in the contract.
 
-There's no per-id approval. ERC-1155 has only `setApprovalForAll`. If you want a marketplace to be able to sell any of your items, you grant operator approval. There's no equivalent of `approve(spender, tokenId)` for a single id. This simplifies the standard but means you can't grant fine-grained per-id permissions.
+ERC-1155 has no `name()` or `symbol()`, because a single contract might hold many unrelated token types. OpenZeppelin's `ERC1155` also doesn't track total supply per id unless you include the `ERC1155Supply` extension.
 
-The `uri(id)` function returns a URI for the token's metadata, similar to ERC-721's `tokenURI`. The convention is that the returned string can contain the literal substring `{id}`, which clients substitute with the lowercase hex token id padded to 64 characters. This lets one URI template serve all ids in the contract.
-
-## Storage shapes side by side
-
-The clearest way to see the difference between the three standards is to look at their storage layouts together.
+## ERC-20 and ERC-721 are special cases of ERC-1155
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-20, ERC-721, and ERC-1155 storage layouts compared</title><desc>Three side-by-side panels show each standard's balanceOf/ownerOf mapping with sample data. ERC-20 maps address to balance (no token identity), ERC-721 maps token id to owner (one owner per id), and ERC-1155 maps id and holder together to a balance (many ids in one contract).</desc>
   <rect x="20" y="30" width="210" height="36" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -168,51 +144,7 @@ ERC-20 stores balances per holder, with no concept of token identity. ERC-721 st
 
 The other side of this is gas cost. ERC-721's mapping is shallower, so reads and writes are slightly cheaper than ERC-1155's nested mapping. The difference is small, but for high-frequency operations it can add up. ERC-1155 trades that small per-write cost for the structural benefits of batch operations.
 
-## Batch operations
-
-This is the central feature ERC-1155 added that ERC-721 doesn't have. The standard ships with `safeBatchTransferFrom`, and the OpenZeppelin implementation adds `_mintBatch` and `_burnBatch` internal functions. All three take arrays of ids and amounts and process them in a single transaction.
-
-<svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-721 three separate transferFrom calls vs ERC-1155 one batch transaction</title><desc>ERC-721 needs three separate transactions, each calling transferFrom with one token id, so base transaction overhead is paid three times. ERC-1155 moves the same tokens with a single safeBatchTransferFrom call carrying arrays of ids and amounts, paying that overhead only once.</desc>
-  <rect x="20" y="20" width="680" height="32" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">ERC-721: three separate transactions</text>
-  <rect x="20" y="52" width="680" height="130" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="40" y="74" width="200" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="140" y="92" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 1</text>
-  <line x1="56" y1="100" x2="224" y2="100" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="140" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">transferFrom(</text>
-  <text x="140" y="132" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, 42)</text>
-  <rect x="260" y="74" width="200" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="92" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 2</text>
-  <line x1="276" y1="100" x2="444" y2="100" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="360" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">transferFrom(</text>
-  <text x="360" y="132" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, 43)</text>
-  <rect x="480" y="74" width="200" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="580" y="92" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 3</text>
-  <line x1="496" y1="100" x2="664" y2="100" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="580" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">transferFrom(</text>
-  <text x="580" y="132" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, 44)</text>
-  <text x="360" y="166" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">base transaction overhead paid three times</text>
-  <rect x="20" y="210" width="680" height="32" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="232" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">ERC-1155: one batch transaction</text>
-  <rect x="20" y="242" width="680" height="130" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <rect x="40" y="264" width="640" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="282" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 1</text>
-  <line x1="56" y1="290" x2="664" y2="290" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="360" y="308" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">safeBatchTransferFrom(</text>
-  <text x="360" y="322" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, [42, 43, 44], [1, 1, 1], "")</text>
-  <text x="360" y="356" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">base transaction overhead paid once</text>
-  <text x="360" y="392" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">ERC-1155 folds many token movements into a single transaction.</text>
-</svg>
-
-Why this matters. Every Ethereum transaction has a base cost of 21,000 gas, regardless of what it does. On top of that you pay for whatever the transaction's code consumes. If you're transferring three NFTs from Alice to Bob using ERC-721, you pay 21,000 base gas three times, plus the per-transfer execution cost. With ERC-1155's batch transfer, you pay the base cost once.
-
-The savings scale with batch size. Three transfers saves a meaningful amount. Twenty transfers saves close to half. A hundred transfers saves enough that batched and unbatched are different orders of magnitude. For projects that distribute large numbers of tokens, like game item drops, airdrops to thousands of wallets, or marketplace settlement of dozens of trades, this difference is real money.
-
-Batch operations also give you atomicity. With three separate ERC-721 transfers, any one could revert independently. The first two might succeed and the third might fail, leaving you in a half-applied state. ERC-1155's batch is one transaction. Either all the transfers happen or none do. For game item bundles where partial fulfillment would corrupt the user's inventory, this matters.
-
-## The three flavors of tokenId
-
-ERC-1155 is sometimes described as supporting fungible, non-fungible, and semi-fungible tokens. This is true, but it isn't a feature the contract enforces. It's a property that emerges from how many of each id you mint.
+ERC-1155 is sometimes described as supporting fungible, non-fungible, and semi-fungible tokens. The contract doesn't enforce any of the three. The label follows from how many of each id you mint.
 
 <svg role="img" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>GameItems ERC-1155 table: fungible, non-fungible, and semi-fungible token ids</title><desc>A table lists three token ids from the GameItems ERC-1155 contract: id 1 GOLD with supply 1,000,000 held by Alice, Bob, Carol and more (fungible); id 42 SWORD_OF_DAWN with supply 1 held only by Alice (non-fungible); and id 99 POTION_LE with supply 50 held by Alice, Bob, Dave, and Eve (semi-fungible). A caption explains that all three ids share the same balances mapping, so the fungible, non-fungible, or semi-fungible label depends only on total supply.</desc>
   <rect x="20" y="20" width="680" height="36" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -251,38 +183,62 @@ ERC-1155 is sometimes described as supporting fungible, non-fungible, and semi-f
   <text x="360" y="346" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">Fungibility in ERC-1155 emerges from supply alone.</text>
 </svg>
 
-A tokenId with a supply in the millions, spread across many holders, behaves like a fungible token. The id might be in-game currency or a stablecoin equivalent. Holders care about the total amount they hold rather than which units they hold.
+A tokenId with a supply in the millions, spread across many holders, behaves like a fungible token. That is GOLD in the table. SWORD_OF_DAWN has a supply of one and is non-fungible, because only one address can hold it at a time. POTION_LE has a supply of 50 and is semi-fungible: the 50 units are interchangeable within their id but distinct from other ids. The contract has no idea which category an id falls into. It stores `balances[id][holder]` for all of them, and the same code path that moves your gold can move your sword.
 
-A tokenId with a supply of exactly one is non-fungible. There's only one of it in existence, and only one address can hold it at a time. The id might be a unique artifact, a one-of-a-kind item, a deed.
+## One batch transaction moves many ids
 
-A tokenId with a supply of, say, 50, is semi-fungible. The 50 units are interchangeable within their id but distinct from other ids. The id might be a limited-edition item, a ticket tier, a serialized bundle of consumables.
+ERC-1155 ships with `safeBatchTransferFrom`, which ERC-721 doesn't have, and the OpenZeppelin implementation adds `_mintBatch` and `_burnBatch` internal functions. All three take arrays of ids and amounts and process them in a single transaction.
 
-The contract has no idea which category an id falls into. It stores `balances[id][holder]` for all of them. The same code path that moves your gold can move your sword. The same event gets emitted. From the contract's perspective there are just ids with balances.
+<svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-721 three separate transferFrom calls vs ERC-1155 one batch transaction</title><desc>ERC-721 needs three separate transactions, each calling transferFrom with one token id, so base transaction overhead is paid three times. ERC-1155 moves the same tokens with a single safeBatchTransferFrom call carrying arrays of ids and amounts, paying that overhead only once.</desc>
+  <rect x="20" y="20" width="680" height="32" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">ERC-721: three separate transactions</text>
+  <rect x="20" y="52" width="680" height="130" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <rect x="40" y="74" width="200" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="140" y="92" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 1</text>
+  <line x1="56" y1="100" x2="224" y2="100" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="140" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">transferFrom(</text>
+  <text x="140" y="132" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, 42)</text>
+  <rect x="260" y="74" width="200" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="92" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 2</text>
+  <line x1="276" y1="100" x2="444" y2="100" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="360" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">transferFrom(</text>
+  <text x="360" y="132" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, 43)</text>
+  <rect x="480" y="74" width="200" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="580" y="92" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 3</text>
+  <line x1="496" y1="100" x2="664" y2="100" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="580" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">transferFrom(</text>
+  <text x="580" y="132" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, 44)</text>
+  <text x="360" y="166" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">base transaction overhead paid three times</text>
+  <rect x="20" y="210" width="680" height="32" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="232" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">ERC-1155: one batch transaction</text>
+  <rect x="20" y="242" width="680" height="130" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <rect x="40" y="264" width="640" height="68" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="282" text-anchor="middle" font-family="monospace" font-size="11" fill="#000000" font-weight="bold">tx 1</text>
+  <line x1="56" y1="290" x2="664" y2="290" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="360" y="308" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">safeBatchTransferFrom(</text>
+  <text x="360" y="322" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">alice, bob, [42, 43, 44], [1, 1, 1], "")</text>
+  <text x="360" y="356" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">base transaction overhead paid once</text>
+  <text x="360" y="392" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">ERC-1155 folds many token movements into a single transaction.</text>
+</svg>
+
+Every Ethereum transaction has a base cost of 21,000 gas, regardless of what it does. On top of that you pay for whatever the transaction's code consumes. If you're transferring three NFTs from Alice to Bob using ERC-721, you pay 21,000 base gas three times, 63,000 in total, plus the per-transfer execution cost. With ERC-1155's batch transfer, you pay the base cost once. The batch of three saves 42,000 gas of base cost, and every further token in the batch saves another 21,000.
+
+A batch is also atomic. With three separate ERC-721 transfers, any one could revert independently. The first two might succeed and the third might fail, leaving you in a half-applied state. ERC-1155's batch is one transaction, so either all the transfers happen or none do. A bundle of game items needs that, because partial fulfillment would corrupt the user's inventory.
+
+## What safe transfers and operator approvals cost
+
+Both standards have a `safeTransferFrom` variant that calls a hook on the receiving contract. ERC-721 calls `onERC721Received`, and ERC-1155 calls `onERC1155Received` or `onERC1155BatchReceived`. If the recipient is a contract that doesn't implement the right hook, the transfer reverts. That prevents tokens from being trapped in contracts that have no logic to handle them.
+
+The hook is an external call. During the transfer the token contract runs the recipient's code, and that code can call back into the contract that started the transfer. If your contract makes a safe transfer before it has finished updating its own state, it has the bug from the [reentrancy lesson](/courses/development-on-ethereum/token-security-and-evm-internals/reentrancy-and-denial-of-service). The defenses are the same: update state before the call, and add a reentrancy guard.
+
+`setApprovalForAll` is the same trade as the unlimited allowance in the [ERC-20 lesson](/courses/development-on-ethereum/token-security-and-evm-internals/what-is-erc-20). The operator can move every token the owner holds in that contract at any time, so a vulnerability in the operator contract, or an approval given to the wrong address, loses all of them. ERC-721 lets you narrow the grant to one token with `approve`. ERC-1155 has only `setApprovalForAll`, so revoking access from a single item means revoking the entire operator's authority.
 
 ## Picking between them
 
-The decision is usually clear from the project's shape.
+You want ERC-721 when each token has its own identity and the project is one collection of similar but distinct items, such as a PFP project, a 1-of-1 art piece, or a registry of named items. The per-id metadata is the point. You also want it when on-chain enumeration of "what does this address own" matters, since the `ERC721Enumerable` extension gives you that.
 
-You want ERC-721 when each token genuinely has its own identity and the project is one collection of similar but distinct items. A PFP project. A 1-of-1 art piece. A registry of named items. The per-id metadata is the point. You also want it when on-chain enumeration of "what does this address own" matters, since the `ERC721Enumerable` extension gives you that.
+You want ERC-1155 when you have multiple token types from the start, or when batch operations are part of the design. That covers game inventories with currencies, weapons, and consumables, event ticketing where different tiers are different ids but tickets within a tier are interchangeable, airdrops where you'll be doing many transfers at once, and multi-asset marketplaces where one contract needs to handle a long tail of token types.
 
-You want ERC-1155 when you have multiple token types from the start, or when batch operations are part of the design. Game inventories with currencies, weapons, and consumables. Event ticketing where different tiers are different ids but tickets within a tier are interchangeable. Airdrops where you'll be doing many transfers at once. Multi-asset marketplaces where one contract needs to handle a long tail of token types.
+Some projects use both: a flagship ERC-721 collection for the headline assets, with an ERC-1155 alongside for accessories, consumables, or fractional editions.
 
-Some projects use both. A flagship ERC-721 collection for the headline assets, with an ERC-1155 alongside for accessories, consumables, or fractional editions. They compose fine within a single dApp.
-
-The choice is rarely about gas alone. For a small collection with infrequent transfers, the savings from ERC-1155's batch operations don't matter. For a high-volume project, they matter a lot. The deeper question is whether your tokens are best modeled as "a registry of unique items" or "balances across many item types." Pick whichever sentence describes your project.
-
-## Things to know before deploying
-
-A few practical points that are easy to miss on a first deployment.
-
-**ERC-1155 has no ****`name()`**** or ****`symbol()`****.** The standard doesn't include them. ERC-721 inherited them from ERC-20 because the early NFT ecosystem assumed every collection had a single human-readable name. ERC-1155 doesn't, because a single contract might hold many unrelated token types. Some implementations add `name()` and `symbol()` as optional extensions, but you can't rely on them being present.
-
-**The ****`{id}`**** URI substitution is a client-side convention.** The contract returns the URI string as-is, including the literal `{id}` placeholder. Wallets, marketplaces, and indexers substitute the hex-encoded tokenId before fetching. If you serve metadata from your own backend, make sure your endpoint handles the substituted form.
-
-**Receiver hooks are required for safe transfers.** Both standards have a `safeTransferFrom` variant that calls a hook on the receiving contract. ERC-721 calls `onERC721Received`. ERC-1155 calls `onERC1155Received` or `onERC1155BatchReceived`. If the recipient is a contract that doesn't implement the right hook, the transfer reverts. This is intentional. It prevents tokens from being trapped in contracts that have no logic to handle them.
-
-**Operator approval is the only delegation in ERC-1155.** There's no per-id approve. If a marketplace wants to list any of your items, you grant operator approval over the whole contract. Revoking access from a single item means revoking the entire operator's authority. Plan UX around this.
-
-**OpenZeppelin's ****`ERC1155`**** doesn't track per-id total supply by default.** The `ERC1155Supply` extension adds it. If you need to query "how many of id X exist," include the extension. Without it, total supply is something you'd have to compute off-chain from `TransferSingle` and `TransferBatch` events.
-
-ERC-721 and ERC-1155 are different shapes for representing tokens that aren't pure ERC-20 balances. ERC-721 is a registry of unique items, one id per owner, with rich per-token metadata. ERC-1155 is a general balances table indexed by both id and holder, designed for batch operations and multi-token contracts. The right choice follows from what your tokens look like in code. If you're unsure, sketch the storage layout in pseudocode before picking the standard.
+The choice is rarely about gas alone. For a small collection with infrequent transfers, the savings from ERC-1155's batch operations don't matter. If you're unsure, sketch the storage layout in pseudocode before picking the standard, and ask which sentence describes your tokens: "a registry of unique items" or "balances across many item types."

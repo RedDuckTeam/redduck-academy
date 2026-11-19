@@ -29,15 +29,15 @@ faq:
       `address(0)`. A `Balance` entry with the zero address as its token constrains native ETH.
 ---
 
-> The one thing a transaction cannot hide is what it does to your balances. ERC-8009 is built on that. You route your transaction through a single, known proxy contract and hand it the balance changes you require. The proxy makes your call, then checks those balances on-chain, and reverts the whole transaction if they did not hold. Because the numbers it checks are the same numbers a hardware wallet can read from the proxy's own interface, the screen shows you what the chain will enforce, so the two cannot disagree.
+> The one thing a transaction cannot hide is what it does to your balances, and ERC-8009 is built on that. You route your transaction through a single, known proxy contract and hand it the balance changes you require. The proxy makes your call, then checks those balances on-chain, and reverts the whole transaction if they did not hold. Because the numbers it checks are the same numbers a hardware wallet can read from the proxy's own interface, the screen shows you what the chain will enforce, so the two cannot disagree.
 
 ## Sign the outcome instead of the call
 
-You already have the question that catches the attacks a decoder misses: what will this transaction do to my balances? A decoder cannot answer it, because naming a function does not tell you the funds it moves. ERC-8009 answers it directly, by making the balance changes part of the transaction itself.
+The [previous lesson](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack) ended on a question that a decoder cannot answer: what will this transaction do to my balances? ERC-8009 answers it directly, by making the balance changes part of the transaction itself.
 
-Apply that question to the Bybit transaction. It moved no balances at all, even though the signers believed they were sending ETH to a hot wallet. A screen that showed "0 ETH moved" against an expected transfer is a screen that makes the signer stop and reject. A transaction that shows no change when you expect one is a transaction you reject.
+Apply that question to the Bybit transaction. It moved no balances at all, even though the signers believed they were sending ETH to a hot wallet. A screen that showed "0 ETH moved" against an expected transfer is a screen that makes the signer stop and reject.
 
-## How the proxy works
+## The proxy makes the call, then checks your balances
 
 ERC-8009 is a single contract, deployed once per network, that you route your transaction through. It keeps no persistent state and needs no permission to use: it holds no funds between transactions, and anyone can route a call through the one canonical deployment each network has. Instead of calling your target contract directly, you call the proxy and hand it two things: the call you want made, and the **balance changes you require** from it.
 
@@ -65,10 +65,9 @@ The proxy then runs a fixed sequence.
   <text x="400" y="420" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">exact balance changes the device showed you, so the screen and the chain cannot disagree.</text>
 </svg>
 
-A revert costs you only gas. The declared changes are the whole safety property: if the call does anything other than what you required of your balances, step 4 throws it away.
+If the call does anything other than what you required of your balances, step 4 throws it away, and a revert costs you only gas.
 
 ```solidity
-// Solidity 0.8.24, Ethereum mainnet
 interface IBalanceProxy {
     // token == address(0) means native ETH.
     // For diffs, balance is a signed minimum change: the actual change must be at least this.
@@ -95,7 +94,7 @@ You state each requirement as a minimum. A requirement of `+2,800 USDC` means th
 
 ## Where the numbers on the screen come from
 
-A hardware wallet could never read the target contract's interface, because for a new contract it does not have one. That was the whole reason it fell back to a hash. The proxy removes that dependency. It has a fixed, well-known address and a fixed interface on every network, so the device can decode the proxy's own arguments straight from an interface it always knows. Your balance requirements are ordinary arguments to that interface. The device reads the token's address from those same arguments, and for a token it recognizes it shows the symbol and formats the amount using the token's decimals. That is how it can print `2,800 USDC` instead of a raw integer.
+A hardware wallet could never read the target contract's interface, because for a new contract it does not have one, which is why it fell back to a hash. The proxy removes that dependency. It has a fixed, well-known address and a fixed interface on every network, so the device can decode the proxy's own arguments straight from an interface it always knows. Your balance requirements are ordinary arguments to that interface. The device reads the token's address from those same arguments, and for a token it recognizes it shows the symbol and formats the amount using the token's decimals. That is how it can print `2,800 USDC` instead of a raw integer.
 
 <svg role="img" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What a hardware wallet shows for the same transaction under ERC-8009 clear signing</title><desc>The device screen no longer shows raw calldata. It shows the guaranteed balance changes decoded from the proxy's own parameters: ETH changes by at least minus 1.00, meaning spend at most 1 ETH, and USDC changes by at least plus 2,800.00, meaning receive at least 2,800 USDC. A line states the proxy enforces these on-chain and reverts the transaction if the real change is worse.</desc>
 
@@ -141,10 +140,6 @@ A hardware wallet could never read the target contract's interface, because for 
 
 ## The display and the enforcement are the same numbers
 
-This is what separates ERC-8009 from a smarter decoder. A decoder shows you a prediction. If the prediction is wrong, or the device is tricked, the transaction still runs. ERC-8009 shows you the balance changes and enforces those same numbers on-chain. The figures on the screen are the figures the contract requires. If the real result comes out worse than the screen said, the transaction reverts and you lose only gas.
+A decoder shows you a prediction. If the prediction is wrong, or the device is tricked, the transaction still runs. ERC-8009 shows you the balance changes and enforces those same numbers on-chain, so a transaction you route through it has two possible endings. Either it produces the balance changes you approved, or it reverts and costs you gas.
 
-That closes the gap the Bybit attack used. A compromised website can still show you a lie, and a compromised computer can still build a malicious call. What neither can do is make the chain accept a result that violates the balance changes you signed. The screen cannot promise one thing while the chain does another, because both read from the same requirements.
-
-## What the guarantee gives you
-
-A transaction you route through ERC-8009 has two possible endings. Either it produces the balance changes you approved, or it reverts and costs you gas. There is no third ending where it runs and does something else, which is the ending the Bybit attack depended on. You no longer have to understand the target contract, keep a whitelist current, or trust that a decoder read the calldata correctly. You read two or three numbers, decide whether they match what you meant to do, and the chain holds the transaction to them.
+That closes the gap the Bybit attack used. A compromised website can still show you a lie, and a compromised computer can still build a malicious call. What neither can do is make the chain accept a result that violates the balance changes you signed. You no longer have to understand the target contract, keep a whitelist current, or trust that a decoder read the calldata correctly.

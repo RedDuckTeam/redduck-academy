@@ -28,13 +28,11 @@ faq:
       Yes. The account validates a WebAuthn signature from your phone's secure enclave.
 ---
 
-> Every Ethereum account today is one of two things: an **EOA** controlled by a private key, or a **contract account** controlled by code. EOAs can initiate transactions but their behavior is fixed by the protocol. Contracts can have any behavior but cannot initiate transactions on their own. **Account abstraction** is the umbrella term for changing this. The goal is to let accounts be controlled by arbitrary code while still being able to send transactions. This lecture covers what AA is, the two production approaches today (ERC-4337 and EIP-7702), and the kinds of features they unlock: passkeys, social recovery, sponsored gas, batched operations, and session keys.
+> Every Ethereum account today is one of two things: an **EOA** controlled by a private key, or a **contract account** controlled by code. EOAs can initiate transactions but their behavior is fixed by the protocol. Contracts can have any behavior but cannot initiate transactions on their own. **Account abstraction** is the umbrella term for changing this. The goal is to let accounts be controlled by arbitrary code while still being able to send transactions.
 
 ## What's wrong with EOAs
 
-An EOA is an account at an address derived from a public key, controlled by the corresponding private key, with a balance attached to it. The protocol allows exactly one kind of authorization: a transaction signed by the matching private key, using ECDSA on the secp256k1 curve. That's it.
-
-This works but it's restrictive in a long list of ways.
+An EOA is an account at an address derived from a public key, controlled by the corresponding private key, with a balance attached to it. The protocol allows only one kind of authorization: a transaction signed by the matching private key, using ECDSA on the secp256k1 curve.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EOA vs smart account: what changes when code controls your account</title><desc>Two columns compare an EOA and a smart account across signature scheme, gas payment, key loss, multiple signers, batched operations, and spending limits. The EOA is powerful but rigid and cannot be customized, while the smart account is flexible but can't self-initiate transactions without ERC-4337 or EIP-7702.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -84,35 +82,59 @@ This works but it's restrictive in a long list of ways.
   <text x="525" y="492" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">needs ERC-4337 or EIP-7702</text>
 </svg>
 
-A smart account is a contract that holds your funds and decides for itself what counts as a valid operation. The code can require two signatures from a 2-of-3 multisig. It can accept a passkey signature from your phone instead of an ECDSA signature. It can require a transaction below a daily spending limit to go through automatically while above-limit transactions wait for a second approver. It can rotate keys, recover access via trusted guardians, pay gas in any token. Anything you can express in Solidity.
+A smart account is a contract that holds your funds and decides for itself what counts as a valid operation. The code can require two signatures from a 2-of-3 multisig. It can accept a passkey signature from your phone instead of an ECDSA signature. It can require a transaction below a daily spending limit to go through automatically while above-limit transactions wait for a second approver.
 
-The limitation is the one thing in the right-hand column that's missing: a contract cannot initiate a transaction. Only an EOA can. Without something to bridge the two sides, smart accounts are still passive, they wait to be called. Account abstraction is the work of building that bridge.
+The one thing a contract cannot do is initiate a transaction. Only an EOA can, so without something to bridge the two sides a smart account is passive and waits to be called.
 
-Two production approaches exist today. **ERC-4337** is an application-layer solution that went live on Ethereum mainnet in March 2023. It works without any consensus change. **EIP-7702** is a protocol-layer change that activated in the Pectra upgrade in May 2025. It's a smaller mechanism that achieves much of what 4337 does with less infrastructure.
+Two approaches are in production. **ERC-4337** is an application-layer solution that went live on Ethereum mainnet in March 2023 and works without any consensus change. **EIP-7702** is a protocol-layer change that activated in the Pectra upgrade in May 2025.
 
 ## ERC-4337: smart accounts without changing the protocol
 
-The constraint that smart contracts can't initiate transactions is at the EVM level. Changing it would mean a hard fork. ERC-4337 sidesteps the problem by building infrastructure on top that lets users sign "intent" off-chain and have someone else turn it into a real transaction.
+The constraint that smart contracts can't initiate transactions is at the EVM level. Changing it would mean a hard fork. ERC-4337 leaves it in place: the user signs off-chain, and someone else turns the signature into a real transaction. The [gasless approvals lesson](/courses/development-on-ethereum/advanced-defi/gasless-approvals) used the same move for one function, `permit`, where a relayer submits the owner's signature and pays the gas.
 
-The user signs a struct called a **UserOperation** that describes what they want done: which contract to call, with what data, paid for somehow. They send it to a service called a **bundler** instead of submitting it to the regular mempool. The bundler is just an EOA running a node. It collects UserOperations, batches them into a single real transaction, and submits that transaction to the chain. The bundler pays gas for the submission.
+The obvious way to apply it to a whole account is for the wallet's developer to run the relayer, a server with an EOA that takes each signed request and calls the user's smart account. Then every account of that wallet works only while that one server is running and agrees to serve it.
 
-The bundler's transaction calls into a singleton contract called the **EntryPoint**. The EntryPoint is what makes the whole thing safe. For each UserOperation in the batch, the EntryPoint runs a fixed protocol:
+ERC-4337 lets anyone do the relaying. The user signs a struct called a **UserOperation** that describes what they want done: which contract to call, with what data, paid for somehow. They send it to a service called a **bundler** instead of submitting it to the regular mempool. The bundler is an EOA running a node. It collects UserOperations, batches them into a single real transaction, and submits that transaction to the chain. The bundler pays gas for the submission.
+
+A bundler pays up front for operations from accounts it knows nothing about, so before it includes one it has to know that it will be paid back. It cannot study the code of every wallet to find out. So the bundler's transaction calls one singleton contract, the **EntryPoint**, which runs the same fixed protocol for each UserOperation in the batch:
 
 1. Ask the user's smart account "is this UserOperation valid?" The smart account checks the signature however it wants (ECDSA, passkey, multisig, ZK proof, whatever) and either accepts or rejects.
 2. Have the smart account execute whatever the UserOperation asked for.
 3. Make sure someone pays the bundler back for gas, plus a small profit tip.
 
-Step 3 is where **paymasters** come in. If the user has ETH, they can pay the bundler directly out of their smart account's balance. If they don't, they can point to a paymaster, which is a separate contract that agrees to cover the gas. Paymasters might require payment in USDC, might check that the call is to an allowlisted dApp, might sponsor the user as part of a subscription. The protocol stays neutral about why the paymaster is willing to pay.
+Validation is a separate step from execution so that a bundler can run it before putting an operation into a batch, and drop the operations that would not pay.
 
-From the user's point of view: they sign one message in their wallet, the dApp sends it to a bundler, and a few seconds later it's on chain. They didn't hold ETH. They didn't sign a transaction. The smart account did the work using whatever signing scheme it's configured for.
+In code, step 1 is a function the account implements. This one is written against version 0.7 of the reference ERC-4337 contracts and accepts a signature from a single `owner` key:
 
-The cost of this design is operational complexity. ERC-4337 deliberately avoided protocol changes, which meant inventing a parallel mempool, a parallel transaction format, and an ecosystem of bundlers and paymasters. None of that is part of Ethereum's core protocol. It all lives in contracts and off-chain services. EIP-7702 takes the opposite approach.
+```solidity
+function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+    external
+    returns (uint256 validationData)
+{
+    require(msg.sender == address(entryPoint), "only EntryPoint");
+    bytes32 hash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
+    bool signedByOwner = ECDSA.recover(hash, userOp.signature) == owner;
+    if (missingAccountFunds > 0) {
+        (bool ok, ) = payable(msg.sender).call{value: missingAccountFunds}("");
+        require(ok, "prefund failed");
+    }
+    return signedByOwner ? SIG_VALIDATION_SUCCESS : SIG_VALIDATION_FAILED;
+}
+```
+
+The EntryPoint calls it with the hash of the UserOperation and `missingAccountFunds`, the ETH the account still has to send to cover the operation's maximum gas cost. The function accepts calls only from the EntryPoint, checks whether `owner` signed the hash, and sends the missing ETH before anything is executed. After execution the EntryPoint pays the bundler out of that ETH and keeps the rest as the account's deposit. A signature from another key makes the function return `SIG_VALIDATION_FAILED` instead of reverting. The EntryPoint then rejects the operation by reverting the whole `handleOps` call, which undoes the ETH transfer too. Returning instead of reverting lets a wallet simulate the operation with a placeholder signature from any key, for example to estimate its gas, before the user has signed it. That is also why the ETH goes out whatever the signature check found: an account that returned before paying would fail the EntryPoint's prefund check, and the simulation would stop there.
+
+Step 3 is where **paymasters** come in. If the user has ETH, they can pay the bundler directly out of their smart account's balance. If they don't, they can point to a paymaster, which is a separate contract that agrees to cover the gas. The EntryPoint then takes the gas from the paymaster's deposit and passes the account zero as `missingAccountFunds`. Paymasters might require payment in USDC, might check that the call is to an allowlisted dApp, might sponsor the user as part of a subscription. The protocol stays neutral about why the paymaster is willing to pay.
+
+The cost of this design is operational complexity. ERC-4337 deliberately avoided protocol changes, which meant inventing a parallel mempool, a parallel transaction format, and an ecosystem of bundlers and paymasters. None of that is part of Ethereum's core protocol. It all lives in contracts and off-chain services. The account also depends on bundlers: if only a few exist and they all refuse to include UserOps from certain users (sanctioned addresses, for example), those users are de-facto blocked from using 4337. The mitigation is many independent bundlers, and the protocol's open structure aims to keep the barrier to entry low.
+
+Signature verification still costs gas. A smart account that does ECDSA on every UserOp pays roughly the same for the check as an EOA would. More complex schemes (multisig, ZK proofs) cost more. The operation as a whole costs more than a plain transaction, because the EntryPoint's steps run on chain on top of the call itself.
 
 ## EIP-7702: smart accounts at the protocol level
 
 Instead of building infrastructure around EOAs, EIP-7702 lets an EOA act as a smart account directly, at its own address.
 
-The idea: introduce a new transaction type (type `0x04`, the SetCode transaction) that includes an **authorization list**. Each authorization is signed by an EOA's private key and says "set my account's code to point to this contract."
+It introduces a new transaction type (type `0x04`, the SetCode transaction) that includes an **authorization list**. Each authorization is signed by an EOA's private key and says "set my account's code to point to this contract."
 
 <svg role="img" viewBox="0 0 720 640" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>EIP-7702: an EOA delegates to smart wallet contract code</title><desc>Before EIP-7702, Alice's EOA is only a keypair with no code. Alice signs an authorization naming a contract address, someone submits a type-0x04 transaction with it, and afterward calls to Alice's EOA execute that contract's code while keeping her own storage and balance.</desc>
   <defs>
@@ -153,54 +175,34 @@ The idea: introduce a new transaction type (type `0x04`, the SetCode transaction
   <text x="360" y="616" text-anchor="middle" font-family="monospace" font-size="10" fill="#000000">Her private key still works for normal signing alongside the delegation.</text>
 </svg>
 
-After a SetCode transaction is processed, the EOA's account state gets a **delegation indicator**: a small piece of data starting with `0xef0100` followed by the address of the implementation contract. The EVM treats this as the EOA's "code." When anyone calls the EOA's address, the EVM looks up the indicator, finds the implementation contract, and executes its code in the context of the EOA's storage.
+After a SetCode transaction is processed, the EOA's account state gets a **delegation indicator**: a small piece of data starting with `0xef0100` followed by the address of the implementation contract. The EVM treats this as the EOA's code. When anyone calls the EOA's address, the EVM looks up the indicator, finds the implementation contract, and executes its code in the context of the EOA's storage. None of the 4337 infrastructure is needed for this.
 
-Three things to notice about this design.
+**Only the account's own key can delegate it.** The authorization is signed by the EOA's private key, and the protocol checks this signature before applying the delegation, like it checks a transaction signature. The type-0x04 transaction that carries the authorization can be submitted by anyone, so a relayer can pay its gas.
 
-The authorization is **signed by the EOA's private key**. Nobody else can delegate your account's code to a contract. The protocol checks this signature before applying the delegation, exactly like it checks a transaction signature.
+**The delegation lasts until the key replaces it.** It stays in place across transactions until Alice signs another authorization, which could be to a different contract, or to the zero address to revoke.
 
-The delegation **persists across transactions**. Once Alice has delegated her account to a smart wallet implementation, that delegation stays in place until she signs another authorization (which could be to a different contract, or to the zero address to revoke). She doesn't need to re-sign every time.
+**The key keeps all of its power.** Alice's private key still works for signing regular transactions. The delegation adds the ability to also be called as a contract, and the two paths coexist.
 
-The EOA **doesn't lose its key-based functionality**. Alice's private key still works for signing regular transactions. The delegation just adds the ability to also be called as a contract. The two paths coexist.
+That last property is the price of 7702. Whoever holds the key can send a regular transaction that ignores the code's spending limits and second approvers, or sign a new authorization that removes them. The key cannot be rotated either, because the address is derived from it. So no rule in the delegated code can lock out a thief who has the key, and the seed phrase has to be guarded as carefully as before.
 
-This is the smaller, simpler version of account abstraction. No alternative mempool, no bundlers, no EntryPoint. The user signs one authorization, points it at a smart wallet implementation, and from that point on their EOA behaves like a smart account. They can still send normal transactions with ECDSA signatures. Anyone can also call into their address and execute the smart-wallet logic.
+The authorization is the other risk. It hands the account's storage and balance to the code it names, so a user tricked into signing an authorization for a malicious contract has given that contract the whole account. The gasless approvals lesson described the same phishing with `permit` signatures, where one signature gave the attacker the user's whole balance of one token.
 
-## What this combination enables
+## The features come down to who signs, who pays, and what runs
 
-The features the AA community has been building toward become real once smart accounts can self-initiate. None of them are new ideas. The blockers were always at the account layer.
+Who may sign is decided in validation. A smart account can implement `validateUserOp` to accept WebAuthn signatures, so users authenticate with their device's biometric and the key never leaves the secure enclave on their phone. It can accept a session key, a temporary, restricted key for a specific dApp: "this key can spend up to 100 USDC, only on the game contract, for the next 4 hours." The dApp can then submit operations within those bounds without re-prompting. It can let designated guardians (other addresses the user trusts) collectively replace a lost signer after a delay.
 
-**Passkeys instead of private keys.** A smart account can implement `validateUserOp` to accept WebAuthn signatures. Now users authenticate transactions with their device's biometric, with no seed phrase to lose. The actual key never leaves the secure enclave on their phone.
+Who pays is decided by the paymaster in 4337, or by a relayer sending the type-0x04 transaction in 7702: a dApp covers gas for first-time users, or the user pays in USDC and the paymaster pays the ETH. What runs can be several calls in one operation: approve USDC, swap for ETH, and stake the ETH take one signature, where an EOA sends three transactions.
 
-**Social recovery.** If a user loses access to their primary signer, designated guardians (other addresses they trust) can collectively replace the signer after a delay. The account doesn't get wiped out by a lost key.
+## Use 4337 for new addresses and 7702 for existing ones
 
-**Sponsored gas.** A dApp covers gas for first-time users via a paymaster (4337) or a relayer sending a type-0x04 transaction on the user's behalf (7702). Onboarding goes from "first buy ETH from an exchange, then use our app" to "use our app, we'll pay your gas."
+4337 alone makes sense when users are starting fresh and willing to use a new address that's a contract from day one. 7702 is the right fit for existing users with EOAs that already have an on-chain history: they don't have to move funds to a new address, they sign one authorization and their existing account gets smart-wallet logic. The two are used together when the delegated implementation supports the 4337 interface, so the same wallet integrates with bundlers and paymasters.
 
-**Gas in any token.** A user pays gas in USDC. The paymaster (or wrapper logic in the smart account) accepts the USDC, converts it or charges it directly, and pays the actual ETH gas to the bundler or block builder.
+## The account is as safe as the code that controls it
 
-**Batched operations.** Approve USDC, swap for ETH, and stake the ETH, all in a single user-signed operation. No three pop-ups, no three transactions, no waiting for confirmations between them.
+A smart account moves the risk from one key to the code that controls the account, and to whoever can replace that code. In February 2025 the exchange Bybit lost about 1.46 billion dollars from a Safe, a multisig wallet contract. The attackers got its signers to approve a transaction that replaced the code the wallet runs, and then emptied it. The [upgradeable contracts lesson](/courses/development-on-ethereum/token-security-and-evm-internals/upgradeable-contracts-and-proxies) covered the mechanism. A 7702 authorization is the same kind of change, and it takes one signature.
 
-**Session keys.** A user authorizes a temporary, restricted key for a specific dApp: "this key can spend up to 100 USDC, only on the game contract, for the next 4 hours." The dApp can submit operations on the user's behalf within those bounds without re-prompting. When the session expires, the key is dead. This is what makes blockchain games and high-frequency apps feel native rather than transactional.
+The code is also shared. A bug in the implementation contract is a bug in every account delegated to it, and the same holds for the EntryPoint.
 
-**Atomic conditional execution.** A smart account can require that a swap return at least a certain output, or that two operations both succeed or neither does. The account itself enforces the policy, so this works across protocols that don't natively support it.
+EIP-7702 has pitfalls around storage compatibility. If two different implementation contracts use the same storage slots for different things, switching delegation between them can leave your account's state in a meaningless configuration. The fix is to use stable storage layouts (often via ERC-7201 namespaced storage) so swapping implementations doesn't conflict.
 
-## ERC-4337 vs EIP-7702: when each fits
-
-4337 and 7702 are not mutually exclusive. A modern smart-wallet design might use both: 7702 to bring existing EOAs under contract control, then 4337 for the rich infrastructure of bundlers and paymasters when sponsored gas or alt-mempool batching matters.
-
-**4337 alone** makes sense when users are starting fresh and willing to use a new address that's a contract from day one. Some wallet providers default to this for new users.
-
-**7702 alone** is the right fit for existing users with EOAs that already have an on-chain history. They don't have to move funds to a new address. They just sign one authorization and their existing account gets smart-wallet logic.
-
-**Both together** is becoming the production pattern for serious smart-wallet projects. Users start with 7702-delegated EOAs for upgrade-in-place. Their delegated implementation supports the 4337 interface, so the same wallet integrates with bundler infrastructure and paymasters for gas sponsorship.
-
-A nice side-effect of 7702: every existing EOA can become a smart account at any time. There's no migration friction. Users who never knew or cared about smart accounts can be upgraded transparently by a wallet provider, with their consent.
-
-## A few things to keep in mind
-
-**The smart-account contract is itself an attack surface.** A bug in the implementation contract is a bug in every account delegated to it. Same for the EntryPoint. Both have been audited heavily but the principle stays: the security of your account depends on the security of the code controlling it.
-
-**Bundler censorship is a real concern.** If only a few bundlers exist and they all refuse to include UserOps from certain users (sanctioned addresses, for example), those users are de-facto blocked from using 4337. The mitigation is many independent bundlers, and the protocol's open structure aims to keep the barrier to entry low.
-
-**EIP-7702 has subtle pitfalls around storage compatibility.** If two different implementation contracts use the same storage slots for different things, switching delegation between them can leave your account's state in a meaningless configuration. The fix is to use stable storage layouts (often via ERC-7201 namespaced storage) so swapping implementations doesn't conflict.
-
-**Signature verification still costs gas.** A smart account that does ECDSA on every UserOp pays roughly the same as an EOA would. More complex schemes (multisig, ZK proofs) cost more. The bill shows up in the verification gas limit on each UserOp.
+For any account design, yours or one you are about to use, ask who can move the funds if each of its keys leaks, and who can if a bug is found in the code that controls the account.

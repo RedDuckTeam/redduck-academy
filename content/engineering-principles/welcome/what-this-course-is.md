@@ -23,18 +23,19 @@ faq:
       rules, so it decides the cases no rule anticipated.
 ---
 
-This is a course about the decisions underneath good engineering. It teaches the design principles that decide whether a system stays simple or turns tangled, whether it resists an attacker or breaks, whether other people can build on it or have to fight it. Every principle is taught with plain examples you already understand, from software, databases, networks, operating systems, and everyday physical systems. Nothing to install, and no blockchain background needed.
+This course teaches design principles with plain examples from software, databases, networks, operating systems, and everyday physical systems. There is nothing to install, and you need no blockchain background.
 
-## Why principles beat a checklist
+## What each module teaches
 
-Most of what makes one design better than another is not knowledge of a tool. It is a way of deciding. Two engineers meet the same problem. One reaches for the pattern they used last time and forces the problem to fit it. The other asks what the goal actually requires and picks the design that serves it. Both may know the same things. What separates them is the question they ask first. This course is about that question, asked on purpose, until it becomes automatic.
+- **[Design tradeoffs](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not)**. An option is better only for a goal, so name the goal before you compare options.
+- **[Constraint bypass](/courses/engineering-principles/constraint-bypass/bypassing-a-constraint)**. Check whether a constraint belongs to the result you need or only to one way of reaching it.
+- **[Relevance and genericity](/courses/engineering-principles/relevance-and-genericity/the-irrelevance-principle)**. Constrain only the properties the result depends on.
+- **[Core and periphery](/courses/engineering-principles/core-periphery/the-core-periphery-pattern)**. Keep the valuable state in a small part that rarely changes, and keep the code that changes often away from it.
+- **[Singleton and factory](/courses/engineering-principles/singleton-and-factory/the-singleton-pattern)**. Put a critical function in one shared component, so the review effort concentrates on it. Derive the identifier of each created instance from its content, so anyone can check it.
+- **[Atomicity as guarantor](/courses/engineering-principles/atomicity-as-guarantor/atomicity-as-a-security-primitive)**. Steps that complete as one unit or leave no trace can replace trust between two parties.
+- **[Standardization patterns](/courses/engineering-principles/standardization-patterns/standardizing-the-interface)**. One shared interface replaces a private agreement between every pair of participants.
+- **[Stateless design](/courses/engineering-principles/stateless-design/what-makes-a-system-stateless)**. A component that keeps nothing between calls holds nothing an attacker can reach.
+- **[Goal hierarchy](/courses/engineering-principles/goal-hierarchy/parent-goals-and-child-goals)**. Trace each design choice up to the goal it serves, and drop it when it stops serving that goal.
+- **[Adversarial thinking](/courses/engineering-principles/adversarial-thinking/thinking-as-a-rational-adversary)**. Design as if one user is fully informed and looking for a way to take value they are not owed.
 
-The principles fall into a few families. How to weigh a tradeoff against the goal it serves. How to make a hard constraint irrelevant instead of fighting it. How to keep the smallest amount of logic in the position of highest trust. How to reason like an adversary before you build. None of it depends on a particular language or platform. The same principle that shapes a payment system shapes a login screen, a file format, or a database schema.
-
-## How the lessons are built
-
-Each lesson is short and holds one idea. It opens with a problem you can feel, works through a single concrete example, and ends with what the idea lets you do. Some lessons close with an optional section headed Blockchain application, which shows how the principle appears in a blockchain system. Those sections are there for readers heading into the security-focused courses. Skip them and you lose none of the principle.
-
-## How to read it
-
-Read slowly, and watch for the moment you catch yourself using one of these ideas on a real problem. That moment matters more than finishing the list. A lesson has done its work the first time you stop, name the goal a design is supposed to serve, and choose the option that serves it.
+None of this depends on a particular language or platform. Some lessons close with an optional section headed Blockchain application, which shows how the principle appears in a blockchain system. Those sections are there for readers heading into the security-focused courses.

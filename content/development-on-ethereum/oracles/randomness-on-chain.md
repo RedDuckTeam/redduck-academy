@@ -24,13 +24,13 @@ faq:
       deliver the same response twice.
 ---
 
-> Smart contracts can't generate random numbers on their own. The reasons are structural and cannot be solved by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. This lecture covers why randomness is hard on chain, how Chainlink VRF solves it cryptographically, and how to connect a consumer contract to receive verified random numbers in production.
+> Smart contracts can't generate random numbers on their own. Every value a contract can read is known to whoever proposes the block, so a number that nobody can choose has to come from outside the chain together with a proof. Chainlink VRF provides one, and it arrives in a separate transaction some blocks after the request.
 
-## Why a blockchain can't roll dice
+## Whoever proposes the block knows every value in it
 
-A blockchain is a deterministic state machine. Every node must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement is incompatible with native randomness. If a contract called some `rand()` function and each node returned a different value, no two nodes would agree on the chain state.
+Every node must execute every transaction and arrive at the same result, so a contract has no native source of randomness. If it called some `rand()` function and each node returned a different value, no two nodes would agree on the chain state, as the [determinism lesson](/courses/blockchain-basics/the-blockchain-idea/determinism-and-what-blockchains-cant-do) explained.
 
-The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain. Block timestamp, block hash, previous block's randao value, the sender's address, transaction hashes. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the entity proposing the block.
+The standard workaround in beginner tutorials is to derive the number from values that already exist on chain: the block timestamp, the block hash, the previous block's randao value, the sender's address, transaction hashes. These are the same for everyone reading the chain, so consensus is preserved. They are also all chosen or seen by the validator proposing the block.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>On-chain lottery seed: block.timestamp, block.prevrandao, and tx ordering, all proposer-controlled</title><desc>A lottery contract seeds a keccak256 hash with block.timestamp and block.prevrandao, and three boxes explain that timestamp, prevrandao, and transaction ordering are all chosen or seen by the block proposer. A four-step attack box shows a validator simulating the lottery locally, publishing the block only if it wins, and rerolling by skipping the block or changing transactions or the timestamp otherwise.</desc>
   <defs>
@@ -70,27 +70,33 @@ The standard workaround in beginner tutorials is to derive "randomness" from val
   <text x="60" y="418" font-family="monospace" font-size="11">  4. The chain has no way to tell what was "rolled away."</text>
 </svg>
 
-The attack does not require the validator to be the lottery's intended target. It requires only that the validator has any financial interest in the outcome and the option to suppress an unfavorable block. The cost of dropping a block is the lost block reward. If the lottery payout exceeds that, the attack is profitable. For pools worth more than a few ETH, this math works out in the attacker's favor every time.
+A validator with a financial interest in the outcome simulates the draw before publishing its block and drops the block if it does not win. The cost of dropping a block is the lost block reward. If the lottery payout exceeds that, the attack is profitable, which is the case for pools worth more than a few ETH.
 
-The fundamental issue: anything visible inside the block is visible to whoever is proposing it, and the proposer chooses what to publish. You cannot patch this by combining more sources. Any input the contract reads is an input the proposer can either control or see, and any deterministic function of public inputs produces an output the proposer can predict.
+You cannot patch this by combining more sources. Any input the contract reads is an input the proposer can either control or see, and any deterministic function of public inputs produces an output the proposer can predict.
 
-## What VRF actually is
+## Commit-reveal lets the last participant reject the result
 
-The Verifiable Random Function (VRF) protocol is a cryptographic construction that produces two things at once: a pseudorandom output, and a proof that the output was generated correctly from a specific seed using a specific private key.
+The next thing to try is to take the inputs from the participants and keep them hidden until nobody can react to them, as in the [commit-reveal task](/courses/development-on-ethereum/token-security-and-evm-internals/commit-reveal). Each participant first submits the hash of a secret number. After all the hashes are in, each participant reveals the number, and the contract hashes the revealed numbers together. A participant cannot pick a number after seeing the others, and the proposer sees only hashes.
 
-The setup involves a key pair. The party generating randomness (the VRF oracle service) holds the private key. The public key is published on chain in advance. The protocol works like this:
+The scheme fails at the last reveal. The participant who reveals last already sees every other number, so they can compute the result before sending their own. If the result is bad for them, they do not send the reveal, and the draw either never finishes or has to be finished some other way. The last participant drops a reveal the way the proposer drops a block.
+
+So the number has to come from a party that does not take part in the draw, and that party has to prove that it did not choose the number.
+
+## A VRF output comes with a proof that the oracle did not choose it
+
+A Verifiable Random Function (VRF) is a cryptographic construction that produces two things at once: a pseudorandom output, and a proof that the output was generated correctly from a specific seed using a specific private key.
+
+The party generating randomness (the VRF oracle service) holds the private key. The public key is published on chain in advance. The protocol works like this:
 
 1. Someone supplies a seed, which can be anything: a block hash, a request ID, a sequence number.
 2. The oracle signs the seed with its private key using the VRF algorithm. This produces a random output and a proof.
-3. Anyone with the public key can verify, by examining the proof, that the output was generated from exactly that seed using exactly that key, and that the oracle had no freedom to choose the output.
+3. Anyone with the public key can verify, by examining the proof, that the output was generated from that seed using that key, and that the oracle had no freedom to choose the output.
 
-The third point is the load-bearing one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
+The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. Either it returns the output that the seed and the key determine, or its proof fails verification and the chain rejects the response. For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf).
 
-For the math, see the [VRF protocol description on Chainlink's docs](https://docs.chain.link/vrf). The summary is: the oracle cannot deviate. Either it returns the cryptographically determined output, or its proof fails verification and the chain rejects the response.
+## The number arrives in a second transaction
 
-## The request-and-receive cycle
-
-VRF cannot be a single function call. The proof must be generated off chain by an entity holding the private key, and that work cannot happen inside a normal contract call. The pattern is asynchronous: your contract submits a request in one transaction, and receives the result in a second transaction some blocks later.
+VRF cannot be a single function call. The proof must be generated off chain by the holder of the private key, so your contract submits a request in one transaction and receives the result in a second transaction some blocks later.
 
 <svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>VRF request cycle: contract, VRF Coordinator, and VRF Service over two transactions</title><desc>Three lanes show your contract, the on-chain VRF Coordinator, and the off-chain VRF Service exchanging messages over time. In transaction 1 your contract calls requestRandomWords() and the coordinator emits an event with a seed; the service signs the seed, waits N block confirmations, and submits the number and proof in transaction 2, which the coordinator verifies before calling fulfillRandomWords() so your contract stores the result.</desc>
   <defs>
@@ -137,90 +143,13 @@ VRF cannot be a single function call. The proof must be generated off chain by a
   <text x="140" y="530" text-anchor="middle" font-family="monospace" font-size="10">stores the result</text>
 </svg>
 
-The implication for your contract design is that you cannot use a random number in the same transaction that requests it. The number does not exist yet. Your `requestRandomWords` call returns a request ID. The number arrives in a separate transaction via the callback function. Anything the contract needs to do with the number (pick a winner, reveal an NFT, settle a bet) happens inside that callback rather than the original user transaction. This async shape is the biggest design constraint in working with VRF and it shapes every contract you'll build with it.
+You cannot use a random number in the same transaction that requests it, because the number does not exist yet. Your `requestRandomWords` call returns only a request ID. Anything the contract needs to do with the number (pick a winner, reveal an NFT, settle a bet) starts in the callback function and not in the original user transaction.
 
-The number of block confirmations the service waits before responding is configurable per request. The current minimum on Sepolia is 3. Higher values give you better protection against shallow reorgs, at the cost of waiting longer for the result.
+The service waits for a number of block confirmations before responding. A block at the tip of the chain can still be dropped in a reorg, as the [consensus lesson](/courses/development-on-ethereum/how-ethereum-works/consensus-on-ethereum) described, and the request transaction with it, so the service reveals the number only after the request is several blocks deep. The number of confirmations is configurable per request, and the current minimum on Sepolia is 3. Higher values give you better protection against shallow reorgs, at the cost of waiting longer for the result.
 
-## The subscription model
+## In code
 
-VRF requests cost gas. Someone has to pay for both the request transaction and the response transaction, plus a premium that compensates the oracle service. The current production version uses a [subscription account model](https://docs.chain.link/vrf/v2-5/overview/subscription) where you pre-fund a balance once and consumer contracts draw from it for each request.
-
-<svg role="img" viewBox="0 0 720 450" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>VRF subscription balance funding Lottery.sol, NFTReveal.sol, and Raffle.sol</title><desc>An owner wallet manages and funds one subscription, ID 42, holding a balance of 10 LINK and 0.5 ETH. Three consumer contracts, Lottery.sol, NFTReveal.sol, and Raffle.sol, draw from this shared balance to pay for their VRF requests.</desc>
-  <defs>
-    <marker id="arrV3" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
-    </marker>
-  </defs>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">One subscription funds multiple consumer contracts</text>
-  <rect x="280" y="170" width="160" height="120" fill="#e0deda" stroke="#ed4937" stroke-width="3"/>
-  <text x="360" y="195" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">Subscription</text>
-  <line x1="295" y1="205" x2="425" y2="205" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="360" y="225" text-anchor="middle" font-family="monospace" font-size="10">ID: 42</text>
-  <text x="360" y="245" text-anchor="middle" font-family="monospace" font-size="10">Balance:</text>
-  <text x="360" y="261" text-anchor="middle" font-family="monospace" font-size="10">10 LINK</text>
-  <text x="360" y="277" text-anchor="middle" font-family="monospace" font-size="10">0.5 ETH</text>
-  <rect x="280" y="80" width="160" height="44" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="100" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Owner wallet</text>
-  <text x="360" y="116" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">manages + funds</text>
-  <line x1="360" y1="128" x2="360" y2="166" stroke="#ed4937" stroke-width="2" marker-end="url(#arrV3)"/>
-  <text x="370" y="150" font-family="monospace" font-size="9" fill="#ed4937">funds</text>
-  <rect x="60" y="330" width="160" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="140" y="354" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Lottery.sol</text>
-  <text x="140" y="373" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">consumer #1</text>
-  <rect x="280" y="330" width="160" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="354" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">NFTReveal.sol</text>
-  <text x="360" y="373" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">consumer #2</text>
-  <rect x="500" y="330" width="160" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="580" y="354" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold">Raffle.sol</text>
-  <text x="580" y="373" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653">consumer #3</text>
-  <line x1="160" y1="328" x2="290" y2="290" stroke="#ed4937" stroke-width="2" marker-end="url(#arrV3)"/>
-  <line x1="360" y1="328" x2="360" y2="294" stroke="#ed4937" stroke-width="2" marker-end="url(#arrV3)"/>
-  <line x1="560" y1="328" x2="430" y2="290" stroke="#ed4937" stroke-width="2" marker-end="url(#arrV3)"/>
-  <rect x="40" y="410" width="640" height="30" fill="#e0deda" stroke="#000000" stroke-width="1"/>
-  <text x="360" y="430" text-anchor="middle" font-family="monospace" font-size="10" font-style="italic" fill="#565653">Up to 100 consumer addresses per subscription. Each request bills the shared balance.</text>
-</svg>
-
-You create a subscription once through the [Subscription Manager UI](https://vrf.chain.link), fund it with LINK or native ETH (the current version supports both), and register the addresses of any contracts that should be allowed to spend from it. A contract that has not been added as an approved consumer cannot make requests against the subscription, even if it has the correct interface. This authorization step is enforced by the VRF Coordinator itself.
-
-## Building a consumer contract
-
-Your contract inherits from `VRFConsumerBaseV2Plus`, which provides the callback receiver and the coordinator reference. The current import paths are:
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
-
-import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-
-contract Randomizer is VRFConsumerBaseV2Plus {
-    // ...
-}
-```
-
-The constructor takes the VRF Coordinator address for the network you're deploying to. Each chain has its own coordinator address, listed on the [supported networks page](https://docs.chain.link/vrf/v2-5/supported-networks). You also pass the subscription ID that will fund this contract's requests.
-
-```solidity
-uint256 public immutable subscriptionId;
-bytes32 public immutable keyHash;
-uint32 public callbackGasLimit = 100_000;
-uint16 public requestConfirmations = 3;
-uint32 public numWords = 1;
-
-constructor(
-    uint256 _subscriptionId,
-    address _vrfCoordinator,
-    bytes32 _keyHash
-) VRFConsumerBaseV2Plus(_vrfCoordinator) {
-    subscriptionId = _subscriptionId;
-    keyHash = _keyHash;
-}
-```
-
-The `keyHash` identifies which off-chain VRF job runs for your request. Different gas lanes (lower gas tolerance vs higher) have different key hashes. Each gas lane has an associated maximum gas price ceiling. The key hash is its identifier. Choose the key hash for the gas price ceiling that fits your target network. The supported networks page lists the valid key hashes for each chain.
-
-The request function builds a struct and calls the coordinator:
+Your contract inherits from `VRFConsumerBaseV2Plus`, which provides the callback receiver and the coordinator reference. The request function builds a struct and calls the coordinator:
 
 ```solidity
 function requestRandomNumber() external returns (uint256 requestId) {
@@ -239,7 +168,7 @@ function requestRandomNumber() external returns (uint256 requestId) {
 }
 ```
 
-The `extraArgs` field is where you choose how to pay. Setting `nativePayment: false` deducts the request cost in LINK from the subscription balance. Setting it to `true` deducts in the network's native token instead. Both options are supported simultaneously on the same subscription.
+`subId` is the subscription that pays for the request, a balance you fund in advance with LINK or native ETH. The consumer contract has to be registered on the subscription, or the coordinator rejects its requests. `keyHash` selects the gas lane, the off-chain VRF job that serves your request, and each lane has its own maximum gas price. `requestConfirmations` is the number of confirmations from the previous section, `callbackGasLimit` is the most gas the callback may use, and `numWords` is how many numbers you want back. The [subscription docs](https://docs.chain.link/vrf/v2-5/overview/subscription) cover the setup and the other fields, and the [supported networks page](https://docs.chain.link/vrf/v2-5/supported-networks) lists the coordinator address and the valid key hashes for each chain.
 
 The callback function is what your contract overrides to receive the result:
 
@@ -248,20 +177,14 @@ function fulfillRandomWords(
     uint256 requestId,
     uint256[] calldata randomWords
 ) internal override {
-    // Whatever you do with the random number happens HERE.
-    // The user's original request transaction has long since returned.
     uint256 result = randomWords[0];
     // ... store it, pick a winner, reveal an NFT, etc.
 }
 ```
 
-The function is `internal` and `override`. The base class exposes a `public` wrapper that checks the caller is the coordinator before invoking your override. You do not need to write that check yourself, but you also cannot bypass it. If anything other than the coordinator calls into the contract attempting to deliver a result, it gets rejected before reaching your code.
+The function is `internal` and `override`. The base class exposes a `public` wrapper that checks the caller is the coordinator before invoking your override, so a result delivered by anything other than the coordinator is rejected before it reaches your code.
 
-The `randomWords` array length matches the `numWords` you requested. For most use cases that's one. Asking for several at once is cheaper per number when you need multiple values for the same request (for example, shuffling a deck), since the cryptographic overhead is paid once.
-
-## Working with the random number
-
-The number you receive is a `uint256`, distributed essentially uniformly across the full range of that type. To use it for a specific range, take the modulo:
+Each number is a `uint256`, distributed essentially uniformly across the full range of that type. To use it for a specific range, take the modulo:
 
 ```solidity
 uint256 diceRoll = (randomWords[0] % 20) + 1;       // 1 to 20
@@ -269,16 +192,24 @@ uint256 percent = randomWords[0] % 100;             // 0 to 99
 address winner = participants[randomWords[0] % participants.length];
 ```
 
-Modulo introduces very slight bias when the modulus does not divide cleanly into the range of `uint256`, but for any modulus you'd use in a contract the bias is undetectable. For a 20-sided die, the bias is on the order of one part in 2^251.
+Modulo introduces a very slight bias when the modulus does not divide cleanly into the range of `uint256`. For a 20-sided die, the bias is on the order of one part in 2^251.
 
-The number is fully revealed on chain the moment the coordinator delivers it. If your contract logic depends on keeping the number hidden until later, that's not something VRF gives you. The fulfillment transaction publishes everything, and anyone watching the mempool sees the result as soon as it's mined. Use cases that need committed-but-hidden randomness need a different protocol.
+## What VRF costs
 
-## What can go wrong
+A VRF number takes two transactions and a wait of several blocks. Someone has to pay for both the request transaction and the response transaction, plus a premium that compensates the oracle service.
 
-Three considerations the [security page](https://docs.chain.link/vrf/v2-5/security) makes explicit and that production contracts get wrong.
+The trust moves to the oracle. It cannot choose the number, but it computes the number before anyone else sees it, and it can fail to deliver it. You rely on the holder of the VRF key having no stake in your draw.
 
-**The callback gas limit can be exhausted.** If your `fulfillRandomWords` runs out of gas (because it does too much work, or the limit you set is too low), the random number is delivered to the coordinator but never reaches your contract's storage. The subscription is still charged for the work. Keep the callback minimal: store the result and any derived values, then handle complex logic in a separate user-triggered transaction that reads from storage.
+The number is not secret. The fulfillment transaction publishes everything, so anyone watching the chain sees the number as soon as that transaction is mined. If your contract logic depends on keeping the number hidden until later, that's not something VRF gives you.
 
-**Reorgs can re-fulfill the same request.** A request submitted near the tip of the chain can be confirmed in one block ordering and then re-organized into a different one. The same VRF response would still be valid (the seed and proof are deterministic), but your contract might process it twice if it doesn't track which requests have already been fulfilled. Use a flag in the request record to mark fulfilled requests and reject double-delivery.
+## What the consumer contract has to get right
 
-**You cannot use the random number in the request transaction.** A common beginner mistake is to write something like "request a number and then check if msg.sender won." There is no number yet. The check has to happen in the callback, and the user has to either send a second transaction to claim a win or have the callback automatically settle the outcome.
+**Fix everything the number decides before you request it.** The seed is set in the request transaction, so from that moment the number is determined, even though the chain has not seen it yet. The list of participants and their stakes has to be final in the same transaction. If a raffle still accepts entries or withdrawals after the request, anyone who learns the number before the contract acts on it can enter or leave knowing the result. The Solana Pro course calls this the [commit-execution split](/courses/solana-pro/deferred-execution/commit-execution-split).
+
+**Keep the callback small.** If your `fulfillRandomWords` runs out of gas (because it does too much work, or the limit you set is too low), the random number is delivered to the coordinator but never reaches your contract's storage. The subscription is still charged for the work. Store the result and any derived values in the callback, then handle complex logic in a separate user-triggered transaction that reads from storage.
+
+**Decide what happens if the number never arrives.** The proof guarantees that a delivered number is correct, not that it is delivered. If the service stays silent or the callback fails, a contract that can only finish in the callback keeps the players' money locked, so it needs a way out after a timeout. Both ways out give the service the option the last participant had in commit-reveal, because the service computes the number before it delivers it. If the contract returns the deposits, a service that holds back a number cancels that draw. If the contract requests again, the new request has a new seed, so the service also gets a different number. Either way the draw is fair only while the holder of the VRF key has no stake in it.
+
+**Record which requests are fulfilled.** A request submitted near the tip of the chain can be confirmed in one block ordering and then re-organized into a different one. The same VRF response would still be valid (the seed and proof are deterministic), but your contract might process it twice if it doesn't track which requests have already been fulfilled. Use a flag in the request record to mark fulfilled requests and reject double-delivery.
+
+Read Chainlink's [security page](https://docs.chain.link/vrf/v2-5/security) before you deploy a consumer.

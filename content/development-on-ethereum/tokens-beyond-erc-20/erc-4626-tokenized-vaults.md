@@ -38,7 +38,7 @@ faq:
 
 ## Why standardize vaults
 
-Every yield protocol does roughly the same thing. Users deposit some token. The protocol does something with the token (lends it out, stakes it, runs an investment strategy, whatever). Profits get reflected somehow in what users get back when they withdraw.
+Every yield protocol does roughly the same thing. Users deposit some token. The protocol does something with the token (lends it out, stakes it, runs an investment strategy). Profits get reflected somehow in what users get back when they withdraw.
 
 Before 2022, every protocol invented its own interface for this. Yearn called it `deposit/withdraw`. Compound called it `mint/redeem` and used a `cToken`. Aave called it `deposit/withdraw` but minted an `aToken`. Each had different function signatures, different events, different decimals handling, different edge cases. A wallet that wanted to display "your positions across DeFi" had to write a separate integration for each one.
 
@@ -46,9 +46,7 @@ Before 2022, every protocol invented its own interface for this. Yearn called it
 
 The standard does not say what the vault does internally. It does not say how the vault generates yield, or where the assets get invested, or whether they're invested at all. It only standardizes the deposit-and-withdraw interface around two tokens: an **asset** (whatever ERC-20 you put in) and a **share** (the ERC-20 receipt you get back).
 
-## The mental model
-
-The clearest way to think about ERC-4626 is as a bank account that issues transferable receipts.
+## The share price grows, the share count does not
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-4626 vault swapping user assets for shares and back</title><desc>A user holding assets like USDC sits next to a vault that tracks totalAssets and totalSupply, where share price equals totalAssets divided by totalSupply. Arrows show the user depositing assets to receive minted shares, and burning shares to get assets back, while a note explains that shares are a transferable ERC-20 token whose value rises as the vault earns yield.</desc>
   <defs>
@@ -90,11 +88,11 @@ Two pieces of state matter for the math:
 - `totalAssets()` returns how much of the underlying asset the vault is currently managing. For a USDC vault, this is the USDC balance of the vault contract, plus any USDC the vault has loaned out or staked elsewhere that still belongs to it.
 - `totalSupply()` returns how many shares have been issued (inherited from the ERC-20 implementation, since shares are themselves an ERC-20).
 
-The ratio between these two values is the share price. If the vault holds 1,000 USDC and has minted 100 shares total, each share is worth 10 USDC. If the vault later generates 100 USDC of yield without any new deposits, totalAssets becomes 1,100 and shares stay at 100, so each share is now worth 11 USDC. Same number of shares, more underlying value per share. This is exactly the same pattern as Uniswap V2 LP tokens.
+The ratio between these two values is the share price. If the vault holds 1,000 USDC and has minted 100 shares total, each share is worth 10 USDC. If the vault later generates 100 USDC of yield without any new deposits, totalAssets becomes 1,100 and shares stay at 100, so each share is now worth 11 USDC. This is the same pattern as Uniswap V2 LP tokens in the [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm), where swap fees grow the reserves and the LP supply stays the same.
 
 ## Four operations, paired by which side you specify
 
-A user might want to specify the deposit two different ways: "I have exactly 100 USDC, take it and give me whatever shares that's worth" or "I want exactly 10 shares of this vault, take whatever USDC that costs from me." The standard supports both. Same for withdrawals.
+A user might want to specify the deposit two different ways: "I have exactly 100 USDC, take it and give me whatever shares that's worth" or "I want exactly 10 shares of this vault, take whatever USDC that costs from me." The standard supports both, and the same for withdrawals.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-4626 vault operations: deposit, mint, withdraw, redeem</title><desc>Four boxes show the vault functions deposit, mint, withdraw, and redeem, each with an example request and the formula the vault uses to convert between assets and shares. Deposit and withdraw start from an asset amount, while mint and redeem start from a share amount, so deposits go in as assets to shares and withdrawals go out as shares to assets.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -139,28 +137,17 @@ A user might want to specify the deposit two different ways: "I have exactly 100
   <text x="520" y="450" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">going out: shares → assets</text>
 </svg>
 
-The math is symmetric. `deposit` and `mint` produce the same net result if the inputs correspond to each other. The same is true for `withdraw` and `redeem`. The standard gives you both because different callers find different sides easier to reason about. A frontend showing "deposit $X" calls `deposit`. A portfolio rebalancer that wants a clean number of shares calls `mint`. Same outcome.
+`deposit` and `mint` produce the same net result if the inputs correspond to each other. The same is true for `withdraw` and `redeem`. The standard gives you both because different callers find different sides easier to reason about. A frontend showing "deposit $X" calls `deposit`. A portfolio rebalancer that wants a clean number of shares calls `mint`.
 
 The `owner` parameter on `withdraw` and `redeem` exists because someone can let a third party burn their shares on their behalf, the same way ERC-20 `transferFrom` works. The caller needs allowance from the owner first. For self-withdrawals, owner equals msg.sender and the allowance check is skipped.
 
-## Preview functions
+For every operation the standard provides a matching `preview` function (`previewDeposit`, `previewMint`, `previewWithdraw`, `previewRedeem`) that returns what the result would be without actually executing, so a frontend can show "you will receive ~X shares" before the user signs the transaction and other contracts can integrate without duplicating the conversion math. There are also `maxDeposit`, `maxMint`, `maxWithdraw`, and `maxRedeem` functions that return per-user limits, which a vault can use to enforce caps (no deposits over 1,000 USDC, no withdrawals if paused, and so on).
 
-For every operation the standard provides a matching `preview` function that returns what the result would be without actually executing:
-
-- `previewDeposit(assets)` returns the shares you would receive
-- `previewMint(shares)` returns the assets you would pay
-- `previewWithdraw(assets)` returns the shares that would be burned
-- `previewRedeem(shares)` returns the assets you would receive
-
-These are pure view functions. Frontends use them to show "you will receive ~X shares" before the user signs the transaction. They also let other contracts integrate without having to duplicate the conversion math.
-
-There are also `maxDeposit`, `maxMint`, `maxWithdraw`, and `maxRedeem` functions that return per-user limits. A vault implementation can use these to enforce caps (no deposits over 1,000 USDC, no withdrawals if paused, and so on). By default they return the maximum representable value, meaning no limit, but vault authors can override.
-
-## The conversion math
+## Conversions round in favor of the vault
 
 Two helpers, `convertToShares(assets)` and `convertToAssets(shares)`, do the core arithmetic. They're public view functions that anyone can call, useful for off-chain calculations or other contracts.
 
-The formula for converting assets to shares is:
+A new depositor has to get shares at the current price, so their part of the share supply must equal their part of the assets: `shares / totalSupply = assets / totalAssets`. Solved for shares:
 
 ```
 shares = (assets × totalSupply) / totalAssets
@@ -174,11 +161,13 @@ assets = (shares × totalAssets) / totalSupply
 
 Both are integer arithmetic in Solidity, which means the result is truncated (rounded down) at the division. The direction of rounding matters for security. The standard's general principle: round in the direction that favors the vault rather than the user. A user depositing assets gets shares rounded down, so they never get more shares than their assets are worth. A user redeeming shares gets assets rounded down, so they never extract more than their shares are worth. Rounding the other direction would let users systematically extract tiny amounts each operation.
 
+In `mint` and `withdraw` the user names the result and the vault computes what the user gives up, so favoring the vault means rounding up. Take the vault with 1,100 USDC and 100 shares, and a call to withdraw 5 USDC. The shares to burn are 5 × 100 / 1,100 = 0.45. Rounded down, the vault would burn 0 shares and still pay out 5 USDC, and the caller could repeat the call until the vault is empty. Rounded up, it burns 1 share. In a real vault the amounts have many decimals, so rounding up costs the caller at most one smallest unit of the share.
+
 OpenZeppelin's reference implementation uses a `Math.mulDiv` helper with an explicit `Rounding` argument so the direction is clear at every call site.
 
 ## The inflation attack
 
-The math above has a problem when the vault is freshly deployed and nearly empty. The very first depositor sets the initial share price by being the first one to mint. If they're malicious, they can rig the price so that the second depositor gets cheated.
+A freshly deployed, nearly empty vault has the first-depositor problem that the [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm) showed for LP tokens. The very first depositor sets the initial share price, and a malicious one can inflate it so that the second depositor's shares are rounded away.
 
 <svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>ERC-4626 inflation attack: attacker drains the second vault depositor</title><desc>A sequence diagram shows three lanes, Attacker, Vault, and Victim, over four numbered steps. The attacker deposits 1 wei then directly transfers 10,000 USDC to inflate the share price, so the victim's 5,000 USDC deposit rounds down to 0 shares while the attacker redeems 1 share for 15,001 USDC, a 5,000 USDC profit.</desc>
   <defs>
@@ -229,18 +218,18 @@ The math above has a problem when the vault is freshly deployed and nearly empty
   <text x="240" y="546" text-anchor="middle" font-family="monospace" font-size="9" fill="#565653" font-style="italic">(deposited 10,001, walked away with 15,001)</text>
 </svg>
 
-The four steps:
+The numbers count the attacker's 1 wei and one whole USDC as the same unit. That keeps them short and does not change the outcome. The four steps:
 
 1. The attacker is the first to deposit. They put in 1 wei of the asset and receive 1 share. The vault now has totalAssets = 1, totalSupply = 1.
 2. The attacker transfers 10,000 USDC directly to the vault's address using a plain ERC-20 transfer rather than a deposit call. The vault's contract has no idea this happened from the standpoint of share accounting. Its totalSupply stays at 1, but its balance (and therefore totalAssets) jumps to 10,001.
-3. The share price is now 10,001 USDC per share. A victim deposits 5,000 USDC and the contract calculates shares = 5,000 × 1 / 10,001 ≈ 0.4999. Solidity rounds down. The victim receives **zero shares**. Their 5,000 USDC is sitting in the vault, but they have no on-chain claim to it.
-4. The attacker redeems their 1 share. The vault now holds 15,001 USDC and has 1 share outstanding. The attacker gets all 15,001 USDC back. They invested 10,001. They walked away with 15,001. Net profit: 5,000 USDC, taken directly from the victim.
+3. The share price is now 10,001 USDC per share. A victim deposits 5,000 USDC and the contract calculates shares = 5,000 × 1 / 10,001 ≈ 0.4999. Solidity rounds down, so the victim receives **zero shares**. Their 5,000 USDC is sitting in the vault, but they have no on-chain claim to it.
+4. The attacker redeems their 1 share. The vault now holds 15,001 and has 1 share outstanding, so the attacker gets all 15,001 back. They put in 10,001 and walked away with 15,001, a profit of 5,000 USDC taken directly from the victim.
 
-This isn't theoretical. Variants of this attack have hit real protocols, including early Aave V2 markets, Hundred Finance, and others. The pattern is general: any time a share-issuing system has a totalSupply much smaller than its assets, rounding can wipe out the next depositor.
+Variants of this attack have hit real protocols, including early Aave V2 markets, Hundred Finance, and others. The pattern is general: any time a share-issuing system has a totalSupply much smaller than its assets, rounding can wipe out the next depositor.
 
 ## The defense: virtual shares
 
-The OpenZeppelin reference implementation fixes the problem with a technique called **virtual shares** (sometimes called **decimals offset**). The idea is to pretend there's always some baseline number of shares and assets in the vault that no one owns and no one can withdraw. These virtual amounts shift the math so the rounding-to-zero attack stops working.
+The OpenZeppelin reference implementation fixes the problem with a technique called **virtual shares** (sometimes called **decimals offset**). The idea is to pretend there's always some baseline number of shares and assets in the vault that no one owns and no one can withdraw. These virtual amounts receive a part of any donated assets, so inflating the share price costs the attacker money.
 
 The conversion formula becomes:
 
@@ -255,39 +244,22 @@ To see why, redo the attack with the virtual amounts using offset = 0:
 - Attacker deposits 1 wei. Vault has totalAssets = 1 + virtual 1 = 2 effective, totalSupply = 1 + virtual 1 = 2 effective. The 1 share they get is now worth ~half the vault rather than the whole thing.
 - Attacker transfers 10,000 USDC directly. Effective totalAssets = 10,002, effective totalSupply still = 2 share-equivalents.
 - Victim deposits 5,000. Shares received = 5,000 × 2 / 10,002 = ~0.9998, still rounds to 0.
+- Attacker redeems their 1 share. Effective totalAssets = 15,002, effective totalSupply = 2, so the share pays 15,002 / 2 = 7,501.
 
-So offset = 0 isn't quite enough. Setting offset to 6 (a common choice) means the virtual share supply is `10^6 = 1,000,000`. The victim's calculation becomes 5,000 × 1,000,001 / 10,002 ≈ 499,950 shares. Now they actually receive shares, and the attacker can't drain them by donating.
+The victim still loses 5,000, but the attacker put in 10,001 and got back 7,501. The other 7,500 stays in the vault, where no share can claim it. With offset = 0 the attack costs the attacker 2,500, but it does not protect the victim.
 
-The offset is a parameter the vault implementer chooses. Higher values give stronger protection against the attack, at the cost of producing very small share amounts that may look strange in user interfaces. OpenZeppelin's default `_decimalsOffset()` returns 0, which OpenZeppelin's documentation recommends increasing for any vault that holds value.
+Setting offset to 6 (a common choice) means the virtual share supply is `10^6 = 1,000,000`. Redo the attack once more:
 
-A simpler alternative that also defends against this attack: have the deployer make an initial deposit during construction, large enough that the inflation math doesn't work out economically. This is called "burning the first share" because the shares are usually sent to address(0). It's less robust than virtual shares but is sometimes the right choice for permissioned vaults where you control the deployment.
+- Attacker deposits 1 wei and receives 1 × 1,000,000 / 1 = 1,000,000 shares.
+- Attacker transfers 10,000 USDC directly. totalAssets = 10,001, totalSupply = 1,000,000.
+- Victim deposits 5,000. Shares received = 5,000 × 2,000,000 / 10,002 ≈ 999,800.
+- totalAssets = 15,001 and totalSupply = 1,999,800, so with the virtual amounts the effective totals are 15,002 and 2,999,800. The victim's shares are worth 999,800 × 15,002 / 2,999,800 ≈ 5,000. The attacker's shares are worth 1,000,000 × 15,002 / 2,999,800 ≈ 5,001.
 
-## Decimals handling
+Now the victim receives shares worth their whole deposit, and the attacker gets back about half of the 10,001 they put in. The other half of the donation went to the 1,000,000 virtual shares.
 
-A vault's share token has its own `decimals()`, which by convention should match the underlying asset's decimals. If USDC has 6 decimals, the share token should also have 6, so amounts look consistent in the UI.
+The offset is a parameter the vault implementer chooses. Higher values give stronger protection against the attack, at the cost of producing very small share amounts that may look strange in user interfaces: the share token's decimals are the asset's decimals plus the offset. OpenZeppelin's default `_decimalsOffset()` returns 0, which OpenZeppelin's documentation recommends increasing for any vault that holds value.
 
-The limitation is that the original ERC-20 standard doesn't require `decimals()` to exist. It's part of the optional `IERC20Metadata` extension. A vault deployed against an exotic asset might not be able to read its decimals at all.
-
-OpenZeppelin's solution is a helper that tries to call `decimals()` on the asset using a low-level `staticcall`, falls back to 18 if the call reverts or returns garbage, and then optionally adds the offset before exposing the vault's own decimals. The pattern looks like this:
-
-```solidity
-function _tryGetAssetDecimals(IERC20 asset_)
-    internal view returns (bool, uint8)
-{
-    (bool success, bytes memory data) = address(asset_).staticcall(
-        abi.encodeWithSelector(IERC20Metadata.decimals.selector)
-    );
-    if (success && data.length >= 32) {
-        uint256 raw = abi.decode(data, (uint256));
-        if (raw <= type(uint8).max) {
-            return (true, uint8(raw));
-        }
-    }
-    return (false, 0);
-}
-```
-
-The use of `staticcall` here is intentional. The vault is asking another contract a question, and staticcall guarantees that the call cannot modify state, so it's safe to make from a constructor or view function.
+A simpler alternative that also defends against this attack: have the deployer make an initial deposit during construction, large enough that the inflation math doesn't work out economically. This is called "burning the first share" because the shares are usually sent to address(0), and it is the same idea as Uniswap V2's minimum liquidity lock from the AMM lesson. It's less robust than virtual shares but is sometimes the right choice for permissioned vaults where you control the deployment.
 
 ## When to use ERC-4626
 
@@ -304,5 +276,3 @@ It's the wrong choice when:
 - The pool holds multiple assets rather than one (an AMM pool holds two assets, so ERC-4626 doesn't fit, and Uniswap V2 LP tokens are similar in spirit but use their own interface)
 - The user's claim isn't fungible (a lending position with a custom interest rate isn't a clean share of a pool)
 - The shares are non-transferable by design (governance staking with a lockup isn't naturally ERC-4626)
-
-The standard is also intentionally minimal. It says nothing about how the vault generates yield, how fees are charged, how the strategy is upgraded, or how rebalancing happens. All of those are decisions the vault implementer has to make on top of the base interface.

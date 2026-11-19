@@ -24,17 +24,17 @@ faq:
       no streaming plugin.
 ---
 
-> Your Solana program produces three kinds of output. Account data is what other programs read. Program logs are what off-chain consumers read. Transaction metadata records what happened. None of these are interchangeable. The rule that ties them together is "emit an event for every important state change," which is how your data actually leaves the chain and reaches your frontend.
+> Your Solana program produces three kinds of output. Account data is what other programs read. Program logs are what off-chain consumers read. Transaction data records the instructions, the signers, the accounts touched, and whether the transaction succeeded. The rule that ties them together is "emit an event for every important state change," which is how your data leaves the chain and reaches your frontend.
 
-## The on-chain / off-chain boundary
+## Programs read only account data, and history does not fit there
 
-Solana draws a sharper line between on-chain and off-chain data than the EVM does. Two facts make this true.
+Two facts draw the line between on-chain and off-chain data on Solana.
 
-First, account data is the only thing programs can read from each other. There's no on-chain API for reading another program's logs, no way to subscribe to events at the program level, no shared memory between executions. If your program needs to react to something another program did, you read that program's account state. Logs and events don't enter the picture.
+First, account data is the only thing programs can read from each other. There's no on-chain API for reading another program's logs and no way to subscribe to events at the program level. If your program needs to react to something another program did, you read that program's account state.
 
-Second, account storage is expensive. Every byte you store costs rent at the rent-exempt rate. A 1KB account locks up about 7 million lamports. Storing the full history of every action a user has taken would mean creating new accounts indefinitely, which gets prohibitively expensive after the first thousand operations.
+Second, account storage is expensive. Every byte you store costs rent at the rent-exempt rate. A 1KB account locks up about 8 million lamports. Storing the full history of every action a user has taken would mean creating new accounts indefinitely, which gets prohibitively expensive after the first thousand operations.
 
-These two facts together create a strict division of labor. State that other programs need to read goes into account data. Everything else, the user-facing log of what happened, analytical data, historical traces, search-friendly indexes, lives off-chain and is built by reading the chain.
+These two facts together create a strict division of labor. State that other programs need to read goes into account data. Everything else, the user-facing log of what happened, analytical data, historical traces, search-friendly indexes, lives off-chain and is built by reading the chain. The same division exists on Ethereum, where a contract cannot read its own events and storage costs far more than logs ([errors, modifiers, and events](/courses/development-on-ethereum/solidity-basics/errors-modifiers-and-events)).
 
 <svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>How data leaves the chain: on-chain data to off-chain reads</title><desc>The diagram shows on-chain data (account data, program logs, transaction data) flowing into three ways to read it: direct RPC reads, a third-party indexer, or a self-hosted worker. These feed off-chain uses like frontend UI, notifications, analytics, and search, noting the choice between paid third-party and self-hosted is mostly economic.</desc>
   <defs>
@@ -93,11 +93,11 @@ These two facts together create a strict division of labor. State that other pro
   <text x="360" y="568" text-anchor="middle" font-family="monospace" font-size="10">paid third-party = fast to start. Self-hosted = control and ownership of the pipeline.</text>
 </svg>
 
-## Why "emit for every important state change" is the rule
+## Account data shows the current state, not how the account got there
 
-Here is a rule that many new Solana developers miss: anything you want to display, alert on, search by, or analyze later must be emitted as an event. Reading the account data tells you the current state. It does not tell you how the account got there.
+Anything you want to display, alert on, search by, or analyze later must be emitted as an event. Reading the account data tells you the current state. It does not tell you how the account got there.
 
-Concretely, suppose your staking program has a `StakePosition` account with `amount` and `staked_at` fields. An off-chain consumer can read the current state of any position by fetching the account. But the consumer cannot answer questions like:
+Concretely, suppose your staking program has a `StakePosition` account with `owner`, `amount` and `staked_at` fields. An off-chain consumer can read the current state of any position by fetching the account. But the consumer cannot answer questions like:
 
 - When was this position opened?
 - Did this user previously open and close a position?
@@ -106,56 +106,47 @@ Concretely, suppose your staking program has a `StakePosition` account with `amo
 
 The first question is partly answered by `staked_at`, but only because you happened to store the timestamp on the account. The other questions can't be answered from current state at all. Once a position is closed via `claim`, the account is gone. Its history is unrecoverable from the chain state.
 
-The fix is to emit an event at every meaningful state change: position opened, position claimed, position closed via unstake. The events go into the transaction record. That record is part of the confirmed transaction data, which archival nodes and RPC providers store, and which indexers can query long after the transaction confirmed. Now any off-chain consumer with access to the historical event stream can reconstruct the full history of every position, even ones that were closed years ago.
+The fix is to emit an event at every meaningful state change: position opened, position claimed, position closed via unstake. As the [errors and events lesson](/courses/development-on-solana/writing-your-first-program/errors-and-events) showed, `emit!` serializes the event struct and writes it to the transaction's logs, and the IDL carries the schema that off-chain code uses to decode it. The logs are stored with the confirmed transaction, which archival nodes and RPC providers keep and which indexers can query long after the transaction confirmed. Now any off-chain consumer with access to the historical event stream can reconstruct the full history of every position, even ones that were closed years ago.
 
-There's a temptation to skip events because "I can always read the account." Don't. The moment your account closes or its fields change, the historical view is gone unless you emitted events. Add the event when you write the handler, before you forget what state changes matter.
+For the claim, the event carries what the closed account held:
 
-## Third-party indexers: Helius and Triton
+```rust
+#[event]
+pub struct PositionClosed {
+    pub owner: Pubkey,
+    pub amount: u64,
+    pub staked_at: i64,
+    pub closed_at: i64,
+}
 
-The fastest way to get off-chain data into your application is to use a third-party indexer. Several services dominate the Solana indexing space.
+pub fn claim(ctx: Context<Claim>) -> Result<()> {
+    let position = &ctx.accounts.position;
+    emit!(PositionClosed {
+        owner: position.owner,
+        amount: position.amount,
+        staked_at: position.staked_at,
+        closed_at: Clock::get()?.unix_timestamp,
+    });
+    Ok(())
+}
+```
 
-**Helius** offers webhooks and an enhanced RPC. You can register a webhook with a list of program IDs or specific accounts, and Helius will push transactions touching those targets to your backend in near-real-time. Their parsed-transaction API decodes Anchor IDLs automatically, so events arrive as structured JSON rather than raw base64.
+The `Claim` accounts struct closes the position with `close = owner`, so the account is gone once the instruction finishes, and the `PositionClosed` event in the transaction's logs keeps its amount and both timestamps.
 
-**Triton's Yellowstone** offers a gRPC streaming interface, also called Yellowstone gRPC, where you subscribe to filters on accounts, slots, transactions, or programs. Your backend receives a steady stream of updates and can process them however you want. The interface is lower-level than Helius's webhooks but gives you more control and typically better throughput.
+An event costs compute in the transaction that emits it, but no rent. Add the event when you write the handler, before you forget what state changes matter.
 
-**The Graph and SubQuery** offer indexing frameworks where you define schemas and event handlers, and the framework runs the indexer for you against the chain. These are higher-level abstractions that work well for query-by-content patterns like "find all users with stake amount over X".
+## Rent an indexer first, and run your own when the bill grows
 
-The trade-off across all of these is the same. You write your code against their interface and let them run the infrastructure. You pay them. You get fast time-to-launch in exchange for being a customer of their pipeline.
+Events sit in transaction logs, and something off chain has to collect them. The diagram above shows three ways to do it, and an application usually moves through them in this order.
 
-This is the right choice for most applications. The infrastructure to reliably index a Solana program in production is non-trivial, and renting it from a specialist is usually cheaper than building it yourself, especially in the early stages of an application's life.
+Direct RPC calls from your frontend or backend work for small-scale apps with simple state. A third-party indexer, such as Helius webhooks or Triton's Yellowstone gRPC stream, pushes the transactions that touch your program to your backend. You write your code against their interface, they run the infrastructure, and you pay them. This is the right choice for most applications. Renting the infrastructure from a specialist is usually cheaper than building it yourself, especially in the early stages of an application's life.
 
-## Running your own indexer
+Your own indexer is more code, but much less infrastructure than it sounds. You don't need to run a validator or a streaming gRPC plugin. The standard pattern is a small worker process that polls a regular RPC endpoint on a schedule, say every 10 seconds, decodes the new transactions and account data using your program's IDL, and writes the result into your database. A 10-second delay is fine for dashboards, analytics, and most user-facing features. Protocols build their own when the third-party bill has grown past the cost of a worker and a Postgres database, when no outside provider may see their queries or their indexed data, or when they need processing that a generic indexer doesn't do, such as joining account state with transaction logs at write time.
 
-What most tutorials skip: you can also run your own, and it's much less infrastructure than it sounds. You don't need to run a validator. You don't need a streaming gRPC plugin. The standard pattern is a small worker process that polls a regular RPC endpoint, decodes what it finds, and writes the result into your database. That's the whole thing.
+## Your own indexer must be safe to rerun and to rebuild from the chain
 
-The shape of a typical polling indexer:
+The worker remembers where it left off, usually by recording the last processed slot or signature, so the next tick picks up from there. If it stops after writing rows but before recording that position, the next tick reads the same transactions again. So each write is an upsert keyed by signature or account address, and processing a transaction twice leaves the same rows as processing it once.
 
-1. A worker runs on a schedule, say every 10 seconds.
-2. On each tick, the worker asks the RPC for whatever happened recently. This is usually some combination of `getSignaturesForAddress` for your program's transaction history, `getBlock` or `getTransaction` to pull full transaction data for the new signatures, and `getProgramAccounts` or `getAccountInfo` for current account state when you need a snapshot.
-3. The worker decodes the returned data using your program's IDL: parses out the events from each transaction's logs, decodes account data into typed structs.
-4. The worker writes the decoded results into your database, typically with an upsert keyed by signature or account address so reruns are idempotent.
-5. The worker remembers where it left off, usually by recording the last processed slot or signature, so the next tick picks up from there.
+The database is a view derived from the chain, so it can also be rebuilt from nothing: the worker starts from the program's first transaction and decodes every event again. This works for as long as your RPC provider serves the old transactions. Whichever of the three ways reads the chain, it finds only the events the program emitted.
 
-That's it. No validator. No plugin. No streaming infrastructure. Most production indexers run as a Node.js or Python or Go process behind a regular RPC endpoint, whether your own, a public one, or a paid provider like Helius or QuickNode, with a Postgres or similar database holding the results.
-
-The polling interval is the one parameter you control. Every 10 seconds catches activity within a 10-second window of delay, which is fine for dashboards, analytics, and most user-facing features. Lower latency is possible by shortening the interval or by switching to a streaming connection if your RPC provider offers one, such as Helius webhooks or Triton's gRPC stream. The trade-off is that streaming is more code to maintain and often costs more, while polling at 10-second intervals is cheap and rarely needs touching.
-
-There are three reasons protocols decide it's worth running their own indexer instead of using a third-party.
-
-The first is unit economics. Once a third-party indexer bill starts adding up, replacing it with a worker process plus a Postgres database is usually much cheaper. The RPC requests to fetch the data are charged separately, but RPC pricing is generally much cheaper per request than indexer-product pricing.
-
-The second is data sovereignty. Some applications need to guarantee they can index data without depending on any external indexing service. A regulated financial protocol, a forensics tool, or an internal analytics system for a company that doesn't want its query patterns visible to a third party are all examples. Your own indexer means no provider sees your queries or your stored data. You still rely on an RPC provider to read the chain, but the indexed view is yours.
-
-The third is custom semantics. Third-party indexers index everything generically and let you filter. Your own pipeline can do custom processing inline: decoding specific Anchor IDLs and writing typed rows, joining account state with transaction logs at write time, computing derived values that your application needs but the generic indexer doesn't produce. The flexibility is real, even if you don't use it on day one.
-
-## The practical decision
-
-For a typical application, the path is:
-
-1. **Start with direct RPC.** Just call `getAccountInfo` and `getProgramAccounts` from your frontend or backend. Works for small-scale apps with simple state. You'll outgrow it.
-2. **Move to a third-party indexer for production.** Helius or Triton, whichever fits your access pattern. You pay them, they give you reliable real-time data and good APIs. This carries most apps from launch through their first year or two.
-3. **Build your own indexer when the bill or the limits start to bite.** A polling worker against an RPC endpoint, writing into your own database. More code than option 2, far less infrastructure than people assume.
-
-You don't have to commit to one path forever. The data shape stays constant across all three paths, meaning the events your program emits and the account structures defined by your IDL. The implementation underneath can change as your needs evolve. Choosing the right tier for your current needs matters more than committing to the "correct" architecture from the start.
-
-The constant across all three paths is the events your program emits. Get those right, meaning comprehensive, well-typed, and emitted at every meaningful state change, and any of the indexing options will work. Skip events or emit them inconsistently, and no amount of fancy infrastructure on top can reconstruct what your program didn't tell anyone happened.
+So for every account your program can close or overwrite, ask which questions about the protocol's past can no longer be answered once it is gone. Each of those questions needs an event.
