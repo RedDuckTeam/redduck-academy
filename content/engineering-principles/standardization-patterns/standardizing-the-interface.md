@@ -25,25 +25,25 @@ faq:
       at once.
 ---
 
-> A fragmented ecosystem is expensive in one specific way. Every pair of participants has to agree on how to work together, and the total cost grows with the number of pairs. Standardizing a single shared interface removes those private agreements. Each participant matches the standard once and becomes compatible with everyone else who did the same.
+> In a fragmented ecosystem every pair of participants has to agree on how to work together, and the total cost grows with the number of pairs. Standardizing a single shared interface removes those private agreements. Each participant matches the standard once and becomes compatible with everyone else who did the same.
 
 ## Before the box, every boundary meant repacking
 
-Move a shipment of goods across the world before the 1950s and it was handled loose, piece by piece. Each kind of cargo had its own way of being loaded. Each port had its own equipment. Each ship had its own hold. Goods travelling from a truck to a train to a ship were unpacked and repacked at every boundary between them, by hand, slowly, with loss and theft at each step. The truck, the train, and the ship were each built for their own kind of load and matched nothing else.
+Move a shipment of goods across the world before the 1950s and it was handled loose, piece by piece. Each kind of cargo had its own way of being loaded, each port its own equipment, and each ship its own hold. Goods travelling from a truck to a train to a ship were unpacked and repacked at every boundary between them, by hand, slowly, with loss and theft at each step. The truck, the train, and the ship were each built for their own kind of load and matched nothing else.
 
-The intermodal shipping container fixed one thing and only one thing: the dimensions of the box and the fittings at its corners. It said nothing about what went inside. A container of coffee and a container of car parts look identical from the outside, so a crane does not care which it lifts. Once the box was standard, every truck bed, every rail car, every crane, and every port in the world was built to the same measurements, and any of them could carry any shipment. The repacking at each boundary disappeared.
+The intermodal shipping container fixed one thing, the dimensions of the box and the fittings at its corners. It said nothing about what went inside. A container of coffee and a container of car parts look identical from the outside, so a crane does not care which it lifts. Once the box was standard, every truck bed, every rail car, every crane, and every port in the world was built to the same measurements, and any of them could carry any shipment. The repacking at each boundary disappeared.
 
 ## The same problem in software: text before Unicode
 
 Software had its own version of loose cargo. For decades, each language region stored text in its own character encoding. One region used one encoding, another used a different one, and a document that moved between two systems arrived as unreadable characters unless a converter existed for that exact pair. With many encodings in use, someone had to write and maintain a converter for each direction between each pair of them.
 
-Unicode replaced the pairs with a single target. It gives every character in every writing system one number. A system implements Unicode once, and from that moment it can exchange text correctly with every other system that did the same. No per-pair converters. One implementation, and compatibility with all the rest.
+Unicode replaced the pairs with a single target. It gives every character in every writing system one number. A system implements Unicode once, and from that moment it can exchange text correctly with every other system that did the same.
 
 ## Why a standard turns N times N into N
 
-Underneath both stories is a number. Take N participants who all need to work with each other. Without a shared standard, each pair has to agree on its own interface, so the number of integrations grows with the number of pairs, on the order of N times N. With ten participants, that is on the order of a hundred private arrangements. Add one more and you add ten new integrations, one against each participant already there.
+Take N participants who all need to work with each other. Without a shared standard, each pair has to agree on its own interface. Each of the N participants has to agree with the other N-1, and that counts every pair twice, so the number of integrations is N(N-1)/2, which grows on the order of N times N. With ten participants that is 45 private arrangements, or 90 if each direction needs its own converter, as it did for text encodings. Add one more and you add ten new integrations, one against each participant already there.
 
-With a standard, each participant implements the one shared interface and nothing else. That is N integrations in total, one per participant. Add a new participant and the cost is a single implementation matched against the standard, where before it was a negotiation with every member already present. This is the whole economic case for standardizing an interface, and it is why a standard grows more valuable as more participants adopt it.
+With a standard, each participant implements the one shared interface and nothing else. That is N integrations in total, one per participant. Add a new participant and the cost is a single implementation matched against the standard, where before it was a negotiation with every member already present. So a standard grows more valuable as more participants adopt it.
 
 <svg role="img" viewBox="0 0 720 385" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Pairwise integrations without a standard versus one integration each with a standard</title><desc>Two panels. On the left, five participants without a standard, every one connected to every other, giving ten links, on the order of N times N. On the right, the same five participants each connected only to a shared standard at the center, giving five links, N in total. Adding a participant adds a link to every other on the left, but only one link on the right.</desc>
 <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">Without a standard every pair coordinates. With one, each joins once.</text>
@@ -110,9 +110,9 @@ With a standard, each participant implements the one shared interface and nothin
 
 ## A standard is a constraint you accept on purpose
 
-A **standard** is not free. It is a constraint. It fixes decisions that an individual participant might have preferred to make differently, and it fits some uses more comfortably than others. A standard that many participants already depend on is also very slow to change, because changing it means every one of them has to move at once. The flexibility you give up is real.
+A **standard** fixes decisions that an individual participant might have preferred to make differently, and it fits some uses more comfortably than others. A standard that many participants already depend on is also very slow to change, because changing it means every one of them has to move at once. And it removes only the agreements among participants who adopted the same standard, so two groups on two different standards still need an adapter between them.
 
-This is the **tradeoff** from [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not). The parent goal is compatibility across the whole ecosystem. The child goal a participant gives up is the freedom to shape its own interface exactly as it likes. Standardizing trades the child goal for the parent one. It is worth doing when compatibility across the group matters more than local control, and it is the wrong move when it does not.
+This is the **tradeoff** from [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not). The parent goal is compatibility across the whole ecosystem. The child goal a participant gives up is the freedom to shape its own interface as it likes. Standardizing trades the child goal for the parent one. It is worth doing when compatibility across the group matters more than local control, and it is the wrong move when it does not.
 
 ## Count the integrations before you commit
 
@@ -120,6 +120,6 @@ Before you wire a set of components together, count the arrangements you are sig
 
 ## Blockchain application
 
-Skip this section if you only want the principle. Decentralized finance repeated the shipping-container story almost exactly. Before 2022, every protocol that held deposits and paid a yield exposed its own deposit interface. One used a deposit call, another a mint call, another a supply call with several parameters of its own. Anyone building on top of several protocols wrote and maintained a separate adapter for each, the software equivalent of repacking cargo at every boundary. ERC-4626 defined one vault interface, built as an extension of the ERC-20 token standard rather than a replacement for it, and the per-protocol adapters fell away.
+Decentralized finance repeated the shipping-container story. Before 2022, every protocol that held deposits and paid a yield exposed its own deposit interface. One used a deposit call, another a mint call, another a supply call with several parameters of its own. Anyone building on top of several protocols wrote and maintained a separate adapter for each, the software equivalent of repacking cargo at every boundary. ERC-4626 defined one vault interface, built as an extension of the ERC-20 token standard rather than a replacement for it, and the per-protocol adapters fell away.
 
-ERC8009, examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack), makes the same move for clear signing. Hardware wallet vendors implement one interface once, rather than settling a private integration with each protocol one at a time.
+ERC-8009, described in [ERC-8009: sign the outcome](/courses/development-on-ethereum/clear-signing/erc-8009-sign-the-outcome), makes the same move for clear signing. Hardware wallet vendors implement one interface once, rather than settling a private integration with each protocol one at a time.

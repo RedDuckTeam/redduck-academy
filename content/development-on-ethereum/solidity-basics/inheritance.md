@@ -27,11 +27,11 @@ faq:
       then A, and each ancestor runs once.
 ---
 
-> Solidity contracts can extend other contracts the same way classes extend in object-oriented languages. A child contract gets all the state variables, modifiers, functions, and events declared in its parents. Properly used, inheritance lets you write small, focused contracts that compose into larger ones. Improperly used, it produces multi-level hierarchies that are hard to follow and audit. This lesson covers the mechanics of inheritance, the rules around overriding, and the patterns most often seen in production code.
+> A child contract gets all the state variables, modifiers, functions, and events declared in its parents. The parents are not deployed separately. The compiler puts their code into the child, and one contract with one storage goes on chain.
 
-The classic motivation is repetition. A handful of state variables and modifiers appear in nearly every nontrivial contract: an owner address, an `onlyOwner` modifier, a constructor that captures `msg.sender` as the owner, a `withdraw` function that the owner alone can call. Writing these out by hand in every contract is wasteful and error-prone. Extracting them into a base contract and inheriting from it lets you share the implementation across many contracts.
+The usual reason to inherit is repetition. An owner address, an `onlyOwner` modifier, and a constructor that captures `msg.sender` as the owner appear in nearly every nontrivial contract. Extracting them into a base contract and inheriting from it lets you share the implementation across many contracts.
 
-## Single inheritance
+## One contract goes on chain
 
 The syntax for one contract inheriting from another uses the keyword `is`.
 
@@ -51,23 +51,22 @@ contract Ownable {
 }
 
 contract Vault is Ownable {
-    function withdraw(address payable to) external onlyOwner {
-        to.transfer(address(this).balance);
+    function withdraw(address to) external onlyOwner {
+        (bool ok, ) = to.call{value: address(this).balance}("");
+        require(ok, "send failed");
     }
 }
 ```
 
-`Vault is Ownable` means everything declared in `Ownable` is part of `Vault`. The state variable `owner`, the constructor, and the modifier `onlyOwner` are all available inside `Vault`. When `Vault` is deployed, the `Ownable` constructor runs first, then any code in `Vault`'s own constructor. You don't deploy `Ownable` separately. There's only one contract on chain, and it contains both the inherited and the original code.
+`Vault is Ownable` means everything declared in `Ownable` is part of `Vault`. The state variable `owner`, the constructor, and the modifier `onlyOwner` are all available inside `Vault`. When `Vault` is deployed, the `Ownable` constructor runs first, then any code in `Vault`'s own constructor. There's only one contract on chain, and it contains both the inherited and the original code.
 
-The four visibility levels from the functions lesson interact with inheritance directly. `public` and `internal` members are accessible from child contracts. `private` members are not. `external` functions can be called by child contracts, but only via `this.functionName()`. That's the same restriction as calling them from the same contract.
+Parent and child are one contract, so a state variable name can be declared only once in the whole chain. If `Ownable` declares `address public owner`, then `Vault` cannot also declare `address public owner`. This is a compile error rather than silent shadowing.
 
-A child contract cannot declare a state variable with the same name as one in a parent. This is a compile error rather than silent shadowing. If `Ownable` declares `address public owner`, then `Vault` cannot also declare `address public owner` even if it intends to. The variable exists in the inheritance chain exactly once.
+Which parent members a child can use is set by the visibility levels from the [functions lesson](/courses/development-on-ethereum/solidity-basics/functions). `public` and `internal` members are accessible from child contracts, and `private` members are not. `external` functions can be called by child contracts, but only via `this.functionName()`.
 
 ## Passing arguments to a parent constructor
 
-When a parent contract's constructor takes arguments, the child must supply them. There are two ways to do it.
-
-The first is to specify the arguments directly in the inheritance list, with literal or compile-time-known values:
+The `Ownable` above makes whoever deploys the contract its owner. OpenZeppelin's `Ownable` is the canonical base contract of this kind, and many production contracts inherit from it directly. Newer versions accept the initial owner as a constructor argument, which addresses a real pitfall where the deployer accidentally became the owner of a contract intended for someone else. A minimal `Ownable` that takes the owner as an argument:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -78,15 +77,9 @@ contract Ownable {
         owner = initialOwner;
     }
 }
-
-contract HardcodedVault is Ownable(0x1234567890123456789012345678901234567890) {
-    // owner is set to the hardcoded address when this contract is deployed
-}
 ```
 
-This form is useful when the parent's constructor argument is known at the time you write the child contract. It's static, but compact.
-
-The second is to call the parent constructor from inside the child's own constructor:
+When a parent contract's constructor takes arguments, the child must supply them. The usual way is to call the parent constructor from the child's own constructor:
 
 ```solidity
 contract DynamicVault is Ownable {
@@ -96,37 +89,13 @@ contract DynamicVault is Ownable {
 }
 ```
 
-The syntax after the parameter list, `Ownable(initialOwner)`, looks like a function call attached to the constructor declaration. It tells Solidity to pass `initialOwner` to the parent's constructor when `DynamicVault` is deployed. The parent constructor runs first, then `DynamicVault`'s body runs.
+The syntax after the parameter list, `Ownable(initialOwner)`, tells Solidity to pass `initialOwner` to the parent's constructor when `DynamicVault` is deployed. The parent constructor runs first, then `DynamicVault`'s body runs. When the value is fixed at the time you write the child, it can go directly in the inheritance list instead, as in `contract HardcodedVault is Ownable(0x1234567890123456789012345678901234567890)`.
 
-Use the second form when the value comes from the deployment transaction and isn't known at compile time. Use the first when the value is fixed.
+If a parent has a constructor with required arguments and the child supplies none, the child cannot be deployed and the compiler will either reject it or require it to be marked `abstract`.
 
-If a parent has a constructor with required arguments and the child supplies none, the child cannot be deployed and the compiler will either reject it or require it to be marked `abstract`. We'll see this next.
+## Abstract contracts and interfaces
 
-## Abstract contracts
-
-A contract that doesn't fully satisfy all the requirements for deployment is **abstract**. Most commonly, that means it inherits from a parent with a constructor argument it doesn't provide.
-
-```solidity
-// Solidity 0.8.24, Ethereum mainnet
-abstract contract Balances is Ownable {
-    // Ownable's constructor takes (address initialOwner)
-    // Balances does not provide it, so Balances cannot be deployed.
-
-    function getBalance() public view returns (uint256) {
-        return address(this).balance;
-    }
-}
-
-contract Wallet is Balances {
-    constructor(address initialOwner) Ownable(initialOwner) {
-        // now the constructor chain is complete; Wallet is deployable
-    }
-}
-```
-
-An abstract contract can still be inherited from. It just cannot be deployed by itself. Trying to deploy one is a compile-time error. Abstract contracts are a structural device for organizing code that's only complete when something else extends it.
-
-Abstract contracts can also have function declarations without bodies, similar to interface methods:
+A contract that doesn't fully satisfy all the requirements for deployment is **abstract**. It can still be inherited from, but trying to deploy it is a compile-time error. One case is the missing constructor argument above. The other is a function declared without a body:
 
 ```solidity
 abstract contract PriceFeed {
@@ -136,9 +105,11 @@ abstract contract PriceFeed {
 
 A child that inherits from this must override `latestPrice` with a concrete implementation, or remain abstract itself.
 
+An `interface` declares functions and events and implements none of them. The `IERC20` interface in the [ERC-20 lesson](/courses/development-on-ethereum/token-security-and-evm-internals/what-is-erc-20) is six function declarations and two events. A contract inherits an interface with `is`, the same way it inherits a contract, and implements its functions. Other contracts then need only the interface to call it, as the [low-level calls lesson](/courses/development-on-ethereum/token-security-and-evm-internals/low-level-calls) shows.
+
 ## Function overriding: `virtual` and `override`
 
-Solidity requires explicit opt-in for function overriding. A function in a parent contract is not overridable by default. You have to declare it `virtual` to allow children to provide a replacement:
+A function in a parent contract is not overridable by default. You have to declare it `virtual` to allow children to provide a replacement:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -162,46 +133,24 @@ contract NoTransfer is Ownable {
 }
 ```
 
-The child writes `override` after the parameter list to declare that it is replacing the parent's function. Both keywords are required. Forgetting `virtual` on the parent or `override` on the child is a compile error. This explicitness is intentional. It makes it impossible to accidentally override a parent function, and it makes the inheritance behavior obvious to anyone reading the code.
+The child writes `override` after the parameter list to declare that it is replacing the parent's function. Forgetting `virtual` on the parent or `override` on the child is a compile error. This makes it impossible to accidentally override a parent function, and it makes the inheritance behavior obvious to anyone reading the code.
 
-If you want the child to remain overridable in turn, mark it both `virtual` and `override`:
+If you want the child to remain overridable in turn, mark it both `virtual` and `override`, as in `function f() public virtual override` in the diamond example below.
 
-```solidity
-contract Variant is Ownable {
-    function transferOwnership(address newOwner) external virtual override {
-        // do something extra, then call the parent
-        require(newOwner != address(0), "no zero address");
-        super.transferOwnership(newOwner);
-    }
-}
-```
+An override keeps the parent's visibility. The one exception is that an `external` function can be overridden as `public`. Any other change is a compile error, `Overriding function visibility differs`.
 
-This becomes important in deep inheritance chains where multiple layers add behavior.
+Modifiers can also be virtual and overridden using the same `virtual`/`override` keywords.
 
-Visibility on an override has to be the same or more permissive than the parent. A `public` function can be overridden as `public`. An `external` function can be overridden as `external` or `public`. You cannot tighten visibility, since callers of the parent's contract expect the function to remain callable from where the parent allowed.
+## Multiple inheritance needs one order of ancestors
 
-Modifiers can also be virtual and overridden using the same `virtual`/`override` keywords. The same rules apply.
-
-## Multiple inheritance and linearization
-
-Solidity supports inheriting from multiple parents. The syntax is just a comma-separated list:
-
-```solidity
-contract Vault is Ownable, Balances {
-    // inherits members from both Ownable and Balances
-}
-```
-
-The order matters. Parents must be listed from **most base to most derived**. That is, most general first, most specific last. If `Balances is Ownable`, then `Ownable` is more base than `Balances`, so `Ownable` must come first in any list that mentions both:
+Solidity supports inheriting from multiple parents, written as a comma-separated list. All of them end up in one contract, so the compiler needs a single order of all ancestors. Parents must be listed from **most base to most derived**, that is, most general first and most specific last. If `Balances` itself inherits from `Ownable`, then `Ownable` is more base than `Balances`, so `Ownable` must come first in any list that mentions both:
 
 ```solidity
 contract Vault is Ownable, Balances { ... }   // correct order
 contract Bad is Balances, Ownable { ... }     // compile error
 ```
 
-The reverse order produces an error about "linearization" that is hard to interpret at first. The compiler is using a specific algorithm called C3 linearization to compute a single ordering of all ancestor contracts. C3 needs the inheritance lists to be consistent with the topology of the inheritance graph. If you list a more-derived parent before a more-base one, the algorithm fails because the order you wrote contradicts the order implied by the rest of the graph.
-
-In practice: list the most general library contracts first, then progressively specialized ones, with the most specific behavior last.
+The reverse order produces an error about "linearization". The compiler uses an algorithm called C3 linearization to compute a single ordering of all ancestor contracts. If you list a more-derived parent before a more-base one, the algorithm fails because the order you wrote contradicts the order implied by the rest of the graph.
 
 When a function exists in multiple parents and a child needs to override it, the override must name every parent that declares the function:
 
@@ -226,35 +175,13 @@ contract C is A, B {
 }
 ```
 
-The `override(A, B)` declares that `C` is overriding the `action` from both `A` and `B`. Without the explicit list, the compiler cannot tell which one or both the override applies to.
+Without the explicit list `override(A, B)`, the compiler cannot tell which one or both the override applies to.
 
-## `super` and explicit parent calls
+## `super` calls the next contract in the linearization
 
-Inside an override, you often want to call the parent's version of the function rather than reimplementing it from scratch. There are two ways.
+Inside an override, you often want to call the parent's version of the function rather than reimplementing it from scratch. `Parent.f()`, for example `B.f()` written inside `D` below, names the parent explicitly and calls the implementation declared in that parent, regardless of the linearization. `super.f()` calls the **next** function in the linearization order, which is not necessarily the immediate parent of the contract you're writing. Both need the parent function to be `public` or `internal`, because a child reaches an `external` function only via `this.functionName()`.
 
-The first names the parent explicitly:
-
-```solidity
-function transferOwnership(address newOwner) external override {
-    require(newOwner != address(0), "no zero address");
-    Ownable.transferOwnership(newOwner);   // call Ownable's version specifically
-}
-```
-
-`Ownable.transferOwnership(newOwner)` is unambiguous. It calls the implementation declared in `Ownable`, regardless of the linearization.
-
-The second uses `super`:
-
-```solidity
-function transferOwnership(address newOwner) external override {
-    require(newOwner != address(0), "no zero address");
-    super.transferOwnership(newOwner);
-}
-```
-
-`super` calls the **next** function in the linearization order, which is not necessarily the immediate parent of the contract you're writing. This distinction matters in diamond inheritance, where a contract has multiple parents that themselves share a common ancestor.
-
-Consider:
+The distinction matters in diamond inheritance, where a contract has multiple parents that themselves share a common ancestor:
 
 ```solidity
 contract A {
@@ -276,14 +203,18 @@ contract D is B, C {
 
 When `D.f()` runs, `super.f()` calls `C.f()` because `C` comes after `D` in the linearization. `C.f()`'s `super.f()` then calls `B.f()`. `B.f()`'s `super.f()` finally calls `A.f()`. The call chain is `D → C → B → A` rather than the visually-suggested `D → B → A` followed by `D → C → A`. The C3 linearization guarantees each ancestor runs at most once.
 
+If `D.f()` called `B.f()` instead of `super.f()`, the chain would be `D → B → A`. `B`'s code runs, its own `super.f()` still follows `D`'s linearization to `A`, and `C.f()` never runs.
+
 This is the pattern behind composable extensions: each layer adds its behavior, calls `super.f()` to chain to the next, and the linearization ensures all layers run in a well-defined order. OpenZeppelin's ERC-20 and ERC-721 implementations rely on this pattern so each extension module can add behavior to the same function.
 
-If you want the immediate-parent semantics, use the named form. If you want the "next layer in the chain" semantics, use `super`. They're different operations, even though in single-inheritance code they look identical.
+If you want one named parent's implementation, use `Parent.f()`. If you want the next layer in the chain, use `super.f()`. In single-inheritance code the two look identical.
 
-## Production patterns
+## What inheritance costs
 
-A few patterns to recognize when reading real contracts.
+The contract that goes on chain is assembled from several source contracts, so to know what one of its functions does you have to read every ancestor that touches it. Multi-level hierarchies are hard to follow and audit. With `super`, the code runs in linearization order, which is not the order the source suggests, as the diamond example shows.
 
-**OpenZeppelin's ****`Ownable`****.** The `Ownable` contract in OpenZeppelin Contracts is the canonical example of the pattern shown at the start of this lesson. Many production contracts inherit from it directly. Newer versions accept the initial owner as a constructor argument, which addresses a real pitfall where the deployer accidentally became the owner of a contract intended for someone else.
+The parents are also part of the storage layout. State variables get slots in declaration order ([storage layout lesson](/courses/development-on-ethereum/token-security-and-evm-internals/storage-layout)), and the [upgradeable contracts lesson](/courses/development-on-ethereum/token-security-and-evm-internals/upgradeable-contracts-and-proxies) lists keeping the inheritance order among the rules for not corrupting storage.
 
-**OpenZeppelin's ****`AccessControl`****.** Generalizes `Ownable` to a role-based system. Inherits the same patterns but adds a mapping of role identifiers to address sets.
+## Write out the linearization
+
+Before you rely on `super` in a contract with several parents, write out its linearization and name the contract whose code each `super.f()` runs. For `D is B, C` above the order is `D, C, B, A`.

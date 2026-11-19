@@ -14,14 +14,16 @@ faq:
       Every program you read or write after this sits on those.
 ---
 
-You finished the Solana track. That's a real milestone. You went from "programs are stateless and accounts hold everything" to writing real Anchor programs, composing them through CPI, integrating Token-2022 extensions, and deploying the kind of code that runs on the second-largest smart-contract platform by total value locked (TVL). The Solana model is harder to start than Solidity, and you got past that part. The fluency is yours now.
+You finished the Solana track. You can now read someone else's program and say which accounts it touches and who is allowed to change them.
 
-Take a moment to appreciate what you've built. Everything you learned here is the foundation every program you'll ever read or write sits on. It doesn't expire. It gets sharper the more you use it.
+Real programs use several ideas from this course in one instruction. Take the vault from the PDAs as signers lesson, which pays a user out of its token account through the SPL Token Program:
+* Every balance is a separate token account, and only the Token Program that owns it can change it, which is the **[account model](/courses/development-on-solana/the-solana-mental-model/accounts)**.
+* The recipient's token account sits at an address anyone can compute from the wallet and the mint, which is the **[Associated Token Account](/courses/development-on-solana/working-with-other-programs/associated-token-accounts-atas)**.
+* Your program cannot change those accounts, so it calls the Token Program's Transfer instruction, which is a **[CPI](/courses/development-on-solana/working-with-other-programs/cross-program-invocation-cpi)**.
+* The data of the vault's token account records a PDA as the owner of the balance, and your program signs for that PDA by passing its seeds to `invoke_signed`, which is a **[PDA as signer](/courses/development-on-solana/working-with-other-programs/pdas-as-signers)**.
 
 ## What's next
 
-The Ethereum track is the natural next step if you haven't taken it yet. You'll write Solidity against a different account model and a different execution environment. Most of the security instincts you built here transfer. Reentrancy on Ethereum follows the same pattern as CPI misuse on Solana. The mechanics differ, but the underlying vulnerability is the same. The EVM's storage layout is easier to understand once you have already worked through rent and zero-copy.
+Pick a protocol you like and read its on-chain program end to end. Jupiter's router and a Drift or Kamino vault are good places to start. For each instruction, read the accounts struct before the handler, and say which accounts are writable, which must sign, and what stops the caller from passing a different account in each slot. Then build something of your own, or apply for an audit role.
 
-If you have already completed the Ethereum track or are not interested in learning another platform, keep building on Solana. Pick a protocol you like and read its on-chain program end to end. Read Jupiter's router. Read a Drift or Kamino vault. Build something of your own. Apply for an audit role. There's plenty of work for the kind of person who can do what you can now do.
-
-Whatever you pick next, good work getting here.
+The Ethereum track is the natural next step if you haven't taken it yet. There a contract reads and writes its own storage as it runs, while a Solana transaction has to list every account before it is sent.

@@ -22,13 +22,25 @@ faq:
 
 > A flash loan lets a contract borrow any amount of any token without putting up collateral, on the condition that the loan is repaid before the same transaction ends. If the borrower doesn't repay, the entire transaction reverts and the loan effectively never happened.
 
-## The trick: atomicity replaces collateral
+## Atomicity replaces collateral
 
-In normal lending, a borrower posts collateral worth more than the loan. The lender accepts default risk in exchange for keeping that collateral if the borrower disappears. Flash loans don't work that way. The borrower posts nothing.
+In normal lending, a borrower posts collateral worth more than the loan. The lender accepts default risk in exchange for keeping that collateral if the borrower disappears. In a flash loan the borrower posts nothing.
 
-The reason it's safe for the lender is that Ethereum transactions are **atomic**. Every state change inside one transaction either commits together or reverts together. There's no partial outcome. So the lender's logic is: send the borrower the funds, give them control to do whatever they want, then at the end of the call check the balance is back. If the balance hasn't returned (plus a small fee), the lender simply reverts the transaction. The funds were never really sent. The borrower never really had them.
+The reason it's safe for the lender is that Ethereum transactions are **atomic**. Every state change inside one transaction either commits together or reverts together. So the lender sends the borrower the funds, gives them control to do whatever they want, then at the end of the call checks that the balance is back, plus a small fee. If it isn't, the lender reverts the transaction, and the principal is still in its pool. The worst case for the lender is that the transaction reverts and it earns no fee.
 
-For the lender this is risk-free. The worst case is the transaction reverts and they earn no fee. They never lose principal, because principal that doesn't come back means the transaction unwinds and the principal is still in their pool.
+In code, the provider's side fits in one function:
+
+```solidity
+function flashLoan(address token, uint256 amount, bytes calldata data) external {
+    uint256 fee = amount * 5 / 10_000;
+    uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+    IERC20(token).transfer(msg.sender, amount);
+    IFlashLoanReceiver(msg.sender).executeOperation(token, amount, fee, data);
+    require(IERC20(token).balanceOf(address(this)) >= balanceBefore + fee, "loan not repaid");
+}
+```
+
+If the borrower sends back less than `amount + fee`, the `require` on the last line fails, and the revert also undoes the `transfer` that sent the loan out.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flash loan steps between borrower contract and provider in one transaction</title><desc>A borrower contract and a flash loan provider (Aave, Balancer, or Uniswap) run six steps inside one transaction: request the loan, receive tokens, call executeOperation, do anything with the funds, then repay the amount plus fee. The provider checks the balance; if repayment is short the whole transaction reverts as if the loan never happened, and if it is enough the transaction succeeds and the profit is kept.</desc>
   <defs>
@@ -73,20 +85,17 @@ For the lender this is risk-free. The worst case is the transaction reverts and 
   <text x="525" y="513" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">entire tx reverts, loan never existed</text>
 </svg>
 
-This is the only kind of loan that can exist this way. Off-chain finance has no equivalent because there's no other system where a multi-step transaction can be reversed cleanly if the last step fails. On Ethereum, that's just how transactions work.
-
-## The borrower's side
+## The borrower implements a callback
 
 A contract that wants to take a flash loan implements a callback function (the exact name depends on the provider: Aave calls it `executeOperation`, Balancer calls it `receiveFlashLoan`, Uniswap V3 uses `uniswapV3FlashCallback`). The contract requests a loan, the provider sends the tokens and immediately calls back into the contract, and the contract has the duration of that callback to do whatever it wants. Before the callback returns, the contract must have approved (or pushed) enough tokens back to the provider to cover the loan plus the fee.
 
 A minimal sketch in Solidity:
 
 ```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IFlashLoanProvider {
-    function flashLoan(address borrower, address token, uint256 amount, bytes calldata data) external;
+    function flashLoan(address token, uint256 amount, bytes calldata data) external;
 }
 
 interface IFlashLoanReceiver {
@@ -94,29 +103,36 @@ interface IFlashLoanReceiver {
 }
 
 contract MyArbitrageur is IFlashLoanReceiver {
-    IFlashLoanProvider public provider;
+    IFlashLoanProvider public immutable provider;
+
+    constructor(IFlashLoanProvider _provider) {
+        provider = _provider;
+    }
 
     function startArbitrage(address token, uint256 amount) external {
-        provider.flashLoan(address(this), token, amount, "");
+        provider.flashLoan(token, amount, "");
         // by the time this returns, the entire arb has executed
     }
 
     function executeOperation(address token, uint256 amount, uint256 fee, bytes calldata) external {
+        require(msg.sender == address(provider), "caller is not the provider");
         // 1. we now hold `amount` of token
         // 2. do whatever the strategy needs (swaps, calls to other protocols)
-        // 3. approve the provider to pull amount + fee back
-        IERC20(token).approve(msg.sender, amount + fee);
+        // 3. send amount + fee back to the provider
+        IERC20(token).transfer(msg.sender, amount + fee);
     }
 }
 ```
 
-Fees are small. Aave charges 0.05% of the borrowed amount at the time of writing. Balancer charges nothing on its core flash loans, which is one reason it's a popular source. Uniswap V3's flash mechanism charges the regular pool swap fee.
+The `require` at the top of `executeOperation` lets only the provider in. The function is `external` and sends `amount + fee` to whoever calls it, so without the check anyone could call it directly with any amount and take the tokens the contract holds. The provider in this sketch calls back the contract that asked for the loan, so with the check the callback runs only inside a loan that `startArbitrage` opened. Aave and Balancer take the receiver's address as a parameter, so anyone can open a loan to your contract and the provider still calls it. With them the callback also has to check who opened the loan, which Aave passes in as `initiator`.
 
-There's no practical cap on the borrowable amount beyond the provider's pool depth. If Aave has $400M of USDC in its lending pool, that's the limit. Most flash loans are far smaller than this, but the upper end gets large.
+Fees are small: Aave charges 0.05% of the borrowed amount at the time of writing. Balancer charges nothing on its core flash loans, which is one reason it's a popular source. Uniswap V3's flash mechanism charges the regular pool swap fee.
 
-## What legitimate users do with them
+There's no practical cap on the borrowable amount beyond the provider's pool depth. If Aave has $400M of USDC in its lending pool, that's the limit.
 
-Flash loans look like a tool for attackers when you first encounter them, but the dominant volume across the major providers is legitimate. Three main categories.
+## Flash loans fund arbitrage, refinancing and liquidations
+
+Flash loans look like a tool for attackers when you first encounter them, but the dominant volume across the major providers is legitimate. It falls into three main categories.
 
 **Arbitrage between exchanges.** If Uniswap and SushiSwap show different prices for the same pair, someone can profit by buying on the cheaper one and selling on the more expensive one. Without a flash loan they'd need the upfront capital. With a flash loan they can do it from a contract that holds nothing.
 
@@ -154,21 +170,15 @@ Flash loans look like a tool for attackers when you first encounter them, but th
   <text x="60" y="514" font-family="monospace" font-size="10">  SushiSwap (bought from): ETH price moved DOWN, e.g. from $3,050 to $3,035</text>
 </svg>
 
-Arbitrage is one of the things that keeps prices consistent across DEXes. Without arbitrageurs, every pool would drift independently and traders would face wildly different prices on different venues. The flash loan removes the capital barrier to doing this work, which makes the price-stabilizing pressure stronger.
-
-**Refinancing and collateral swaps.** A user has a loan on Aave collateralized by ETH. They want to switch to using staked-ETH as collateral instead. Without a flash loan, they'd have to repay the loan first (which means they need the USDC they don't have), withdraw the ETH, swap to staked-ETH, redeposit, and reborrow. With a flash loan they can do all of it in a single transaction: flash-loan the USDC to repay, withdraw ETH, swap to staked-ETH, redeposit, reborrow, repay the flash loan from the new borrow.
+**Refinancing and collateral swaps.** A user has a loan on Aave collateralized by ETH. They want to switch to using staked-ETH as collateral instead. Without a flash loan, they'd have to repay the loan first, which means they need the USDC they don't have. With a flash loan they can do all of it in a single transaction: flash-loan the USDC to repay, withdraw ETH, swap to staked-ETH, redeposit, reborrow, repay the flash loan from the new borrow.
 
 **Liquidations.** When someone else's loan goes underwater, anyone can liquidate it and take a bounty. Liquidators normally need capital sitting around to repay the bad loan. With a flash loan, they can liquidate any size position without holding capital of their own, and keep the bounty.
 
-In each of these, the flash loan is doing useful work. Capital efficiency goes up because nobody has to keep idle inventory waiting for opportunities.
+## Borrowed capital can move a pool's spot price for one transaction
 
-## The dark side: oracle manipulation
+A flash loan can also be used to manipulate something the rest of the system depends on. The most common target is a price oracle that reads from a single AMM pool.
 
-The flash loan stops being neutral the moment it's used to manipulate something the rest of the system depends on. The most common target is a price oracle that reads from a single AMM pool.
-
-Recall how Uniswap V2 pool pricing works. The pool's spot price is just the ratio of its reserves. Any swap moves the ratio. A big-enough swap moves it a lot. Normally this isn't an issue because moving the price means paying a lot of slippage, and any attacker would lose more in slippage than they could gain by exploiting the moved price. But if some other protocol reads that pool's spot price and trusts it as "the price of TOKEN," an attacker who can briefly distort the pool's reserves can extract value from the downstream protocol.
-
-The flash loan provides exactly the capital needed for the distortion, free of charge.
+A Uniswap V2 pool's spot price is the ratio of its reserves, as the [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm) showed. Any swap moves the ratio, and a big enough swap moves it a lot. Normally this isn't an issue because moving the price means paying a lot of slippage, and any attacker would lose more in slippage than they could gain by exploiting the moved price. But if some other protocol reads that pool's spot price and trusts it as the price of TOKEN, an attacker who can briefly distort the pool's reserves can extract value from the downstream protocol. The flash loan provides the capital needed for the distortion at the cost of its fee.
 
 <svg role="img" viewBox="0 0 720 700" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flash-loan attack: manipulating a thin pool's price to fake a lending oracle</title><desc>A flash loan of 1,000,000 USDC is dumped into a TOKEN/USDC pool, pushing the price from $10 to $40 so the attacker can borrow 1,600,000 USDC against inflated TOKEN collateral. After the flash loan is repaid the price reverts to $10, leaving the attacker with about $600k profit and the lending protocol with about $1.1M in bad debt.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -213,30 +223,24 @@ The flash loan provides exactly the capital needed for the distortion, free of c
   <text x="360" y="678" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">The protocol's mistake: trusting a spot price that one flash-loaned trade could move.</text>
 </svg>
 
-The numbers in the diagram are illustrative. The pattern is the same: borrow a large amount -> distort a pool -> exploit a downstream protocol that trusted the pool's spot price -> repay -> keep the difference.
+In the diagram the pool holds 100,000 TOKEN and 1,000,000 USDC, so the spot price is $10. A lending protocol reads that price and lends up to 80% of the collateral's value. The attacker swaps a flash-loaned 1,000,000 USDC into the pool, which leaves the pool with 50,000 TOKEN and 2,000,000 USDC, a spot price of $40. The lending protocol values the attacker's 50,000 TOKEN at $2,000,000 and lends 1,600,000 USDC against them. The attacker repays 1,000,500 USDC to Aave, keeps 599,500 USDC, and never comes back for the collateral. Once arbitrageurs bring the pool back to $10, that collateral is worth $500,000, and the lending protocol is left with about $1.1M of bad debt.
 
-Why doesn't the manipulation cost the attacker more than they gain? Two reasons.
+The manipulation was not free. The attacker paid 1,000,000 USDC for tokens worth $500,000 at the real price, so the swap cost them $500,000. Against those tokens they borrowed 1,600,000 USDC, which is $1,100,000 more than the tokens are worth. The difference between the two, about $600,000, is the profit. When the exploit does not need the tokens to stay behind as collateral, the attacker reverses the swap before repaying and recovers most of what they pushed through.
 
-The pool manipulation is *temporary*. The attacker swaps in, exploits, and then either reverses the swap, recovering most of what they "paid", or just lets arbitrageurs do the reversal a few blocks later. The net cost of the manipulation is mostly pool slippage and fees rather than the full nominal amount they pushed through.
+Every attack of this class has the same steps: borrow a large amount, distort a pool, exploit a downstream protocol that trusted the pool's spot price, repay, and keep the difference. bZx was hit this way in February 2020, twice in one week, for combined losses around $1M. Harvest Finance followed later that year at $24M. In total, oracle manipulation enabled by flash loans has cost protocols hundreds of millions of dollars, and the pattern still surfaces on smaller projects with weak oracle designs.
 
-The exploit is *leveraged*. A 4x price distortion can let the attacker over-borrow far more than the slippage cost of creating that distortion, especially when LTV ratios on the downstream protocol allow large borrows against the inflated collateral. Even after slippage, the math comes out positive.
+## A spot price from one pool was never a safe oracle
 
-The historical version of this attack class exploited bZx in February 2020, twice in one week, for combined losses around $1M. Harvest Finance followed later that year at $24M. Cream Finance, Warp Finance, and many others were exploited the same way. In total, oracle manipulation enabled by flash loans has cost protocols hundreds of millions of dollars, and the pattern still surfaces on smaller projects with weak oracle designs.
+The attacker doesn't strictly need a flash loan to manipulate a pool. Anyone with enough capital can do the same attack with their own tokens. The flash loan reduces the barrier from needing $10M of capital to needing only gas and a flash-loan fee.
 
-## Why this is a flash loan problem, sort of
+So **a spot price from a single AMM pool was never a safe oracle**. Someone with enough capital could always move it, and flash loans made that capital available to anyone. Blocking flash loans is therefore not a defense. The defense is at the oracle layer. Protocols need price signals that can't be moved by a single transaction.
 
-The attacker doesn't strictly need a flash loan to manipulate a pool. Anyone with enough capital can do the same attack by simply holding the tokens. The flash loan reduces the barrier from needing $10M of capital to needing only gas and a flash-loan fee. It democratized this class of attack.
+There are three main approaches in production today.
 
-The deeper issue is that **a spot price from a single AMM pool was never a safe oracle**. It was always manipulable, just expensively. Flash loans exposed how cheap the manipulation actually is.
+**External oracles** like Chainlink [price feeds](/courses/development-on-ethereum/oracles/oracles-and-chainlink-price-feeds). The price is set by off-chain aggregation across many exchanges. A single on-chain swap can't move it. This is the dominant defense.
 
-So the defense isn't "block flash loans". The defense is at the oracle layer. Protocols need price signals that can't be moved by a single transaction.
-
-Three main approaches in production today:
-
-**External oracles** like Chainlink. The price is set by off-chain aggregation across many exchanges. A single on-chain swap can't move it. This is the dominant defense.
-
-**Time-weighted prices**, where the oracle reports an average over a window rather than a spot read. A one-block manipulation contributes only one block's worth of price to the average, which dilutes its impact to near zero. The next lecture covers this in detail.
+**Time-weighted prices**, where the oracle reports an average over a window rather than a spot read. A one-block manipulation contributes only one block's worth of price to the average, which dilutes its impact to near zero. The [TWAP lesson](/courses/development-on-ethereum/oracles/twap-oracles) covers this in detail.
 
 **Multi-source checks**, where the protocol consumes two oracles and reverts if they diverge significantly. This catches the case where one of them is wrong or being attacked.
 
-The next lecture covers TWAP oracles, which are the main on-chain answer to this problem when an external oracle isn't available or sufficient. Having seen the attack pattern above, the design choices TWAP makes will be clearer.
+For every value your contract reads from another contract, ask whether someone who can borrow any amount for one transaction could move that value before your contract reads it. If they could, do not lend or pay out against it.

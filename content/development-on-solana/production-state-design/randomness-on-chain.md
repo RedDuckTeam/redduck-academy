@@ -29,13 +29,13 @@ faq:
       small, store the result, and leave heavy work to a later instruction.
 ---
 
-> Solana programs can't generate random numbers on their own. The reasons are structural rather than solvable by writing cleverer code, and the workarounds you'll see in tutorials are mostly broken in ways that have led to real money being stolen. Real randomness has to come from an external source with a cryptographic proof, which is exactly what MagicBlock VRF provides and what a consumer program wires up to receive verified random numbers in production.
+> Solana programs can't generate random numbers on their own. Real randomness has to come from an external source with a cryptographic proof, which is what MagicBlock VRF provides, and it arrives in a second transaction, some slots after the request.
 
 ## Why a blockchain can't roll dice
 
-The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result, otherwise consensus breaks. That requirement is incompatible with native randomness. If a program called some `rand()` function and each validator returned a different value, no two validators would agree on the chain state.
+The Solana runtime is a deterministic state machine. Every validator must execute every transaction and arrive at the same result, otherwise consensus breaks. If a program called some `rand()` function and each validator returned a different value, no two validators would agree on the chain state.
 
-The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain. The Clock sysvar's unix timestamp, the current slot number, the SlotHashes sysvar, recent transaction hashes, the caller's pubkey. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all manipulable by the slot leader producing the block.
+The standard workaround in beginner tutorials is to derive "randomness" from values that already exist on chain: the Clock sysvar's unix timestamp, the current slot number, the SlotHashes sysvar, recent transaction hashes, the caller's pubkey. These are deterministic for everyone reading the chain, so consensus is preserved. They are also all set or seen by the slot leader producing the block.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Lottery seed inputs a slot leader controls: Clock, SlotHashes, and tx inclusion</title><desc>A code box shows a lottery program picking a winner from a seed made of the Clock sysvar timestamp and slot number. Three boxes below show that the Clock sysvar, the SlotHashes sysvar, and transaction inclusion are all set or seen by the slot leader, and a red box lists four steps a malicious leader can use to simulate the lottery and skip transactions until the outcome favors them.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -70,25 +70,23 @@ The standard workaround in beginner tutorials is to derive "randomness" from val
   <text x="60" y="418" font-family="monospace" font-size="11">  4. Sysvar values change at the next slot, so the outcome reshuffles.</text>
 </svg>
 
-The attack does not require the validator to be the lottery's intended target. It requires only that the validator has any financial interest in the outcome and the option to suppress an unfavorable block. The cost of skipping a slot is the lost block reward. If the lottery payout exceeds that, the attack is profitable. For pools worth more than a few SOL, the attack produces a profit every time.
+A leader with a financial interest in the outcome simulates the draw before publishing the block and skips the block if the result goes against it. The cost of skipping a slot is the lost block reward. If the lottery payout exceeds that, the attack is profitable. For pools worth more than a few SOL, whoever is the leader for the slot of the draw can afford this, because skipping costs one block reward and the outcome is drawn again in the next slot.
 
-The fundamental issue: anything visible inside the block is visible to whoever is producing it, and the leader chooses what to publish. You cannot patch this by combining more sources. Any input the program reads is an input the leader can either control or see, and any deterministic function of public inputs produces an output the leader can predict.
+Anything visible inside the block is visible to whoever is producing it, and the leader chooses what to publish. You cannot patch this by combining more sources. Any input the program reads is an input the leader can either control or see, and any deterministic function of public inputs produces an output the leader can predict.
 
-## What VRF actually is
+## The oracle cannot choose a VRF output
 
 The Verifiable Random Function (VRF) protocol is a cryptographic construction that produces two things at once: a pseudorandom output, and a proof that the output was generated correctly from a specific seed using a specific private key.
 
-The setup involves a keypair. The party generating randomness, the VRF oracle service, holds the private key. The public key is published on chain in advance. The protocol works like this:
+The party generating randomness, the VRF oracle service, holds the private key. The public key is published on chain in advance. The protocol works like this:
 
 1. Someone supplies a seed, which can be anything: a slot number, a request ID, a sequence number.
 2. The oracle signs the seed with its private key using the VRF algorithm. This produces a random output and a proof.
-3. Anyone with the public key can verify, by examining the proof, that the output was generated from exactly that seed using exactly that key, and that the oracle had no freedom to choose the output.
+3. Anyone with the public key can verify, by examining the proof, that the output was generated from that seed using that key, and that the oracle had no freedom to choose the output.
 
-The third point is the critical one. The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. The output is bound to the seed and the key in a way that cannot be forged or selected.
+The oracle cannot try multiple seeds, see the outputs, and publish only the one it likes, because the seed is committed to in the proof. The oracle cannot reuse a previously favorable output for a new seed, because the proof will not verify. Either it returns the cryptographically determined output, or its proof fails verification and the on-chain program rejects the response.
 
-In short: the oracle cannot choose or manipulate the output. Either it returns the cryptographically determined output, or its proof fails verification and the on-chain program rejects the response.
-
-## The request-and-receive cycle
+## The number arrives in a second transaction
 
 VRF cannot be a single instruction call. The proof must be generated off chain by an entity holding the private key, and that work cannot happen inside a normal program execution. The pattern is asynchronous: your program submits a request in one transaction, and receives the result in a second transaction some slots later.
 
@@ -137,138 +135,44 @@ VRF cannot be a single instruction call. The proof must be generated off chain b
   <text x="140" y="530" text-anchor="middle" font-family="monospace" font-size="10">stores the result</text>
 </svg>
 
-The implication for your program design is that you cannot use a random number in the same transaction that requests it. The number does not exist yet. Your `request_randomness` CPI completes by writing a pending request to a PDA, and the user's transaction returns successfully. The number arrives later in a separate transaction via the callback. Anything the program needs to do with the number (pick a winner, reveal an NFT, settle a bet) happens inside that callback rather than the original user transaction. This async shape is the biggest design constraint in working with VRF and it shapes every program you'll build with it.
+You cannot use a random number in the same transaction that requests it, because the number does not exist yet. The request CPI completes by adding a pending request to the oracle's queue account, and the user's transaction returns successfully. Anything the program needs to do with the number (pick a winner, reveal an NFT, settle a bet) happens in the second transaction, inside the handler that the VRF program calls back (the callback), rather than in the original user transaction.
 
-The number of slots the oracle waits before fulfilling is short. Under normal load, fulfillment happens within a few slots, often within a second of the original request. The user pays for the request transaction in SOL. The oracle pays for the fulfillment transaction itself and charges a fee that gets debited from the requester at request time.
+The split would be needed even if the number could be produced on the spot. A user who gets a random outcome inside their own transaction can simulate the transaction first and send it only when it wins. So the user's transaction only commits to the bet, and someone else, here the oracle, sends the transaction that brings the result. Solana PRO covers this pattern in the [commit-execution split](/courses/solana-pro/deferred-execution/commit-execution-split) lesson.
 
-## Building a consumer program
+Under normal load, fulfillment happens within a few slots, often within a second of the original request. The user pays for the request transaction in SOL. The oracle pays for the fulfillment transaction itself and charges a fee that gets debited from the requester at request time.
 
-Your program needs two instructions: one to make the request, and one to receive the callback. The callback is a regular Anchor instruction with a specific signature that the MagicBlock VRF program will invoke via CPI.
+## In code
 
-Add the MagicBlock VRF SDK to your `Cargo.toml`. A request instruction looks like this:
+Your program needs two instructions: one to make the request, and one to receive the callback. The request is a CPI into the MagicBlock VRF program, which adds the request, with a seed and the callback target, to the oracle's queue account. The callback handler is a normal instruction with one extra constraint: it can only be called by the MagicBlock VRF program.
+
+When the VRF program delivers the number, it calls the callback through a CPI and signs for its identity PDA, which it derives from the seed `identity` and your program's ID. Only the VRF program can sign for that PDA, so the callback takes it as its first account, typed `Signer`, with an `address` constraint computed by `scoped_vrf_identity` from MagicBlock's `ephemeral-vrf-sdk` crate.
 
 ```rust
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke;
-use magicblock_vrf_sdk::{
-    create_request_randomness_ix,
-    RequestRandomnessParams,
-    VRF_PROGRAM_ID,
-};
-
-declare_id!("...");
-
-#[program]
-pub mod lottery {
-    use super::*;
-
-    pub fn request_random(ctx: Context<RequestRandom>) -> Result<()> {
-        // Build the request instruction via the SDK helper
-        let ix = create_request_randomness_ix(RequestRandomnessParams {
-            payer: ctx.accounts.user.key(),
-            callback_program_id: crate::ID,
-            callback_discriminator: instruction::ReceiveRandomness::DISCRIMINATOR.to_vec(),
-            caller_seed: ctx.accounts.lottery.key().to_bytes(),
-            ..Default::default()
-        });
-
-        // CPI into the MagicBlock VRF program
-        invoke(
-            &ix,
-            &[
-                ctx.accounts.user.to_account_info(),
-                ctx.accounts.vrf_program.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-                // ... other accounts the SDK requires
-            ],
-        )?;
-
-        Ok(())
-    }
-}
-
 #[derive(Accounts)]
-pub struct RequestRandom<'info> {
-    #[account(mut)]
-    pub user: Signer<'info>,
-
+pub struct ReceiveRandomness<'info> {
+    #[account(address = ephemeral_vrf_sdk::consts::scoped_vrf_identity(&crate::ID))]
+    pub vrf_program_identity: Signer<'info>,
     #[account(mut)]
     pub lottery: Account<'info, Lottery>,
-
-    /// CHECK: The MagicBlock VRF program, address pinned
-    #[account(address = VRF_PROGRAM_ID)]
-    pub vrf_program: UncheckedAccount<'info>,
-
-    pub system_program: Program<'info, System>,
 }
-```
 
-The important fields in `RequestRandomnessParams`:
-
-- `payer`: who pays the request fee. Usually the user.
-- `callback_program_id`: your program's ID, since the VRF program will CPI back into you.
-- `callback_discriminator`: the 8-byte Anchor discriminator of the instruction that should receive the randomness. The VRF program uses this to encode the right CPI on fulfillment.
-- `caller_seed`: 32 bytes of caller-supplied seed. Including the lottery PDA pubkey is a reasonable choice. The VRF service mixes this with its own entropy before signing, so the result is unpredictable to both sides.
-
-The callback handler is a normal instruction with one extra constraint: it can only be called by the MagicBlock VRF program. Anchor's `Signer` constraint plus an address pin handles this:
-
-```rust
-pub fn receive_randomness(
-    ctx: Context<ReceiveRandomness>,
-    randomness: [u8; 32],
-) -> Result<()> {
-    // Whatever you do with the random number happens HERE.
-    // The user's original request transaction has long since returned.
-
+pub fn receive_randomness(ctx: Context<ReceiveRandomness>, randomness: [u8; 32]) -> Result<()> {
     let lottery = &mut ctx.accounts.lottery;
-    let participants_len = lottery.participants.len() as u64;
-
-    // Convert the first 8 bytes of randomness to a u64, then modulo
-    let winner_idx = u64::from_le_bytes(
-        randomness[..8].try_into().unwrap()
-    ) % participants_len;
-
+    let n = lottery.participants.len() as u64;
+    let winner_idx = u64::from_le_bytes(randomness[..8].try_into().unwrap()) % n;
     lottery.winner = lottery.participants[winner_idx as usize];
     Ok(())
 }
-
-#[derive(Accounts)]
-pub struct ReceiveRandomness<'info> {
-    /// CHECK: The MagicBlock VRF program signed this CPI via its PDA.
-    /// The address pin and Signer constraint together guarantee that
-    /// only the VRF program can invoke this handler.
-    #[account(signer, address = VRF_PROGRAM_ID)]
-    pub vrf_program: UncheckedAccount<'info>,
-
-    #[account(mut)]
-    pub lottery: Account<'info, Lottery>,
-}
 ```
 
-The signer check on `vrf_program` is what enforces that only the MagicBlock VRF program can invoke this callback. If anyone else tries to call `receive_randomness` directly, the constraint fails and the transaction reverts before reaching your code. You do not write that check manually. Anchor enforces it at handler entry based on the Accounts struct.
-
-## Working with the random number
-
-The number you receive is 32 bytes of uniformly random data. To use it for a specific range, slice and modulo:
-
-```rust
-// Pick a winner from N participants
-let winner_idx = u64::from_le_bytes(randomness[..8].try_into().unwrap())
-    % participants_len;
-
-// Roll a 20-sided die
-let dice_roll = (u64::from_le_bytes(randomness[..8].try_into().unwrap()) % 20) + 1;
-
-// A percentage from 0 to 99
-let percent = u64::from_le_bytes(randomness[..8].try_into().unwrap()) % 100;
-```
-
-The number is fully revealed on chain the moment the oracle delivers it. If your program logic depends on keeping the number hidden until later, that is not something VRF gives you. The fulfillment transaction publishes everything, and anyone watching the chain sees the result as soon as it lands. Use cases that need committed-but-hidden randomness need a different protocol.
+Anchor checks the signature and the address before the handler runs. A direct call can name the PDA but cannot carry its signature, so it reverts before reaching your code. Without such a check, anyone could call the handler with a number of their own choosing. The handler receives the number as 32 bytes and takes the first 8 bytes as a `u64` modulo the number of participants.
 
 ## What can go wrong
 
-Two things production programs often get wrong.
+**The number is public as soon as it is delivered.** The fulfillment transaction publishes everything, and anyone watching the chain sees the result as soon as it lands. If your program logic depends on keeping the number hidden until later, that is not something VRF gives you, and you need a different protocol.
 
-**The callback can fail.** If your `receive_randomness` handler runs out of compute units, or panics on a checked-arithmetic overflow, or hits any other Anchor constraint failure, the callback transaction reverts. The MagicBlock VRF program records the failure, but your program does not receive the randomness. Keep callbacks minimal. Store the result and any cheap derived values. Save complex logic for a separate user-triggered instruction that reads from storage. A callback that reverts means you paid for the request and received no randomness.
+**Entries have to close before the request.** The oracle knows the number before the chain does. If the callback only stores the number and a later instruction picks the winner, as the next point recommends, everyone knows it before the winner is recorded. If participants can still join or withdraw after the request, whoever learns the number first can change the participant list so that the draw goes their way. The request instruction has to lock everything the number decides, here the participant list and the stakes, and keep it locked until the winner is recorded.
 
-**You cannot use the random number in the request transaction.** A common mistake is to write logic that requests a number and then immediately checks if the user won. There is no number yet. The check has to happen in the callback. The user either sends a follow-up transaction to claim their prize or the callback automatically settles the outcome.
+**The callback can fail.** If your `receive_randomness` handler runs out of compute units, panics on a checked-arithmetic overflow, or hits an Anchor constraint failure, the whole fulfillment transaction reverts, including the VRF program's part of it. The request stays in the queue until it expires and is removed, your program does not receive the randomness, and the fee you paid at request time is not refunded. Keep callbacks minimal: store the result and any cheap derived values, and save complex logic for a separate user-triggered instruction that reads from storage. The handler above can panic too: with no participants, `% n` divides by zero, so the request instruction has to reject an empty lottery.
+
+**The oracle may never answer.** The proof makes a delivered number correct, but nothing makes the oracle deliver it, and a callback that reverts leaves the program in the same place. A lottery that can only finish in the callback then holds the pot forever, so it needs an exit: if no number has arrived by a deadline, participants take their stakes back. A second request is the other exit. Neither exit takes away the oracle's option to hold back a number it does not like: the refund cancels that draw and a second request repeats it, which is what the slot leader got by skipping a block. Solana PRO's [write the exit](/courses/solana-pro/dependencies-and-exits/write-the-exit) task asks for the same guarantee: the players' stakes must come back even if the round is never settled.

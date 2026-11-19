@@ -36,21 +36,21 @@ faq:
 
 > When a leader produces a block, they choose which transactions to include and in what order. That choice has value, because the right ordering can capture real profit from things like DEX arbitrage. The name for this profit is MEV: maximum extractable value. Jito is the system most of the Solana network uses to organize how MEV gets captured. It does this through two mechanisms, tips and bundles.
 
-## What MEV actually is
+## MEV is profit from choosing the order of transactions
 
-Imagine a user is about to swap 100,000 USDC for SOL on a DEX. Their swap is large enough to move the price by half a percent. If you can spot their pending swap and buy SOL right before them, then sell right after, you pocket the half-percent move. They wanted to trade. You made money from the fact that you knew about their trade and got to choose the order.
+Imagine a user is about to swap 100,000 USDC for SOL on a DEX. Their swap is large enough to move the price by half a percent, which on 100,000 USDC is 500 USDC. If you can spot their pending swap and buy SOL right before them, then sell right after, you pocket the half-percent move. They wanted to trade, and you made money from the fact that you knew about their trade and got to choose the order.
 
-That's MEV in one example. The profit comes from controlling transaction ordering. It exists in any system where somebody decides what goes in a block first, second, third. Solana has it just like every other chain does.
+The profit comes from controlling transaction ordering. It exists in any system where somebody decides what goes in a block first, second, third. Solana has it just like every other chain does.
 
-There is one difference on Solana: it has no public mempool. On chains that do, anyone can watch pending transactions and try to front-run them. On Solana, transactions go straight from RPC nodes to leaders via Gulf Stream, with no public waiting room in between. So you can't scan for opportunities from the outside. But the leader still sees every transaction they're about to include and still chooses the order. The MEV is still there. It just goes to whoever has the closest relationship with the leader.
+What differs on Solana is who can spot the pending swap. There is no public mempool to watch, as the [architecture lesson](/courses/development-on-solana/architecture-details/detailed-solana-architecture) explained: transactions go straight from RPC nodes to leaders via Gulf Stream. But the leader still sees every transaction they're about to include and still chooses the order, and a leader can also buy private order flow from RPC providers. So the MEV is still there, and it goes to whoever has the closest relationship with the leader.
 
-This is the problem Jito was built to organize. Before Jito, MEV on Solana was opaque. Big trading firms ran their own validators or made informal deals with leaders, and ordinary users had no idea their transactions were being reordered around them. Jito turned this into an open market that anyone can participate in, with clear rules.
+Before Jito, MEV on Solana was opaque. Big trading firms ran their own validators or made informal deals with leaders, and ordinary users had no idea their transactions were being reordered around them. Jito turned this into an auction that anyone can bid in.
 
-## Jito tips: paying for priority
+## A tip is a payment for priority
 
-The simpler half of what Jito introduced is the tip. A tip is a regular SOL transfer to one of eight special accounts that Jito designated. That's it. There's no special instruction, no bundle, no API call. You just add a `SystemProgram::transfer` to your transaction, sending some lamports to a Jito tip address.
+A tip is a regular SOL transfer to one of eight special accounts that Jito designated. You add a `SystemProgram::transfer` to your transaction, sending some lamports to a Jito tip address, and it needs no special instruction, bundle, or API call.
 
-What happens next: leaders running the Jito-Solana validator client watch for these transfers. When they're building a block, they prioritize transactions that include tips, ordered by how much was tipped. Higher tip means earlier inclusion.
+Leaders running the Jito-Solana validator client watch for these transfers. When they're building a block, they prioritize transactions that include tips, ordered by how much was tipped.
 
 The eight tip accounts exist for performance reasons. Solana's runtime serializes transactions that write to the same account, so if every tip went to one account, every tipped transaction in a block would block each other. With eight accounts, Jito-Solana spreads the load. Your client picks one at random for each transaction.
 
@@ -61,13 +61,13 @@ Tips are not the same as priority fees. They live alongside each other:
 
 A transaction can have both. Most production wallets and routers attach both, because together they maximize the chance the transaction lands.
 
-This is the mechanism behind a lot of behavior you've probably seen without knowing why. When Phantom shows you "transaction priority: high" and the swap lands quickly, there's a Jito tip in there. When Jupiter routes a swap and asks if you want "MEV protection," it adds a tip and routes the transaction through Jito's bundle system to prevent other transactions from being inserted around it. When you read about a wallet's "land rate" improving, the team probably just turned on Jito tips. The tip mechanism is what makes all of this work.
+## A bundle lands several transactions together, in a fixed order
 
-## Jito bundles: atomic groups of transactions
+Some operations only make sense as a sequence. Inside one transaction that is already guaranteed: the instructions run in order, and if one of them fails, none of the changes happen, as [instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions) explained. The guarantee covers one transaction only. Two separate transactions can land one without the other, and nothing fixes which transaction lands right before yours or right after it.
 
-The other half is bundles. A bundle is a small group of up to 5 transactions that the leader commits to including together, in the order you specify. If any transaction in the bundle fails, none of them land. The whole bundle is atomic.
+A bundle is a small group of up to 5 transactions that the leader commits to including together, in the order you specify. If any transaction in the bundle fails, none of them land.
 
-Why does atomicity matter? Because some operations only make sense as a sequence. A classic example: arbitrage between two DEXes. You want to buy a token on one DEX, then sell it on another at a better price. If only the buy lands, you're stuck holding tokens you didn't want. If only the sell lands, you don't have the tokens to sell and the transaction fails. With a bundle, you get all-or-nothing. The two transactions land together, or neither does.
+Take the swap from the first example. Your buy, the user's swap, and your sell are three transactions, and the swap is signed by the user, so you cannot put all three into one transaction of your own. A bundle lands them together and in that order, or not at all.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two paths into a block: normal transaction vs Jito bundle</title><desc>One path shows a normal transaction moving from user wallet to RPC node to current leader to a block, included one tx at a time with no atomicity guarantees. The other path shows a Jito bundle moving from searcher to Jito block engine to Jito-Solana leader to a block, where the whole bundle lands together or not at all.</desc>
   <defs>
@@ -119,22 +119,22 @@ Why does atomicity matter? Because some operations only make sense as a sequence
   <text x="360" y="513" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">in a specific order, in exchange for a tip paid to the leader.</text>
 </svg>
 
-How bundles work mechanically: a searcher, meaning someone running a trading bot, submits the group of transactions to the Jito block engine, which is an off-chain service that runs an auction. Bundles compete against each other for the same slot. The block engine picks winners based on tip size, simulates them to make sure they'd succeed, and forwards the winning bundles to the current leader. The leader, running Jito-Solana, places them in the block.
+A searcher, meaning someone running a trading bot, submits the group of transactions to the Jito block engine, which is an off-chain service that runs an auction. The block engine has its own API endpoint, so bundles go to it directly rather than to RPC nodes. Bundles compete against each other for the same slot. The block engine picks winners based on tip size, simulates them to make sure they'd succeed, and forwards the winning bundles to the current leader. The leader, running Jito-Solana, places them in the block.
 
 The tip works the same way as for single transactions: a SOL transfer to one of those eight tip accounts, included as one of the transactions in the bundle. If the bundle lands, the leader collects the tip. If the bundle fails or doesn't win the auction, no tip is paid.
 
-Two things to know about bundles:
+## Jito's guarantees depend on its own service and its own client
 
-**They're submitted to the block engine rather than to RPC nodes.** The block engine has its own API endpoint that searchers use directly. Regular wallets and applications don't talk to it.
+The auction is not part of the protocol. It runs in Jito's block engine, an off-chain service, so a bundle lands only if that service receives it and forwards it to the leader. Only leaders running the Jito-Solana client recognize tips and place bundles, so in a slot whose leader runs another client, a bundle cannot land. The same bundle mechanism that the searcher from the first example uses against a large swap can also protect it, as the next section shows.
 
-**The order is fixed.** When you submit a bundle, you specify the exact order the transactions should appear in. The leader respects that order. This is what makes patterns like "do my buy right before this user's swap" possible.
+## What to do in your frontend and in your program
 
-## Where Jito touches the transactions you submit
-
-You probably won't submit a bundle yourself. Bundles are mostly used by trading firms and MEV bots. But Jito affects every Solana developer, because tips have become the standard way transactions get prioritized on the network.
+Bundles are mostly used by trading firms and MEV bots, and most developers never submit one. But Jito affects every Solana developer, because tips have become the standard way transactions get prioritized on the network.
 
 **Your users' transactions need tips to land reliably during busy periods.** When the network is calm, a normal transaction with a small priority fee lands easily. When the network is busy, transactions without tips often get dropped while tipped ones go through. If you build a frontend that submits user transactions, you probably want to attach a Jito tip. Most wallet SDKs and transaction-building libraries support this directly.
 
-**Your users get protected from MEV through Jito.** When a user does a large swap on a DEX, MEV bots can profit by placing their own transactions around it, buying just before the swap drives the price up, then selling right after, exactly the pattern described at the start of this lesson. The defense is to route the user's transaction through Jito, often as part of a bundle that includes a "protection" component preventing other transactions from being inserted nearby. Aggregators like Jupiter do this automatically when MEV protection is enabled. The user pays a small tip and gets a fair price.
+**A large swap can be routed through Jito so that nothing is inserted around it.** When a user does a large swap on a DEX, MEV bots can profit by placing their own transactions around it, the pattern described at the start of this lesson. One defense is to route the user's transaction through Jito, often as part of a bundle that includes a "protection" component preventing other transactions from being inserted nearby. Aggregators like Jupiter do this when MEV protection is enabled, and the user pays a tip for it.
 
-You don't have to integrate any of this directly. Most developers get it for free by using a wallet adapter or aggregator that already handles tips internally. But knowing the mechanism is what makes you able to debug "why isn't my transaction landing" and "why did my user get a worse price than expected." The answer to both involves Jito, and now you know what to look for.
+**In your program, the swap instruction takes a limit.** The program cannot control how a transaction was sent, but it controls which result it accepts. The user signs the minimum output they accept together with the swap, and the swap fails if the result is below it, as [boundary of consent](/courses/solana-pro/order-and-consent/boundary-of-consent) in the Solana Pro course shows with Jupiter. For the 100,000 USDC swap above, if the user signs a minimum 0.1% below the expected output, trading ahead of them can cost them at most about 100 USDC, and a worse result makes the swap fail. A tighter minimum leaves less to take but also fails the swap more often when the price moves for ordinary reasons, so the user picks the number and the instruction takes it as an argument.
+
+Most developers get tips and bundle protection by using a wallet adapter or aggregator that already handles them internally. Knowing the mechanism is what lets you debug "why isn't my transaction landing" and "why did my user get a worse price than expected."

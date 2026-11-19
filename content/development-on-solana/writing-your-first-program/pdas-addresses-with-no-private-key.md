@@ -33,17 +33,17 @@ faq:
       Up to 16, each at most 32 bytes.
 ---
 
-> A normal Solana account is controlled by whoever holds its private key. That works fine for wallets, where a person is in charge. It does not work for programs. Programs can't hold keys, can't sign with them, can't be trusted to keep one secret from anyone watching the chain. The fix is a different kind of address: one derived from a program ID and some seeds, with no private key in existence anywhere. The program signs for that address using the seeds themselves. These are called Program-Derived Addresses, or PDAs, and they're how every nontrivial Solana program manages its own state.
+> A normal Solana account is controlled by whoever holds its private key. That works for wallets, where a person is in charge. It does not work for programs, because a program cannot keep a key secret. The fix is a different kind of address: one derived from a program ID and some seeds, with no private key in existence anywhere. The program signs for that address using the seeds themselves. These are called Program-Derived Addresses, or PDAs.
 
 ## Why PDAs have to exist
 
 A normal account's address is the public key of an Ed25519 keypair. To authorize anything that account does, you sign a transaction with the matching private key. That model is fine when there's a human or a server holding the key in secret.
 
-A program can't do this. The program is open-source bytecode running on every validator at once. Anything the program "knows" is visible to anyone running it. If a program tried to hold a private key, every validator would see it, which means every validator could sign with it, which means the key is effectively public, which means it isn't a key at all. The whole concept of a key the program controls just collapses.
+A program can't do this. The program is bytecode running on every validator at once, and anyone can read it. If a program tried to hold a private key, everyone who reads the bytecode could sign with it, so the key would be public.
 
-But programs need to control accounts. They need vaults that hold user deposits. They need state accounts that only the program is allowed to mutate. They need to sign for token transfers out of their own pools. None of that works with the standard keypair model.
+But programs need to control accounts: vaults that hold user deposits, state accounts that only the program is allowed to mutate, pools the program signs token transfers out of. None of that works with the standard keypair model.
 
-The resolution is to invent a kind of address that nobody can sign for in the normal way, and grant the program a special ability to sign for it instead. That's what a PDA is. A 32-byte value that looks like a public key but isn't one, derived deterministically from the program's address and some seeds chosen by the developer. No private key exists for it, because the derivation lands at a point that isn't on the Ed25519 curve, and the curve is where valid keypairs come from. The runtime gives the program a back door: if a program submits the seeds, the runtime treats it as authorization for the PDA those seeds derive to.
+The resolution is a kind of address that nobody can sign for in the normal way, with a special ability for the program to sign for it instead. A PDA is a 32-byte value that looks like a public key but isn't one, derived deterministically from the program's address and some seeds chosen by the developer. No private key exists for it, because the derivation lands at a point that isn't on the Ed25519 curve, and the curve is where valid keypairs come from. If a program submits the seeds, the runtime treats it as authorization for the PDA those seeds derive to.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Two ways an account gets an address: normal wallet vs program-derived PDA</title><desc>The diagram compares two ways a Solana account gets its address, side by side: a normal wallet on the left and a PDA on the right. The wallet's private key derives a public key, a point on the curve, as its address; the PDA's program ID and seeds go through a hash and bump search to land on a point off the curve, so only the program can sign for it.</desc>
   <defs>
@@ -97,13 +97,21 @@ The resolution is to invent a kind of address that nobody can sign for in the no
   <text x="360" y="505" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A PDA is the same kind of 32-byte address, derived a different way. The point off the curve is the trick.</text>
 </svg>
 
-Both halves of the diagram produce the same kind of artifact: a 32-byte address the runtime understands. The difference is in how that address is reached and who's allowed to sign for it. A wallet's address is reachable through a private key. A PDA's address is reachable only by re-running the derivation with the seeds.
+## The address is the lookup
 
-## The bump trick
+The second reason for PDAs is what the derivation gives you besides signing. Because the address is a hash of public inputs, anyone who knows the inputs can compute where the account is.
 
-The derivation looks roughly like this. Take the seeds, append a single byte called the bump, append the program ID, append a tag string, and hash the whole thing with SHA-256. The result is 32 bytes. If those 32 bytes happen to land on the Ed25519 curve, the derivation could have a corresponding private key, and the whole point of PDAs would be broken. So if the result is on the curve, the derivation rejects it and tries again with a smaller bump byte.
+For one vault per user, use seeds `[b"vault", user.key()]`. Each user's pubkey produces a unique PDA, and to find a user's vault you compute the PDA from their pubkey. In a normal database, you'd have a users table mapping user IDs to vault row IDs. Here the address of the vault is a hash of the user's identity, so no mapping table is needed.
 
-The bump starts at 255 and decreases. Roughly half of all 32-byte values land on the curve, so on average two or three tries are enough to find one that doesn't. The first off-curve result encountered, with the highest bump, is the **canonical PDA** for those seeds. The bump that produced it is the **canonical bump**.
+Seeds can combine several values. A vote record that's unique per user and per proposal can use seeds `[b"vote", user.key(), proposal.key()]`. A daily counter PDA could use `[b"counter", day_number.to_le_bytes()]`. Any tuple of public values that uniquely identifies the account you want can be the seeds. The runtime guarantees the resulting address is unique to that tuple under your program.
+
+Each seed can be at most 32 bytes, and there can be at most 16 seeds. Addressing accounts this way also has costs. The program cannot list all vaults, because it sees only the accounts a transaction passes in, so the client has to know which user it wants and derive the address. The seeds of an existing account cannot change, because different seeds give a different address. And every PDA is a separate account with its own rent deposit, so one vault per user means one deposit per user.
+
+## The bump keeps the address off the curve
+
+The derivation hashes the seeds, a single byte called the bump, and the program ID with SHA-256. The result is 32 bytes. If those 32 bytes happen to land on the Ed25519 curve, a matching private key could exist, which a PDA must not have. So if the result is on the curve, the derivation rejects it and tries again with a smaller bump byte.
+
+The bump starts at 255 and decreases. Roughly half of all 32-byte values land on the curve, so on average two tries are enough to find one that doesn't. The first off-curve result encountered, with the highest bump, is the **canonical PDA** for those seeds. The bump that produced it is the **canonical bump**.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>find_program_address bump search from 255 down to the canonical PDA</title><desc>The flowchart tries bump values starting at 255 and checks each candidate address against the curve. Bumps 255 and 254 land on the curve and are rejected, but bump 253 falls off the curve and is returned as the canonical PDA with canonical_bump = 253.</desc>
   <defs>
@@ -138,18 +146,22 @@ The bump starts at 255 and decreases. Roughly half of all 32-byte values land on
   <text x="360" y="525" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Roughly half the candidates fall on the curve. The loop finds the first off-curve one within a few tries.</text>
 </svg>
 
-The function that runs this loop is called `find_program_address`. You hand it the seeds and the program ID, and it returns the canonical PDA along with the bump that produced it. Off-chain code calls it before submitting a transaction so the right account address can be included. On-chain code mostly avoids `find_program_address`, since running the loop costs compute units, and instead uses a cheaper function called `create_program_address` that takes a known bump and checks it directly. The pattern is: compute the canonical bump once with `find_program_address`, store it, and from then on pass it in everywhere.
+The function that runs this loop is called `find_program_address`. You hand it the seeds and the program ID, and it returns the canonical PDA along with the bump that produced it. Off-chain code calls it before submitting a transaction so the right account address can be included.
 
-Anchor handles this for you when you write `seeds = [...]` and `bump`. The `bump` keyword without a value means "compute and verify the canonical bump." If you store the bump on the account, you can write `bump = self.bump` instead, which skips the search and uses the stored value. Most programs store the bump on the account they're deriving so subsequent instructions stay cheap.
+On-chain code mostly avoids `find_program_address`, since running the loop costs 1,500 compute units for every bump it tries. A cheaper function called `create_program_address` takes a known bump and checks it directly. So programs compute the canonical bump once, store it on the account in a field like `pub bump: u8`, and pass it in from then on.
 
-## Deriving PDAs from the client
+The bump a program checks against has to be the canonical one, because it is not the only bump that gives an off-curve address. Roughly half of the lower bumps do too, each at a different address. If a program accepted any bump the caller supplied, one set of seeds would have several valid addresses, and one user could have more than one vault.
 
-Most of the time you need to know the PDA address from your TypeScript client before you can build a transaction that touches it. The Anchor SDK uses it to fill in the accounts list, and your tests use it to fetch state back after the call. The function you reach for is `PublicKey.findProgramAddressSync` from `@solana/web3.js`:
+Anchor handles this for you when you write `seeds = [...]` and `bump`. The `bump` keyword without a value means "compute and verify the canonical bump." In the init instruction you store the value Anchor computed in the account's `bump` field, and every later instruction writes `bump = state.bump` on the `seeds` constraint, which skips the search and uses the stored value.
+
+## The client derives the same address from the same seeds
+
+Most of the time you need to know the PDA address from your TypeScript client before you can build a transaction that touches it. The Anchor SDK uses it to fill in the accounts list, and your tests use it to fetch state back after the call. The function is `PublicKey.findProgramAddressSync` from `@solana/web3.js`:
 
 ```typescript
 import { PublicKey } from "@solana/web3.js";
 
-const programId = new PublicKey("YourProgram1111111111111111111111111111111111");
+const programId = new PublicKey("Fg6PaFpoGXkYsidMpWxqSWPg2J9eRMK8RnPwYxNb8nN");
 const user = userKeypair.publicKey;
 
 // Same algorithm as find_program_address on chain, just running off-chain.
@@ -162,15 +174,7 @@ console.log("vault address:", vaultPda.toBase58());
 console.log("canonical bump:", vaultBump);
 ```
 
-The function returns a tuple of the PDA and the canonical bump. It runs the same loop the on-chain version does, just in JavaScript. Since the seeds are public and the program ID is public, you can compute any PDA your program uses from outside the program.
-
-The one thing that has to match exactly is the seed bytes. If your program declares `seeds = [b"vault", user.key().as_ref()]`, your client has to pass `Buffer.from("vault")` and `user.toBuffer()` in the same order. The common bug here is a seed encoding mismatch: passing a string where the program expects a number, swapping the order of two seeds, or calling `.toString()` instead of `.toBuffer()` on a pubkey. When this happens, the client computes a different PDA than the program expects, and the transaction fails at constraint-check time with a "seeds constraint violated" error. Keep the seed shapes in sync between the two sides and the addresses will agree.
-
-## The address is the lookup
-
-The second reason PDAs are powerful, beyond the signing ability, is what their derivation enables architecturally. Because the address is a hash of public inputs, you can encode application logic directly into the address.
-
-Want one vault per user? Use seeds `[b"vault", user.key()]`. Each user's pubkey produces a unique PDA. To find a user's vault, you compute the PDA from their pubkey. No mapping table needed.
+`programId` is the address from the program's `declare_id!`. The function returns a tuple of the PDA and the canonical bump. Since the seeds are public and the program ID is public, you can compute any PDA your program uses from outside the program.
 
 <svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Vault PDAs derived from seeds b"vault" plus pubkey for Alice, Bob, Carol</title><desc>For Alice, Bob, and Carol, the seeds b"vault" and the user's pubkey are combined to deterministically derive that user's vault PDA and bump. No user-to-vault mapping table is needed, since the address itself is the lookup, like content-addressed storage.</desc>
   <defs>
@@ -231,22 +235,8 @@ Want one vault per user? Use seeds `[b"vault", user.key()]`. Each user's pubkey 
   <text x="360" y="518" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Same idea as content-addressed storage. The hash of the identity is the location.</text>
 </svg>
 
-The concept is similar to content-addressed storage: the address of an item is derived from its contents, so you never need a separate lookup table. In a normal database, you'd have a users table mapping user IDs to vault row IDs, and you'd look up the vault by joining. With PDAs, the address of the vault is a hash of the user's identity. You don't look up the mapping. You compute the location from the identity itself.
+The seed bytes have to be the same on both sides. If your program declares `seeds = [b"vault", user.key().as_ref()]`, your client has to pass `Buffer.from("vault")` and `user.toBuffer()` in the same order. The common bug here is a seed encoding mismatch: passing a string where the program expects a number, or swapping the order of two seeds. When this happens, the client computes a different PDA than the program expects, and the transaction fails at constraint-check time with a "seeds constraint violated" error. Calling `.toString()` instead of `.toBuffer()` on a pubkey fails earlier, in the client: the Base58 string is 43 or 44 bytes, over the 32-byte seed limit, so `findProgramAddressSync` throws `Max seed length exceeded`.
 
-This composes well. A vote record that's unique per user and per proposal can use seeds `[b"vote", user.key(), proposal.key()]`. A daily counter PDA could use `[b"counter", day_number.to_le_bytes()]`. Any tuple of public values that uniquely identifies the account you want can be the seeds. The runtime guarantees the resulting address is unique to that tuple under your program.
+## The account at a PDA is an ordinary account
 
-The constraint is that seeds together cannot exceed 32 bytes per seed and the total seed count is capped at 16. That's plenty for almost any indexing scheme you'd want, and it's a small price for the architectural simplicity.
-
-## Storing the bump
-
-One last practical detail. When you initialize a PDA account, you'll usually store the canonical bump as a field on the account itself. The next instruction that needs to sign for this PDA can read the bump from the account in one fetch instead of running `find_program_address` again. The savings add up: a single `find_program_address` can cost 1,500 to 12,000 compute units depending on how many bumps it has to try, while reading a stored bump from an already-loaded account is essentially free.
-
-The convention shows up in account structs as a field like `pub bump: u8`, populated in the init instruction by the value Anchor computed, and read back in every subsequent instruction via `bump = state.bump` on the `seeds` constraint. This is the standard idiom and worth adopting from your first program.
-
-## What a PDA does and doesn't change
-
-A PDA does not change anything about the account model. The account at a PDA still has the same five fields: lamports, data, owner, executable, and an address. Reading from it works exactly the way reading from any account works. Writing to it requires it to be owned by the program, exactly the way any program-owned account requires.
-
-What changes is who can sign for it. A normal account's signature comes from a keypair. A PDA's "signature" comes from a program re-deriving the seeds inside a cross-program invocation. The runtime treats the two as equivalent for authorization purposes.
-
-That sentence is the whole conceptual core. Once you've internalized it, every PDA pattern in real Solana code follows: programs creating accounts they own, programs signing for token transfers, programs maintaining per-user state without storing a key per user, programs holding pool funds without anyone holding the pool's key.
+A PDA does not change anything about the account model. The account at a PDA still has the same five fields: lamports, data, owner, executable, and an address. Reading from it works the way reading from any account works. Writing to it requires it to be owned by the program, the way any program-owned account requires. What changes is who can sign for it: the program does, by supplying the seeds inside a cross-program invocation. The [PDAs as signers](/courses/development-on-solana/working-with-other-programs/pdas-as-signers) lesson shows that in code.

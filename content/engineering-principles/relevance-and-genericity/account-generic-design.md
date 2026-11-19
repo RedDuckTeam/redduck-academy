@@ -29,15 +29,15 @@ faq:
       in particular.
 ---
 
-> Apply the Irrelevance Principle to one property, the identity of the user, and a whole class of systems falls out. A system that does not care who is asking has no reason to remember anyone. Systems built this way, called account-generic, turn out to be both safer and easier to build on than systems that keep a record of every user. The one question worth asking is whether the job even requires remembering users at all.
+> Apply the Irrelevance Principle to one property, the identity of the user. A system that does not care who is asking has no reason to remember anyone. Systems built this way, called account-generic, are safer and easier to build on than systems that keep a record of every user, as long as the job does not require remembering users.
 
 ## Two services, one that remembers you and one that does not
 
-Start with the difference stated plainly. An **account-generic** system holds no mapping from a user's identity to that user's stored state. Everything it needs to answer a request arrives with the request, and once the request is done, nothing about that particular caller is kept.
+An **account-generic** system holds no mapping from a user's identity to that user's stored state. Everything it needs to answer a request arrives with the request, and once the request is done, nothing about that particular caller is kept.
 
-A currency conversion service is a clean example. You send an amount and two currency codes, and it sends back the converted amount. It keeps no record of who asked. The next caller could be anyone, and they get an answer computed exactly the same way. The service has no idea who you are, and it does not need one, because your identity has no effect on what one hundred dollars is in euros. This is the [**Irrelevance Principle**](/courses/engineering-principles/relevance-and-genericity/the-irrelevance-principle) applied to identity. Who is asking is irrelevant to the conversion, so the design does not track it.
+Take a currency conversion service. You send an amount and two currency codes, and it sends back the converted amount. It keeps no record of who asked, and the next caller gets an answer computed the same way. Your identity has no effect on what one hundred dollars is in euros, so by the [**Irrelevance Principle**](/courses/engineering-principles/relevance-and-genericity/the-irrelevance-principle) the design does not track it.
 
-Now the opposite, done correctly. A bank's ledger is account-specific on purpose. The bank has to know how much each customer holds, and it has to keep knowing across every deposit and withdrawal, for years. Tracking each customer's balance over time is the entire point of the service, so the customer's identity sits right at the core. A ledger that forgot who owned what would be broken, because the record of who owns what is the ledger itself.
+A bank's ledger is account-specific on purpose. The bank has to know how much each customer holds, and it has to keep knowing across every deposit and withdrawal, for years. A ledger that forgot who owned what would be broken, because the record of who owns what is the ledger itself.
 
 <svg role="img" viewBox="0 0 720 312" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>What an account-generic service and an account-specific service store between calls</title><desc>Two boxes side by side. The currency conversion service on the left is account-generic. It takes an amount and two codes, returns the converted amount, and stores nothing per user. The bank ledger on the right is account-specific. It takes a deposit or withdrawal, returns a new balance, and stores a balance for each named customer.</desc>
   <text x="360" y="28" text-anchor="middle" font-size="14" fill="#000000" font-weight="bold">What each system stores between calls</text>
@@ -70,26 +70,26 @@ Now the opposite, done correctly. A bank's ledger is account-specific on purpose
   <text x="360" y="292" text-anchor="middle" font-size="11" fill="#565653" font-style="italic">The account-generic service has no per-user store, so there is nothing to corrupt and no one to register.</text>
 </svg>
 
-## Why storing no user gives an attacker less to grab
+## Storing nothing per user gives an attacker less to corrupt
 
-When a system keeps state for each user, that stored state becomes a target. A large share of attacks on account-specific systems come down to corrupting the mapping. Inflating a stored balance. Slipping through a check by pointing it at some other user's record. The state is what gets attacked, because the state is what decides the outcome.
+When a system keeps state for each user, that stored state becomes a target, because the state is what decides the outcome. An attacker inflates a stored balance, or slips through a check by pointing it at some other user's record. An account-generic system has no per-user state in storage, so attacks on the stored mapping have nothing to aim at.
 
-An account-generic system has none of that. There is no per-user state sitting in storage, so there is no per-user state to tamper with. The whole class of attack that targets the stored mapping has nothing to aim at. You remove the reason the user records exist in the first place. With no records to hold, there is nothing to defend and nothing to corrupt.
+[What makes a system stateless](/courses/engineering-principles/stateless-design/what-makes-a-system-stateless) extends this argument to everything a component keeps between calls. A stateless component keeps nothing at all, while an account-generic one drops the per-user record in particular.
 
-## Why any caller can walk up and use it
+## Any caller can use it without registering
 
-An account-generic service does not need to know in advance who will call it. There is no account to create first, no registration, no setup. A new caller sends a well-formed request and gets a correct answer on the first try, the same as every existing caller. Anything that wants to build on top can do so without asking permission or being known ahead of time.
+An account-generic service does not need to know in advance who will call it. There is no account to create first, so a new caller sends a well-formed request and gets a correct answer on the first try, the same as every existing caller. Anything that wants to build on top can do so without asking permission or being known ahead of time.
 
-Of all the things a system could hold on to between calls, the per-user record is often the one it can safely drop. A service that never needs to know who is asking has no reason to remember anyone.
+## What an account-generic system cannot do
+
+The price is every feature that needs a per-user record. A service that remembers no one cannot count one caller's requests against a limit, bill a caller for past use, or block a single caller, because each of those needs a record kept per caller.
 
 ## Check what you store per user
 
-You can classify a system with one question. For each user, what does it keep between calls? If the honest answer is nothing, and the results are still correct, the system is account-generic and should stay that way. If the answer is a balance, a history, or a claim that has to survive from one call to the next, the system is account-specific. That is correct, because remembering the user is the job.
+You can classify a system with one question. For each user, what does it keep between calls? If the honest answer is nothing, and the results are still correct, the system is account-generic and should stay that way. If the answer is a balance, a history, or a claim that has to survive from one call to the next, the system is account-specific, and that is correct, because remembering the user is the job.
 
-The design question is never which style is better in the abstract. The only thing that decides is whether the purpose requires remembering users. When it does not, do not remember them. Every stored record you can avoid is one an attacker cannot reach, and one less thing standing between a new caller and their first use.
+Neither style is better in the abstract. What decides is whether the purpose requires remembering users. When it does not, do not remember them.
 
 ## Blockchain application
 
-Skip this section if you only want the principle.
-
-Some on-chain proxies are account-generic. Every call carries a complete, self-contained assertion. For example, after this transaction a given address must hold at least a certain amount of a certain token. Nothing is stored between one call and the next. Because the proxy remembers no users and grants no one standing rights, anyone can call it, which is what makes it permissionless. ERC-4626 vaults sit at the other end, and correctly so. A vault has to track each depositor's claim over time, so it is account-specific by necessity, the same way a bank ledger is.
+Some on-chain proxies are account-generic. Every call carries a complete, self-contained assertion, for example that after this transaction a given address must hold at least a certain amount of a certain token. Nothing is stored between one call and the next. Because the proxy remembers no users and grants no one standing rights, anyone can call it, which is what makes it permissionless. An ERC-4626 vault has to track each depositor's claim over time, so it is account-specific by necessity, the same way a bank ledger is.

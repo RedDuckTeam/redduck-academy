@@ -27,21 +27,21 @@ faq:
       reach all of them.
 ---
 
-> A **singleton** concentrates one critical function into a single shared component that everything else depends on. The name comes from keeping exactly one of a thing where a system might otherwise have had many. This costs you something real, because a bug in that one component now reaches everything at once, where before a bug reached one thing. You accept the cost because concentrating the function in one place also concentrates the review effort on it, and one heavily-reviewed component can be safer than fifty lightly-reviewed ones.
+> A **singleton** concentrates one critical function into a single shared component that everything else depends on. The name comes from keeping one of a thing where a system might otherwise have had many. This costs you something real, because a bug in that one component now reaches everything at once, where before a bug reached one thing. You accept the cost because concentrating the function in one place also concentrates the review effort on it, and one heavily-reviewed component can be safer than fifty lightly-reviewed ones.
 
 ## What fifty login systems cost
 
-A company runs fifty internal applications. Different teams built them at different times, and each one implements its own login. Each stores its own copy of every employee's password. Each has its own bugs in how it checks a password. Each has to be secured on its own.
+A company runs fifty internal applications. Different teams built them at different times, and each one implements its own login, stores its own copy of every employee's password, has its own bugs in how it checks a password, and has to be secured on its own.
 
-Look at the cost from three directions. An employee now carries fifty passwords and reuses them out of fatigue, which spreads one leak across many systems. A researcher finds a flaw in how passwords are verified, and the fix has to be written and applied fifty times, once per application, and one team missing the change leaves the hole open. And every one of those fifty password stores is a separate thing an attacker can go after, so the ground you have to defend grows with every application you add.
+An employee now carries fifty passwords and reuses them out of fatigue, which spreads one leak across many systems. A researcher finds a flaw in how passwords are verified, and the fix has to be written and applied fifty times, once per application, and one team missing the change leaves the hole open. And every one of those fifty password stores is a separate thing an attacker can go after, so the ground you have to defend grows with every application you add.
 
 ## One service everything trusts
 
-The fix is to pull login out of the fifty applications and put it in one place. One shared authentication service. Every application hands the job of checking who you are to that service and trusts the answer. This is single sign-on, the thing that lets you sign in once at work and reach every internal tool without signing in again.
+The fix is to pull login out of the fifty applications and put it in one shared authentication service. Every application hands the job of checking who you are to that service and trusts the answer. This is single sign-on, the thing that lets you sign in once at work and reach every internal tool without signing in again.
 
-Now count the same three costs. Passwords are stored once, in one service, so there is one store to defend instead of fifty. A flaw in how passwords are verified is fixed once, in one place, and every application gets the fix the moment that service is updated. Each application integrates against one well-known, stable endpoint, so a new application joins by pointing at the same service every other application already uses.
+Passwords are now stored once, in one service, so there is one store to defend instead of fifty. A flaw in how passwords are verified is fixed once, in one place, and every application gets the fix the moment that service is updated. Each application integrates against one well-known, stable endpoint, so a new application joins by pointing at the same service every other application already uses.
 
-The same shape appears at the scale of the whole internet. When your browser opens a secure connection to a website, it needs to be sure the site is really who it claims to be. Millions of websites rely on a small number of trusted certificate authorities to vouch for that, rather than every pair of parties arranging trust between themselves from scratch. A small, heavily-trusted set of authorities stands in the middle, and everyone else depends on them. The web keeps that number small on purpose, because concentrating trust in a few closely-watched places is safer than spreading it thin across many.
+The same shape appears at the scale of the whole internet. When your browser opens a secure connection to a website, it needs to be sure the site is really who it claims to be. Millions of websites rely on a small number of trusted certificate authorities to vouch for that, rather than every pair of parties arranging trust between themselves from scratch. The web keeps that number small on purpose, because concentrating trust in a few closely-watched places is safer than spreading it thin across many.
 
 <svg role="img" viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Fifty separate login systems versus one shared authentication service</title><desc>Two panels. On the left, fifty applications each carry their own login and password store, so one security fix must be applied fifty times. On the right, every application delegates login to one shared authentication service, so passwords are stored once and one fix reaches all of them.</desc>
 <defs>
@@ -83,30 +83,22 @@ The same shape appears at the scale of the whole internet. When your browser ope
 
 ## The risk you just concentrated
 
-Something was traded away here, and it is worth naming plainly. Before, a bug in one application's login reached that one application. Now a critical bug in the shared authentication service reaches all fifty at once. The certificate authority is the same story. If one of those few authorities is compromised, a large slice of the web is exposed through it.
+Before, a bug in one application's login reached that one application. Now a critical bug in the shared authentication service reaches all fifty at once. The certificate authority is the same story. If one of those few authorities is compromised, a large slice of the web is exposed through it.
 
-That concentrated risk is the whole reason a shared authentication service and a certificate authority receive the most intensive security review of any component in their ecosystem. The concentration of risk and the concentration of review effort are the same decision. You are choosing to put the critical function where the most eyes are on it. A bug there is more likely to be found before it reaches anyone, and less likely to survive once the whole system depends on the code being right.
+That concentrated risk is why a shared authentication service and a certificate authority receive the most intensive security review of any component in their ecosystem. The concentration of risk and the concentration of review effort are the same decision. You are choosing to put the critical function where the most eyes are on it. A bug there is more likely to be found before it reaches anyone, and less likely to survive once the whole system depends on the code being right.
 
-## Which goal each part serves
-
-The **parent goal** and **child goal** from [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not) make this tradeoff easy to read. Storing passwords once and giving every application one stable endpoint to integrate against are child goals: operational efficiency and integration simplicity. Keeping accounts safe is the parent goal above them. A single shared login service is correct only because the concentrated review keeps that parent goal satisfied while the child goals improve. If the concentration made accounts less safe on the whole, the efficiency underneath would not matter, because it would be serving a parent goal that is no longer being met.
+In the terms of [What engineering is and is not](/courses/engineering-principles/design-tradeoffs/what-engineering-is-and-is-not), storing passwords once and giving every application one stable endpoint are child goals, and keeping accounts safe is the parent goal above them. If the concentration made accounts less safe on the whole, the efficiency underneath would not matter.
 
 ## When making something shared is the right call
 
 A singleton is the right choice when three things hold.
 
 - The component's logic is stable enough to be relied on without frequent change. A part that everything depends on should not be a part that keeps changing.
-- The safety of one heavily-reviewed component genuinely exceeds the safety of many less-reviewed ones. This is what you are buying, and it has to be real.
+- The safety of one heavily-reviewed component exceeds the safety of many less-reviewed ones. If you are not prepared to give that one component more scrutiny than anything around it, the fifty separate copies, for all their waste, may still be the safer arrangement.
 - The integration-simplicity benefit is real and measurable. Every application reaching one known endpoint is worth something you can point to rather than a vague sense of tidiness.
 
-When these hold, concentrating the function is a good trade. When the logic is still churning, or the review would be no better than before, or the simplicity is imaginary, you are just building a single point of failure and calling it a pattern.
-
-## Before you make something shared
-
-Before you pull a function into one shared component, say out loud what everything will now depend on, and ask whether that component can carry the weight. A shared thing is only as safe as the review behind it, so the decision to centralize is also a decision to concentrate your review effort there. If you are not prepared to give that one component more scrutiny than anything around it, the fifty separate copies, for all their waste, may still be the safer arrangement.
+When the logic is still churning, or the review would be no better than before, or the simplicity is imaginary, you are building a single point of failure and calling it a pattern.
 
 ## Blockchain application
 
-Skip this section if you only want the principle.
-
-Decentralized finance uses the singleton deliberately. Balancer v2 puts a single contract, the Vault, in charge of holding all of the assets across every pool at once. Because one contract holds all the tokens, a trade that hops through several pools settles inside the Vault and the tokens themselves move only once, which greatly reduces the cost of the trade. Uniswap v4 takes the same route, holding all of its pools inside one PoolManager contract. The ERC8009 design, examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack), deploys one balance-proxy contract per chain so that hardware wallet firmware can hardcode a single address and trust it. The single-vault decision concentrates risk deliberately, accepted for those measured benefits and paid for with unusually heavy auditing.
+Decentralized finance uses the singleton deliberately. Balancer v2 puts a single contract, the Vault, in charge of holding all of the assets across every pool at once. Because one contract holds all the tokens, a trade that hops through several pools settles inside the Vault and the tokens themselves move only once, which greatly reduces the cost of the trade. Uniswap v4 takes the same route, holding all of its pools inside one PoolManager contract. The ERC-8009 design, described in [The core and its routers](/courses/development-on-ethereum/clear-signing/the-core-and-its-routers), deploys one balance-proxy contract per chain so that hardware wallet firmware can hardcode a single address and trust it. The single-vault decision concentrates risk deliberately, accepted for those measured benefits and paid for with unusually heavy auditing.

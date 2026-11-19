@@ -34,15 +34,13 @@ faq:
       type, an instruction that copies the data, and close on the old account.
 ---
 
-> An account's data field is a fixed slab of bytes. When you initialize an account, you tell the runtime how many bytes you want, you pay rent for that many, and the size never changes. Every field on your Rust struct has to fit into that slab in a known, fixed amount of room. The math is simple: 8 bytes for a discriminator that says what type the account is, plus the size of each field added together. Everything that follows is variations on that one sentence.
+> An account's data field is a fixed slab of bytes. When you initialize an account, you tell the runtime how many bytes you want and you pay rent for that many. Every field on your Rust struct has to fit into that slab in a known, fixed amount of room: 8 bytes for a discriminator that says what type the account is, plus the size of each field.
 
 ## A Solana account is a fixed-size struct
 
-In dynamic languages, you can keep adding fields to a dictionary forever. The runtime grows the storage as you go, and you don't think about how many bytes a value takes. In systems languages like C and Rust, a struct has a fixed size at declaration. The compiler computes it once, allocates exactly that much memory, and won't let you grow the struct after the fact.
+The data field of an account is allocated to a specific byte count when the account is created. Rent was paid for that many bytes and that's how many the chain reserves for the account. You can write different values into those bytes, but there is no implicit growth.
 
-Solana accounts follow the second model. The data field of an account is allocated to a specific byte count when the account is created. That allocation is the account's storage forever. You can write different values into those bytes, but you cannot add a new byte that wasn't there at creation, and you cannot remove bytes you allocated. The size is part of the account's identity in a real sense, because rent was paid for that many bytes and that's how many the chain reserves for the account.
-
-This is the most important thing to internalize about layout: **you decide the size of an account at init, and you live with that decision.** Programs that need accounts to grow later use `realloc`, which costs additional rent and has its own constraints. Programs that need to store more data than fits in one account use multiple accounts, each at its own PDA, each sized at creation. There is no implicit growth.
+So you decide the size of an account at init. Changing it later takes an explicit `realloc` in a separate instruction, which costs additional rent when the account grows. The [account closure and realloc](/courses/development-on-solana/production-state-design/account-closure-and-realloc) lesson covers it. Programs that need to store more data than fits in one account use multiple accounts, each at its own PDA, each sized at creation.
 
 <svg role="img" viewBox="0 0 720 570" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Byte layout of a Vault account: discriminator, authority, total, bump</title><desc>The diagram maps the Rust Vault struct to bytes in the account's data field: an 8-byte discriminator, a 32-byte authority (Pubkey), an 8-byte total (u64), and a 1-byte bump, adding up to 49 bytes. It shows that this size is fixed once the account is created and cannot grow later.</desc>
   <defs>
@@ -101,21 +99,21 @@ This is the most important thing to internalize about layout: **you decide the s
   <text x="360" y="550" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A Solana account is a fixed-size struct. Size is decided at init and lives with the account.</text>
 </svg>
 
-The diagram above lays out exactly what's inside the data field of a Vault account. Eight bytes of discriminator, 32 bytes for the authority pubkey, 8 bytes for the u64 total, 1 byte for the bump. The sum is 49 bytes. That's the value you pass to `space` when you initialize the account.
+For this `Vault` the sum is 8 + 32 + 8 + 1 = 49 bytes, and that's the value you pass to `space` when you initialize the account.
 
-## The 8-byte discriminator
+## The first 8 bytes say which type the account is
 
-Every Anchor account starts with 8 bytes that aren't part of your struct: a discriminator. The discriminator is a hash derived from the account type's name, stored at the beginning of the data field, and checked by Anchor before deserializing the rest. Its job is to make sure the bytes you're about to interpret as a `Vault` were actually written by a `Vault`-shaped instruction, and not by some other instruction that happens to produce 49 bytes.
+Every Anchor account starts with 8 bytes that aren't part of your struct: a discriminator. The discriminator is a hash derived from the account type's name, stored at the beginning of the data field, and checked by Anchor before deserializing the rest. Its job is to make sure the bytes you're about to interpret as a `Vault` were written by a `Vault`-shaped instruction, and not by some other instruction that happens to produce 49 bytes.
 
 Without the discriminator, a class of bugs called type confusion becomes possible. If you have two account types `Vault` and `Pool` that happen to be the same size, an attacker could initialize a Pool account, pass it to your Vault instruction, and your deserialization would succeed because the bytes parse cleanly as either struct, but with different field meanings. The attacker has effectively turned a Pool into a Vault for the purposes of one call, and any check you wrote that depends on the type of the account silently fails.
 
-The discriminator stops that. The first 8 bytes of a Vault account are the hash of `"account:Vault"`. The first 8 bytes of a Pool account are the hash of `"account:Pool"`. When Anchor sees `Account<'info, Vault>` in your struct, it reads those 8 bytes and compares them to the `Vault` discriminator. Mismatch means rejection. No matter what's in the rest of the data, you can be sure the account is the type you asked for.
+The first 8 bytes of a Vault account are the hash of `"account:Vault"`. The first 8 bytes of a Pool account are the hash of `"account:Pool"`. When Anchor sees `Account<'info, Vault>` in your struct, it reads those 8 bytes, compares them to the `Vault` discriminator, and rejects the account on a mismatch. No matter what's in the rest of the data, you can be sure the account is the type you asked for.
 
-This is also why the formula is always `8 + sum_of_fields` and never just `sum_of_fields`. The 8 bytes are real bytes that need real allocation. Forget them and your account is 8 bytes short and Anchor's first attempt to write the discriminator overflows.
+The discriminator is stored in the account's data, so `space` always starts with 8. Leave it out and the account is 8 bytes short, and the instruction that creates it fails. Right after allocating the account, Anchor reads it back as a `Vault`, and the bytes after the discriminator are too few to hold one, so the read stops with `AccountDidNotDeserialize`.
 
-## How many bytes each type takes
+## Field sizes are fixed, and Anchor adds them up
 
-Computing the size of an account by hand means knowing the size of each Rust type that goes into it. The numbers are fixed and easy to memorize.
+Computing the size of an account by hand means knowing the size of each Rust type that goes into it.
 
 <svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Byte sizes of Rust types for account space</title><desc>A table lists Rust types such as bool, integers, Pubkey, arrays, Option&lt;T&gt;, String, and Vec&lt;T&gt;, showing the byte size and notes for each. It ends with the rule: total space equals an 8-byte discriminator plus the sum of all field sizes, which #[derive(InitSpace)] can compute automatically.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -164,17 +162,35 @@ Computing the size of an account by hand means knowing the size of each Rust typ
   <text x="360" y="535" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Or let #[derive(InitSpace)] compute it for you. The macro reads your fields and adds them up.</text>
 </svg>
 
-For everyday programs, the table above is enough. A `Pubkey` is 32 bytes. The fixed-width integers are their size in bits divided by 8. A `bool` is 1 byte even though it could fit in 1 bit, because Borsh serialization, the format Anchor uses, doesn't bit-pack. An `Option<T>` adds a 1-byte discriminator, similar in spirit to the account's main discriminator, that says whether the option is `Some` or `None`. A fixed-size array `[T; N]` is exactly N copies of T, with no overhead beyond the elements themselves.
+You almost never compute this by hand. Anchor provides a `#[derive(InitSpace)]` macro that adds an `INIT_SPACE` constant to your struct, equal to the sum of the field sizes. You then write `space = 8 + Vault::INIT_SPACE`, and the compiler computes the right number. When you change the struct's fields, the constant updates automatically.
 
-The arithmetic for a struct is what you'd expect: sum the field sizes, add 8 for the discriminator, that's your space. For the Vault from earlier: 8 + 32 + 8 + 1 = 49.
+## A Vec or String needs a maximum length
 
-You almost never compute this by hand. Anchor provides a `#[derive(InitSpace)]` macro that adds an `INIT_SPACE` constant to your struct, equal to the sum of the field sizes. You then write `space = 8 + Vault::INIT_SPACE`, and the compiler computes the right number. When you change the struct's fields, the constant updates automatically. This is the idiomatic form and what you should use in every program.
+`String` and `Vec<T>` are variable-length: in normal Rust, they grow as you push to them. The account's data field does not grow when you push, so Anchor needs to know, at init time, how many bytes to reserve for each variable-length field.
 
-## Variable-length fields and the bounds you must give them
+You tell it with `#[max_len(N)]`, an attribute on the field that gives the maximum number of elements the field will ever hold. The space allocated for the field is `4 + max_len × size_of_element`, where the 4 bytes hold the current length and the rest hold the elements. `#[derive(InitSpace)]` uses that number when it computes `INIT_SPACE`:
 
-The trouble starts when you use `String` or `Vec<T>`. These types are variable-length by nature: in normal Rust, they grow as you push to them. On Solana, that's impossible. The account's data field can't grow. So Anchor needs to know, at init time, how many bytes to reserve for each variable-length field.
+```rust
+#[account]
+#[derive(InitSpace)]
+pub struct Proposal {
+    #[max_len(100)]
+    pub votes: Vec<Pubkey>,
+}
 
-This is what `#[max_len(N)]` does. You write it as an attribute on the field, and it tells Anchor the maximum number of elements the field will ever hold. The space allocated for the field is `4 + max_len × size_of_element`, where the 4 bytes hold the current length and the rest hold the elements. The current length grows as you push, and the runtime rejects any push that would take you over the cap.
+#[derive(Accounts)]
+pub struct CreateProposal<'info> {
+    #[account(init, payer = creator, space = 8 + Proposal::INIT_SPACE)]
+    pub proposal: Account<'info, Proposal>,
+    #[account(mut)]
+    pub creator: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+```
+
+Here `Proposal::INIT_SPACE` is 4 + 100 × 32 = 3,204, and the account gets 8 + 3,204 = 3,212 bytes.
+
+`#[max_len]` only sizes the account and does not stop a push. Inside the handler `votes` is an ordinary `Vec` in memory, and a 101st push succeeds there. The failure comes when the handler returns and Anchor writes the account back into its 3,212 bytes: the vector no longer fits, and the transaction fails with `AccountDidNotSerialize`. To fail with your own error instead, check `votes.len()` before you push.
 
 <svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Unbounded Vec vs #[max_len(100)] bounded Vec account space</title><desc>The diagram compares two versions of a Proposal account with a votes: Vec&lt;Pubkey&gt; field. On the left, no bounds are set, so at init time Anchor cannot compute the space and a guess is either too low (push overflows, tx reverts) or too high (wasted rent). On the right, #[max_len(100)] fixes space at 8 + 4 + 100*32 = 3,212 bytes, so pushes succeed up to the 100th vote and the 101st push returns an error.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -221,20 +237,12 @@ This is what `#[max_len(N)]` does. You write it as an attribute on the field, an
   <text x="360" y="505" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">If you can't bound it, you can't put it on an account. Move overflow data to a separate PDA per item.</text>
 </svg>
 
-The bound is a design decision. Set it too low and your application breaks when users hit the cap. Set it too high and every account pays rent for bytes that may never be used. A 100-pubkey vote list at 32 bytes each is 3,200 bytes just for the vector, which is enough to cost the user about 0.022 SOL in rent. That cost is paid up front, once, when the account is initialized. The user pays for a 100-vote bound whether they end up using 5 votes or 100.
+The bound is a design decision. Set it too low and your application breaks when users hit the cap. Set it too high and every account pays rent for bytes that may never be used. A 100-pubkey vote list at 32 bytes each is 3,200 bytes for the vector alone, which is enough to cost the user about 0.022 SOL in rent. That cost is paid up front, once, when the account is initialized. The user pays for a 100-vote bound whether they end up using 5 votes or 100.
 
-The way most production programs handle this is to avoid putting variable-length data on a single account when the bound would be large or unbounded. Instead, each element gets its own PDA, derived from the parent account's key and an index or sub-identifier. A proposal with thousands of votes wouldn't store them in a `Vec` on the proposal account. It would store each vote in a separate `Vote` PDA derived from `(proposal, voter)`. The proposal account stays small and predictable, and there's no architectural cap on how many votes can be cast.
+Most production programs avoid putting variable-length data on a single account when the bound would be large or unbounded. Instead, each element gets its own PDA, derived from the parent account's key and an index or sub-identifier. A proposal with thousands of votes wouldn't store them in a `Vec` on the proposal account. It would store each vote in a separate `Vote` PDA derived from `(proposal, voter)`. The proposal account stays small and predictable, and there's no architectural cap on how many votes can be cast.
 
-## Schema migration is hard, so design carefully
+## The layout of existing accounts is hard to change
 
-Once an account is created with a given size, you cannot meaningfully change the struct it represents. You can deploy a new version of your program that interprets the existing bytes differently, but you can't grow old accounts to fit a new field, and you can't shrink them to remove one. The `realloc` constraint lets you change the size of a specific account in a specific instruction, paying or refunding rent as you go, but it doesn't help you migrate every existing account at once.
+You can deploy a new version of your program that interprets the existing bytes differently, but the accounts created by the old version keep their size. The `realloc` constraint lets you change the size of a specific account in a specific instruction, paying or refunding rent as you go, but it doesn't help you migrate every existing account at once. Moving all of them to a new layout takes a new account type and a migration instruction that copies each old account into a new one and closes the old account, once per account.
 
-In practice, you get one chance to pick the layout, and that decision is permanent. This shapes how programs are designed. Reserve a few bytes for future use if you think the struct might grow. Avoid putting derived data on the account, since recomputing it from inputs costs less than reserving space for it. Be conservative with `Vec` and `String` bounds.
-
-If a serious migration is unavoidable, the standard pattern is to deploy a new program version with a new account type, write a migration instruction that takes an old account and a fresh new account, copies the relevant data across, and closes the old account to refund its rent. The migration runs once per account, paid for by either the user or the protocol depending on the situation. It's tedious enough that you want to design the original layout carefully to make sure you never have to do it.
-
-## Let InitSpace do the arithmetic
-
-For most accounts you'll write, the workflow is short. Define your `#[account]` struct. Add `#[derive(InitSpace)]` above it so the macro computes the size for you. For any `String` or `Vec`, add `#[max_len(N)]` with a bound you've thought about. In your init instruction, set `space = 8 + YourStruct::INIT_SPACE`. The compiler does the arithmetic, the runtime allocates the bytes, and your account is the right size.
-
-When you change the struct, the size updates automatically. When you add a new bounded vector, you set its bound, and the compiler handles the rest. The whole topic collapses to one question per field: how big does this need to be, and what happens if I'm wrong? Answer that, and the rest is mechanical.
+So in practice you get one chance to pick the layout. Reserve a few bytes for future use if you think the struct might grow, and be conservative with `Vec` and `String` bounds. For each field, ask how big it needs to be and what happens if you are wrong.

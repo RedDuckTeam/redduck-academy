@@ -23,17 +23,11 @@ faq:
       invalid and every node downstream rejects it.
 ---
 
-> By now you have all the parts. Cryptographic primitives that let identities exist and signatures bind authorship to messages. A hash-linked block structure that makes the past tamper-evident. A consensus mechanism that lets strangers agree without an operator. A network of nodes that hold copies, validate everything, and gossip new information to each other within seconds. None of these pieces is a blockchain by itself. This lesson takes the pieces and shows them assembling, in real time, into one operation: a single change to the chain, from the moment a user clicks something in their wallet to the moment that change is part of the permanent record. Every term used in this lesson is something you already understand. The lesson is where they snap together.
+> A transaction is a request to change the chain, signed by its sender. This lesson follows one transaction from the wallet to a block that every node has accepted, and shows where the signatures, blocks, consensus and nodes from the previous lessons come in.
 
-## The setup
+Alice wants to send 1 coin to Bob and offers a fee of 0.001 coin. Her wallet holds her private key. The most recent block on the chain is block N. The same eight steps apply to any other transaction, such as deploying new code or calling code that is already on the chain, and every blockchain runs some version of them.
 
-Imagine a specific event. A user wants to make a change to the chain. The exact nature of the change doesn't matter for this lesson, because the flow is the same regardless. It could be a value transfer, a deployment of new code, an interaction with code already on the chain, anything.
-
-The user has a wallet. The wallet holds the user's private key. The wallet also has access to one or more nodes on the network, either nodes the user is running themselves or nodes operated by a service provider. The chain is currently sitting at some height, with the most recent block being block N. The user is about to create the request that, eventually, will be included in block N+1 or later.
-
-Here is what happens, in order.
-
-## The eight steps
+## Eight steps from the wallet to the chain
 
 <svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction flow: eight steps from signed request to new chain tip</title><desc>A vertical flowchart lists eight numbered steps of a blockchain transaction, connected top to bottom by arrows. It goes from the user constructing and signing a request, through wallet broadcast and network gossip, to a block producer assembling and broadcasting a new block, other nodes validating it, and the block becoming the new tip of the chain.</desc>
   <!-- Step 1 -->
@@ -106,64 +100,52 @@ Here is what happens, in order.
   <text x="100" y="550" font-family="monospace" font-size="10" fill="#ffffff">every accepting node appends it. the change is now in the record</text>
 </svg>
 
-Now walk through each step with the components you already know.
+### Step 1: Alice constructs the transaction
 
-### Step 1: The user constructs the request
+Alice enters Bob's address and the amount. The wallet builds a structured piece of data containing Alice's address as the sender, the action (send 1 coin to Bob), the fee she offers (0.001 coin), and a value that makes the transaction one-time-use.
 
-In the user's wallet, they describe what they want to do. Send some value. Call some code. Whatever it is. The wallet builds a structured piece of data containing the user's identifier as the sender, the action being requested, a fee the user is offering to pay, and an anti-replay value that makes the request one-time-use. This structured data is the request, and at this point it exists only on the user's device.
+Without this value, anyone could send Alice's signed transfer to the network a second time. The signature would still be valid, so Bob would be paid twice. On Ethereum, for example, the value is a counter called a **nonce**. It goes up by one with every transaction Alice sends, and the network accepts a transaction only if its nonce is the next one for her address. The [account model lesson](/courses/development-on-ethereum/how-ethereum-works/the-account-model) of the Ethereum course covers the nonce in detail. The nonce inside a signature, from the digital signatures lesson, is a different number with the same name.
 
-No cryptography has happened yet. No network communication has happened yet. The request is just a draft.
+At this point the transaction exists only on Alice's device.
 
-### Step 2: The wallet signs the request
+### Step 2: The wallet signs the transaction
 
-The wallet computes a signature over the entire request, using the user's private key. This is the same signing operation from the cryptography lessons. The signature is appended to the request.
+The wallet computes a signature over the entire transaction, using Alice's private key, as described in the [digital signatures lesson](/courses/blockchain-basics/cryptography/digital-signatures-and-signature-recovery), and appends it to the transaction. The signature proves Alice approved the exact content of the transaction, and changing even one bit after this point will invalidate the signature.
 
-Two things matter about this step. The signature mathematically proves the user approved the exact content of the request, and changing even one bit of the request after this point will invalidate the signature. From now on, the request is tamper-evident in the same sense the chain itself is, but at the level of a single message rather than a whole history.
+### Step 3: The wallet broadcasts the signed transaction
 
-### Step 3: The wallet broadcasts the signed request
+The wallet sends the signed transaction to one node on the network. It might be a node Alice is running herself, but more likely it's a node operated by a service provider.
 
-The wallet sends the signed request to one node on the network. It might be a node the user is running themselves. More likely it's a node operated by a service provider, accessed through an API the wallet was configured to use.
+The receiving node checks that the signature is valid against Alice's public key, that the transaction follows the rules of the protocol, and that Alice has what the transaction spends, which is 1 coin for Bob plus the fee. If any of these checks fails, the node rejects the transaction and the flow stops here.
 
-The receiving node performs a basic check. Is the signature valid against the sender's public key? Does the request follow the rules of the protocol? Does the sender have what they need to make this change happen? If any of these checks fails, the node rejects the request and the flow stops here.
+If the checks pass, the node adds the transaction to its **mempool**, a local buffer of valid transactions that are not in a block yet. The buffer is needed because transactions arrive all the time and a new block appears only periodically. Every node keeps its own mempool, so there is no single shared queue.
 
-If the checks pass, the node adds the request to its local buffer of pending requests, sometimes called the **mempool**, and the flow continues.
+### Step 4: Gossip propagates the transaction across the network
 
-### Step 4: Gossip propagates the request across the network
-
-The receiving node announces the new request to its peers. Each peer that doesn't already have it asks for it, validates it themselves, and adds it to their own buffer. They then announce to *their* peers. Within seconds, most of the network is aware of the request and has independently validated that it's well-formed.
-
-The validation happens at every node rather than just the first one. This is part of what makes the system trustless. The user does not have to trust the first node they sent the request to, because every other node will check the same things independently.
+The receiving node announces the transaction to its peers, and each peer validates it, adds it to its own mempool, and announces it further. This is the gossip protocol from the [nodes lesson](/courses/blockchain-basics/the-blockchain-idea/nodes-and-the-network), and within seconds most of the network holds the transaction. Alice does not have to trust the first node she sent the transaction to, because every other node checks the same things independently.
 
 ### Step 5: A block producer assembles a new block
 
-Periodically, one participant earns the right under the consensus rules to propose the next block. This is the costly-participation mechanism from the consensus lesson: in proof-of-work systems it's whoever finishes the puzzle, in proof-of-stake systems it's whoever the protocol selects from the staked validators.
+Periodically, one participant earns the right under the consensus rules to propose the next block. This is the costly participation from the [consensus lesson](/courses/blockchain-basics/the-blockchain-idea/why-we-need-consensus): in proof-of-work systems it's whoever finishes the puzzle, in proof-of-stake systems it's whoever the protocol selects from the staked validators.
 
-That participant looks at their local buffer of pending requests, picks a set of them, usually prioritising the ones offering the highest fees, and assembles them into a block. The block has the structure from earlier: a header containing the hash of the previous block plus a Merkle root summarising all the requests inside, then the requests themselves underneath.
+The producer fills the block with transactions from its own mempool. A block has limited room, and the producer earns more from a transaction that pays a higher fee, so it usually takes the highest fees first. Say the block has room for three transactions and the mempool holds six, with fees of 0.003, 0.002, 0.001, 0.0005, 0.0002 and 0.0001 coin. The producer takes the first three. Alice's 0.001 coin is the third, so her transfer goes into block N+1, and the other three transactions wait for a later block. Had Alice offered 0.0004 coin, the transaction paying 0.0005 coin would have taken her place.
 
-This is the turning point. Up to here, the user's request was waiting in mempools as a pending item. From here, if everything goes right, it's about to become part of the permanent record.
+The fee also protects the network. Every node has to check and store every transaction, so if sending one cost nothing, anyone could fill the blocks with junk. The [contracts and gas lesson](/courses/development-on-ethereum/how-ethereum-works/contracts-and-gas) of the Ethereum course shows how one network computes the fee.
+
+The block has the structure from the [What is blockchain](/courses/blockchain-basics/the-blockchain-idea/what-is-blockchain) lesson: a header containing the hash of the previous block plus a Merkle root summarising all the transactions inside, then the transactions themselves underneath.
 
 ### Step 6: The producer broadcasts the new block
 
-The producer sends the assembled block out via the same gossip mechanism that carried the original request. The announcement-then-fetch pattern keeps bandwidth manageable. Within seconds, most nodes in the network have the new block.
+The producer sends the assembled block out via the same gossip mechanism that carried the transaction. Within seconds, most nodes in the network have the new block.
 
 ### Step 7: Other nodes validate the block
 
-Every node receiving the block checks it independently. They verify the block's structure. They re-verify every signature on every request in the block. They check that the block follows the consensus rules (the producer was actually entitled to propose, the work or stake was properly demonstrated).
+Every node receiving the block checks it independently. They verify the block's structure, re-verify every signature on every transaction in the block, and check that the block follows the consensus rules: the producer was entitled to propose, and the work or stake was properly demonstrated.
 
-This step is the deepest reason a blockchain works at all. The validation is replicated across every node. No single party is trusted to enforce the rules. If the proposer tried to cheat, the rest of the network rejects the block and nothing happens. This applies whether they included an invalid request or claimed a proposal slot they didn't earn.
+No single party is trusted to enforce the rules. If the producer included an invalid transaction or claimed a proposal slot it didn't earn, the rest of the network rejects the block and nothing changes.
 
 ### Step 8: The block becomes the new tip
 
-If the block passes validation, every accepting node appends it to their copy of the chain. The user's request is now part of block N+1, and the chain's state reflects the change the request asked for.
+If the block passes validation, every accepting node appends it to its copy of the chain. Alice's transfer is now part of block N+1: Alice has 1.001 coin less than before and Bob has 1 coin more. Either of them can query any node and see the change.
 
-The user can now query any node and see that the change has happened. Technically, the change can still be rolled back if the network ends up agreeing on a different version of recent history. The probability is small, and shrinks further with each new block built on top.
-
-## What just happened
-
-Eight steps, every one using a concept already in your head, ending with a permanent change to a shared record that no single party controls.
-
-This is what a blockchain *does*. The rest of this course is about the variations between chains, the edge cases, the failure modes, and the application layer built on top. But the flow above is the core. Every blockchain you'll ever meet runs some version of it.
-
-## The flow you can now trace
-
-You can now trace a change to a blockchain from end to end: a user signs a request in their wallet, the network validates and gossips it, a block producer bundles it into a block, and every node independently checks and appends the result. That is the core loop every chain runs. Every chain you'll meet is a variation on one of these steps, running the same underlying loop.
+The change can still be rolled back if the network ends up agreeing on a different version of recent history. The probability is small, and shrinks further with each new block built on top. The [next lesson](/courses/blockchain-basics/the-blockchain-idea/forks-and-conflict-resolution) explains how that happens and how long to wait before treating a transfer as settled.

@@ -31,15 +31,15 @@ faq:
       so the earlier indices stay valid.
 ---
 
-> Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. Underneath, it enforces just two rules, and the `'info` lifetime on every Anchor account is a direct consequence of them. A handful of borrow patterns trip up almost every new Solana developer, and each one traces back to those same two rules. Once you see what the checker is actually doing, the compiler error messages start making sense and you spend fewer hours fighting the compiler.
+> Rust's borrow checker is the part of the language that feels like it's fighting you. It rejects code that looks fine, with errors that mention "lifetimes" and "cannot borrow as mutable more than once" without explaining how to fix it. Underneath, it enforces two rules, and the handful of borrow patterns that trip up almost every new Solana developer each trace back to them.
 
 ## What the borrow checker is for
 
 Most languages let you do whatever you want with memory and crash at runtime if you make a mistake. C and C++ are notorious for this. Garbage-collected languages like JavaScript and Go hide the problem by making memory management automatic, at the cost of a runtime garbage collector you can't easily reason about.
 
-Rust takes a third approach. It tracks who owns each piece of memory at compile time, enforces a small number of rules about how that memory can be shared, and rejects code at compile time that would have caused a runtime bug in C. There's no garbage collector. There's no runtime cost. The price is that you have to write code the compiler can prove is safe, which sometimes means restructuring code that would have been fine in another language.
+Rust takes a third approach. It tracks who owns each piece of memory at compile time, enforces a small number of rules about how that memory can be shared, and rejects code at compile time that would have caused a runtime bug in C. There's no garbage collector and no runtime cost. The price is that you have to write code the compiler can prove is safe, which sometimes means restructuring code that would have been fine in another language.
 
-For Solana programs specifically, the borrow checker matters because Anchor handlers receive a `Context<T>` containing references to a set of accounts. The runtime has loaded those accounts into memory and is letting your code read and write them. Anchor uses Rust's references and lifetimes to model who can touch which account, when, and for how long. Most of the time this is invisible. Occasionally you'll write code the compiler rejects, and you'll need to understand why.
+For Solana programs specifically, the borrow checker matters because Anchor handlers receive a `Context<T>` containing references to a set of accounts. The runtime has loaded those accounts into memory and is letting your code read and write them. Anchor uses Rust's references and lifetimes to model who can touch which account, when, and for how long. Most of the time this is invisible, but occasionally you'll write code the compiler rejects, and you'll need to understand why.
 
 ## The ownership rule
 
@@ -52,7 +52,7 @@ let s2 = s1;             // ownership moves from s1 to s2
 println!("{}", s2);      // fine: s2 owns the string now
 ```
 
-For "primitive" types like integers and booleans, this rule is relaxed via the `Copy` trait. Copying a `u64` makes a duplicate, so `let a = 5; let b = a;` leaves both usable. But for owned types that hold heap data, the move is real, and you can't use the original binding afterward.
+For primitive types like integers and booleans, this rule is relaxed via the `Copy` trait. Copying a `u64` makes a duplicate, so `let a = 5; let b = a;` leaves both usable. But for owned types that hold heap data, the move is real, and you can't use the original binding afterward.
 
 In Anchor code, you mostly don't move things around. You operate on accounts via references, which is the next concept.
 
@@ -107,11 +107,13 @@ These rules are what the borrow checker enforces. They prevent data races and al
   <text x="525" y="325" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653">against any reader.</text>
 </svg>
 
-In Anchor code, you typically write `let user_state = &mut ctx.accounts.user_state;` when you need to modify a field, and `let config = &ctx.accounts.config;` when you only need to read. Anchor's `#[account(mut)]` constraint marks an account as writable at the runtime level. The `&mut` in your handler is the matching declaration at the language level.
+In Anchor code, you typically write `let user_state = &mut ctx.accounts.user_state;` when you need to modify a field, and `let config = &ctx.accounts.config;` when you only need to read. The `&mut` only satisfies the compiler. For the change to be saved, the field also needs `#[account(mut)]` in the Accounts struct: without it the handler still compiles and runs, but Anchor does not write the account back, as [account constraints](/courses/development-on-solana/writing-your-first-program/account-constraints) shows.
+
+The Solana runtime applies the same idea to accounts. A transaction marks each account as read-only or writable, as the [instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions) lesson described. Any number of transactions can read the same account in parallel, and transactions that write to the same account run one after another.
 
 ## Lifetimes and the `'info` you see everywhere
 
-Every reference has a lifetime: the span of time during which the reference is valid. Usually the compiler figures this out for you, a process called lifetime elision. Sometimes it needs help, and that's when you see explicit lifetime annotations like `'a` or `'info`.
+Every reference has a lifetime: the span of time during which the reference is valid. Usually you don't write lifetimes: inside a function body the compiler infers them, and in function signatures a few fixed rules, called lifetime elision, fill them in. Sometimes it needs help, and that's when you see explicit lifetime annotations like `'a` or `'info`.
 
 In Anchor, the lifetime you'll see in every Accounts struct is `'info`:
 
@@ -132,24 +134,41 @@ The `'info` lifetime says: "every reference in this struct lives for the same sp
 
 You don't invent your own lifetime names in normal Anchor code. You write `'info` because that's the convention Anchor established, and the macro layer ties it to the right thing. The lifetime parameter is mostly boilerplate. When you copy an Accounts struct from documentation, the `'info` is part of the template.
 
-## Three borrow-checker errors you will hit
+## Two borrow-checker errors you will hit
 
-Here are the patterns that cause borrow-checker errors for most Solana developers in their first week. Each produces a specific error message, and the fix is straightforward once you know the pattern.
+Here are the patterns that cause borrow-checker errors for most Solana developers in their first week.
 
 ### 1. Two mutable borrows of `ctx.accounts`
 
-The error message:
-
 ```
-error[E0499]: cannot borrow `ctx.accounts` as mutable more than once at a time
+error[E0499]: cannot borrow `*ctx.accounts` as mutable more than once at a time
 ```
 
-The pattern that triggers it:
+The pattern that triggers it is a method on the Accounts struct that takes `&mut self`, called while you still hold a reference to one of the struct's fields. A method is a function declared in an `impl` block and called with a dot, and its `&mut self` parameter is a mutable reference to the value it is called on:
+
+```rust
+impl<'info> Process<'info> {
+    fn bump_count(&mut self) {
+        self.user_state.count += 1;
+    }
+}
+
+pub fn process(ctx: Context<Process>) -> Result<()> {
+    let position = &mut ctx.accounts.position;
+    ctx.accounts.bump_count();  // ERROR
+    position.amount = 100;
+    Ok(())
+}
+```
+
+You took a mutable borrow of `ctx.accounts.position`, and it is still alive because the last line writes through it. Calling `bump_count` takes a second mutable borrow, this time of the whole `ctx.accounts`, because a `&mut self` method borrows every field of the struct, `position` included. The compiler looks only at the method's signature, so it does not see that `bump_count` never touches `position`.
+
+Mutable borrows of two different fields don't conflict. The compiler tracks each field of `ctx.accounts` separately, so this version compiles:
 
 ```rust
 pub fn process(ctx: Context<Process>) -> Result<()> {
     let user_state = &mut ctx.accounts.user_state;
-    let position = &mut ctx.accounts.position;  // ERROR
+    let position = &mut ctx.accounts.position;
 
     user_state.count += 1;
     position.amount = 100;
@@ -157,44 +176,25 @@ pub fn process(ctx: Context<Process>) -> Result<()> {
 }
 ```
 
-You took a mutable borrow of `ctx.accounts.user_state`, then while it was still alive, tried to take another mutable borrow of `ctx.accounts.position`. Both borrows go through `ctx.accounts`, which the compiler treats as borrowing the whole accounts struct.
-
-The fix: split-borrow them through a destructuring pattern, or do the mutations in separate scopes.
+To fix the error, don't hold a field reference across the method call. Call the method first, then write to the field:
 
 ```rust
 pub fn process(ctx: Context<Process>) -> Result<()> {
-    // Destructure once. Both fields become independent &mut references.
-    let Process { user_state, position, .. } = ctx.accounts;
-
-    user_state.count += 1;
-    position.amount = 100;
-    Ok(())
-}
-```
-
-The `..` pattern means "ignore the rest of the fields." The compiler is smart enough to see that `user_state` and `position` are disjoint fields, so it allows the two mutable borrows when they come from a destructuring.
-
-A simpler version, the one you'll see in most Anchor code: bind to a single mutable reference and do the work through it.
-
-```rust
-pub fn process(ctx: Context<Process>) -> Result<()> {
-    ctx.accounts.user_state.count += 1;
+    ctx.accounts.bump_count();
     ctx.accounts.position.amount = 100;
     Ok(())
 }
 ```
 
-If you don't bind separate `&mut` references, the compiler scopes each access narrowly enough that there's no conflict. Reach into `ctx.accounts.field` once per assignment and let the compiler handle the rest.
+Binding `let position = &mut ctx.accounts.position;` after the call works too. What matters is that no field reference is still in use while the method runs.
 
 ### 2. Borrowing while iterating
 
-The error message:
-
 ```
-error[E0502]: cannot borrow `vec` as mutable because it is also borrowed as immutable
+error[E0502]: cannot borrow `ctx.accounts.poll` as mutable because it is also borrowed as immutable
 ```
 
-The pattern:
+The pattern that triggers it:
 
 ```rust
 let votes = &ctx.accounts.poll.votes;
@@ -205,9 +205,9 @@ for vote in votes {
 }
 ```
 
-You're iterating over `votes`, which holds an immutable borrow of `ctx.accounts.poll.votes`, while also trying to take a mutable borrow of the same vector to remove from it. The compiler refuses because modifying the vector during iteration would invalidate the iterator.
+You're iterating over `votes`, which holds an immutable borrow of `ctx.accounts.poll.votes`, while also trying to take a mutable borrow of the same vector to remove from it. The message names `ctx.accounts.poll`, the account that holds the vector, because the mutable borrow goes through it. The compiler refuses because modifying the vector during iteration would invalidate the iterator.
 
-The fix: collect the indices to remove first, then remove them after the loop ends.
+To fix it, collect the indices to remove first, then remove them after the loop ends.
 
 ```rust
 let mut to_remove = Vec::new();
@@ -224,56 +224,12 @@ for i in to_remove.iter().rev() {
 
 The `.rev()` matters because removing from a `Vec` shifts later indices down. Removing from the end first keeps the earlier indices valid.
 
-### 3. Holding a reference past when its owner moves
-
-The error message:
-
-```
-error[E0382]: borrow of moved value
-```
-
-The pattern:
+For this case `Vec` has a method that does both steps. `retain` keeps the elements for which the closure, the inline function `|vote| !vote.invalid`, returns true and removes the rest, with no index list:
 
 ```rust
-let name = String::from("alice");
-let name_ref = &name;
-let new_owner = name;       // moves `name` into new_owner
-msg!("{}", name_ref);       // ERROR: name has been moved
+ctx.accounts.poll.votes.retain(|vote| !vote.invalid);
 ```
 
-You had a reference to `name`, then you moved `name` somewhere else, then you tried to use the reference. The compiler tracks that `name_ref` is no longer pointing at a valid value, and refuses.
+## When the compiler rejects a borrow, look for overlapping references
 
-The fix: pick one approach, either pass references everywhere, or move ownership and drop the reference. Don't mix.
-
-```rust
-let name = String::from("alice");
-let new_owner = name;
-msg!("{}", new_owner);      // use the new owner directly
-```
-
-Or:
-
-```rust
-let name = String::from("alice");
-let name_ref = &name;
-msg!("{}", name_ref);       // use the reference
-// `name` still owned here; can be moved after if needed
-```
-
-This error pattern is less common in Anchor code than the first two, because account references all share the same `'info` lifetime and aren't moved around. You'll see it more often in helper functions that work with `Vec` and `String` values you constructed yourself.
-
-## The mental model for daily work
-
-You don't need to track lifetimes by hand. The compiler does that. What you need is the rule of thumb that catches 90% of cases:
-
-If you need to write to an account, reach `ctx.accounts.the_account.field = value` directly, or take one `&mut` reference and do all the work through it. Don't take two mutable references to the same struct.
-
-If you need to read an account, just read it. `ctx.accounts.config.rddk_mint` works without ceremony.
-
-If you need to iterate over a collection and modify it, collect the changes first, then apply them after iteration ends.
-
-If the compiler complains about a borrow, the first question to ask is: how long am I holding each reference, and do any of them overlap with another reference to the same data? Almost every borrow error reduces to "two things claim exclusive access at the same time" or "a reference outlived its owner."
-
-In your first few days writing Anchor handlers, you will get borrow-checker errors regularly. After a week or two, the patterns become automatic. You'll start writing code that compiles the first time, because you'll think about ownership and borrows as you write rather than after the compiler rejects you.
-
-That's the goal. Not to memorize lifetime syntax, but to internalize the two reference rules well enough that you write code the compiler accepts without thinking about it.
+You don't need to track lifetimes by hand, the compiler does that. If the compiler complains about a borrow, the first question to ask is: how long am I holding each reference, and do any of them overlap with another reference to the same data? Almost every borrow error reduces to a mutable reference that is alive at the same time as another reference to the same data.

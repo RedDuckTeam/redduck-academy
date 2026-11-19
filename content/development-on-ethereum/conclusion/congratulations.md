@@ -10,14 +10,17 @@ faq:
       apply for an audit role.
 ---
 
-You finished the Ethereum track. That's a real milestone. You went from "what is a smart contract" to writing them, reading them, and understanding the protocols that move billions of dollars on the blockchain every day. That kind of fluency takes serious work, and you did it.
+You reached the end of Development on Ethereum.
 
-Take a moment to appreciate what you've built. Everything you learned here is the foundation every contract you'll ever read or write sits on. It doesn't expire. It gets sharper the more you use it.
+A real protocol answers several of the course's constraints in one swap. Take a swap on Uniswap V2, whose pair contract you rebuilt in the [AMM Pair task](/courses/development-on-ethereum/defi-tasks-and-patterns/amm-pair):
 
-## What's next
+* The pair holds two tokens and keeps `x * y = k`, so the price comes out of the reserves and nobody maintains an order book, which is the **[AMM](/courses/development-on-ethereum/defi-tasks-and-patterns/amm)**.
+* A pending swap is visible before it executes, and whoever builds the block chooses the order of transactions. So the swap takes a minimum output and a deadline from the user and reverts if it cannot meet them, which is the defense from **[front-running and MEV](/courses/development-on-ethereum/token-security-and-evm-internals/front-running-and-mev)**.
+* One large swap moves the ratio of the reserves, and a **[flash loan](/courses/development-on-ethereum/oracles/flash-loans)** supplies the capital for it inside one transaction. So no other contract should trust the pair's current price.
+* Every swap therefore adds the last price, multiplied by the time it held, to a running total, and a reader takes the average over a window. This is the **[TWAP oracle](/courses/development-on-ethereum/oracles/twap-oracles)**, and its cost is a price that lags the market.
 
-The Solana track is the natural next step. You'll write programs in Rust against a different account model and a different execution environment. The mental models from Ethereum mostly stay with you. Some rewire. Solana's "everything is an account" worldview is unfamiliar at first, but the instincts you built here transfer cleanly. The second blockchain ecosystem is always faster to learn than the first.
+## What to do with it
 
-If you're not ready for Solana yet, that's fine too. Keep building on Ethereum. Find a protocol you like and read its codebase end to end. Build something of your own. Apply for an audit role. There's plenty of work for the kind of person who can do what you can now do.
+Read the Uniswap V2 contracts end to end, starting with the pair. You have written your own version, so look for what yours left out: the factory, the router, flash swaps. For each one, work out which constraint it answers before you read how it is done.
 
-Whatever you pick next, good work getting here.
+If you continue with Development on Solana, its [AMM lesson](/courses/development-on-solana/production-state-design/amm) builds the same pool differently. A Solana program is stateless code, so the pool is a set of accounts that every transaction has to name in advance, not a contract that holds its own tokens.

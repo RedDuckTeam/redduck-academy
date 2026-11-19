@@ -24,22 +24,20 @@ faq:
       that exists once the call has run, and a missing result reverts everything.
 ---
 
-> This lesson is optional. It is for readers going on to the security courses, and it shows how the all-or-nothing guarantee becomes a concrete tool on Ethereum. If you only wanted the principle, you already have it, and you can stop here.
+## A check before the action is only a prediction
 
-## Handing control to code you did not write
+A program often has to hand control to code it did not write, then confirm the code did what was promised. One way to check is to simulate the whole operation first and read what the simulation says the result would be. The weak point is the trust that the simulation matches what actually runs. A result that looked right in the simulation is only a prediction until the real call executes.
 
-A wallet or a proxy contract often has to hand control to some external application to carry out an action, then confirm the action did what was promised. The common way to check is to simulate the whole transaction off-chain first and read what the simulation says the result would be. The weak point is the trust that the simulation matches what actually runs on-chain. A result that looked right in the preview is only a prediction until the real call executes.
+## Declare the outcome and check it in the same transaction
 
-## Declare the outcome, let the chain enforce it
+**Outcome enforcement** moves the check after the action. The caller declares the outcome it requires. The action runs, and then, inside the same transaction, the real state is checked against that declaration. A transaction is the all-or-nothing unit from [the previous lesson](/courses/engineering-principles/atomicity-as-guarantor/atomicity-as-a-security-primitive), so if the outcome is not there, the whole transaction rolls back as though it never happened. The check trusts neither the called code nor any simulation, only the state that exists once the call has run.
 
-ERC8009 removes the prediction. The caller declares the outcome it requires: after this call, address X holds at least Y of token Z. The EVM is the enforcer. When the call finishes, the real state is checked against that declaration, and if the outcome is not there, the whole transaction reverts as though it never happened.
+Say the caller's balance is 500 and it requires at least 600 after the call. If the call leaves 590, everything the called code did is undone and the balance is 500 again.
 
-The proxy at the center of this design, BalanceProxy, does not trust the application it called, the user who initiated the call, or any off-chain simulation. It trusts the state that actually exists once the call has run. The same declared amounts drive a plain balance-diff display, so a person approving the action sees the exact change it will make to their holdings before they sign. BalanceProxy lives at one deterministic address on each chain, so every caller checks outcomes against the same known contract.
+## Only the declared outcome is guaranteed
 
-## The same revert that powers flash loans
+The check reads what was declared and nothing else, so anything the called code changed that the declaration does not mention goes through. Before you rely on an enforced outcome, list what the called code is able to change and compare the list with what you declared.
 
-This is all-or-nothing execution applied directly. Rather than adding a permission system or a trusted simulator, the design uses what the platform already guarantees: a transaction either produces the required end state or reverts completely. That is the identical mechanism behind a flash loan, where the transaction reverts if the funds are not repaid within it. A flash loan enforces "the loan was repaid by the end of the transaction". ERC8009 enforces "address X holds at least Y of token Z by the end of the transaction". Two different outcomes, one revert.
+## Blockchain application
 
-## Bypassing the trusted simulation
-
-Seen through [**constraint bypass**](/courses/engineering-principles/constraint-bypass/bypassing-a-constraint), the constraint here is that you cannot verify an outcome without simulating the full transaction off-chain and trusting that simulation. Instead of building a better simulator or a tighter permission list to work around that constraint, ERC8009 enforces the outcome on-chain, which makes the constraint irrelevant. There is no prediction to trust, because the guarantee reads the result after execution and discards everything if the result is wrong. The full design is examined in depth in [the clear signing module](/courses/development-on-ethereum/clear-signing/blind-signing-and-the-bybit-hack).
+A flash loan, described in the previous lesson, is outcome enforcement with the declared outcome "the loan was repaid by the end of the transaction". ERC-8009, a proposed Ethereum standard, uses the same revert for "the balance of address X in token Z changed by at least Y by the end of the transaction". The call goes through a proxy contract, BalanceProxy, at one canonical address on each chain, and a hardware wallet shows the declared amounts before the user signs. [ERC-8009: sign the outcome](/courses/development-on-ethereum/clear-signing/erc-8009-sign-the-outcome) covers the design, and [The core and its routers](/courses/development-on-ethereum/clear-signing/the-core-and-its-routers) covers what stays unchecked, such as an NFT moved by a transaction that met every declared balance requirement.

@@ -30,77 +30,31 @@ faq:
       underneath, so prefer UncheckedAccount.
 ---
 
-> Every field in an Accounts struct has a type, and the type is doing real work. It tells Anchor what kind of account this slot expects, what checks to run before your handler executes, and what your handler can do with the field once it gets there. There are five types you'll use day to day. Each one is a different contract about what the account is and what's already been verified by the time your code sees it. The first thing to learn is when to use each one.
+> Every field in an Accounts struct has a type. It tells Anchor what kind of account this slot expects, what checks to run before your handler executes, and what your handler can do with the field once it gets there. There are five types you'll use day to day, and each one verifies something different.
 
-## What the type is actually doing
+## The type says what the program accepts in a slot
 
-When you write `pub vault: Account<'info, Vault>` inside an Accounts struct, you are not just naming a Rust type. You are telling Anchor to perform a specific set of checks on whichever account appears in that slot of the transaction. If any of those checks fail, the transaction is rejected before your handler runs. If all of them pass, the field becomes available inside your handler as a fully typed value, ready to read or write.
+A program does not choose the accounts it runs on. The client that builds the transaction lists every account the instruction touches (see [instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions)), and the runtime passes the program those accounts and nothing else. Whoever sends the transaction decides which account sits in each slot, so for every slot the program has to state what it accepts.
 
-The same idea applies to all five Anchor account types. Each one packages a particular check, or set of checks, behind a name. Picking the right type is how you express what the account is supposed to be in a way the framework can verify mechanically. The point of having five types instead of one is that "what counts as valid" depends on the role the account plays in the instruction. A signer is different from a state account, which is different from a recipient wallet, which is different from a program you're calling into.
-
-In the same way you wouldn't write `Object` in Java when you mean `String`, you don't write `UncheckedAccount` in Anchor when you mean `Signer`. Pick the most specific type that captures what you need. Anchor handles the verification.
-
-<svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The five Anchor account types: Signer, Account, SystemAccount, Program, UncheckedAccount</title><desc>A table lists five Anchor account types with what each one checks and when to use it. Signer checks that the account signed the transaction, Account checks ownership and that data matches type T, SystemAccount checks it is a plain wallet owned by the System Program, Program checks it is the right program to call into, and UncheckedAccount checks nothing, so it is the last-resort escape hatch you validate yourself.</desc>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The five Anchor account types</text>
-  <rect x="40" y="90" width="640" height="32" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="110" font-family="monospace" font-size="11" font-weight="bold" fill="#ffffff">type</text>
-  <text x="220" y="110" font-family="monospace" font-size="11" font-weight="bold" fill="#ffffff">what it checks</text>
-  <text x="490" y="110" font-family="monospace" font-size="11" font-weight="bold" fill="#ffffff">when to use it</text>
-  <rect x="40" y="122" width="640" height="70" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="142" font-family="monospace" font-size="10" font-weight="bold">Signer&lt;'info&gt;</text>
-  <text x="220" y="142" font-family="monospace" font-size="10">the account signed</text>
-  <text x="220" y="158" font-family="monospace" font-size="10">the transaction</text>
-  <text x="220" y="176" font-family="monospace" font-size="9" fill="#565653">nothing else</text>
-  <text x="490" y="142" font-family="monospace" font-size="10">the wallet authorizing</text>
-  <text x="490" y="158" font-family="monospace" font-size="10">the action</text>
-  <rect x="40" y="194" width="640" height="80" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="55" y="214" font-family="monospace" font-size="10" font-weight="bold">Account&lt;'info, T&gt;</text>
-  <text x="220" y="214" font-family="monospace" font-size="10">owned by your program</text>
-  <text x="220" y="230" font-family="monospace" font-size="10">discriminator matches T</text>
-  <text x="220" y="246" font-family="monospace" font-size="10">data deserializes to T</text>
-  <text x="220" y="262" font-family="monospace" font-size="9" fill="#565653">the workhorse</text>
-  <text x="490" y="214" font-family="monospace" font-size="10">your program's state</text>
-  <text x="490" y="230" font-family="monospace" font-size="10">(Vault, UserData,</text>
-  <text x="490" y="246" font-family="monospace" font-size="10">Proposal, etc.)</text>
-  <rect x="40" y="276" width="640" height="65" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="296" font-family="monospace" font-size="10" font-weight="bold">SystemAccount&lt;'info&gt;</text>
-  <text x="220" y="296" font-family="monospace" font-size="10">owned by the System</text>
-  <text x="220" y="312" font-family="monospace" font-size="10">Program (a plain wallet)</text>
-  <text x="490" y="296" font-family="monospace" font-size="10">a recipient wallet</text>
-  <text x="490" y="312" font-family="monospace" font-size="10">that doesn't need to sign</text>
-  <rect x="40" y="343" width="640" height="65" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="363" font-family="monospace" font-size="10" font-weight="bold">Program&lt;'info, T&gt;</text>
-  <text x="220" y="363" font-family="monospace" font-size="10">the account is the</text>
-  <text x="220" y="379" font-family="monospace" font-size="10">program with type T</text>
-  <text x="490" y="363" font-family="monospace" font-size="10">programs you call into</text>
-  <text x="490" y="379" font-family="monospace" font-size="10">(System, Token, your own)</text>
-  <rect x="40" y="410" width="640" height="65" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="55" y="430" font-family="monospace" font-size="10" font-weight="bold">UncheckedAccount</text>
-  <text x="55" y="446" font-family="monospace" font-size="10" font-weight="bold">&lt;'info&gt;</text>
-  <text x="220" y="430" font-family="monospace" font-size="10">nothing</text>
-  <text x="220" y="448" font-family="monospace" font-size="9" fill="#ed4937" font-weight="bold">escape hatch, validate</text>
-  <text x="220" y="461" font-family="monospace" font-size="9" fill="#ed4937" font-weight="bold">it yourself</text>
-  <text x="490" y="430" font-family="monospace" font-size="10">last resort, when none</text>
-  <text x="490" y="446" font-family="monospace" font-size="10">of the others fit</text>
-  <text x="360" y="510" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Pick the most specific type that fits. The checks happen before your handler runs.</text>
-</svg>
+The field's type is the first place you state it. When you write `pub vault: Account<'info, Vault>` inside an Accounts struct, you are telling Anchor to perform a specific set of checks on whichever account appears in that slot of the transaction. If any of those checks fail, the transaction is rejected before your handler runs. If all of them pass, the field becomes available inside your handler as a fully typed value, ready to read or write. Each of the five types packages a different set of checks, because what counts as valid depends on the role the account plays in the instruction. Pick the most specific type that fits.
 
 ## The five types, one at a time
 
-**Signer<'info>**. The account whose keypair authorized the transaction. Anchor verifies one thing: a signature from this account's public key was attached to the incoming transaction. That's it. There's no check on the account's owner, no check on its data, no check on whether it even has a balance. Use it for the wallet that's calling your instruction. Anything labeled "authority," "owner," or "user" in your design almost certainly wants this type.
+**Signer<'info>**. The account whose keypair authorized the transaction. Anchor verifies one thing: a signature from this account's public key was attached to the incoming transaction. It does not check the account's owner, its data, or its balance. So the sender cannot put someone else's wallet in this slot without that wallet's signature. Use it for the wallet that's calling your instruction. Anything labeled "authority," "owner," or "user" in your design almost certainly wants this type.
 
-**Account<'info, T>**. The most commonly used type in Anchor programs. It says three things at once: the account is owned by your program, its data starts with the 8-byte discriminator that identifies a `T`, and the rest of its data deserializes cleanly into the `T` struct. By the time your handler runs, `ctx.accounts.vault` is a reference to a typed `Vault` you can read and write like any Rust struct. Use this for every piece of state your program owns. Most of your program's logic will read and write accounts of this type.
+**Account<'info, T>**. It says three things at once: the account is owned by the program that defines `T` (your program, for a type you declare with `#[account]`), its data starts with the 8-byte discriminator that identifies a `T`, and the rest of its data deserializes cleanly into the `T` struct. So the sender cannot pass an account that belongs to another program, or an account of your program that stores a different type. By the time your handler runs, `ctx.accounts.vault` is a reference to a typed `Vault` you can read and write like any Rust struct. Use this for every piece of state your program owns.
 
-**SystemAccount<'info>**. A regular wallet on the chain, owned by the System Program. No data, no complex validation, just a SOL balance. Use it when an instruction needs to reference a wallet that isn't signing the transaction. A common case is a recipient of a SOL transfer: the recipient doesn't sign, but you want to make sure the slot really holds a plain wallet rather than some random account you'd accidentally clobber. `SystemAccount` is the type that makes that intent explicit.
+**SystemAccount<'info>**. A regular wallet on the chain, owned by the System Program. Use it when an instruction needs to reference a wallet that isn't signing the transaction. A common case is a recipient of a SOL transfer: the recipient doesn't sign, but you want to make sure the slot really holds a plain wallet rather than some random account you'd accidentally clobber.
 
-**Program<'info, T>**. The account is the deployed program of type `T`. Anchor verifies the account's address matches the program's known address and that its executable flag is true. Use it when your instruction calls into another program. Need to invoke the System Program to create an account? You'll list it as `Program<'info, System>`. Need to call the Token Program to move tokens? `Program<'info, Token>`. Calling your own program recursively? `Program<'info, MyProgram>`. Without this type, you would not have a way to tell Anchor "yes, this account is supposed to be a program."
+**Program<'info, T>**. The account is the deployed program of type `T`. Anchor verifies the account's address matches the program's known address and that its executable flag is true. So the sender cannot pass a different program in place of the one you mean to call. Use it when your instruction calls into another program: `Program<'info, System>` to invoke the System Program and create an account, `Program<'info, Token>` to call the Token Program and move tokens.
 
-**UncheckedAccount<'info>**. The escape hatch. Anchor performs no checks on it. Whatever account the client sends in this slot is what your handler receives, as a raw `AccountInfo` you have to validate yourself. Use it only when none of the other types fit, and always pair it with a `/// CHECK:` doc comment explaining why it's safe and what you're doing to validate it. Anchor's compiler refuses to build without that comment, which is one of the framework's small but effective safety nets. Common legitimate uses include accounts you constrain with a fixed address (`#[account(address = ...)]`), or accounts whose validation is performed by a CPI you're about to make. Using `UncheckedAccount` is a signal that you have stepped outside the framework's automatic checks, and you should know exactly why.
+**UncheckedAccount<'info>**. Anchor performs no checks on it. Whatever account the client sends in this slot is what your handler receives, as a raw `AccountInfo` you have to validate yourself. Use it only when none of the other types fit, and always pair it with a `/// CHECK:` doc comment explaining why it's safe and what you're doing to validate it. `anchor build` refuses to build without that comment. Common legitimate uses include accounts you constrain with a fixed address (`#[account(address = ...)]`), or accounts whose validation is performed by a CPI you're about to make. Older Anchor code uses `AccountInfo<'info>` directly, the raw type that the runtime hands to a program: an account's public key, owner, lamports, data, and flags. Anchor treats an `AccountInfo` field the same way, with no checks and the same `/// CHECK:` requirement. `UncheckedAccount` is a thin wrapper around it whose name says that nothing is checked, so prefer `UncheckedAccount`.
 
-## A real example with all five
+If the manual validation is missing, the slot accepts anything. Wormhole lost about 320 million dollars in 2022 this way. Its program needed the list of the transaction's instructions, which a program reads from the instructions sysvar (a system account with a fixed address that the runtime fills with data). The program read the list from whatever account the caller passed in that slot and never compared its address with the real sysvar address. The [root of trust lecture](/courses/solana-pro/trust-and-identity/root-of-trust) of the Solana Pro course covers the incident.
 
-A withdrawal from a vault is a good case for seeing every type at once. The vault holds program state, so it's `Account<'info, Vault>`. The owner has to authorize the withdrawal, so they're a `Signer<'info>`. The funds go to a recipient wallet that doesn't need to sign, so that's a `SystemAccount<'info>`. The transfer happens by calling into the Token Program, which appears in the struct as `Program<'info, Token>`. And there's a price oracle that's not directly typed by Anchor but is constrained to a specific address, so it appears as an `UncheckedAccount<'info>` with a `/// CHECK:` comment explaining the address pin.
+## A withdrawal struct that uses all five
+
+A withdrawal from a vault can use every type at once. The vault holds program state, the owner signs to authorize the withdrawal, the recipient is a wallet that doesn't need to sign, and the transfer happens by calling into the Token Program. The struct also takes a price oracle account. No Anchor type fits it, but it is constrained to a specific address, so it appears as an `UncheckedAccount<'info>` with a `/// CHECK:` comment explaining the address pin.
 
 <svg role="img" viewBox="0 0 720 530" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Withdraw struct showing Account, Signer, SystemAccount, Program, and UncheckedAccount types</title><desc>The diagram shows Anchor's Withdraw accounts struct, with vault as Account, authority as Signer, recipient as SystemAccount, token_program as Program, and price_oracle as UncheckedAccount. Arrows label each field with its role, such as 'your state', 'the signer', 'a passive wallet', 'an external program', and 'opt out of validation'.</desc>
   <defs>
@@ -147,11 +101,11 @@ A withdrawal from a vault is a good case for seeing every type at once. The vaul
   <text x="360" y="495" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Each type tells Anchor what to check. Reading the struct tells you what the instruction does.</text>
 </svg>
 
-Anyone reading that struct, without seeing the handler at all, can describe what the instruction does and what assumptions hold by the time the handler runs. That readability is the second-biggest payoff of using specific types. The first is correctness.
+A type says what kind of account the slot holds, but not which one. `Account<'info, Vault>` accepts any `Vault` account your program owns, and `Signer<'info>` accepts any wallet that signed the transaction. Nothing in the types of this struct ties `authority` to the authority recorded in `vault`, so with types alone a stranger could sign as `authority` and pass someone else's vault. Tying accounts to each other is the job of [account constraints](/courses/development-on-solana/writing-your-first-program/account-constraints), the next lesson.
 
-## A decision rule for picking the type
+## Pick the type at the first yes
 
-When you're writing a new instruction and trying to decide which type to use for each field, walk through the questions in order. Does this account need to sign the transaction? Then it's a `Signer`. Is it a program you call into? Then it's a `Program<T>`. Does it hold state owned by your program? Then it's an `Account<T>`. Is it a plain wallet that doesn't sign? Then it's a `SystemAccount`. If none of those fit, you reach for `UncheckedAccount`, and the comment you write next is your justification.
+When you add a field to a new instruction, ask the four questions below in order and take the type at the first yes. If every answer is no, you reach for `UncheckedAccount`, and the comment you write next is your justification.
 
 <svg role="img" viewBox="0 0 720 580" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flowchart for picking an Anchor account type: Signer, Program, Account, SystemAccount, or UncheckedAccount</title><desc>A flowchart asks four yes-or-no questions in order: does it sign, is it a program, does it hold your program's state, and is it a plain wallet. Each yes gives a type (Signer, Program&lt;'info, T&gt;, Account&lt;'info, T&gt;, or SystemAccount), and if every answer is no you land on UncheckedAccount, which needs a CHECK comment.</desc>
   <defs>
@@ -204,9 +158,3 @@ When you're writing a new instruction and trying to decide which type to use for
   <text x="360" y="520" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Stop at the first yes. The earlier in the tree, the safer the type.</text>
   <text x="360" y="555" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">If you hit the bottom, take a hard look. Almost every legitimate use has a more specific type above.</text>
 </svg>
-
-The earlier the question lands on a "yes," the safer the resulting type. `Signer` constrains the account on exactly one dimension, that a signature is present, and demands nothing else. `UncheckedAccount` constrains it on zero. Most of the security bugs in Solana programs trace back to the same pattern: a developer reached for `UncheckedAccount` to keep moving, then forgot to add the manual validation that the type's "do nothing" semantics imply.
-
-## A note on `AccountInfo`
-
-If you read older Anchor code or the underlying Solana SDK, you will see `AccountInfo<'info>` everywhere. It's the raw type that the runtime hands to a program: just an account's public key, owner, lamports, data, and flags. `UncheckedAccount` is a wrapper around `AccountInfo` whose only added behavior is the `/// CHECK:` requirement at compile time. The underlying account data is identical. In a modern Anchor program, prefer `UncheckedAccount` because the compile-time requirement to justify the unchecked access is exactly the kind of friction that prevents you from accidentally skipping validation.

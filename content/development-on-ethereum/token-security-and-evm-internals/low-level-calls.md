@@ -29,23 +29,13 @@ faq:
       way, took ownership, and about $150M in ETH was frozen permanently.
 ---
 
-> You've already used `.call{value: amount}("")` in the reentrancy lesson to send ETH. You did that without anyone explaining what `call` really is or what alternatives exist. This lesson fills that gap and introduces a sibling function called `delegatecall` that looks similar but works in a way most people find surprising the first time they see it. `delegatecall` is the foundation of every proxy contract and every Solidity library, and it's also the source of one of the more devastating attack patterns in smart contract history. Both functions are important. Both are easy to misuse.
+> You've already used `.call{value: amount}("")` in the reentrancy lesson to send ETH. `call` forwards all but 1/64 of the remaining gas and returns a success flag instead of reverting, so checking the result is your job. `delegatecall` looks almost the same but runs the target's code on the calling contract's storage. It is the foundation of every proxy contract and every Solidity library, and one write to the wrong slot can give the contract to an attacker.
 
-## Why contracts call other contracts
-
-A real protocol is never a single contract. A token might be on one contract. A DEX that trades it might be on another. A staking contract that holds it might be on a third. They all need to talk to each other.
-
-There are three ways one contract can interact with another:
-
-**High-level call.** You import the other contract's interface and call its functions like normal Solidity code: `token.transfer(recipient, amount)`. This is what most code looks like. The compiler handles the encoding for you.
-
-**Low-level ****`call`****.** You build the call manually using `address.call(...)`. You specify the target, the value to send, and the calldata. The compiler does nothing for you. You handle encoding, return values, and errors yourself.
-
-**Low-level ****`delegatecall`****.** Similar to `call`, but executes the target's code in YOUR contract's context. We'll get to what that means.
+There are three ways one contract can call another. With a **high-level call** you import the other contract's interface and call its functions like normal Solidity code: `token.transfer(recipient, amount)`. The compiler handles the encoding for you. With a **low-level call** you build the call manually using `address.call(...)`. You specify the target, the value to send, and the calldata, and you handle encoding, return values, and errors yourself. A **low-level delegatecall** is built the same way, but executes the target's code in the calling contract's context.
 
 You usually use the high-level form. The low-level forms exist for cases the high-level form can't handle: sending ETH to addresses that may or may not be contracts, calling functions on contracts whose interface you don't have at compile time, building proxy patterns, or interacting with libraries.
 
-## `call` for sending ETH
+## `call` returns a flag instead of reverting
 
 The simplest use of `call` is sending ETH:
 
@@ -57,14 +47,9 @@ require(ok, "transfer failed");
 
 This sends 1 ETH to `recipient`. The empty string `""` is the calldata. Empty means "no function call, just transfer ETH." If `recipient` is a contract, its `receive()` function runs, or its `fallback()` if there's no `receive`. If it's a wallet, the ETH just arrives.
 
-The return value is a tuple of two things:
+`call` returns two values: `bool ok`, which says whether the call succeeded, and `bytes memory returnData`, which holds whatever the target returned.
 
-- `bool ok`: did the call succeed?
-- `bytes memory returnData`: whatever the target returned
-
-The comma in `(bool ok, )` discards the second return value because we don't care about it.
-
-**Important**: if the call fails, `call` does NOT revert automatically. It returns `ok = false` and your code continues. You have to check `ok` and revert yourself. Forgetting this check is a common bug. You might think your ETH transfer succeeded when it silently failed.
+If the call fails, `call` does not revert. It returns `ok = false` and your code continues, so you have to check `ok` and revert yourself. If you forget the check, your transaction succeeds although the ETH never left the contract.
 
 ## `call` vs `transfer` and `send`
 
@@ -73,63 +58,18 @@ Solidity has two other built-in ways to send ETH: `transfer` and `send`. You'll 
 ```solidity
 recipient.transfer(1 ether);          // reverts on failure, forwards 2300 gas
 bool ok = recipient.send(1 ether);    // returns bool, forwards 2300 gas
-(bool ok, ) = recipient.call{value: 1 ether}("");  // returns bool, forwards all gas
+(bool ok, ) = recipient.call{value: 1 ether}("");  // returns bool, forwards all but 1/64 of gas
 ```
 
 The 2300 gas limit on `transfer` and `send` was a deliberate design choice to prevent the receiving contract from doing much work in its `receive()`. The motivation was blocking reentrancy attacks. It worked, but it created a different problem.
 
-In 2019, the Istanbul hard fork increased the gas cost of certain storage operations. Contracts whose `receive()` did simple bookkeeping that used to fit in 2300 gas no longer fit. Suddenly, perfectly legitimate contracts couldn't receive ETH via `transfer`. The 2300 gas budget had become too tight.
+In 2019, the Istanbul hard fork increased the gas cost of certain storage operations. Contracts whose `receive()` did simple bookkeeping that used to fit in 2300 gas no longer fit, so legitimate contracts couldn't receive ETH via `transfer`.
 
-The modern recommendation is to use `call` with the full gas forward, and protect against reentrancy explicitly using the patterns from the previous lesson: checks-effects-interactions and reentrancy guards. `transfer` is not safer. It's just more fragile.
+The modern recommendation is to use `call` without a gas limit, and protect against reentrancy explicitly using the patterns from the [previous lesson](/courses/development-on-ethereum/token-security-and-evm-internals/reentrancy-and-denial-of-service): checks-effects-interactions and reentrancy guards. `transfer` is not safer, only more fragile.
 
-## `call` for calling a function
+## Calling a function through `call`
 
-`call` can also invoke a function on the target contract by name. You encode the function signature and arguments into the calldata.
-
-Say there's another contract with this function:
-
-```solidity
-contract OtherContract {
-    string public name;
-
-    function setName(string memory _name) external returns (bool) {
-        name = _name;
-        return true;
-    }
-}
-```
-
-You can call it from your contract like this:
-
-```solidity
-// Solidity 0.8.24, Ethereum mainnet
-contract MyContract {
-    address public target;
-
-    constructor(address _target) {
-        target = _target;
-    }
-
-    function callSetName(string memory newName) external returns (bytes memory) {
-        (bool ok, bytes memory response) = target.call(
-            abi.encodeWithSignature("setName(string)", newName)
-        );
-        require(ok, "call failed");
-        return response;
-    }
-}
-```
-
-`abi.encodeWithSignature("setName(string)", newName)` builds the calldata:
-
-- It takes the function signature as a string
-- Hashes it with `keccak256`
-- Takes the first 4 bytes, which is the function selector from the loops-and-hashing lesson
-- Appends the encoded arguments
-
-The result is a `bytes` value that, when sent to `OtherContract`, triggers `setName(newName)` exactly as if you'd called it directly.
-
-The return value comes back as raw bytes in `response`. To use it as a typed value, you decode it:
+`call` can also invoke a function on the target contract by name. You encode the function signature and arguments into the calldata. Say the target has a function `setName(string)` that returns a `bool`:
 
 ```solidity
 (bool ok, bytes memory response) = target.call(
@@ -139,11 +79,11 @@ require(ok, "call failed");
 bool result = abi.decode(response, (bool));  // true if setName returned true
 ```
 
-The decoding has to match what the function actually returned. If `setName` returned a `string` instead of a `bool`, you'd decode with `(string)` instead of `(bool)`.
+`abi.encodeWithSignature` takes the function signature as a string, hashes it with `keccak256`, takes the first 4 bytes, which is the function selector from the [loops and hashing lesson](/courses/development-on-ethereum/solidity-basics/loops-and-hashing), and appends the encoded arguments. The return value comes back as raw bytes in `response`, and the type you pass to `abi.decode` has to match what the function actually returned.
 
-## When you'd actually do this
+A successful `call` does not prove that any code ran. If `target` is an address with no contract deployed, the call still returns `ok = true`, because the EVM does not check whether code exists at the target. When the target address comes from configuration or from a user, `require(ok)` will not catch a wrong address.
 
-In normal code, you wouldn't. If you have access to `OtherContract`'s interface, you import it and call the function directly:
+If you have the target's interface, you import it and call the function directly:
 
 ```solidity
 interface IOther {
@@ -153,17 +93,13 @@ interface IOther {
 IOther(target).setName("alice");
 ```
 
-That's shorter, type-safe, and produces the same result.
-
-You reach for low-level `call` when:
+That's shorter and type-safe, and the compiler does the encoding. You reach for low-level `call` when:
 
 - The target's interface isn't known at compile time, for example when the user passes the function name in as a parameter
 - You're building a generic forwarder, multicall, or proxy contract
 - You're handling cases where the call might fail and you need to inspect the failure
 
-For everyday work, prefer the high-level form. Save `call` for the cases that need it.
-
-## What is `delegatecall`?
+## `delegatecall` runs the target's code on your storage
 
 `delegatecall` looks almost identical to `call`:
 
@@ -173,34 +109,9 @@ For everyday work, prefer the high-level form. Save `call` for the cases that ne
 );
 ```
 
-But it behaves completely differently. The difference is execution context.
+The difference is execution context. When you use `call`, the target's code runs in the target's context: the target's storage, the target's address, and your contract as its `msg.sender`. When you use `delegatecall`, the target's code runs in your contract's context: your storage, your address, and the same `msg.sender` and `msg.value` that your contract received.
 
-When you use `call`, the target's code runs in the target's context: the target's storage, the target's address, the target as `msg.sender` to anyone IT calls.
-
-When you use `delegatecall`, the target's CODE runs but in YOUR context: YOUR storage, YOUR address, YOUR `msg.sender`.
-
-The simplest way to think about this:
-
-```
-call:          "Run this function over there, on their stuff"
-delegatecall:  "Bring their function here, run it on our stuff"
-```
-
-## The phone call analogy
-
-Imagine you have a friend Bob who's good at shopping.
-
-**Call:**
-You phone Bob and say "go buy me a book." Bob takes some money, goes to the bookstore, buys a book. The book is now Bob's book, sitting in Bob's house. The bookstore knows Bob as the customer. If Bob needs to write down what he bought, he writes in HIS notebook.
-
-**Delegatecall:**
-You bring Bob to your house. You say "use your shopping skills, but use my stuff." Bob looks at YOUR shopping list, takes money from YOUR wallet, and writes the new book into YOUR notebook. The book ends up in YOUR library. The phone calls Bob makes appear to come from YOU.
-
-The key insight: with delegatecall, you're using THEIR knowledge in the form of code logic but YOUR state, meaning your storage, your address, and your balance.
-
-## A concrete example
-
-Here's a delegatecall in action. Two contracts: a `Helper` that knows how to record events, and a `Main` that wants to use Helper's logic but in its own context.
+`Helper` below knows how to record events, and `Main` uses Helper's logic in its own context:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -228,48 +139,15 @@ contract Main {
 }
 ```
 
-When Alice calls `Main.callRecord{value: 2 ether}()`:
+When Alice calls `Main.callRecord{value: 2 ether}()`, `record()` runs inside Main. It sees Alice as `msg.sender` and 2 ETH as `msg.value`, and the ETH stays in Main. The event is emitted by Main rather than Helper. If you're watching Main's events, you see `Recorded` events from Main even though Main has no `Recorded` event declared. With a regular `call`, Helper would have seen Main as `msg.sender` and emitted the event itself.
 
-```
-                  Without delegatecall:                  With delegatecall:
-                  (using regular call)                   (what actually happens here)
+Proxies rely on `msg.sender` being preserved. When you call a proxy, the proxy delegatecalls to the implementation, and to the implementation's code the original caller still looks like the original caller. The [proxies lesson](/courses/development-on-ethereum/token-security-and-evm-internals/upgradeable-contracts-and-proxies) covers how they are built.
 
-Alice calls       Main forwards to Helper                Main pulls Helper's code
-                  Helper.record() runs                   record() runs INSIDE Main
-                  
-msg.sender:       Helper sees Main as sender             record() sees ALICE as sender
-                  ("Main called me")                     ("Alice called me")
-                  
-msg.value:        Helper has the 2 ETH                   record() sees 2 ETH in Main
-                  (it was forwarded)                     (Main holds the ETH)
-                  
-Emitted event:    "Recorded by Main, 2 ether"            "Recorded by Alice, 2 ether"
-                  fired by Helper                        fired by Main
-```
+## Both contracts must agree on what each slot holds
 
-That last point matters. The event is emitted by Main rather than Helper. If you're watching Main's events, you see `Recorded` events from Main even though Main has no `Recorded` event declared. The event was emitted in Main's context, so Main is the one that records the log.
+Storage is the flat array of numbered slots from the [mappings lesson](/courses/development-on-ethereum/solidity-basics/mappings), and the compiler decides which variable goes in which slot based on the order they're declared, starting at slot 0. The variable's name doesn't matter at the storage level, because source code that says `counter` compiles to reads and writes of a slot number. The [storage layout lesson](/courses/development-on-ethereum/token-security-and-evm-internals/storage-layout) covers the rules in detail.
 
-`msg.sender` being preserved as Alice is the key property. It's why proxies work. When you call a proxy, the proxy delegatecalls to the implementation. The implementation's code runs, but to that code, the original caller still looks like the original caller. The user can't tell the proxy is there.
-
-## Storage and the layout problem
-
-`delegatecall` runs code in YOUR storage. This is powerful, but it is also the main source of danger.
-
-Solidity stores state variables in numbered slots, starting at 0:
-
-```
-contract Foo {                Slot 0: a
-    uint256 public a;         Slot 1: b
-    uint256 public b;         Slot 2: c
-    address public c;
-}
-```
-
-The compiler decides which variable goes in which slot based on the ORDER they're declared. The variable's name doesn't matter at the storage level. Slot 0 is just "the first 256 bits of storage."
-
-This is fine when a contract uses its own storage. It becomes dangerous when one contract delegatecalls into another, because the two contracts have to agree on what's in each slot.
-
-Consider:
+This is fine when a contract uses its own storage. When one contract delegatecalls into another, the two contracts have to agree on what's in each slot. Consider:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -295,29 +173,13 @@ contract Storage {
 }
 ```
 
-When `Storage.callIncrement()` runs, it delegatecalls into `Logic.increment()`. The `increment` function says "add 1 to `counter`," but Logic thinks `counter` is in slot 0. So it adds 1 to slot 0, which in Storage is `owner`. The `owner` field gets corrupted: adding 1 changes the stored address, so `owner` no longer points to the real owner.
+When `Storage.callIncrement()` runs, it delegatecalls into `Logic.increment()`. The `increment` function says "add 1 to `counter`," but Logic thinks `counter` is in slot 0. So it adds 1 to slot 0, which in Storage is `owner`. Adding 1 changes the stored address, so `owner` no longer points to the real owner.
 
-The two contracts have to agree on storage layout. If Logic expects `counter` at slot 0, then Storage must put its `counter` at slot 0 too. If Logic expects `owner` at slot 1, then Storage's `owner` must be at slot 1.
+The fix is to make the layouts match. Storage keeps `owner` at slot 0 and `counter` at slot 1, so Logic has to declare an `owner` at slot 0 too, even though it never uses it, and its `counter` then lands at slot 1. The price is that the two contracts can no longer change independently. Proxy patterns deal with this by being extremely strict about storage layout. The proxy and the implementation are designed together so their slots line up, and even adding a new variable at the wrong position can break a deployed proxy permanently.
 
-```
-Bad layout:                            Good layout:
+## A write to the wrong slot can replace the code you delegate to
 
-Logic:                                 Logic:
-  Slot 0: counter                        Slot 0: owner    (not used by logic but
-                                                          must match)
-Storage:                                 Slot 1: counter
-  Slot 0: owner    ← gets corrupted
-  Slot 1: counter                      Storage:
-  Slot 2: logic                          Slot 0: owner
-                                         Slot 1: counter
-                                         Slot 2: logic
-```
-
-Proxy patterns deal with this by being extremely strict about storage layout. The proxy and the implementation are designed together so their slots line up. Even adding a new variable at the wrong position can break a deployed proxy permanently.
-
-## The ownership hijack attack
-
-Now we get to the dangerous version. Imagine a contract that uses delegatecall to a helper, with a mismatched storage layout, and the helper happens to write to a slot that holds something critical:
+A mismatch becomes an attack when the slot holds something critical and the caller chooses the value written to it:
 
 ```solidity
 // Solidity 0.8.24, Ethereum mainnet
@@ -347,22 +209,11 @@ contract Helper {
 }
 ```
 
-The vulnerable contract delegatecalls into Helper's `doStuff`. Helper writes `timestamp` to its slot 0, which it thinks is `lastTimestamp`. But because this is a delegatecall running in Vulnerable's context, slot 0 is actually `helper`, an address.
+Helper writes `timestamp` to its slot 0, which it thinks is `lastTimestamp`. But because this is a delegatecall running in Vulnerable's context, slot 0 is actually `helper`, an address.
 
 An attacker can pass a `uint256` that, when interpreted as an address, points to their own malicious contract. After one call, Vulnerable's `helper` slot now points to the attacker's contract. The next time anyone calls `doStuff`, it delegatecalls into the attacker's contract instead of the original Helper.
 
-The attacker's contract can have a `doStuff(uint256)` that does whatever it wants in Vulnerable's storage. Including:
-
-```solidity
-function doStuff(uint256) external {
-    // slot 1 is owner in the calling context
-    assembly {
-        sstore(1, caller())  // write the caller's address to slot 1
-    }
-}
-```
-
-Or simpler, without assembly:
+The attacker's contract can have a `doStuff(uint256)` that does whatever it wants in Vulnerable's storage:
 
 ```solidity
 contract Attacker {
@@ -375,31 +226,16 @@ contract Attacker {
 }
 ```
 
-After the attacker calls `doStuff` again, with the call now delegatecalling into their own contract, the `owner` field in Vulnerable is set to the attacker. The attacker now owns the contract. From there, they can call any owner-only function: withdraw all funds, transfer ownership permanently, change parameters, whatever the contract allows.
+After the attacker calls `doStuff` again, with the call now delegatecalling into their own contract, the `owner` field in Vulnerable is set to the attacker. From there, they can call any owner-only function: withdraw all funds, transfer ownership permanently, change parameters, whatever the contract allows.
 
-This is the **Parity multisig wallet attack**, which happened in 2017 and froze about $150 million worth of ETH permanently. The exact pattern: a delegatecall to a library contract that wasn't expected to be callable externally, but was. An attacker triggered a function that wrote to a critical slot, and the funds became unrecoverable.
+## Know whose code writes to your storage
 
-## How to defend against the attack
+Two things went wrong in `Vulnerable`. Helper wrote to a slot that Vulnerable used for something else, and after that write the delegatecall target was no longer the code the author had deployed.
 
-The defense is **strict storage layout discipline**.
+Matching the layouts prevents the first write. If Vulnerable has `helper` at slot 0 and `owner` at slot 1, then Helper should have placeholders at slot 0 and slot 1 that match, so that `lastTimestamp` lands in a slot Vulnerable does not use. When all you need is shared code, prefer a `library`. Solidity's `library` keyword uses delegatecall but with compiler-enforced constraints: libraries can't have state variables of their own, so the layout collision risk is removed.
 
-1. **Match storage layouts between contracts that delegatecall each other.** If Vulnerable has `helper` at slot 0 and `owner` at slot 1, then Helper should have placeholders at slot 0 and slot 1 that match.
-2. **Use storage gaps in upgradeable contracts.** OpenZeppelin's upgradeable contracts include `uint256[50] private __gap;` arrays at the end of each contract to reserve future slots. If you later need to add a variable, you take from the gap rather than shifting other slots.
-3. **Prefer pure libraries over delegatecall when possible.** Solidity's `library` keyword uses delegatecall but with compiler-enforced constraints: libraries can't have state variables of their own, so the layout collision risk is removed.
-4. **Don't delegatecall to untrusted contracts. Ever.** The target of a delegatecall has full power to modify your storage in arbitrary ways. Only delegatecall to contracts you wrote or contracts whose code you've audited carefully.
-5. **Be paranoid about upgradeable proxies.** They depend entirely on storage layout matching between the proxy and every version of the implementation. Tools like OpenZeppelin's `@openzeppelin/upgrades-core` check this automatically. Use them.
+But matching layouts only helps with code that you control. The target of a delegatecall has full power to modify your storage in arbitrary ways, whatever layout it declares, and `Attacker` declared the layout that let it reach `owner`. So only delegatecall to contracts you wrote or contracts whose code you've audited carefully, and make sure no outside caller can overwrite the target address.
 
-## When to use what
+In the 2017 **Parity multisig wallet** incident, the wallets delegatecalled to a library contract that wasn't expected to be callable externally, but was. An attacker triggered a function that wrote to a critical slot, and about $150 million worth of ETH was frozen permanently.
 
-A practical summary:
-
-| Need | Use |
-| --- | --- |
-| Send ETH to a known address | `recipient.call{value: amount}("")` |
-| Call a function on a contract whose interface you know | `IContract(addr).functionName(args)` |
-| Call a function dynamically when the interface isn't known at compile time | `addr.call(abi.encodeWithSignature(...))` |
-| Reuse code from a library | `using Library for Type;` or `library` declarations |
-| Build a proxy that delegates to an implementation | `addr.delegatecall(...)` with carefully matched storage |
-| Call code in your own context for any other reason | Almost certainly don't. Reconsider. |
-
-The hierarchy of trust: high-level calls are safest, low-level `call` is next, low-level `delegatecall` is the most dangerous. Use each at the level appropriate for the task, and don't reach down a level unless you have a real reason.
+Before you write a `delegatecall`, answer three questions. Whose code will write to your storage? Can the target address change, and who can change it? Can you show that the code writes only to the slots it is meant to? If you can't answer all three, don't use `delegatecall`.

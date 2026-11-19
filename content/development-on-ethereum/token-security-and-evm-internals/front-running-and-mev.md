@@ -34,23 +34,15 @@ faq:
       cannot require it.
 ---
 
-## How transactions actually get into blocks
+## Pending transactions are visible, and their order is for sale
 
-A simplification we've been using throughout these lessons: "a transaction is submitted and then it happens." The reality has a step in between.
-
-When you submit a transaction to Ethereum, it doesn't execute immediately. It goes into a waiting area called the **mempool**, which is a pool of pending transactions that every node on the network maintains and shares with its peers. Your transaction sits there until a block proposer decides to include it in a block.
-
-The mempool is **public**. Anyone running an Ethereum node can see every pending transaction: the caller, the contract being called, the function, the arguments, the gas price. Bots specifically designed to watch the mempool see your transaction within milliseconds of you submitting it, before any block has included it.
-
-A block proposer picks which transactions go into the next block and in what order. There's no rule that says "first come, first served." The proposer can choose any transactions from the mempool, in any order. Proposers are economically motivated, so they pick the ordering that pays them the most. This means whoever pays a higher gas fee tends to get in first, but proposers can also accept payment off-chain to include or exclude specific transactions.
+A pending transaction sits in the public mempool, where anyone can read its caller, target contract, function, arguments, and gas price before any block includes it (the [contracts and gas lesson](/courses/development-on-ethereum/how-ethereum-works/contracts-and-gas) covered this). The order of transactions inside the next block is not first come, first served either. Whoever assembles the block can choose any pending transactions, in any order, and picks the ordering that pays the most.
 
 Three actors matter for understanding MEV:
 
 - **Searchers** are the bots that watch the mempool. They look for profitable patterns and construct transaction bundles that exploit those patterns.
 - **Builders** assemble blocks. They take bundles from searchers and try to construct the highest-revenue block possible.
 - **Proposers** are the validators that ultimately sign and broadcast a block. They typically accept whatever block pays them the most.
-
-Here's the flow visually:
 
 <svg role="img" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Transaction path from user wallet through mempool and searchers to block</title><desc>A user wallet submits a transaction into the public mempool, where it sits alongside other pending transactions. Searchers run bots that read every transaction and build profitable bundles around them, then the builder orders all the transactions, the proposer signs the block, and it goes on chain.</desc>
   <!-- User wallet -->
@@ -114,51 +106,25 @@ Here's the flow visually:
   <text x="380" y="362" font-family="monospace" font-size="11" fill="#000000">block on chain</text>
 </svg>
 
-This public visibility, combined with the builder's freedom to order transactions for profit, is what every attack in this lesson builds on.
+**MEV** stands for "Maximal Extractable Value." It's the extra profit that can be made by choosing the right order of transactions in a block, or by inserting your own transactions between someone else's. It needs no bug in any contract, only a visible queue and a builder free to order it for profit. MEV exists on every public chain in some form.
 
-## What is MEV?
+## A pending swap shows how the price is about to move
 
-**MEV** stands for "Maximal Extractable Value." It's the extra profit that can be made by choosing the right order of transactions in a block, or by inserting your own transactions between someone else's.
+The most common target is a swap on a decentralized exchange (DEX), a smart contract that lets users trade one token for another without a centralized intermediary. The most common design is the **automated market maker** (AMM), where the contract holds reserves of two tokens, say ETH and USDC, and uses a formula to determine the price. The [AMM lesson](/courses/development-on-ethereum/defi-tasks-and-patterns/amm) covers the formula.
 
-A simple example: imagine you submit a transaction that will change the price of a token. A searcher sees this in the mempool. They submit two of their own transactions, one before yours and one after. The first carries a higher gas fee than yours so it executes first, the second a lower fee so it lands right after yours. The builder, motivated to maximize their fee revenue, orders these transactions in a way that lets the searcher profit at your expense. The proposer signs the block.
+In an AMM, **trades move the price**. If you buy a lot of ETH from the pool, you're taking ETH out and putting USDC in. The pool now has less ETH and more USDC, so the next person who buys ETH gets a worse price. The bigger your trade, the more the price moves. This is called **price impact**.
 
-You paid a normal gas fee. The searcher profited. The builder collected fees. The proposer got paid. Every party in the supply chain made money except you, the user whose transaction was the bait that made the whole thing possible.
+Price impact is predictable from the trade size and the pool's current state, so anyone watching the mempool can calculate what your trade will do to the price before it executes.
 
-This isn't a bug. It's a structural property of public blockchains where the transaction queue is visible. The same property that makes Ethereum transparent and trustless also makes MEV inevitable. MEV exists on every public chain in some form.
+The price you get depends on the pool state when your transaction executes, which may differ from the state when you submitted. **Slippage** is the difference between the price you expected and the price you got. To limit it, DEXes ask the user to specify a minimum acceptable output, often as a percentage tolerance. A user might say "I'll accept up to 1% worse than the current quote." If the execution would be worse than that minimum, the transaction reverts.
 
-## DEXes: the most common MEV target
+## Sandwich: the bot trades before you and after you
 
-To understand front-running attacks concretely, you need a basic picture of how a decentralized exchange (DEX) works.
+In a sandwich attack the searcher places two transactions around the victim's trade: one before it, called the front-run, and one after, called the back-run. The first carries a higher gas fee than the victim's so it executes first, the second a lower fee so it lands right after the victim's.
 
-A DEX is a smart contract that lets users trade one token for another without a centralized intermediary. The most common design is the **automated market maker** (AMM), where the contract holds reserves of two tokens, say ETH and USDC, and uses a formula to determine the price.
+Alice wants to swap 100 ETH for USDC on a DEX. The current price is 2000 USDC per ETH, so Alice expects to receive about 200,000 USDC. She sets her slippage tolerance to 2%, meaning her transaction will revert if she'd get less than 196,000 USDC.
 
-The key property of AMMs: **trades move the price**. If you buy a lot of ETH from the pool, you're taking ETH out and putting USDC in. The pool now has less ETH and more USDC. The next person who buys ETH gets a slightly worse price because the ratio has shifted. The bigger your trade, the more the price moves. This is called **price impact**.
-
-Because price impact is predictable from the trade size and the pool's current state, anyone watching the mempool can calculate exactly what your trade will do to the price BEFORE your trade executes. This is the opening that MEV bots exploit.
-
-## Slippage
-
-When you submit a swap, you specify how many tokens you want to trade. But the EXACT price you'll get depends on the pool state when your transaction executes, which may differ from the state when you submitted. Other people may trade before you, the price may move, and you might receive fewer tokens than you expected.
-
-**Slippage** is the difference between the price you expected and the price you actually got. To protect users, DEXes ask the user to specify a minimum acceptable output, often as a percentage tolerance. A user might say "I'll accept up to 1% worse than the current quote." If the actual execution would be worse than that minimum, the transaction reverts and the user doesn't lose more than they agreed to.
-
-This slippage tolerance is what makes sandwich attacks profitable, as we'll see in a moment.
-
-## Front-running: the basic attack
-
-A front-running attack is the simplest form. The attacker sees a profitable transaction in the mempool and copies it with a higher gas fee, getting their version mined first.
-
-Example: a token is about to be listed on a major exchange, news that everyone agrees will push its price up. Alice notices the news early and submits a transaction to buy 10,000 tokens at the current price. Bob's bot sees Alice's transaction in the mempool. Before Alice's transaction is mined, Bob submits the same trade with 50% higher gas fee. Bob's transaction mines first, he buys his tokens at the lower price, then Alice's transaction mines and pushes the price up further. Bob immediately sells, profiting from the price movement Alice was about to cause.
-
-Alice still gets her tokens, but at a worse price than she would have. The profit Bob made came directly from Alice's loss, even though Bob never touched Alice's wallet.
-
-## Sandwich attacks: front-running plus back-running
-
-A sandwich attack is a more advanced form of front-running. The attacker places two transactions: one before the victim's trade, called the front-run, and one after, called the back-run. The victim's trade gets sandwiched between them.
-
-Walk through a concrete example. Alice wants to swap 100 ETH for USDC on a DEX. The current price is 2000 USDC per ETH. Alice expects to receive about 200,000 USDC. She sets her slippage tolerance to 2%, meaning her transaction will revert if she'd get less than 196,000 USDC.
-
-A sandwich bot named Mallory sees Alice's pending transaction. The three-transaction sequence Mallory constructs looks like this:
+A sandwich bot named Mallory sees Alice's pending transaction and constructs this sequence:
 
 <svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Sandwich attack: Mallory front-runs and back-runs Alice's ETH/USDC swap</title><desc>A four-step table tracks the pool's ETH/USDC reserves and price as Mallory front-runs Alice's 100 ETH swap, then back-runs it after her trade executes. The summary shows Alice lost about 3,500 USDC of expected value while Mallory netted about 2 ETH profit, purely through transaction ordering, not a contract bug.</desc>
   <!-- Column headers -->
@@ -223,23 +189,25 @@ A sandwich bot named Mallory sees Alice's pending transaction. The three-transac
   <text x="350" y="475" text-anchor="middle" font-family="monospace" font-size="13" fill="#ffffff" font-weight="bold">Mallory captured it through ordering, not a contract bug</text>
 </svg>
 
-Mallory walked away with more ETH than she started with. Alice received fewer USDC than she expected. The difference between Alice's "best case" price and her actual price is what Mallory captured. The slippage tolerance Alice set determined the maximum Mallory could extract: if Alice had set tolerance to 0.1%, Mallory's sandwich would have caused Alice's transaction to revert, and Mallory's setup would have been a loss.
+Mallory trades in the same direction as Alice just before her and in the opposite direction just after. Alice's swap executes at the price Mallory's front-run left behind, which is worse for Alice but still inside her 2% tolerance, so it does not revert. Alice's own swap then moves the price further the same way. Mallory's back-run reverses her first trade at that price, which is better for her than the price she started from, so she walks away with more ETH than she started with. The difference between Alice's "best case" price and her actual price is what Mallory captured.
 
-This is why slippage tolerance is a delicate setting. Set it too tight and your transactions fail when prices move naturally. Set it too loose and you're advertising "please sandwich me up to this amount."
+The slippage tolerance Alice set determined the maximum Mallory could extract. If Alice had set tolerance to 0.1%, Mallory's sandwich would have caused Alice's transaction to revert, and Mallory's setup would have been a loss.
 
-## Displacement attacks
+Alice paid a normal gas fee. The searcher profited, the builder collected fees, and the proposer got paid, so every party in the supply chain made money except the user.
 
-A displacement attack is different. The attacker doesn't sandwich your trade. They REPLACE your action with their own, leaving you with a worse outcome or a failed transaction.
+## Displacement: the bot takes your place
 
-The classic case: you discover a token contract has a bug that lets the first caller of some function claim all the funds. You submit the call. A bot watching the mempool sees your transaction, copies it with higher gas, and gets in first. Your call still executes, but the funds are already gone. You paid gas for nothing.
+The plain form of front-running needs no price impact. The attacker sees a profitable transaction in the mempool, copies it with a higher gas fee, and gets their version mined first. This is called a displacement attack, because the attacker replaces your action with their own and leaves you with a worse outcome or a failed transaction.
+
+The classic case: you discover a token contract has a bug that lets the first caller of some function claim all the funds. You submit the call, and a bot watching the mempool sees your transaction, copies it with higher gas, and gets in first. Your call still executes, but the funds are already gone, and you paid gas for nothing.
 
 Another case: you're creating a new liquidity pool on a DEX and you want to set the initial price. An attacker sees your transaction in the mempool and creates the pool first with a skewed price that benefits them. When your transaction executes, it interacts with the attacker's pool and you lose value.
 
 Displacement attacks aren't limited to DEXes. Any time a transaction would be valuable if it's first, an attacker can preempt it.
 
-## Defense 1: slippage parameters
+## The user signs the worst outcome they accept
 
-Every state-changing function that depends on external prices should accept a minimum or maximum tolerance parameter from the user, and revert if the execution would be outside that tolerance.
+A contract cannot stop a bot from trading before the user. It can refuse to execute when the result is worse than what the user agreed to. Every state-changing function that depends on external prices should accept a minimum or maximum tolerance parameter from the user, and revert if the execution would be outside that tolerance.
 
 For a DEX swap, this looks like:
 
@@ -261,37 +229,35 @@ function swapExactTokensForTokens(
 }
 ```
 
-The user computes their `amountOutMin` off-chain based on the current price plus their tolerance. The contract enforces this floor on chain. A sandwich attacker can still squeeze profit out of the user up to `amountOutMin`, but they can't take any more.
+The user computes their `amountOutMin` off-chain based on the current price plus their tolerance. The contract enforces this floor on chain. A sandwich attacker can still squeeze profit out of the user up to `amountOutMin`, but they can't take any more. Set the tolerance too tight and your transactions fail when prices move naturally. Set it too loose and you have told a sandwich bot how much it may take.
 
-The same idea applies to any function where the user commits to a value that depends on chain state. Lending protocols use `minCollateralFactor`, NFT marketplaces use `maxPrice`, airdrop claims use `expectedAmount`. The pattern is always the same: the user signs off on a worst-acceptable outcome, the contract enforces it.
-
-## Defense 2: deadline parameters
-
-A transaction can sit in the mempool for a long time if gas prices spike or the network is congested. By the time it executes, market conditions may have changed completely. A trade you intended at one price might execute at a wildly different one.
-
-The defense is to include a `deadline` parameter: a block timestamp past which the transaction must revert.
+The second bound is time. A transaction can sit in the mempool for a long time if gas prices spike or the network is congested, and by the time it executes, a trade you intended at one price might execute at a very different one. So the swap also takes a `deadline`, a block timestamp past which the transaction must revert:
 
 ```solidity
 require(block.timestamp <= deadline, "Transaction expired");
 ```
 
-A user typically sets the deadline to 10-30 minutes in the future when they submit. If the transaction hasn't mined by then, it reverts. The user can submit a new transaction at the current price instead of being executed at a stale one.
+A user typically sets the deadline to 10-30 minutes in the future when they submit. If the transaction hasn't mined by then, it reverts, and the user can submit a new transaction at the current price instead of being executed at a stale one.
 
 Deadlines also limit the time window in which a sandwich bot can pursue your transaction. If your deadline is short, the bot has to commit early and may face more competition from other bots.
 
-## Defense 3: commit-reveal
+The same idea applies to any function where the user commits to a value that depends on chain state: the user signs off on a worst-acceptable outcome, the contract enforces it.
 
-Slippage and deadline parameters limit the damage but don't prevent the attacker from seeing your transaction. A more aggressive defense is to hide the transaction's intent entirely until it's safe to reveal.
+## Commit-reveal hides the action until the reveal
 
-The pattern is **commit-reveal**. The user submits a transaction containing only a hash of their intended action plus a secret. The contract stores the hash. Some blocks later, the user submits a second transaction revealing the original action and the secret. The contract checks that the hash matches and then executes.
+Slippage and deadline parameters limit the damage but don't prevent the attacker from seeing your transaction. A more aggressive defense is to hide the transaction's intent until it's safe to reveal.
+
+In the **commit-reveal** pattern, the user submits a transaction containing only a hash of their intended action plus a secret. The contract stores the hash. Some blocks later, the user submits a second transaction revealing the original action and the secret. The contract checks that the hash matches and then executes.
 
 ```solidity
 // Phase 1: commit. The only thing anyone sees in the mempool is a hash.
 mapping(address => bytes32) public commitments;
+mapping(address => uint256) public commitBlock;
 
 function commitSwap(bytes32 commitment) external {
     commitments[msg.sender] = commitment;
-    // commitment = keccak256(abi.encode(amountIn, amountOutMin, secret))
+    commitBlock[msg.sender] = block.number;
+    // commitment = keccak256(abi.encode(msg.sender, amountIn, amountOutMin, secret))
 }
 
 // Phase 2: reveal and execute
@@ -300,7 +266,8 @@ function revealAndSwap(
     uint256 amountOutMin,
     bytes32 secret
 ) external {
-    bytes32 expected = keccak256(abi.encode(amountIn, amountOutMin, secret));
+    require(block.number > commitBlock[msg.sender], "Reveal too early");
+    bytes32 expected = keccak256(abi.encode(msg.sender, amountIn, amountOutMin, secret));
     require(commitments[msg.sender] == expected, "Bad commitment");
     delete commitments[msg.sender];
     // ... execute the swap ...
@@ -309,24 +276,20 @@ function revealAndSwap(
 
 In the commit phase, an attacker watching the mempool sees the commitment but the hash is opaque. They can't tell what trade is about to happen. The `secret` is a random salt that defeats brute-force attacks where an attacker might otherwise precompute hashes for every popular trade size and look for a match.
 
-Phase 1 is genuinely private. Phase 2 is where this pattern has a problem worth understanding.
+The reveal phase is where the pattern has a problem. When the user broadcasts the reveal transaction, its calldata contains the full trade parameters in the clear: `amountIn`, `amountOutMin`, the secret. A searcher watching the mempool sees the reveal transaction, decodes its parameters, simulates it locally, and confirms it will execute successfully. From there the searcher constructs a sandwich just as they would for a direct swap: a front-run before the reveal, the user's reveal in the middle, a back-run after. The naive commit-reveal pattern doesn't stop sandwich attacks on a DEX. It moves the attack window from "the moment the user submits a swap" to "the moment the user submits a reveal."
 
-When the user broadcasts the reveal transaction, its calldata contains the full trade parameters in the clear: `amountIn`, `amountOutMin`, the secret. A searcher watching the mempool sees the reveal transaction, decodes its parameters, simulates it locally, and confirms it will execute successfully. From there the searcher constructs a sandwich just as they would for a direct swap: a front-run before the reveal, the user's reveal in the middle, a back-run after. The naive commit-reveal pattern doesn't actually stop sandwich attacks on a DEX. It just moves the attack window from "the moment the user submits a swap" to "the moment the user submits a reveal."
-
-So why is commit-reveal still useful? Because it actually defeats a different class of attack: **displacement and ordering attacks** where the attacker just needs to know WHAT you're going to do in order to do it first themselves. NFT minting where the first caller wins a rare item, claiming a unique reward, or any "first-mover" race fits this category. The attacker can copy the action only after they see it, and by the time they see it through your reveal, your commit is already on chain, so you have priority. For these use cases, commit-reveal genuinely solves the problem.
+Commit-reveal does defeat displacement, where the attacker just needs to know what you're going to do in order to do it first themselves. NFT minting where the first caller wins a rare item, claiming a unique reward, or any "first-mover" race fits this category. The attacker can copy the action only after they see it, and by the time they see it through your reveal, your commit is already on chain, so you have priority. Two parts of the listing are needed for that priority. `revealAndSwap` requires the commit to be in an earlier block than the reveal, because otherwise a bot that sees your reveal can send its own commit and reveal ahead of it. The commitment includes `msg.sender`, because otherwise a bot can copy your commitment from the chain into its own entry right after you commit, and later reveal your parameters ahead of you. The listing still only stops a bot from committing in the block of its reveal. If your reveal waits in the mempool for a block, a bot can commit with its own address in that block and reveal ahead of you in the next one.
 
 For DEX swaps specifically, the pattern only works if combined with additional contract-side mechanics. Two common designs:
 
 - **Batch auctions.** The contract collects many commits over a window, then settles all the reveals at a single uniform price computed from the aggregated trades. CoW Protocol uses a variant of this idea. Within a batch, ordering doesn't matter, so sandwich attacks have nothing to extract.
 - **Price-lock to commit block.** The contract uses the pool's reserves at the block where the commit was made rather than at the block where the reveal executes. A bot that tries to pump the price before your reveal accomplishes nothing because the contract ignores the current price. This is expensive in practice because it requires storing pool state history.
 
-Naive commit-reveal alone is not an MEV solution for AMMs. It's a building block that protects intent disclosure but needs additional protocol-level mechanics to actually neutralize price-impact attacks.
+The drawback in all cases is friction: two transactions instead of one, with a delay between them. For high-value or sensitive operations this is worth it. For frequent everyday trades it usually isn't, which is why commit-reveal hasn't replaced direct swaps as the default user flow.
 
-The drawback in all cases is friction. Two transactions instead of one, with a delay between them. For high-value or sensitive operations this is worth it. For frequent everyday trades it usually isn't, which is why commit-reveal hasn't replaced direct swaps as the default user flow.
+## A private relay keeps the transaction out of the public mempool
 
-## Defense 4: private mempools
-
-Instead of fixing the contract, you can change how transactions are submitted. Instead of broadcasting to the public mempool, the user sends their transaction to a **private relay** that bypasses the public mempool entirely. The relay sends the transaction directly to block builders without it ever being visible to searchers.
+Instead of fixing the contract, you can change how transactions are submitted. The user sends their transaction to a **private relay** that bypasses the public mempool. The relay sends the transaction directly to block builders without it ever being visible to searchers.
 
 <svg role="img" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Public mempool vs private relay: sandwich attack outcome compared</title><desc>On the left, the user wallet sends a tx to the public mempool, where searchers read every tx and the block includes the tx sandwiched by Mallory. On the right, the user wallet sends the tx through the Flashbots private relay straight to trusted builders, so searchers cannot read it and no sandwich is possible.</desc>
   <!-- Column headers -->
@@ -407,23 +370,16 @@ Instead of fixing the contract, you can change how transactions are submitted. I
 
 The most well-known service is **Flashbots Protect**. Users add a custom RPC endpoint to their wallet, and transactions submitted through that endpoint never appear in the public mempool. Searchers can't see them, so they can't front-run them.
 
+The relay and the builders it forwards to still see the transaction before it executes, so the user now trusts them not to use it or pass it on.
+
 This defense lives at the wallet layer rather than the contract layer. As a contract developer, you can't enforce that your users use private mempools, but you can recommend it and integrate with services that make it easier. Many production DeFi frontends have started defaulting their users to private RPCs.
 
-A bonus to private relays: some of them participate in "MEV-Share" schemes where searchers bid for the right to back-run your transaction profitably. A portion of that bid goes back to you as a rebate. So instead of being a victim of MEV, you can earn a small cut of it.
+Some private relays participate in "MEV-Share" schemes where searchers bid for the right to back-run your transaction profitably. A portion of that bid goes back to you as a rebate, so you earn a small cut of the MEV your transaction creates.
 
-## Why MEV isn't really fixable
+## Ask what an early reader of the transaction gains
 
-You'll see proposals to "solve MEV" at the protocol level. Some are promising. Most are not.
+As long as transactions are visible before they execute, and as long as someone decides the order they execute in, opportunities for value extraction will exist. The mempool being public is what makes Ethereum a transparent, permissionless system. Removing that transparency means giving someone the power to decide what happens and when. That someone could be a relay, an encrypted-mempool system, or an off-chain coordinator.
 
-The fundamental issue is structural. As long as transactions are visible before they execute, and as long as someone decides the order they execute in, opportunities for value extraction will exist. The mempool being public is what makes Ethereum a transparent, permissionless system. Removing that transparency means giving someone the power to decide what happens and when. That someone could be a relay, an encrypted-mempool system, or an off-chain coordinator.
+Some designs that hide or batch transactions are deployed in production already, like CoW Protocol's batch auctions. But all of them involve tradeoffs around centralization, latency, or complexity.
 
-There's active research on encrypted mempools, fair sequencing services, threshold encryption, and intent-based architectures where users submit "what I want to happen" rather than "here's the exact transaction to execute." Some of these are deployed in production already, like CoW Protocol's batch auctions. But all of them involve tradeoffs around centralization, latency, or complexity.
-
-As a developer, the practical position is:
-
-- Always enforce slippage and deadline checks. These are cheap and effective.
-- Consider commit-reveal for high-value operations where the friction is worth it.
-- Recommend private mempools to your users for the operations where they matter most.
-- Accept that some MEV will leak through anyway, and design your protocols so that small amounts of MEV don't cause catastrophic outcomes.
-
-MEV is not a bug to be eliminated. It's a tax on the use of public blockchains, and the goal is to minimize it where you can and make it predictable where you can't.
+So for every function you write, ask what someone gains if they see the call before it executes and place their own transaction in front of it, or one in front and one behind. If they gain something, give the user a bound to sign, such as a minimum output and a deadline, or hide the action until the order no longer matters. Some MEV will leak through anyway, so design your protocols so that small amounts of MEV don't cause catastrophic outcomes.

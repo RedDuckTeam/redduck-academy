@@ -28,21 +28,21 @@ faq:
       anonymous strangers with no prior trust.
 ---
 
-> The previous lesson made a strong claim. A blockchain has no operator. Nobody runs it. Yet it somehow holds a consistent record across thousands of independent machines, all of whom can write to it. Forget the cryptography for a moment and just focus on the question. How is that possible at all? The mechanism that makes it possible is called consensus, and it is the single most subtle problem in distributed systems. This lesson explains why the problem is hard, why the obvious solutions don't work, and what the actual answer looks like at the level of "how it works" rather than "which exact algorithm."
+> The previous lesson made a strong claim: a blockchain has no operator, yet it holds a consistent record across thousands of independent machines, all of whom can write to it. How is that possible at all? The mechanism that makes it possible is called consensus.
 
-## The problem, stated plainly
+## Thousands of machines must keep one record, and some of them lie
 
-Imagine a few thousand computers spread across the world. None of them trust any of the others. There is no shared boss, no central server, no court of appeal. New facts come in: new transactions, new blocks, and other new data. Every machine has to decide what to add to its copy of the record. And every machine has to end up with the same record as every other one.
+Imagine a few thousand computers spread across the world. None of them trust any of the others, and there is no central server to settle a dispute. New transactions and new blocks keep coming in. Every machine has to decide what to add to its copy of the record, and every machine has to end up with the same record as every other one.
 
-Worse, some of those computers will lie. They'll propose blocks that don't follow the rules. They'll send different versions of "the truth" to different peers. They'll go offline at convenient moments. They'll team up to push fake history. The network has no way to identify the liars in advance, because anyone can join.
+Worse, some of those computers will lie. They'll propose blocks that don't follow the rules, send different versions of "the truth" to different peers, go offline at convenient moments, and team up to push fake history. The network has no way to identify the liars in advance, because anyone can join.
 
-The system has to produce one agreed-upon record anyway. Not most of the time. All of the time, forever, as long as the network exists. With strangers, in public, with hostile actors actively trying to break it.
+The system has to produce one agreed-upon record anyway, with strangers, in public, with hostile actors actively trying to break it.
 
 This is the consensus problem, and for most of the history of computer science, it was considered either impossible or only solvable inside small, trusted groups. Bitcoin's design in 2008 was the first time anyone showed it could be solved at internet scale, with anonymous participants, without any pre-existing trust between them.
 
-## The Byzantine Generals framing
+## Honest participants cannot tell who is lying
 
-The classic way to describe this problem comes from a 1982 thought experiment about generals besieging a city. Several generals surround the city. They have to agree on a single coordinated action: either all attack at dawn or all retreat. Any half-and-half outcome is a disaster. They can only communicate by messengers, and some of the generals are traitors who will lie to make the operation fail.
+The classic way to describe this problem is the Byzantine Generals problem, a 1982 thought experiment about generals besieging a city. Several generals surround the city. They have to agree on a single coordinated action: either all attack at dawn or all retreat. Any half-and-half outcome is a disaster. They can only communicate by messengers, and some of the generals are traitors who will lie to make the operation fail.
 
 <svg role="img" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Byzantine Generals problem: four generals around a city, one a traitor</title><desc>Four generals, A, B, C, and D, surround a city and must all agree to attack or retreat together. Dashed lines show messages passing between every pair of generals and the city, while General C, marked in red, is the traitor who may lie.</desc>
   <!-- The city -->
@@ -84,54 +84,40 @@ The classic way to describe this problem comes from a 1982 thought experiment ab
 <text x="360" y="320" text-anchor="middle" font-size="12" fill="#565653" font-style="italic">All generals exchange messages. Some are honest, some lie. They still have to agree on one plan.</text>
 </svg>
 
-The generals are stand-ins for nodes on a network. The messengers are network connections. The traitors are malicious or buggy participants. The "agree on attack or retreat" is "agree on which block comes next." Replace the army metaphor with database servers and you have the actual problem facing every blockchain on day one.
-
-The hard part is not "tell honest from dishonest." The hard part is that the honest participants can't tell either, because they only see the messages they receive, and a clever traitor can send different messages to different recipients. Two honest generals can both be confident they've reached the right answer and still end up with opposite plans.
+The generals are stand-ins for nodes on a network, and "agree on attack or retreat" is "agree on which block comes next." The hard part is that the honest generals can't tell who is lying, because they only see the messages they receive, and a clever traitor can send different messages to different recipients. Two honest generals can both be confident they've reached the right answer and still end up with opposite plans.
 
 Any system that wants to make decisions without a trusted referee has to solve some version of this problem.
 
 ## Why the obvious solutions fail
 
-The first thing most developers reach for is **voting**. Each participant proposes their version of the next block. Everyone votes. Majority wins.
+The first thing to try is **voting**. Each participant proposes their version of the next block, everyone votes, and the majority wins.
 
-This breaks immediately on an open network, for one reason. There is no way to count "participants" when anyone can create a thousand fake identities for the price of cloud rental. A vote becomes meaningless the moment one party can show up as 51% of the voters by themselves. Creating unlimited fake identities to manipulate a vote is called a **Sybil attack**, and it's the reason every naive consensus scheme fails the moment it touches the open internet.
+This breaks on an open network, because there is no way to count participants when anyone can create a thousand fake identities for the price of cloud rental. A vote becomes meaningless the moment one party can show up as 51% of the voters by themselves. Creating unlimited fake identities to manipulate a vote is called a **Sybil attack**, and it's the reason every naive consensus scheme fails the moment it touches the open internet.
 
-The second instinct is **first writer wins**. Whoever submits a block first gets to write it. Done.
+The second instinct is **first writer wins**: whoever submits a block first gets to write it.
 
 This breaks because there is no shared clock. Two participants on opposite sides of the planet can each be the "first" from their own perspective, and the network has no way to decide between them. Worse, an attacker with a faster connection can systematically race honest participants and always win.
 
 The third instinct is **fall back to a trusted server**. Let one party be the tiebreaker, just for the cases where the network can't agree.
 
-This works, and it's how most databases handle replication. It's also exactly what a blockchain is trying to avoid. The moment you have a trusted tiebreaker, the system has an operator again. Everything that made the structure interesting is gone.
+This works, and it's how most databases keep their copies in agreement. It's also what a blockchain is trying to avoid, because the moment you have a trusted tiebreaker, the system has an operator again.
 
-So voting fails because participants are fakeable. First-wins fails because there is no shared clock. Trusted-server fails because it defeats the purpose. The problem is genuinely hard.
+## A vote has to cost something real
 
-## The actual answer: make participation cost something
+Voting failed because identities were free. The design that worked keeps the vote and puts a price on it. **If you want to vote, you have to spend something real, and you only get to vote once per unit of what you spent.**
 
-The breakthrough is one sentence long. **If you want to vote, you have to spend something real, and you only get to vote once per unit of what you spent.**
+An attacker can still create a thousand fake voters, but each one has to actually pay the cost. If the cost is large enough, paying it a thousand times is more expensive than the attack is worth. The system doesn't prevent fake identities, but it makes them too expensive to bother with.
 
-Now think about what that does. An attacker can still create a thousand fake voters, but each one has to actually pay the cost. If the cost is large enough, paying it a thousand times is more expensive than the attack is worth. Sybil attacks become economically infeasible rather than technically impossible. The system isn't preventing fake identities. It's making them too expensive to bother with.
+Two main kinds of cost have shown up in the past two decades. Both use the same general logic.
 
-What counts as "something real"? Two main answers have shown up in the past two decades. Both use the same general logic.
+**Computation.** Each "vote" requires the voter to demonstrate they did a large amount of useless arithmetic. The arithmetic itself is wasted, but the energy bill is real, and energy costs the same regardless of who's paying. An attacker with a thousand fake identities has to pay a thousand times the electricity. This is the family of mechanisms called **proof of work**. On Bitcoin, the hardware needed to outvote all the honest participants costs billions of dollars, as [The economics of proof of work](/courses/blockchain-basics/bitcoin/the-economics-of-proof-of-work) lesson shows.
 
-**Computation.** Each "vote" requires the voter to demonstrate they did a large amount of useless arithmetic. The arithmetic itself is wasted, but the energy bill is real, and energy costs the same regardless of who's paying. An attacker with a thousand fake identities has to pay a thousand times the electricity. This is the family of mechanisms called **proof of work**.
+**Stake.** Each "vote" requires the voter to lock up an amount of the network's own currency, with the rule that if they vote dishonestly they lose it. An attacker with a thousand fake identities has to lock up a thousand times the stake, and any visible misbehaviour costs them all of it. This is the family of mechanisms called **proof of stake**. Its price is capital that stays locked while it backs the votes. Votes are also weighted by stake, as the [Forks and conflict resolution](/courses/blockchain-basics/the-blockchain-idea/forks-and-conflict-resolution) lesson describes for Ethereum, so whoever can lock up more has more say.
 
-**Stake.** Each "vote" requires the voter to lock up an amount of the network's own currency, with the rule that if they vote dishonestly they lose it. An attacker with a thousand fake identities has to lock up a thousand times the stake, and any visible misbehaviour costs them all of it. This is the family of mechanisms called **proof of stake**.
+Later chain-specific lessons cover the mechanics of either family. The underlying logic is the same for both: voting in an open consensus system has to be expensive enough that buying enough votes to attack the network costs more than the attack is worth.
 
-The mechanics of either family are detailed enough to need their own treatment. Later chain-specific lessons cover them. What you need to take from this lesson is the underlying logic, which is the same for both. Voting in an open consensus system has to be expensive enough that buying enough votes to attack the network costs more than the attack is worth. Once you have that property, the network can hold honest agreement among strangers indefinitely, with no operator and no trusted referee.
+## A costly vote gives one history that anyone can join
 
-## What this buys you
+With a real participation cost in place, two honest nodes will converge on the same view of the chain over time, even though they started with no shared trust and exchange only messages. The network stays safe as long as attacking it costs more than the attacker could profit from the attack. And anyone with the resources to pay the cost can participate, because nobody is keeping a list of who is allowed to vote.
 
-A consensus mechanism with a real participation cost gives the network three properties that no amount of clever programming can produce in its absence.
-
-**One canonical history, agreed by all.** Two honest nodes will converge on the same view of the chain over time, even though they started with no shared trust and exchange only messages.
-
-**Resistance to majority attackers.** The network stays safe as long as attacking it costs more than the attacker could profit from the attack.
-
-**Permissionless participation.** Anyone with the resources to pay the cost can participate. Nobody is keeping a list of who is allowed to vote. The cost itself is the gate.
-
-Those three properties, together, are what a blockchain is actually selling. Cryptography gives it a tamper-evident structure. Consensus gives it the ability to operate that structure without an operator. Without either piece, the other is useless.
-
-## The agreement mechanism you now understand
-
-You now have the agreement mechanism that keeps a blockchain running: a way for mutually untrusted strangers to converge on one shared history by making dishonest participation cost more than it can earn. That is the piece that lets the tamper-evident structure from cryptography operate with no operator and no trusted referee.
+Cryptography gives a blockchain its tamper-evident structure. Consensus gives it the ability to operate that structure without an operator.

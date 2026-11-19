@@ -26,65 +26,25 @@ faq:
       four.
 ---
 
-> Solana programs are not isolated. A program can call another program in the middle of its own execution, pass it accounts, and observe the result before continuing. This is how a swap program moves SPL tokens, how a lending program reads price oracles, how any nontrivial protocol composes services. The mechanism is called Cross-Program Invocation. The runtime gives you two syscalls, `invoke` and `invoke_signed`, plus a strict set of rules about what authority crosses with the call. Once you understand those rules, the rest of Solana's ecosystem opens up to your programs.
+> In a Cross-Program Invocation (CPI), a program calls another program in the middle of its own execution, passes it accounts, and observes the result before continuing. The accounts keep the signer and writable flags they had in the caller, and the called program never gets more than that.
 
-## Programs need to call programs
+## Only the owner program can change an account, so you ask the owner
 
-The programs you've written so far operate on accounts owned by your own program. You can read them, mutate them, initialize new ones, charge them rent. What you can't do, alone, is move SPL tokens, mint NFTs, place an order on a DEX, or do anything else that requires touching state owned by a different program.
+The programs you've written so far operate on accounts owned by your own program. What you can't do, alone, is move SPL tokens, mint NFTs, place an order on a DEX, or do anything else that requires touching state owned by a different program.
 
-That's deliberate. Solana's security model is that each account has exactly one owner program, and only that owner can mutate the account's data. So if you want to move tokens out of a vault, you can't just write zeros over the source balance and write a higher number into the destination. The tokens live in accounts owned by the Token Program. Only the Token Program can mutate them.
+Each account has one owner program, and only that owner can mutate the account's data. So if you want to move tokens out of a vault, you can't write zeros over the source balance and write a higher number into the destination. The tokens live in accounts owned by the Token Program, and only the Token Program can mutate them.
 
-The way you make changes to accounts you don't own is to ask the program that owns them, politely, to do it on your behalf. You construct a request, you hand it to the runtime, and the runtime hands it to the owning program. If your request is well-formed and you have the right authority, the owning program performs the mutation and returns success. That's a CPI.
+The way you make changes to accounts you don't own is to ask the program that owns them to do it on your behalf. You construct a request, you hand it to the runtime, and the runtime hands it to the owning program. If your request is well-formed and you have the right authority, the owning program performs the mutation and returns success. That request is a CPI.
 
-If you've worked with microservices, the pattern is familiar: one service calls another, forwarding the caller's auth credentials. The called service trusts those credentials because the platform attests to them. CPI does the same thing, where the platform is the runtime and the credentials are signer flags on accounts.
-
-## The shape of a CPI call
+## A CPI is an instruction built inside your program
 
 A CPI happens in four phases. Your handler builds an `Instruction` describing what it wants the called program to do. It calls the `invoke` syscall, passing the instruction along with references to the accounts the called program will need. The runtime suspends your program, switches execution to the called program, and runs it with those accounts. When the called program returns, control comes back to your handler with the state changes already applied.
 
-<svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>The four steps of a CPI call: build, invoke, execute, return</title><desc>The diagram shows four stacked boxes joined by arrows: building an Instruction, passing it to the invoke syscall, running the called program, and returning control to the handler. A caption at the bottom says a CPI is a function call across program boundaries, with strict rules about what crosses with you.</desc>
-  <defs>
-    <marker id="arrS41aR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed4937"/>
-    </marker>
-  </defs>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">The shape of a CPI call</text>
-  <rect x="40" y="85" width="640" height="120" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="60" y="108" font-family="monospace" font-size="11" font-weight="bold">1. Your handler builds an Instruction</text>
-  <text x="60" y="130" font-family="monospace" font-size="10">let ix = Instruction {</text>
-  <text x="80" y="148" font-family="monospace" font-size="10">program_id: token_program.key(),</text>
-  <text x="80" y="166" font-family="monospace" font-size="10">accounts: vec![ /* AccountMetas */ ],</text>
-  <text x="80" y="184" font-family="monospace" font-size="10">data: instruction_data,</text>
-  <text x="60" y="200" font-family="monospace" font-size="10">};</text>
-  <line x1="360" y1="210" x2="360" y2="230" stroke="#ed4937" stroke-width="2" marker-end="url(#arrS41aR)"/>
-  <rect x="40" y="235" width="640" height="85" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="60" y="258" font-family="monospace" font-size="11" font-weight="bold">2. Pass it to the invoke syscall</text>
-  <text x="60" y="280" font-family="monospace" font-size="10">invoke(&amp;ix, &amp;account_infos)?;</text>
-  <text x="60" y="300" font-family="monospace" font-size="9" fill="#565653">the runtime suspends your program and switches execution</text>
-  <line x1="360" y1="330" x2="360" y2="350" stroke="#ed4937" stroke-width="2" marker-end="url(#arrS41aR)"/>
-  <rect x="40" y="355" width="640" height="90" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="60" y="378" font-family="monospace" font-size="11" font-weight="bold">3. The called program runs</text>
-  <text x="60" y="400" font-family="monospace" font-size="10" fill="#565653">its entry point sees the accounts you passed, with their signer</text>
-  <text x="60" y="416" font-family="monospace" font-size="10" fill="#565653">and writable flags carried over from your frame</text>
-  <text x="60" y="436" font-family="monospace" font-size="10" fill="#565653">it can read or mutate any account it received, subject to those flags</text>
-  <line x1="360" y1="455" x2="360" y2="475" stroke="#ed4937" stroke-width="2" marker-end="url(#arrS41aR)"/>
-  <rect x="40" y="480" width="640" height="80" fill="#e0deda" stroke="#ed4937" stroke-width="2"/>
-  <text x="60" y="503" font-family="monospace" font-size="11" font-weight="bold">4. Control returns to your handler</text>
-  <text x="60" y="525" font-family="monospace" font-size="10" fill="#565653">any state changes the called program made are now visible</text>
-  <text x="60" y="541" font-family="monospace" font-size="10" fill="#565653">if it returned an error, your handler propagates that error</text>
-  <text x="360" y="582" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A CPI is a function call across program boundaries, with strict rules about what crosses with you.</text>
-</svg>
-
-The `Instruction` struct should look familiar. It's the same shape as the instructions a wallet builds and submits in a transaction. The CPI version is built inside another program and sent through the syscall instead of arriving from the network, but the runtime treats them the same way once they're being executed. Same fields, same semantics.
-
-The depth is bounded. A transaction can invoke up to four levels deep: your handler is depth one, a CPI from it is depth two, a CPI from that is depth three, and one more layer is allowed. Beyond that, the runtime rejects the call. In practice this is plenty for any composition pattern, but it's worth knowing the limit exists.
+The `Instruction` struct is the same shape as the instructions a wallet builds and submits in a transaction. The CPI version is built inside another program and sent through the syscall instead of arriving from the network, but the runtime treats them the same way once they're being executed.
 
 ## Privileges propagate, and they never grow
 
-This is the most important conceptual point in the lecture. The rules about what authority a CPI carries with it are the entire security model of Solana's composition layer.
-
-When your handler runs, each account in its frame carries flags: was this account a signer in the transaction, and is it marked writable. When you CPI to another program, those flags travel through. An account that signed your transaction is still a signer in the called program's frame. An account marked writable in your handler is still writable in the called program's frame, if you pass it as writable.
+When your handler runs, each account in its frame carries flags: was this account a signer in the transaction, and is it marked writable. When you CPI to another program, those flags travel through.
 
 <svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>CPI account flags: alice, vault, and mint keep the same signer and writable status</title><desc>Two account tables compare program A's frame with the called program B's frame for accounts alice, vault, and mint, and their signer and writable flags match exactly. A rules list below states that privileges never grow across a CPI, except a program can sign as a PDA it controls via invoke_signed.</desc>
   <defs>
@@ -140,15 +100,15 @@ When your handler runs, each account in its frame carries flags: was this accoun
   <text x="360" y="605" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">A program can only delegate authority it already has. This is the entire security model of CPI.</text>
 </svg>
 
-What you cannot do is escalate authority. If an account arrived in your handler as readonly, you cannot pass it to a CPI as writable. The runtime checks. If an account arrived as a non-signer, you cannot pretend it signed on the way down. The runtime checks. The principle: a program can only delegate authority it already has.
+Take the three accounts in the diagram. Alice signed the transaction, `vault` is marked writable, and `mint` is read-only. When your handler makes a CPI to the Token Program with these accounts, the Token Program sees Alice as a signer, can write to `vault`, and can only read `mint`.
 
-You can drop authority. If your handler can write to an account, you can pass it to a CPI as readonly, telling the called program it may read the account but not write to it. This is a useful capability, since it lets you call programs that need to read state without granting them write access they don't need.
+What you cannot do is escalate authority. If your handler marked `mint` as writable or `vault` as a signer in the inner instruction, the runtime would reject the CPI. A program can only delegate authority it already has. If the runtime allowed a new signer, a program could mark any wallet passed to it as a signer and have the Token Program move that wallet's tokens. If it allowed a new writable account, a program could write to an account that the transaction declared read-only, and the runtime uses those declarations to decide which transactions run in parallel ([instructions and transactions](/courses/development-on-solana/the-solana-mental-model/instructions-and-transactions)).
 
-There is one exception to the "no new signers" rule, and it's the central mechanism that makes Solana programs useful. Your program can sign as a PDA it controls, by calling `invoke_signed` and passing the PDA's seeds. The runtime re-derives the PDA, confirms it belongs to your program, and treats it as a signer in the called program's frame. This is how a vault PDA authorizes a token transfer out of its own token account: the program proves it knows the seeds, the runtime accepts that as the PDA's signature.
+You can drop authority: if your handler can write to an account, you can pass it to a CPI as readonly, telling the called program it may read the account but not write to it. This lets you call programs that need to read state without granting them write access they don't need.
 
-## invoke and invoke_signed
+## invoke forwards signers, invoke_signed adds a PDA your program controls
 
-The runtime exposes two syscalls. `invoke` forwards existing signers downstream. `invoke_signed` does the same, plus it lets your program sign as one or more PDAs.
+The runtime exposes two syscalls. `invoke` forwards existing signers downstream. `invoke_signed` does the same, plus it lets your program sign as one or more PDAs, which is the one exception to the rule that a CPI adds no signers. Your program passes the PDA's seeds, the runtime re-derives the PDA, confirms it belongs to your program, and treats it as a signer in the called program's frame. A vault PDA authorizes a token transfer out of its own token account this way.
 
 <svg role="img" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>invoke vs invoke_signed: forwarding signers vs signing as a PDA</title><desc>Two side-by-side panels compare the syscalls invoke and invoke_signed for calling another program. The invoke panel shows it forwarding existing signers, like Alice's signature used to move her tokens via a CPI to the Token Program; the invoke_signed panel shows it forwarding existing signers plus letting the program sign as a PDA, like a vault PDA authorizing a token transfer with seeds.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -195,9 +155,7 @@ The runtime exposes two syscalls. `invoke` forwards existing signers downstream.
   <text x="360" y="510" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Both syscalls forward signers. invoke_signed adds one capability: your program acting as a PDA.</text>
 </svg>
 
-The signer seeds passed to `invoke_signed` are an array of seed arrays. Each inner array re-derives one PDA. So you can sign on behalf of multiple PDAs in a single call, by passing multiple sets of seeds. The runtime walks each one, derives the address, and adds that address to the signer set for the inner call. If any of the derived addresses doesn't match an account in the call, the CPI fails.
-
-A concrete shape for the seeds, with the bump appended at the end:
+The signer seeds passed to `invoke_signed` are an array of seed arrays. Each inner array re-derives one PDA, so you can sign on behalf of multiple PDAs in a single call. A concrete shape for the seeds, with the bump appended at the end:
 
 ```rust
 let bump = ctx.accounts.vault.bump;
@@ -208,9 +166,9 @@ let signer_seeds: &[&[&[u8]]] = &[seeds];
 invoke_signed(&ix, &account_infos, signer_seeds)?;
 ```
 
-The double-reference shape is awkward to read at first, but it makes sense once you see what it represents: a list of seed sets, where each seed set is itself a list of byte slices. One set per PDA you're signing for.
+The [PDAs as signers](/courses/development-on-solana/working-with-other-programs/pdas-as-signers) lesson explains why the runtime accepts seeds in place of a signature.
 
-## Anchor's CpiContext
+## Anchor's CpiContext builds the instruction for you
 
 Writing raw `Instruction` structs and calling `invoke` directly is verbose and easy to get wrong. Anchor provides a typed wrapper called `CpiContext` that builds the instruction and account structures for you when calling known programs, and the SPL Token bindings in `anchor_spl` give you typed structs for every Token Program instruction.
 
@@ -231,16 +189,20 @@ let cpi_ctx = CpiContext::new(
 token::transfer(cpi_ctx, amount)?;
 ```
 
-The `Transfer` struct names every account the Token Program's transfer instruction expects, with the correct field names. `CpiContext::new` packages the program reference together with the accounts. `token::transfer` builds the right `Instruction`, calls `invoke`, and returns the result. You wrote no `AccountMeta` lists, no instruction data buffers, no syscall calls. The macro layer handled all of it.
+The `Transfer` struct names every account the Token Program's transfer instruction expects, with the correct field names. `CpiContext::new` packages the program reference together with the accounts. `token::transfer` builds the right `Instruction`, calls `invoke`, and returns the result.
 
-For `invoke_signed`, the equivalent constructor is `CpiContext::new_with_signer`, which takes the same arguments plus a signer seeds slice. Everything else is identical. The signature on `token::transfer` is the same. Only the context changes.
+For `invoke_signed`, the equivalent constructor is `CpiContext::new_with_signer`, which takes the same arguments plus a signer seeds slice. The call to `token::transfer` is the same.
 
-This is the form you'll write in real code. The raw syscall form exists so you can use it directly when no typed wrapper exists for the program you're calling, but for any of the popular SPL programs, the typed wrappers cover the common operations cleanly.
+The raw syscall form exists so you can use it directly when no typed wrapper exists for the program you're calling. For the popular SPL programs, the typed wrappers cover the common operations.
 
-## Composition is the payoff
+## The called program can do everything the forwarded signers can
 
-The reason CPI matters is not the syscall mechanics. It's what composition unlocks once the mechanics are in place.
+Because authority never grows through a CPI, a program you call cannot do anything with the accounts you gave it that you couldn't have done yourself. The cost is that the called program gets all of that authority. It receives every signer and writable account you forward and can pass them on to any other program. With Alice's signature and her token account, it can ask the Token Program to move her tokens somewhere else.
 
-A swap program can be 200 lines of code because the actual token movement lives in the SPL Token Program, and the swap program just CPIs to it. A lending protocol can pull oracle prices by calling Pyth or Switchboard through CPI, instead of operating its own price feeds. A vault aggregator can route deposits across multiple yield strategies, calling into each one through CPI, without knowing the internals of any of them. The whole ecosystem assembles like this.
+On Ethereum, when contract A calls contract B, B sees A as `msg.sender`, not the wallet that started the transaction, and a contract that B calls sees B. On Solana, a wallet that signed the transaction is a signer in every program it is forwarded to.
 
-The privilege rules are what make composition safe. Because authority never grows through a CPI, a program you call cannot do anything with the accounts you gave it that you couldn't have done yourself. You can trust the called program with whatever signers and writable accounts you forwarded, no more. That property is enforced by the runtime rather than by convention, which is why the Solana ecosystem can compose contracts written by mutually distrusting teams. You don't have to audit the Token Program every time you transfer. You just need to know what authority you're handing it. And the runtime guarantees that's all the authority it gets.
+Your program also has to be sure which program it is calling. The program to call is an account in a slot that the client fills. If your code does not check that slot, the client can pass their own program in place of the Token Program. That program can return success without moving any tokens, and your handler continues as if the transfer happened. Declaring the slot as `Program<'info, Token>` pins its address ([account types](/courses/development-on-solana/writing-your-first-program/account-types-in-anchor)), and the [classic exploits lesson](/courses/development-on-solana/production-state-design/the-classic-solana-exploits) goes through this bug in code.
+
+A transaction can invoke up to four levels deep: your handler is depth one, a CPI from it is depth two, a CPI from that is depth three, and one more layer is allowed. Beyond that, the runtime rejects the call. If an aggregator calls your program and your program calls the Token Program, your handler already runs at depth two and its transfer at depth three.
+
+For each CPI in your program, name the signers and writable accounts it forwards, and name what in your Accounts struct fixes the address of the program that receives them.

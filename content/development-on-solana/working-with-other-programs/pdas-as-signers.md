@@ -25,19 +25,17 @@ faq:
       dropped before the seeds are used.
 ---
 
-> A PDA has no private key. Nobody can sign a transaction with it the normal way. But programs need PDAs to be able to act on the chain, to authorize transfers out of vaults, to mint tokens from pools, to approve withdrawals from treasuries. The runtime's resolution is to let a program sign on behalf of any PDA derived under its own program ID, by submitting the seeds. The seeds are the signature. Once that one idea clicks, every pattern in real Solana code involving program-controlled funds works the same way.
+> A program cannot keep a private key, so it cannot sign the way a wallet does. It signs for a PDA by passing the PDA's seeds to `invoke_signed`. The runtime re-derives the address with the calling program's ID and, if it matches an account in the call, treats that account as a signer.
 
-## The seeds are the signature
+## The runtime accepts a re-derived address in place of a signature
 
-A normal account signs by producing a cryptographic signature with its private key. The runtime verifies the signature, sees that it matches the account's public key, and marks the account as a signer for the transaction. This is what a wallet does every time a user clicks "Approve."
+A program that holds funds has to authorize moving them, and the Token Program moves tokens only when the owner of the source token account has signed. A normal account signs by producing a cryptographic signature with its private key. The runtime verifies the signature, sees that it matches the account's public key, and marks the account as a signer for the transaction.
 
-A PDA cannot do this. Its address is a hash that lands off the ed25519 curve, which means no private key exists that would produce that address. There is nothing to sign with.
+A program has no private key to do this with, because its bytecode is public and a key stored in it would be public too. So the accounts it controls sit at PDAs, as the [PDA lesson](/courses/development-on-solana/writing-your-first-program/pdas-addresses-with-no-private-key) showed. A PDA's address is a hash that lands off the ed25519 curve, which means no private key exists that would produce that address.
 
-What the runtime accepts instead is a re-derivation. When a program calls `invoke_signed`, it passes a list of seed sets along with the inner call. The runtime takes each seed set, appends the calling program's ID, runs the PDA derivation, and gets an address back. If that address matches an account in the call, the runtime marks it as a signer in the inner frame, exactly as if a real signature had been provided.
+What the runtime accepts instead is a re-derivation. When a program calls `invoke_signed`, it passes a list of seed sets along with the inner call. The runtime takes each seed set, appends the calling program's ID, runs the PDA derivation, and gets an address back. If that address matches an account in the call, the runtime marks it as a signer in the inner frame, as if a real signature had been provided.
 
-The key property: the calling program's ID is mixed into the derivation. A different program calling with the same seeds would derive a different PDA. So only the program whose ID was used at PDA creation can produce the right address by replaying the seeds. The seeds aren't a secret. The program ID is what makes the seeds work for one specific program and nobody else.
-
-A corporate stamp shows the same idea. Anyone can describe what the stamp says. The seeds are public. But only an Acme employee can apply the Acme stamp, because they are the only ones who run under the Acme identity. The program ID is the identity. The seeds are the description of which stamp.
+The calling program's ID is mixed into the derivation, so a different program calling with the same seeds would derive a different PDA. The seeds aren't a secret. The program ID is what makes the seeds work for one specific program and nobody else.
 
 <svg role="img" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Four steps of invoke_signed: seeds, PDA re-derivation, match, signer check</title><desc>Four connected boxes show what invoke_signed does: your program calls invoke_signed with seeds, the runtime re-derives the PDA from the seeds and program ID, the derived PDA is matched against the accounts passed in, and the called program then sees the PDA as a signer. A caption below states that the seeds are the signature, and only your program can produce them under its program ID.</desc>
   <defs>
@@ -74,13 +72,31 @@ A corporate stamp shows the same idea. Anyone can describe what the stamp says. 
   <text x="360" y="585" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The seeds are the signature. Only your program can produce them under your program's ID.</text>
 </svg>
 
-The whole mechanism is those four steps. Your program promises "I am these seeds." The runtime checks the math, accepts the promise, and the inner program gets a signer it can verify like any other.
+An Ethereum contract needs no such step. When it calls a token contract, the token sees the contract's own address as `msg.sender` and moves the balance recorded under that address. The Token Program checks signer flags instead, so a Solana program needs an address it can sign for.
 
-## The signing pattern in Anchor
+## In Anchor the seeds are one more argument to the CPI context
 
-The raw `invoke_signed` syscall is workable but verbose. In practice you use Anchor's `CpiContext::new_with_signer`, which takes the signer seeds as a third argument and otherwise looks like the plain `CpiContext::new` used for non-PDA CPIs.
+The raw `invoke_signed` syscall is workable but verbose. In practice you use Anchor's `CpiContext::new_with_signer`, which takes the signer seeds as a third argument and otherwise looks like the plain `CpiContext::new` used for non-PDA CPIs. The `&[&[&[u8]]]` type of `signer_seeds` is that list of seed sets, with one entry per PDA you're signing for.
 
-The full pattern for signing as a Vault PDA fits into six small pieces.
+The full pattern for signing as a Vault PDA, whose seeds are `b"vault"` and the mint's address, fits into six small pieces:
+
+```rust
+let bump = ctx.accounts.vault.bump;
+let mint_key = ctx.accounts.mint.key();
+let seeds: &[&[u8]] = &[b"vault", mint_key.as_ref(), &[bump]];
+let signer_seeds: &[&[&[u8]]] = &[seeds];
+
+let cpi_ctx = CpiContext::new_with_signer(
+    ctx.accounts.token_program.to_account_info(),
+    Transfer {
+        from: ctx.accounts.vault_token.to_account_info(),
+        to: ctx.accounts.user_token.to_account_info(),
+        authority: ctx.accounts.vault.to_account_info(),
+    },
+    signer_seeds,
+);
+token::transfer(cpi_ctx, amount)?;
+```
 
 <svg role="img" viewBox="0 0 720 620" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Signing as a PDA in Anchor, line by line</title><desc>A six-step code block shows a Solana handler reading the vault's stored bump, building seeds with the bump last, wrapping them in signer_seeds, and using CpiContext::new_with_signer to call token::transfer. Side callouts flag why each step matters: bump stored on state at init, Rust needing a binding for temporaries, always putting bump last, and the double-reference signer form that is the one change versus a plain CPI.</desc>
   <defs>
@@ -144,17 +160,17 @@ The full pattern for signing as a Vault PDA fits into six small pieces.
   <text x="360" y="580" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">Every Solana program that holds tokens has some version of these six lines.</text>
 </svg>
 
-Three details in this code earn special attention.
+Three rules cover most failures of this code:
 
-The bump goes last in the seeds array, always. When `find_program_address` originally derived the canonical PDA, the algorithm appended the bump byte after the rest of the seeds and ran the hash. To re-derive that same address, you must replay the exact same input, in the exact same order. Move the bump to the front, or leave it out, and you'll derive a different address. The runtime will tell you so by rejecting the CPI, but the error message isn't always clear about which seed was wrong. Always put the bump last to avoid this error.
+- **The bump goes last and comes from the account.** When `find_program_address` originally derived the canonical PDA, the algorithm appended the bump byte after the rest of the seeds and ran the hash. To re-derive that same address, you must replay the same input in the same order. Move the bump to the front, leave it out, or pass a wrong value, and the seeds no longer derive the vault's address. They derive some other address or, if the hash lands on the curve, no address at all. Read the bump from the account where it was stored at init. Re-running `find_program_address` would also work but costs significant compute units.
+- **Bind each `Pubkey` to a local variable first.** An inline `ctx.accounts.mint.key().as_ref()` borrows from a `Pubkey` temporary that is dropped before the seeds are used, and the compiler reports "temporary value dropped while borrowed."
+- **Use the seeds of the PDA you are acting for.** If your program manages many PDAs of the same kind, such as per-user vaults, the seeds in your CPI must match the specific PDA. Mixing seeds for one user's vault into a transaction acting on another user's vault is a bug that the compiler can't catch, so test these paths.
 
-The double-reference shape `&[&[&[u8]]]` is unusual enough that it's worth saying out loud. The outer slice contains one entry per PDA you're signing for. Each entry is itself a slice, and that inner slice is a list of byte slices, the actual seeds. Almost every program signs for exactly one PDA at a time, so the outer slice contains exactly one entry. The shape supports multiple PDAs because a single instruction can act on behalf of more than one program-derived account, but it's rare.
+When PDA signing fails because the seeds derive some other address, the error is `Cross-program invocation with unauthorized signer or writable account`. The runtime is telling you that an account in the inner call needed to be a signer but wasn't, or needed to be writable but wasn't. For PDA signing failures, signer is almost always the missing flag. If the seeds derive no valid address, which happens for about half of wrong seed sets, the call stops earlier with `Could not create program address with signer seeds`. Either way, review the seeds and the bump, and check that the PDA address you are trying to sign for is in your accounts list.
 
-The lifetime handling for `mint_key` is a Rust-specific issue. Writing `ctx.accounts.mint.key().as_ref()` inline creates a `Pubkey` temporary and immediately calls `as_ref` on it. The resulting `&[u8]` borrows from a value that's already going out of scope by the time you try to use it. Bind the `Pubkey` to a local variable first, and the slice can borrow from the local. The error you'll see if you forget is "temporary value dropped while borrowed."
+## The Token Program sees an ordinary signed transfer
 
-## A worked example: the Vault transfer
-
-The canonical use case for PDA signing is a vault that holds tokens on behalf of a program. The setup is: a Vault PDA is derived from some seeds. A token account is created with the Vault PDA as its owner. To move tokens out of that account, the Token Program needs the owner to sign. The owner is a PDA, with no key. The program signs on its behalf via `invoke_signed`.
+The canonical use case for PDA signing is a vault that holds tokens on behalf of a program. A Vault PDA is derived from some seeds, and a token account is created with the Vault PDA as its owner. Say the vault's token account holds 1,000 USDC, a user's token account holds 0, and your handler pays the user 300 USDC.
 
 <svg role="img" viewBox="0 0 720 590" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Vault PDA transfer flow: signing via invoke_signed and balance changes</title><desc>A Vault PDA owns a Vault Token Account holding 1,000 USDC, while the User Token Account starts at 0 USDC. To transfer 300 USDC, the program calls invoke_signed with the vault's seeds so the Token Program accepts the PDA as signer, leaving the vault with 700 USDC and the user with 300 USDC.</desc>
   <defs>
@@ -202,32 +218,14 @@ The canonical use case for PDA signing is a vault that holds tokens on behalf of
   <text x="360" y="572" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">No human signed for the Vault. The seeds passed to invoke_signed were its signature.</text>
 </svg>
 
-A few things are worth pointing out about this pattern.
+The handler passes the Vault PDA as the `authority` field in the Transfer instruction and the vault's seeds as signer seeds. The Token Program reads the authority field, looks at the source token account's owner field, confirms they match, and checks the runtime signer set to confirm the authority signed. Both checks pass, so it takes 300 from the vault's token account and adds 300 to the user's, leaving 700 and 300. From the Token Program's perspective, this looks identical to a transfer authorized by a normal wallet. The Token Program has no concept of PDAs.
 
-First, the Vault PDA itself doesn't hold the tokens. The tokens live in a token account, which is a separate account with the mint, owner, and balance fields the SPL Token Program understands. The Vault PDA is the owner of that token account, in the same way a user's wallet would be the owner of their personal token account. The runtime knows which PDA owns which token account because that owner field was set when the token account was created, usually during the program's initialization.
+The Vault PDA itself doesn't hold the tokens. They live in the token account, a separate account that records the Vault PDA as its owner, in the same way it would record a user's wallet. The [next lesson](/courses/development-on-solana/working-with-other-programs/the-spl-token-program-in-practice) covers token accounts.
 
-Second, the Vault PDA is what gets passed as the `authority` field in the Transfer instruction. The Token Program reads the authority field, looks at the source token account's owner field, confirms they match, and checks the runtime signer set to confirm the authority signed. From the Token Program's perspective, this looks identical to a transfer authorized by a normal wallet. The Token Program has no concept of PDAs. It just sees a signed authority that owns the source account.
+The only thing your program needed to provide that a wallet-signed transfer would not provide is the seeds. Everything else is identical, including the instruction shape, the accounts list, and the amount.
 
-Third, the only thing your program needed to provide that a wallet-signed transfer would not provide is the seeds. Everything else is identical, including the instruction shape, the accounts list, and the amount. Once you internalize that the seeds replace a signature for accounts you control, every program-owned funds pattern in Solana follows the same template.
+## Whoever can make your program sign controls the PDA
 
-## What can go wrong
+Every path in your program that reaches `invoke_signed` with the vault's seeds can move the vault's tokens, so the checks that run before that call are all that stands between a caller and the funds. The holder of the program's upgrade authority has the same power: they can deploy new code to the same program ID, and that code derives the same PDAs ([program upgrades](/courses/development-on-solana/working-with-other-programs/program-upgrades)).
 
-There are a handful of failure modes specific to PDA signing that account for most of the questions developers ask in their first week. Worth naming them.
-
-Forgetting the bump. The most common bug. Your seeds derive a different address, the runtime doesn't find a match in the call's account list, and you get an unauthorized-signer error. The fix is mechanical: put the bump byte at the end of the seeds array, every time.
-
-Using the wrong bump. If you stored a bump on initialization and your account-fetching logic returns a stale or incorrect value, you'll derive a different PDA. Always read the bump from the account itself, never compute it fresh in a signing path. Re-running `find_program_address` would also work but costs significant compute units, so use the stored bump.
-
-Lifetime errors. The `&[&[&[u8]]]` shape is fragile in Rust. Inline `as_ref` calls fail to compile. Bind your Pubkeys to locals before using them in seeds.
-
-Seeds matching the wrong PDA. If your program manages many PDAs of the same kind, such as per-user vaults, per-pool authorities, or per-proposal escrows, the seeds in your CPI must match the specific PDA you're trying to act on behalf of. Mixing seeds for one user's vault into a transaction acting on another user's vault is a real bug that the compiler can't catch. Test these paths carefully.
-
-Wrong program ID at derivation. If a PDA was derived under one program but you try to sign for it from a different program, the derivation produces a different address. This usually only happens during program upgrades where the program ID changed, but it's worth being aware of.
-
-When PDA signing fails, the error is usually `Cross-program invocation with unauthorized signer or writable account`. The runtime is telling you that an account in the inner call needed to be a signer but wasn't, or needed to be writable but wasn't. For PDA signing failures, signer is almost always the missing flag. Review the seeds, confirm the bump is correct and last, and check that the PDA address you are trying to sign for is in your accounts list.
-
-## Why this design is the whole point
-
-A program that can't hold authority on its own state is barely a program. It would have to ask a human to sign every action, the way a contract on a normal smart-contract platform would call out to a privileged caller. Solana's PDA signing model lets programs own state without any human in the loop. Vaults that auto-rebalance, escrows that release on time triggers, lending pools that liquidate undercollateralized positions, governance contracts that execute approved proposals, all of these need the program to act on behalf of accounts it controls. PDA signing is the mechanism that makes any of it possible.
-
-Once you've signed your first transfer this way, every subsequent program you write that holds funds reuses the same six lines, with different seeds. The pattern is small. The implications are large.
+For each PDA that owns funds, list the paths in your program that end in a signature by that PDA, and say what each path checks before it signs.

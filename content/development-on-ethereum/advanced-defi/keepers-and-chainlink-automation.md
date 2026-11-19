@@ -22,44 +22,31 @@ faq:
       function. A log trigger uses checkLog instead, receiving the matching event.
 ---
 
-## The passivity problem
+## A contract cannot start itself
 
-A contract has no clock, no scheduler, and no background thread. Nothing inside it ever runs on its own. Every state change traces back to some externally owned account, or another contract, sending a transaction that calls in. Between transactions the contract is inert. It does not poll, it does not wake on a timer, it does not react to the passage of time except by reading `block.timestamp` when something else calls it.
+Nothing inside a contract ever runs on its own. Every state change traces back to some externally owned account, or another contract, sending a transaction that calls in. This is fine when a user supplies both the intent and the gas: a swap happens because a trader submitted it. The problem shows up the moment a contract's correct behavior depends on something happening without a user present to make it happen. A lending protocol needs undercollateralized positions liquidated the instant their health factor (collateral value times a safety threshold, divided by the debt) drops below 1, and no borrower is going to liquidate themselves. A yield vault needs to harvest and recompound rewards on a regular cadence to stay competitive. In both cases the contract knows what should happen and can check whether the condition is met, but someone, the executor, has to send the transaction.
 
-This is fine for a lot of contracts. An ERC-20 transfer happens because someone asked for it. A swap happens because a trader submitted it. The user supplies both the intent and the gas.
+Before you look for that someone, check whether the work has to happen on its own at all. A vesting contract needs no monthly release transaction, because it can compute how much has vested at the moment the beneficiary claims. An executor is needed only for work that cannot wait until someone who wants the result calls the contract.
 
-The problem shows up the moment a contract's correct behavior depends on something happening without a user present to make it happen. A few examples that come up constantly:
+## Your own bot and a paid open call both fall short
 
-A lending protocol needs undercollateralized positions liquidated the instant their health factor drops below 1. No borrower is going to liquidate themselves.
+The first instinct of most developers coming from web2 is to run a bot, also called a keeper. Spin up a server, poll the chain every block, and when the condition is met, sign and send the transaction from a hot wallet.
 
-A vesting contract needs to release the next tranche of tokens on a schedule, every month, whether or not the beneficiary remembers to claim.
+The bot is a single point of failure. The work stops when your server goes down or the hot wallet runs out of ETH for gas, and if the machine is compromised, the attacker has a funded key. You have reintroduced the centralized, trusted operator that the contract was supposed to do without.
 
-A limit order needs to execute the moment the price crosses a threshold, which might be at 3am when nobody is watching.
+The second instinct is to make the work permissionless and let economics handle it. Anyone can call `liquidate()`, and the caller takes a cut of the seized collateral. This works when the task carries a built-in profit. Liquidations get done because liquidators race for the bonus, around 5% to 10% for ETH on Aave (more in the [lending lesson](/courses/development-on-ethereum/advanced-defi/lending-and-borrowing-on-chain)). The same logic drives arbitrage and the closing of expired options.
 
-A yield vault needs to harvest and recompound rewards on a regular cadence to stay competitive.
+It falls apart for any task that has no natural payout. Nobody will pay gas to call your vault's `harvest()` out of goodwill. You can add a reward yourself, for example a share of the harvest for whoever calls it. Then you have to price it: a reward that does not cover the caller's gas attracts nobody, and everything above that is overpaid on every call. Someone also has to write and run a bot for your contract before any reward is claimed.
 
-In every case the contract knows what should happen and can check whether the condition is met. What it cannot do is trigger itself. Someone has to send the transaction.
+A keeper network sells this as a service. Its nodes are already running, and they send your transaction for the gas plus a premium. You pay for every call in both designs. With the network you do not have to price a reward or wait for bots. In exchange you depend on the network and on keeping your balance with it funded. Chainlink Automation is such a network.
 
-## The naive fixes and where they break
+## Automation checks off-chain and executes on-chain
 
-The first instinct of most developers coming from web2 is to run a bot. Spin up a server, poll the chain every block, and when the condition is met, sign and send the transaction from a hot wallet. This works in a demo and fails in production for predictable reasons.
-
-The bot is a single point of failure. If your server goes down, your dead-man's switch dies with it. If the hot wallet runs out of ETH for gas, every upkeep stalls. If the machine is compromised, the attacker has a funded key. You have reintroduced exactly the centralized, trusted operator that the contract was supposed to do without. For a protocol that markets itself as decentralized, a critical function gated behind one team's cron job is a contradiction users will eventually notice.
-
-The second instinct is to make the work permissionless and let economics handle it. Anyone can call `liquidate()`, and the caller takes a cut of the seized collateral. This is the pattern the lending lecture covered, and it works beautifully when the task carries a built-in profit. Liquidations get done because liquidators race for the bonus. The same logic drives arbitrage and the closing of expired options.
-
-It falls apart for any task that has no natural payout. Nobody will pay gas to call your vault's `harvest()` out of goodwill. Nobody will spend money to advance a vesting schedule that benefits someone else. You can try to bolt on an artificial reward, but now you are paying a bounty on every call and inviting people to game the timing. For unprofitable maintenance work, the incentivized-caller model has no one to incentivize.
-
-What both fixes are reaching for is a reliable, decentralized party that will send the transaction when the condition is met and charge you a fair price for the gas. That is what Chainlink Automation is.
-
-## What Chainlink Automation provides
-
-Automation, called Chainlink Keepers until its 2022 rename, is a network of independent nodes that monitor registered upkeeps and execute them on-chain when they are due. The same decentralization and crypto-economic guarantees behind Chainlink's price feeds apply here. No single node decides whether your function runs, and the network is paid in LINK to cover gas plus a premium.
+Automation, called Chainlink Keepers until its 2022 rename, is a network of independent nodes that monitor upkeeps (jobs registered with the network) and execute them on-chain when they are due. No single node decides whether your function runs, and the network is paid in LINK to cover gas plus a premium.
 
 The custom-logic integration rests on a two-function interface your contract implements.
 
 ```solidity
-// Solidity 0.8.20, Ethereum mainnet
 interface AutomationCompatibleInterface {
     function checkUpkeep(bytes calldata checkData)
         external
@@ -68,8 +55,6 @@ interface AutomationCompatibleInterface {
     function performUpkeep(bytes calldata performData) external;
 }
 ```
-
-The split between these two functions is the whole idea, and it mirrors the off-chain-decides, on-chain-executes shape you already saw with VRF.
 
 `checkUpkeep` answers one question: is there work to do right now. The Automation nodes call it off-chain, as a simulation, on every block. Because the call never lands in a block, it costs no gas and changes no state. You can read as much as you need inside it. It returns a boolean and an optional `performData` blob that gets handed to the execution step.
 
@@ -151,55 +136,18 @@ The split between these two functions is the whole idea, and it mirrors the off-
 <text x="360" y="545" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">The off-chain check is free and constant. Only performUpkeep touches the chain and costs gas.</text>
 </svg>
 
-## The three trigger types
+Automation has two other trigger types: a time-based trigger runs a target function on a schedule given as a cron expression, with no `checkUpkeep` at all, and a log trigger fires when a specific event log is emitted on-chain and uses `checkLog` instead of `checkUpkeep`. The rest of this lesson stays with custom logic.
 
-Automation exposes three ways to fire an upkeep, and picking the right one keeps your contract simple.
+## A stop-loss order as an upkeep
 
-Time-based triggers run a function on a fixed schedule given as a cron expression, every hour, every day at midnight, the first of each month. You point the registration at a target function and a schedule, and you write no `checkUpkeep` at all. This is the right tool for vesting releases, periodic rebalances, and anything that runs on the calendar rather than on a condition.
-
-Custom-logic triggers use the `checkUpkeep` and `performUpkeep` pair above. The nodes poll your `checkUpkeep` every block, and when it returns true they call `performUpkeep`. This is the tool for condition-based work where you cannot predict the timing in advance, a price crossing a threshold, a quorum being reached, a buffer filling up.
-
-Log triggers fire when a specific event log is emitted on-chain. Instead of `checkUpkeep`, you implement `checkLog`, which receives the matching log and decides whether to act. This suits event-driven reactions, responding to a deposit, a governance vote, or a cross-contract signal, without polling state every block.
-
-For most non-scheduled DeFi mechanics, custom logic is the default, so the rest of this lecture stays with it.
-
-## Wiring it up: a stop-loss order
-
-Here is a contract that sells a held asset when its price drops below a floor. It reads a Chainlink price feed, the same `latestRoundData` and staleness check from the oracle lecture, and it uses Automation to fire the sale automatically.
+Here is a contract that sells a held asset when its price drops below a floor. It reads a Chainlink price feed, the same `latestRoundData` and staleness check from the [oracle lesson](/courses/development-on-ethereum/oracles/oracles-and-chainlink-price-feeds), and it uses Automation to fire the sale automatically. The listing shows the state and the two Automation functions. The constructor, the error declarations, the owner-guarded setter for `forwarder`, and the sale itself are left out.
 
 ```solidity
-// Solidity 0.8.20, Ethereum mainnet
-// Automation-compatible stop-loss: sell when the price falls below a floor.
-
-import {AutomationCompatibleInterface} from
-    "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
-import {AggregatorV3Interface} from
-    "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-
 contract StopLoss is AutomationCompatibleInterface {
     AggregatorV3Interface public immutable priceFeed;
     int256 public immutable floorPrice;   // e.g. 1800 * 1e8 for an 8-decimal feed
-    address public immutable owner;
     address public forwarder;             // assigned after the upkeep is registered
     bool public triggered;
-
-    error NotOwner();
-    error NotForwarder();
-    error PriceStale();
-    error ConditionNotMet();
-
-    constructor(address feed, int256 floor) {
-        priceFeed = AggregatorV3Interface(feed);
-        floorPrice = floor;
-        owner = msg.sender;
-    }
-
-    // The registry hands you a forwarder address after registration.
-    // Lock performUpkeep to it so nobody else can trigger the sale.
-    function setForwarder(address fwd) external {
-        if (msg.sender != owner) revert NotOwner();
-        forwarder = fwd;
-    }
 
     // Simulated off-chain by the nodes on every block. Never mined.
     function checkUpkeep(bytes calldata)
@@ -210,7 +158,7 @@ contract StopLoss is AutomationCompatibleInterface {
     {
         if (triggered) return (false, "");
         (, int256 price,, uint256 updatedAt,) = priceFeed.latestRoundData();
-        bool fresh = block.timestamp - updatedAt < 1 hours;
+        bool fresh = block.timestamp - updatedAt < 1 hours + 10 minutes;
         upkeepNeeded = fresh && price > 0 && price < floorPrice;
     }
 
@@ -218,30 +166,21 @@ contract StopLoss is AutomationCompatibleInterface {
     function performUpkeep(bytes calldata) external override {
         if (msg.sender != forwarder) revert NotForwarder();
 
-        // Re-validate. The off-chain result is already a few blocks old.
         (, int256 price,, uint256 updatedAt,) = priceFeed.latestRoundData();
-        if (block.timestamp - updatedAt >= 1 hours) revert PriceStale();
+        if (block.timestamp - updatedAt >= 1 hours + 10 minutes) revert PriceStale();
         if (triggered || price <= 0 || price >= floorPrice) revert ConditionNotMet();
 
         triggered = true;
         _executeSell();   // swap the held asset against a DEX router, omitted here
-    }
-
-    function _executeSell() internal {
-        // ... routing and slippage protection ...
     }
 }
 ```
 
 `checkUpkeep` is marked `view`. It reads the feed, checks freshness, and reports whether the price has fallen below the floor. The Automation contracts also offer a `cannotExecute` modifier you can add to guarantee the function reverts if anyone tries to call it in a real transaction, since it is meant for simulation only.
 
-`performUpkeep` is where the discipline lives, and it is worth slowing down on.
+## The check is a few blocks old when the transaction lands
 
-## The re-validation requirement
-
-Look at `performUpkeep` again. It does not assume the sale should happen just because it was called. It re-reads the price and checks the condition from scratch, reverting if the price is stale or has climbed back above the floor.
-
-This re-check is not defensive padding. It is required for correctness, and the reason is timing. `checkUpkeep` runs off-chain at block N. By the time a node builds the transaction, broadcasts it, and it lands in a block, two or three blocks have passed. The state the node observed when it decided to act is no longer the current state. Prices move, balances change, other transactions execute in between.
+`performUpkeep` re-reads the price and checks the condition from scratch, reverting if the price is stale or has climbed back above the floor. It has to, because `checkUpkeep` runs off-chain at block N. By the time a node builds the transaction, broadcasts it, and it lands in a block, two or three blocks have passed, and the price may have moved in between. If `performUpkeep` trusted the stale decision, it would sell at a price the user never agreed to, after the stop-loss condition had already cleared. So in every Automation integration, treat `checkUpkeep` as a cheap filter that tells the network when to bother sending a transaction, and treat `performUpkeep` as the authority that re-establishes every precondition before doing anything irreversible.
 
 <svg role="img" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>checkUpkeep vs performUpkeep timeline: price moves $1,790 to $1,815</title><desc>A timeline shows checkUpkeep running off-chain at block N, where the price is $1,790 and below $1,800, so it returns true. By the time performUpkeep runs on-chain at block N+2, the price has moved to $1,815, back above $1,800: trusting the stale true value sells at the wrong price (a bug), while re-reading the price reverts safely because the condition is now false.</desc>
   <defs>
@@ -313,36 +252,22 @@ This re-check is not defensive padding. It is required for correctness, and the 
 <text x="360" y="475" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">performUpkeep must re-validate the condition. The off-chain "true" is a hint, never a guarantee.</text>
 </svg>
 
-If `performUpkeep` trusted the stale decision, it would sell at a price the user never agreed to, after the stop-loss condition had already cleared. By re-reading the feed and reverting when the condition is gone, the contract guarantees it only ever acts on conditions that are true at the moment of execution. The off-chain `true` is a hint that work might be needed. The on-chain function decides whether it actually is.
+## The result must not depend on the caller
 
-This generalizes to every Automation integration. Treat `checkUpkeep` as a cheap filter that tells the network when to bother sending a transaction, and treat `performUpkeep` as the authority that re-establishes every precondition before doing anything irreversible.
+`performUpkeep` is a public function. By default, any address can call it, including ones that have nothing to do with the Automation network. The re-check is the first defense against them. A stranger who calls the function early gets a revert and wastes their own gas, and a stranger who calls it when the condition holds does the work you wanted done. If the result is the same whoever calls, the function can stay open, and the Automation network is one executor among several.
 
-## Access control and the forwarder
+The result does depend on the caller when the caller chooses something the function trusts. The usual case is `performData`: `checkUpkeep` computes off-chain which items to process, and whoever calls `performUpkeep` directly passes a blob of their own. The function should re-check every item it is handed.
 
-`performUpkeep` is a public function. By default, any address can call it, including ones that have nothing to do with the Automation network. For some upkeeps that is harmless, because the function re-validates and a stranger calling it early just wastes their own gas. For others it is a real risk, because an attacker can call it at a moment that benefits them, front-run the legitimate execution, or pass a malicious `performData` blob.
+Where a caller can still gain by choosing the moment or the data, Automation gives you a second lock, the forwarder. When you register an upkeep, the registry generates a unique forwarder address for it, and that address is the only one the network uses to call your `performUpkeep`. Once you know it, restrict the function to `msg.sender == forwarder`, as the stop-loss does. Do not hardcode the forwarder in the constructor. You do not know its address until after registration, which happens after deployment. Set it afterward through an owner-guarded setter.
 
-The fix is the forwarder. When you register an upkeep, the registry generates a unique forwarder address for it, and that address is the only one the network uses to call your `performUpkeep`. Once you know it, restrict the function to `msg.sender == forwarder`, as the stop-loss does. Now the network can trigger the work and nobody else can.
+The lock makes the function depend on one executor. The stop-loss re-checks everything and ignores `performData`, so it would do the right thing for any caller. With the lock, if the network stops running the upkeep, nobody else can execute the sale, and the owner has to point `forwarder` at an address they control and call `performUpkeep` by hand. When you add the forwarder check, decide in advance who executes if the network does not.
 
-Do not hardcode the forwarder in the constructor. You do not know its address until after registration, which happens after deployment. Set it once afterward through an owner-guarded setter.
+## An upkeep can stop without the contract noticing
 
-## Funding and lifecycle
+An upkeep is paid in LINK. You deposit a LINK balance when you register it, and the network deducts from that balance each time it runs `performUpkeep`, covering the gas plus a premium that pays the node. When the LINK balance is depleted, the upkeep stops being executed. Nothing reverts and nothing warns the contract, so the sale or liquidation it was supposed to trigger quietly fails to happen. Monitoring the balance and topping it up is operational work you own.
 
-An upkeep is paid in LINK. You register it at the Automation app or programmatically against the registry, deposit a LINK balance, and the network deducts from that balance each time it runs `performUpkeep`, covering the gas plus a premium that pays the node.
+The other limit to plan for is gas. Each upkeep has a configured gas limit for `performUpkeep`. If your execution exceeds it, the transaction reverts and the work does not get done. This makes unbounded loops especially dangerous here, because the loop might fit under the limit in a test with three items and blow past it in production with three thousand. Cap the work per execution, or use `performData` to tell `performUpkeep` which items to process, computed during the free off-chain check. `checkUpkeep` runs off-chain and costs nothing to simulate, within the node's generous limits, so it is the right place for heavy reads and iteration. `performUpkeep` costs real gas and runs under a hard limit, so keep it lean.
 
-When the LINK balance is depleted, the upkeep stops. It does not warn you in the contract, it does not revert, it simply stops being executed, and your liquidations or releases quietly fail to happen. Monitoring the balance and topping it up is operational work you own. Several teams have deployed a contract that worked perfectly in testing and then watched a critical upkeep go silent weeks later because nobody refilled the LINK.
+Automation is also best-effort: it fires soon after the condition is met, usually within a block or two. Anything that needs sub-block precision or guaranteed execution in a specific block should not depend on it.
 
-The other limit to plan for is gas. Each upkeep has a configured gas limit for `performUpkeep`. If your execution exceeds it, the transaction reverts and the work does not get done. This makes unbounded loops especially dangerous here, because the loop might fit under the limit in a test with three items and blow past it in production with three thousand.
-
-## What people get wrong
-
-**Trusting the off-chain check.** The most common and most damaging mistake is writing a `performUpkeep` that does the work unconditionally because "checkUpkeep already verified it." By the time `performUpkeep` runs, the check is several blocks stale. Re-validate every precondition on-chain.
-
-**Leaving performUpkeep open.** Forgetting the forwarder guard exposes the function to anyone. Depending on what the upkeep does, that ranges from harmless to exploitable. Lock it to the forwarder unless you have a specific reason the function is safe to call by anyone.
-
-**Fearing an expensive checkUpkeep.** Developers sometimes cram complex logic into `performUpkeep` to keep `checkUpkeep` cheap. This is the wrong approach. `checkUpkeep` runs off-chain and costs nothing to simulate, within the node's generous limits, so it is the right place for heavy reads and iteration. `performUpkeep` is the part that costs real gas and runs under a hard limit, so keep it lean and let the check do the looking.
-
-**Unbounded loops in performUpkeep.** A loop over all positions or all users passes in a small test and reverts in production once the set grows past the gas limit. Cap the work per execution, or use `performData` to tell `performUpkeep` exactly which items to process, computed during the free off-chain check.
-
-**Expecting exact timing.** Automation is best-effort. It fires soon after the condition is met, usually within a block or two. The timing is approximate, so anything that needs sub-block precision or guaranteed execution in a specific block should not depend on it.
-
-The raffle task you just built is a clean candidate for this pattern. Its `drawWinner` currently relies on someone remembering to call it after the deadline. A time-based upkeep pointed at `drawWinner`, or a custom-logic upkeep whose `checkUpkeep` returns true once `block.timestamp` passes the deadline, removes that dependency and makes the draw fire on its own. The contract stays passive and correct, and the network supplies the missing trigger.
+For every job in your protocol that has to run without a user asking, answer four questions. Can the result be computed later, when someone asks for it? If not, who is paid to send the transaction? Is the result the same whoever sends it? And who sends it if the network you pay stops?

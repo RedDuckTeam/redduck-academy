@@ -28,19 +28,21 @@ faq:
       the bytecode on chain, and explorers tag the programs that match.
 ---
 
-> On Solana, a program isn't a special kind of thing. It's just an account, like any other, with a flag that says "this account holds executable code." That fact has a useful consequence: you can replace the code without disturbing anything else. A program upgrade is exactly that replacement. Only the holder of the upgrade authority can perform it, and that authority is what everyone using the program ultimately trusts.
+> On Solana, a program is an account, like any other, with a flag that says "this account holds executable code." So you can replace the code without disturbing anything else, and a program upgrade is that replacement. Only the holder of the upgrade authority can perform it, and that authority is what everyone using the program ultimately trusts.
 
 ## Code is just another account
 
 Solana's account model treats programs the same as everything else. A program account has the same shape as a user account or a vault account. The only difference is one flag: `executable: true`. That flag tells the runtime "this account's data is BPF bytecode rather than regular data, and you should run it when someone calls this address."
 
-So a program is really two things: a pubkey that never changes (the program's address), and the bytecode in that account's data field, which can change. Everything users interact with, including the address they call, the instructions they invoke, and the IDL they generate clients from, points at the address rather than at the bytecode. The bytecode is just whatever happens to be sitting in that account right now.
+So a program is really two things: a pubkey that never changes (the program's address), and the bytecode in that account's data field, which can change. Everything users interact with, including the address they call, the instructions they invoke, and the IDL they generate clients from, points at the address rather than at the bytecode. The bytecode is whatever happens to be sitting in that account right now.
 
 Replacing the bytecode is what we call an upgrade. The address stays the same. Users keep calling the same program. But the next time they do, they're running a different version of the code.
 
+On Ethereum the default is the opposite. The code at an address cannot change once it is deployed, and a team that wants upgrades has to add a proxy, a contract that holds the state and delegates all logic to a replaceable implementation ([upgradeable contracts and proxies](/courses/development-on-ethereum/token-security-and-evm-internals/upgradeable-contracts-and-proxies)). A Solana program is upgradeable from the moment it is deployed, and making it immutable is a separate step.
+
 ## State stays put
 
-The reason this works cleanly is that user data lives in other accounts. Your staking program doesn't store stake positions inside its own bytecode account. It stores them in separate `StakePosition` accounts, one per user. The Vault sits in its own account. The Config sits in its own account. The program is just code that operates on those accounts when called.
+The reason this works cleanly is that user data lives in other accounts. Your staking program doesn't store stake positions inside its own bytecode account. It stores them in separate `StakePosition` accounts, one per user. The Vault sits in its own account. The Config sits in its own account. The program is code that operates on those accounts when called.
 
 <svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Program upgrade: before and after, bytecode v1 to v2, state accounts unchanged</title><desc>Two side-by-side panels compare a program account before and after an upgrade. In both panels the program account keeps executable: true, only its data changes from bytecode v1 to bytecode v2, while the separate state accounts (UserState balances of 500, 1200, and 300, Config, and Vault: tokens = 50000) stay untouched with the same values.</desc>
   <defs>
@@ -94,32 +96,26 @@ The reason this works cleanly is that user data lives in other accounts. Your st
   <text x="360" y="460" text-anchor="middle" font-family="monospace" font-size="11" fill="#565653" font-style="italic">Users keep their balances. The program just starts running new logic on them.</text>
 </svg>
 
-Upgrading a Solana program doesn't require a migration. You don't have to copy data from a v1 program to a v2 program. You don't have to redeploy at a new address and ask users to move. The address stays. The state stays. Only the code changes.
+Upgrading a Solana program doesn't require moving the state. You don't have to copy data from a v1 program to a v2 program. You don't have to redeploy at a new address and ask users to move. The address and the state stay, and only the code changes.
 
-The constraint is that your new code has to be compatible with the existing state. If your old `Vault` struct had three fields and your new one has four, the v2 code reading old accounts is going to fail, because the bytes on disk don't match the new struct. So in practice, upgrades require careful thought about account layouts. Adding fields is easy if you handle the migration in code, by reading the old format and writing the new format. Changing field types or removing fields is hard. Most upgrades add new instructions and avoid changing existing structs.
+The constraint is that your new code has to be compatible with the existing state. If your old `Vault` struct had three fields and your new one has four, the v2 code reading old accounts is going to fail, because the bytes on disk don't match the new struct. An old `Vault` account was sized for three fields when it was created, and an upgrade does not resize it ([account space and layout](/courses/development-on-solana/writing-your-first-program/account-space-and-layout)). The fourth field can go into bytes that v1 reserved for future use. If v1 reserved nothing, each old account has to be grown with `realloc` in its own instruction, or copied into a new account type by a migration instruction and closed, once per account. Changing field types or removing fields is hard. Most upgrades add new instructions and avoid changing existing structs.
 
-## The upgrade authority
+## Only the upgrade authority can replace the code
 
 Programs don't upgrade themselves. Every upgradeable program has an **upgrade authority**, which is a pubkey stored alongside the bytecode. Only that authority can deploy new code to that program. If you don't hold the upgrade authority's private key, you cannot upgrade the program.
 
 The upgrade authority is set when the program is first deployed. It defaults to the deployer's keypair, but you can change it later: transfer it to a multisig, transfer it to a DAO-controlled account, or set it to `None` to make the program permanently immutable.
 
-That last option is important. **Setting the upgrade authority to ****`None`**** is irreversible.** Once you do it, no one can ever upgrade the program again. The bytecode is frozen forever. Some protocols do this on purpose, as a credibility signal. They're saying "we've audited this code and we promise you the rules won't change."
+**Setting the upgrade authority to `None` is irreversible.** Once you do it, no one can ever upgrade the program again. The bytecode is frozen forever. Some protocols do this on purpose, as a credibility signal. They're saying "we've audited this code and we promise you the rules won't change."
 
 Most production protocols don't do this, at least not initially. They keep the upgrade authority on a multisig controlled by the team, so they can release bug fixes if something goes wrong. Some transfer it to a governance program later, so the community votes on upgrades instead of the team deciding unilaterally. The choice is a trust signal to users.
 
-## The three things to check before trusting a program
+## Three things to check before you build on a program
 
-When you're using a Solana program, you're trusting whoever holds its upgrade authority. They can change the rules. They can fix bugs. They can also, in theory, deploy code that drains the vault.
+When you're using a Solana program, or calling it from your own through CPI, you're trusting whoever holds its upgrade authority. They can change the rules and fix bugs. They can also, in theory, deploy code that drains the vault.
 
-Users who care about this check three things:
+Before you build on someone else's program, check three things. Users and integrators will ask the same three about yours.
 
 - **Is there an upgrade authority?** Block explorers show this. If the field says `null`, the program is frozen.
 - **Who holds it?** A single team wallet, a multisig with a published signer set, a governance program. Each of these has different trust implications.
-- **Does the on-chain code match the audited source code?** This is where **verifiable builds** matter. If a project publishes its source code on GitHub, anyone can compile it and check whether the resulting bytecode matches what's on chain. Tools exist that automate this comparison. Block explorers show a tag indicating whether a program has a verified build. A program that's verifiable is one where you can be sure the code you're reading is the code that's actually running.
-
-You don't have to perform these checks yourself for every program you interact with. Auditors and explorer integrations do most of the work. But the concept is what matters: a program's behavior is whatever its current bytecode says, and the people who can change that bytecode are the ones with the upgrade authority. Knowing who they are tells you who you're really trusting.
-
-## Summary
-
-A Solana program is an account with executable bytecode. That bytecode can be replaced by whoever holds the upgrade authority, without touching any of the state the program operates on. Set the authority to `None` and the program becomes permanent. Verifiable builds let users confirm the code on chain matches a published source. That covers everything about program upgrades.
+- **Does the on-chain code match the audited source code?** With a **verifiable build**, anyone can compile the source code a project publishes on GitHub and check whether the resulting bytecode matches what's on chain. Block explorers show a tag indicating whether a program has a verified build. A program that's verifiable is one where you can be sure the code you're reading is the code that's actually running.

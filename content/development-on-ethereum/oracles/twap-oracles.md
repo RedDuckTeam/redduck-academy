@@ -19,17 +19,13 @@ faq:
       Five-minute windows have been broken, and 10 minutes to an hour is usual.
 ---
 
-> The previous lecture argued that production protocols use Chainlink because reading prices from a single AMM pool is dangerous. That's true. But Chainlink doesn't have a feed for every asset, and even when it does, sometimes you want an oracle that lives inside your own protocol, on the same chain, with no external dependency. The pattern that makes that workable is the **time-weighted average price**, or TWAP. This lecture covers what a TWAP is, why it's harder to manipulate than spot price, exactly how Uniswap V2's TWAP works, and where it still falls short.
+> Chainlink doesn't have a feed for every asset, and even when it does, sometimes you want an oracle that lives inside your own protocol, on the same chain, with no external dependency. The pattern that makes that workable is the **time-weighted average price**, or TWAP.
 
-## The spot price problem, restated
+## To move a time-weighted average, the attacker has to hold the price
 
-Reading the spot price from an AMM pool means computing the ratio of its current reserves. The number is right there, in storage, for anyone to read. The issue is that anyone can also *move* it, by swapping into the pool. A swap big enough to push the price 20% in one direction costs the swapper most of that 20% in slippage, but if a lending protocol is about to read the post-swap price, that's a manageable cost relative to the loan they'd extract against inflated collateral.
+The [flash loans lesson](/courses/development-on-ethereum/oracles/flash-loans) showed that a pool's spot price can be pushed away from the market and exploited inside one transaction, with borrowed capital.
 
-A flash loan removes even the capital constraint. The attacker borrows enough to make a market-moving swap, exploits the manipulated price, reverses the swap, and repays the loan. The attack fits in one transaction and one block. It's been done, repeatedly, for tens of millions of dollars at a time.
-
-## The TWAP idea
-
-Take the average price over a window of time instead of the instantaneous price. If the window is 30 minutes, then to manipulate what the oracle reports, the attacker has to keep the pool's price away from the true market price for roughly 30 minutes. That's not something a flash loan can do.
+Take the average price over a window of time instead of the instantaneous price. If the window is 30 minutes, then to manipulate what the oracle reports, the attacker has to keep the pool's price away from the true market price for roughly 30 minutes. A flash loan cannot do that, because it has to be repaid in the same transaction.
 
 <svg role="img" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Flash-loan spot-price spike versus 30-minute TWAP oracle response</title><desc>A chart shows the pool's spot price spiking to $7,000 for one block during a flash-loan attack, while the 30-minute TWAP line stays near $3,510. Below it, the spot oracle reports Alice as under-collateralized and liquidates her, but the TWAP oracle sees the spike averaged out and takes no action.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -66,143 +62,9 @@ Take the average price over a window of time instead of the instantaneous price.
   <text x="390" y="438" font-family="monospace" font-size="10" font-weight="bold">-> no action</text>
 </svg>
 
-The price spike a flash loan creates lasts one block. Averaged over a 30-minute window (roughly 150 blocks on Ethereum), the contribution of that single block to the average is about 0.7%. Even a 100% price spike for one block barely shifts the average. The protocol reading the TWAP sees a number very close to the real market price, and the attack fails.
+The average weights each price by how long it held. A price that is pushed up and brought back inside one transaction held for zero seconds, so it has no weight in the average. If the attacker leaves the price in place and arbitrageurs correct it in the next block, it held for one block. Averaged over a 30-minute window (roughly 150 blocks on Ethereum), the contribution of that single block to the average is about 0.7%. Even a 100% price spike for one block barely shifts the average, so the protocol reading the TWAP sees a number very close to the real market price.
 
-## How the math works without storing every price
-
-The naive way to compute an average price over time is to store every observation. Every time the pool's price changes, write down the new price along with the timestamp. To compute the average at any point, sum the stored prices weighted by how long each one held, and divide by total time.
-
-This is unworkable on chain. Each observation is a storage write. Active pools change price many times per block. Storing every observation would make every swap dramatically more expensive, and the contract would have to keep paying for unbounded storage.
-
-There's a better approach. Instead of storing each individual price, store a single running total: the integral of price over time, `priceCumulative`. Every time the pool's price changes, do one update: add `oldPrice × (now − lastUpdate)` to the accumulator, then set `lastUpdate = now`. That's one storage slot, one read, one write per change.
-
-To compute the average price between two times T₁ and T₂, you don't need to know any of the prices in between. You only need the value of `priceCumulative` at those two times. The average is:
-
-```
-TWAP[T₁, T₂] = (priceCumulative(T₂) - priceCumulative(T₁)) / (T₂ - T₁)
-```
-
-<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>priceCumulative curve showing TWAP as the slope between two readings</title><desc>A line chart plots priceCumulative rising over time as price moves from low to high. A dashed line connects two sample points, T1 and T2, and its slope equals TWAP, calculated as (cum2 minus cum1) divided by (T2 minus T1) from just two stored readings.</desc>
-  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
-  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">priceCumulative grows by (price × time). TWAP is the slope between two readings.</text>
-  <text x="50" y="240" text-anchor="middle" font-family="monospace" font-size="11" transform="rotate(-90, 50, 240)">priceCumulative</text>
-  <line x1="100" y1="380" x2="660" y2="380" stroke="#000000" stroke-width="1.5"/>
-  <line x1="100" y1="80" x2="100" y2="380" stroke="#000000" stroke-width="1.5"/>
-  <text x="380" y="408" text-anchor="middle" font-family="monospace" font-size="11">time</text>
-  <line x1="100" y1="350" x2="200" y2="320" stroke="#000000" stroke-width="2"/>
-  <line x1="200" y1="320" x2="320" y2="260" stroke="#000000" stroke-width="2"/>
-  <line x1="320" y1="260" x2="450" y2="160" stroke="#000000" stroke-width="2"/>
-  <line x1="450" y1="160" x2="660" y2="100" stroke="#000000" stroke-width="2"/>
-  <text x="135" y="365" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=low</text>
-  <text x="260" y="295" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=med</text>
-  <text x="430" y="225" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=high</text>
-  <text x="600" y="148" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=med-high</text>
-  <line x1="200" y1="320" x2="540" y2="130" stroke="#ed4937" stroke-width="2.5" stroke-dasharray="8 4"/>
-  <circle cx="200" cy="320" r="6" fill="#ed4937" stroke="#000000" stroke-width="1.5"/>
-  <circle cx="540" cy="130" r="6" fill="#ed4937" stroke="#000000" stroke-width="1.5"/>
-  <line x1="200" y1="320" x2="200" y2="380" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <line x1="100" y1="320" x2="200" y2="320" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <line x1="540" y1="130" x2="540" y2="380" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <line x1="100" y1="130" x2="540" y2="130" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
-  <text x="200" y="395" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">T₁</text>
-  <text x="540" y="395" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">T₂</text>
-  <text x="92" y="324" text-anchor="end" font-family="monospace" font-size="10">cum₁</text>
-  <text x="92" y="134" text-anchor="end" font-family="monospace" font-size="10">cum₂</text>
-  <text x="182" y="345" text-anchor="end" font-family="monospace" font-size="10" font-weight="bold">obs₁</text>
-  <text x="558" y="115" font-family="monospace" font-size="10" font-weight="bold">obs₂</text>
-  <rect x="100" y="425" width="560" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
-  <text x="380" y="447" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">TWAP[T₁, T₂]  =  (cum₂ − cum₁) / (T₂ − T₁)  =  slope of the dashed line</text>
-  <text x="380" y="470" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">Two storage reads. The contract never has to remember each price along the way.</text>
-</svg>
-
-The geometric interpretation: each segment of the cumulative curve has a slope equal to the price during that segment. The average price between two times is the slope of the straight line connecting the two endpoints. The pool's `priceCumulative` works exactly like an odometer. The pool tells you "total price-time so far". You sample it twice and divide to get average speed.
-
-To use it as an oracle, your contract has to do two things:
-
-1. Read `priceCumulative` at the moment you want the window to *start*, and store that value.
-2. Wait the window duration. Then read `priceCumulative` again, subtract, and divide by elapsed time.
-
-Step 1 is sometimes called "taking an observation." It's the only thing you store on your side. The pool stores the running total.
-
-## Uniswap V2's implementation
-
-Uniswap V2 was the first AMM to introduce this design. The relevant additions to the `Pair` contract are two storage slots:
-
-```solidity
-uint256 public price0CumulativeLast;
-uint256 public price1CumulativeLast;
-uint32  private blockTimestampLast;
-```
-
-These are updated inside the pair's `_update()` function, which is called on every swap, mint, and burn. The update is:
-
-```solidity
-uint32 timeElapsed = blockTimestamp - blockTimestampLast;
-if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
-    price0CumulativeLast += uint(UQ112x112.encode(reserve1).uqdiv(reserve0)) * timeElapsed;
-    price1CumulativeLast += uint(UQ112x112.encode(reserve0).uqdiv(reserve1)) * timeElapsed;
-}
-```
-
-Two things worth noting in this code.
-
-First, the prices are stored in a fixed-point format called `UQ112x112`, an unsigned 224-bit number where the top 112 bits are the integer part and the bottom 112 bits are the fractional part. Solidity has no native decimals, and a price like 3500.84291 needs more precision than integer math gives. The UQ format encodes fractions as integers by scaling everything up by 2^112. Any contract reading these cumulatives has to know this and shift back down before interpreting the result.
-
-Two cumulatives exist because each token in the pair can be priced in the other. `price0CumulativeLast` accumulates "how much of token1 a unit of token0 buys". `price1CumulativeLast` is the inverse. Use whichever one points the direction you need.
-
-Second, this update only happens when `_update()` runs, which only happens when someone trades or modifies liquidity. If nobody touches the pair for ten minutes, the cumulative doesn't move during those ten minutes, but the price during those ten minutes is still the *last* price the pair recorded, and that price should have contributed to the cumulative as time passed.
-
-There's a workaround. Anyone reading TWAP can compute what the cumulative *would* be if it were updated *now*, by taking the stored cumulative and adding `lastPrice × (block.timestamp - blockTimestampLast)`. Uniswap's `UniswapV2OracleLibrary.currentCumulativePrices()` helper does exactly this. So reading current TWAP doesn't require triggering a trade to refresh the pair. You read the storage and compute the extension yourself.
-
-## A reader contract
-
-A minimal V2 TWAP consumer maintains its own observation and computes the average against the pair's current cumulative.
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
-
-import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import {UniswapV2OracleLibrary} from "@uniswap/v2-periphery/contracts/libraries/UniswapV2OracleLibrary.sol";
-
-contract SimpleV2TWAP {
-    IUniswapV2Pair public immutable pair;
-    uint256 public constant PERIOD = 30 minutes;
-
-    uint256 public price0CumulativeLast;
-    uint32  public blockTimestampLast;
-    uint224 public price0Average;   // UQ112x112 format
-
-    constructor(IUniswapV2Pair _pair) {
-        pair = _pair;
-        // Anchor the first observation.
-        (price0CumulativeLast, , blockTimestampLast) =
-            UniswapV2OracleLibrary.currentCumulativePrices(address(_pair));
-    }
-
-    function update() external {
-        (uint256 price0Cumulative, , uint32 blockTimestamp) =
-            UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
-        uint32 timeElapsed = blockTimestamp - blockTimestampLast;
-        require(timeElapsed >= PERIOD, "period not elapsed");
-
-        price0Average = uint224((price0Cumulative - price0CumulativeLast) / timeElapsed);
-        price0CumulativeLast = price0Cumulative;
-        blockTimestampLast = blockTimestamp;
-    }
-
-    function consult(uint256 amountIn) external view returns (uint256 amountOut) {
-        // price0Average is in UQ112x112 divide by 2^112 to use it as an integer ratio.
-        return (uint256(price0Average) * amountIn) >> 112;
-    }
-}
-```
-
-Anyone calls `update()` at most once per period. `consult()` then returns the most recently computed average for any input amount. The pattern is two-step on purpose: TWAP is a function of *past* state, so the read is decoupled from the trade. A consumer can call `consult()` thousands of times against a single stored observation without paying for any oracle work.
-
-## Why the cost of attack scales with the window
-
-Spot price manipulation works because the cost of the manipulation is bounded by the size of one swap and recovered when the swap reverses. TWAP changes the economics by forcing the attacker to keep the pool's price away from the true market price for the duration of the window.
+Leaving the price in place takes the attacker's own capital, because the flash loan is repaid before the transaction ends. Holding the price for more blocks costs money in each of them. Arbitrageurs sell into the pool at the fake price and take the profit, and the attacker has to push the price up again.
 
 <svg role="img" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>Spot oracle attack vs 30-min TWAP attack: one block vs ~150 blocks</title><desc>Two side-by-side panels compare a spot oracle attack, done in one block with free flash-loan capital and ending in a bad loan plus huge profit, against a 30-minute TWAP attack, which needs about 150 blocks of locked-up real capital while arbitrageurs repeatedly extract value. Each panel walks through the block-by-block steps, the cost incurred, and the net result, showing the TWAP attack is often unprofitable.</desc>
   <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
@@ -255,19 +117,142 @@ Spot price manipulation works because the cost of the manipulation is bounded by
   <text x="410" y="496" font-family="monospace" font-size="10" font-weight="bold">often unprofitable</text>
 </svg>
 
-The longer the TWAP window, the more blocks of manipulation the attacker has to sustain, and the more arbitrage value bleeds out during that time. 5-minute windows have been broken by determined attackers with deep liquidity behind them. 30-minute and longer windows have generally held up, but only against pools with reasonable trading volume.
+The longer the TWAP window, the more blocks of manipulation the attacker has to sustain, and the more they lose to arbitrageurs during that time. 5-minute windows have been broken by determined attackers with deep liquidity behind them. 30-minute and longer windows have generally held up, but only against pools with reasonable trading volume.
+
+## How the math works without storing every price
+
+The naive way to compute an average price over time is to store every observation. Every time the pool's price changes, write down the new price along with the timestamp. To compute the average at any point, sum the stored prices weighted by how long each one held, and divide by total time.
+
+This is unworkable on chain. Each observation is a storage write. Active pools change price many times per block. Storing every observation would make every swap dramatically more expensive, and the contract would have to keep paying for unbounded storage.
+
+Instead of storing each individual price, store a single running total: the integral of price over time, `priceCumulative`. Every time the pool's price changes, do one update: add `oldPrice × (now − lastUpdate)` to the accumulator, then set `lastUpdate = now`. That's one storage slot, one read, one write per change.
+
+Say the price is 10 for 60 seconds and then 12 for 40 seconds. The first update adds 10 × 60 = 600 and the second adds 12 × 40 = 480, so the total grows by 1,080 over 100 seconds. The average price is 1,080 / 100 = 10.8.
+
+To compute the average price between two times T₁ and T₂, you don't need to know any of the prices in between. You only need the value of `priceCumulative` at those two times. The average is:
+
+```
+TWAP[T₁, T₂] = (priceCumulative(T₂) - priceCumulative(T₁)) / (T₂ - T₁)
+```
+
+<svg role="img" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" style="background:#e0deda; font-family: system-ui, sans-serif;"><title>priceCumulative curve showing TWAP as the slope between two readings</title><desc>A line chart plots priceCumulative rising over time as price moves from low to high. A dashed line connects two sample points, T1 and T2, and its slope equals TWAP, calculated as (cum2 minus cum1) divided by (T2 minus T1) from just two stored readings.</desc>
+  <rect x="20" y="20" width="680" height="34" fill="#ed4937" stroke="#000000" stroke-width="2"/>
+  <text x="360" y="42" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">priceCumulative grows by (price × time). TWAP is the slope between two readings.</text>
+  <text x="50" y="240" text-anchor="middle" font-family="monospace" font-size="11" transform="rotate(-90, 50, 240)">priceCumulative</text>
+  <line x1="100" y1="380" x2="660" y2="380" stroke="#000000" stroke-width="1.5"/>
+  <line x1="100" y1="80" x2="100" y2="380" stroke="#000000" stroke-width="1.5"/>
+  <text x="380" y="408" text-anchor="middle" font-family="monospace" font-size="11">time</text>
+  <line x1="100" y1="350" x2="200" y2="320" stroke="#000000" stroke-width="2"/>
+  <line x1="200" y1="320" x2="320" y2="260" stroke="#000000" stroke-width="2"/>
+  <line x1="320" y1="260" x2="450" y2="160" stroke="#000000" stroke-width="2"/>
+  <line x1="450" y1="160" x2="660" y2="100" stroke="#000000" stroke-width="2"/>
+  <text x="135" y="365" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=low</text>
+  <text x="260" y="295" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=med</text>
+  <text x="430" y="225" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=high</text>
+  <text x="600" y="148" font-family="monospace" font-size="9" fill="#565653" font-style="italic">price=med-high</text>
+  <line x1="200" y1="320" x2="540" y2="130" stroke="#ed4937" stroke-width="2.5" stroke-dasharray="8 4"/>
+  <circle cx="200" cy="320" r="6" fill="#ed4937" stroke="#000000" stroke-width="1.5"/>
+  <circle cx="540" cy="130" r="6" fill="#ed4937" stroke="#000000" stroke-width="1.5"/>
+  <line x1="200" y1="320" x2="200" y2="380" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="100" y1="320" x2="200" y2="320" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="540" y1="130" x2="540" y2="380" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="100" y1="130" x2="540" y2="130" stroke="#565653" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="200" y="395" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">T₁</text>
+  <text x="540" y="395" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold">T₂</text>
+  <text x="92" y="324" text-anchor="end" font-family="monospace" font-size="10">cum₁</text>
+  <text x="92" y="134" text-anchor="end" font-family="monospace" font-size="10">cum₂</text>
+  <text x="182" y="345" text-anchor="end" font-family="monospace" font-size="10" font-weight="bold">obs₁</text>
+  <text x="558" y="115" font-family="monospace" font-size="10" font-weight="bold">obs₂</text>
+  <rect x="100" y="425" width="560" height="60" fill="#e0deda" stroke="#000000" stroke-width="2"/>
+  <text x="380" y="447" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold">TWAP[T₁, T₂]  =  (cum₂ − cum₁) / (T₂ − T₁)  =  slope of the dashed line</text>
+  <text x="380" y="470" text-anchor="middle" font-family="monospace" font-size="10" fill="#565653" font-style="italic">Two storage reads. The contract never has to remember each price along the way.</text>
+</svg>
+
+Each segment of the cumulative curve has a slope equal to the price during that segment. The average price between two times is the slope of the straight line connecting the two endpoints. The pool's `priceCumulative` works like an odometer. The pool tells you "total price-time so far". You sample it twice and divide to get average speed.
+
+To use it as an oracle, your contract has to do two things:
+
+1. Read `priceCumulative` at the moment you want the window to start, and store that value.
+2. Wait the window duration. Then read `priceCumulative` again, subtract, and divide by elapsed time.
+
+Step 1 is sometimes called "taking an observation." It's the only thing you store on your side. The pool stores the running total.
+
+## Uniswap V2's implementation
+
+Uniswap V2 was the first AMM to introduce this design. The relevant additions to the `Pair` contract are two cumulative prices and the timestamp of the last update:
+
+```solidity
+uint256 public price0CumulativeLast;
+uint256 public price1CumulativeLast;
+uint32  private blockTimestampLast;
+```
+
+These are updated inside the pair's `_update()` function, which is called on every swap, mint, and burn. The update is:
+
+```solidity
+uint32 timeElapsed = blockTimestamp - blockTimestampLast;
+if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
+    price0CumulativeLast += uint(UQ112x112.encode(reserve1).uqdiv(reserve0)) * timeElapsed;
+    price1CumulativeLast += uint(UQ112x112.encode(reserve0).uqdiv(reserve1)) * timeElapsed;
+}
+```
+
+Each update adds the price that stood before it, the `oldPrice` of the rule above. All transactions in a block share one timestamp, so `timeElapsed` is zero for every update after the first one in a block, and those updates add nothing. A price that is created and removed inside one transaction therefore never reaches the cumulative.
+
+The prices are stored in a fixed-point format called `UQ112x112`, which encodes fractions as integers by scaling everything up by 2^112, because Solidity has no native decimals. Any contract reading these cumulatives has to shift the result back down by 112 bits before interpreting it.
+
+Two cumulatives exist because each token in the pair can be priced in the other. `price0CumulativeLast` accumulates how much of token1 a unit of token0 buys, and `price1CumulativeLast` is the inverse.
+
+This update only happens when someone trades or modifies liquidity. If nobody touches the pair for ten minutes, the cumulative doesn't move during those ten minutes, although the last price the pair recorded held all that time and should have contributed to the cumulative.
+
+So anyone reading TWAP computes what the cumulative would be if it were updated now, by taking the stored cumulative and adding `lastPrice × (block.timestamp - blockTimestampLast)`. Uniswap's `UniswapV2OracleLibrary.currentCumulativePrices()` helper does this, so reading current TWAP doesn't require triggering a trade to refresh the pair.
+
+## A reader contract
+
+A minimal V2 TWAP consumer maintains its own observation and computes the average against the pair's current cumulative. Its constructor, not shown here, stores the pair and takes the first observation.
+
+```solidity
+contract SimpleV2TWAP {
+    IUniswapV2Pair public immutable pair;
+    uint256 public constant PERIOD = 30 minutes;
+
+    uint256 public price0CumulativeLast;
+    uint32  public blockTimestampLast;
+    uint224 public price0Average;   // UQ112x112 format
+
+    function update() external {
+        (uint256 price0Cumulative, , uint32 blockTimestamp) =
+            UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
+        uint32 timeElapsed = blockTimestamp - blockTimestampLast;
+        require(timeElapsed >= PERIOD, "period not elapsed");
+
+        price0Average = uint224((price0Cumulative - price0CumulativeLast) / timeElapsed);
+        price0CumulativeLast = price0Cumulative;
+        blockTimestampLast = blockTimestamp;
+    }
+
+    function consult(uint256 amountIn) external view returns (uint256 amountOut) {
+        // price0Average is in UQ112x112 divide by 2^112 to use it as an integer ratio.
+        return (uint256(price0Average) * amountIn) >> 112;
+    }
+}
+```
+
+Anyone calls `update()` at most once per period. `consult()` then returns the most recently computed average for any input amount. A consumer can call `consult()` thousands of times against a single stored observation without paying for any oracle work.
+
+Nothing calls `update()` by itself. Someone has to send that transaction every period, and the [keepers lesson](/courses/development-on-ethereum/advanced-defi/keepers-and-chainlink-automation) covers who that can be. If nobody does, `consult()` keeps returning the last stored average however old it is, so a consumer should check `blockTimestampLast` the way it checks `updatedAt` on a [Chainlink feed](/courses/development-on-ethereum/oracles/oracles-and-chainlink-price-feeds). Until the first `update()` succeeds, `price0Average` is zero and `consult()` returns 0. `blockTimestampLast` already holds the deployment time by then, so the consumer has to reject a zero average too.
 
 ## What TWAP doesn't solve
 
-TWAP changes the economics of manipulation, but it does not eliminate manipulation. Several specific limitations remain.
+TWAP changes the economics of manipulation, but it does not eliminate manipulation.
 
 **A TWAP is only as deep as its underlying pool.** If the pool has low liquidity, the cost of moving the price for a few blocks can be small enough that even a 30-minute window is affordable to attack. TWAP shifts the manipulation budget upward, but it doesn't make a thinly traded pool safe to read.
 
-**TWAP lags the real price.** That's the entire point. The smoothing is the defense. But if you need to know the actual current price, TWAP isn't the right oracle. Use it for collateral valuation, liquidation thresholds, fee calculations, anything that benefits from stability and can tolerate latency. Don't use it for "what price do I quote this swap at" because the answer will be wrong by minutes.
+**TWAP lags the real price**, because it averages prices that are up to a full window old. If you need to know the actual current price, TWAP isn't the right oracle. Use it for collateral valuation, liquidation thresholds, fee calculations, anything that benefits from stability and can tolerate latency. Don't use it for "what price do I quote this swap at" because the answer will be wrong by minutes.
 
-**Stale TWAPs across inactive periods.** The cumulative only advances when someone interacts with the pair. A pool that goes hours without a trade has a cumulative that hasn't moved, and the computed extension uses whatever the last trade's price was. That last price might already be far from the true market.
+**A pool that nobody trades in reports its last price.** The computed extension uses whatever the last trade's price was for the whole idle period, and that price might already be far from the true market.
 
-**Choosing the right window is a tradeoff.** Shorter windows track price changes more quickly but are cheaper to manipulate. Longer windows are harder to attack but lag farther behind the real market. There is no universally right answer. Lending protocols using TWAP typically pick 10 minutes to 1 hour depending on volume and risk tolerance.
+**Choosing the right window is a tradeoff.** Shorter windows track price changes more quickly but are cheaper to manipulate. Longer windows are harder to attack but lag farther behind the real market. Lending protocols using TWAP typically pick 10 minutes to 1 hour depending on volume and risk tolerance.
 
 **Two-token denomination.** A V2 TWAP gives you the price of one token in the pair, denominated in the other. ETH/USDC tells you the ETH price in USDC. To get "ETH/USD" you have to either trust that USDC equals USD (usually fine, sometimes not) or chain multiple TWAPs together. Chainlink feeds give you USD directly because they aggregate across markets.
 
@@ -277,6 +262,8 @@ Chainlink price feeds are the right answer when they're available, because they 
 
 The first is long-tail assets without Chainlink coverage. If you're building a protocol that takes some obscure ERC-20 as collateral, there's no feed for it. The TWAP of its largest liquid pool is the best you can do.
 
-The second is internal protocol pricing of derived assets. Pricing LP tokens, liquid staking tokens, or any token whose value is *defined* by an on-chain protocol is something TWAP can do that off-chain oracles can't. The canonical source of truth is the on-chain math, and TWAP just gives you a smoothed read of it.
+The second is internal protocol pricing of derived assets. Pricing LP tokens, liquid staking tokens, or any token whose value is defined by an on-chain protocol is something TWAP can do that off-chain oracles can't. The canonical source of truth is the on-chain math, and TWAP just gives you a smoothed read of it.
 
 The third is cross-checks. Production protocols sometimes consume both a Chainlink price and a TWAP, and revert if they diverge significantly. The TWAP catches the rare case where a Chainlink feed is misconfigured, suspended, or otherwise wrong, while Chainlink catches the case where the pool is thinly traded or under attack.
+
+Before you rely on a TWAP, estimate what it costs to hold that pool's price away from the market for the whole window, and compare it with what an attacker could take from your protocol at the moved price.
